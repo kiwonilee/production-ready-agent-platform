@@ -1729,12 +1729,12 @@ uv sync"></pre>
         <h3>2-1. <code>agent-production-readiness</code> Agent Skill 설치</h3>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · Antigravity 글로벌 스킬 디렉터리에 설치 (단일 명령)</span>
+            <span class="code-label">bash · GitHub 저장소에서 Antigravity 글로벌 스킬 디렉터리로 바로 설치 (단일 명령)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
-          <pre class="code-pre" data-tpl="rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
-curl -fsSL &quot;{{SKILL_DOWNLOAD_URL}}/api/skill/download&quot; | tar -xz -C ~/.gemini/skills/
-ls -la ~/.gemini/skills/agent-production-readiness/SKILL.md"></pre>
+          <pre class="code-pre">rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
+curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
+ls -la ~/.gemini/skills/agent-production-readiness/SKILL.md</pre>
         </div>
 
         <h3>2-2. Antigravity CLI (<code>agy</code>) 실행 · 로그인 및 <code>/skills</code> 확인</h3>

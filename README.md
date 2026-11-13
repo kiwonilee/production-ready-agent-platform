@@ -121,10 +121,10 @@ flowchart LR
 ## 🚀 어떻게 사용하나요? (3가지 방법 중 편한 방법 선택)
 
 ### 방법 1️⃣: Antigravity (또는 Gemini CLI)에서 **채팅으로** 사용하기 *(가장 추천)*
-1. **내 컴퓨터에 스킬 복사하기 (최초 1회)**:
+1. **내 환경에 스킬 설치하기 (최초 1회)**:
    ```bash
-   mkdir -p ~/.gemini/skills
-   cp -r skills/agent-production-readiness ~/.gemini/skills/agent-production-readiness
+   rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
+   curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
    ```
 2. **내가 개발 중인 에이전트 폴더를 열고 채팅창에 말하기**:
    - 💬 *"이 에이전트 프로덕션 준비 점수가 몇 점인지 스캔해줘"* *(먼저 3개 프로필 + 직접 맞춤 조합 중 선택 후 진단 진행)*
@@ -190,8 +190,9 @@ This toolkit bridges the **Day-2 Production Readiness Gap** after **ADK (`google
 
 ## 🚀 Quickstart
 ```bash
-# Install skill for Antigravity / Gemini CLI
-mkdir -p ~/.gemini/skills && cp -r skills/agent-production-readiness ~/.gemini/skills/agent-production-readiness
+# Install skill directly from GitHub for Antigravity / Gemini CLI
+rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
+curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
 
 # Or run the interactive 3-pane Web Workbench (includes /lab guide)
 uv run prod-ready ui samples/02_cloud_run_agent --port 8090

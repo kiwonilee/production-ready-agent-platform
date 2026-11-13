@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY pyproject.toml README.md ./
 COPY skills ./skills
+COPY web ./web
 COPY samples ./samples
 
 RUN pip install --no-cache-dir . && \

@@ -12,8 +12,8 @@ description: >-
   URLs or injects unsolicited GCLB/WAF/Model Armor/Billing-Budget/deletion_protection mutations;
   emits non-scoring advisories for Model Armor Floor Settings and Provisioned Throughput SLA instead).
   Wires Agent Platform Managed Sessions & Memory Bank by default,
-  generates unified diffs, applies in-place Terraform and ADK plugin patches, exports
-  READINESS_REPORT.md/.html for security sign-off, and launches a 3-Pane localhost workbench. Use when asked to check production readiness, harden
+  generates unified diffs, applies in-place Terraform and ADK plugin patches, and exports
+  READINESS_REPORT.md/.html (including a Post-Setup Decision Guide) for security sign-off. Use when asked to check production readiness, harden
   an ADK or agents-cli project for production, generate production Terraform/finops guards, or
   prepare for an enterprise security review. Don't use for writing initial business prompt
   logic from scratch (use google-agents-cli-adk-code) or GKE cluster control-plane
@@ -60,7 +60,7 @@ Load these files from `references/` or `assets/` (relative to this `SKILL.md` di
 
 ## Step-by-Step Agent Workflow
 
-Let `<SKILL_DIR>` be the directory containing this `SKILL.md` file. Always execute `<SKILL_DIR>/scripts/prod_ready.py` with `python3` (for `scan`, `diff`, `apply`, `report` — requires **zero external packages**) or `uv run` (for `ui`).
+Let `<SKILL_DIR>` be the directory containing this `SKILL.md` file. Always execute `<SKILL_DIR>/scripts/prod_ready.py` with `python3` (requires **zero external packages** — pure Python stdlib).
 
 ### Step 1: Pre-Scan Workload Selection (MANDATORY BEFORE `scan`)
 
@@ -147,13 +147,9 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <target_project_dir> --target <
 python3 "<SKILL_DIR>/scripts/prod_ready.py" report <target_project_dir> --target <target> --items <confirmed_items> --format both -o <target_project_dir>/READINESS_REPORT.md
 ```
 
-### Step 5: Launch the Interactive 3-Pane Web Workbench (Optional)
+### Step 5: Optional Web Workbench (Hosted or Repository `web/` App)
 
-When the user wants to visually explore the 15 items, customize infrastructure parameters with live diff regeneration, or download a `.zip` bundle in their browser:
-
-```bash
-uv run "<SKILL_DIR>/scripts/prod_ready.py" ui <target_project_dir> --port 8090
-```
+The standalone skill stays lightweight (zero web assets or FastAPI dependencies). If the user wants a browser-based JSON Runtime Wizard or visual diff workbench, they can use the separate `web/` app from the repository (`uv run prod-ready ui <target_project_dir> --port 8090`).
 
 ### Step 6: Guide Cloud Deployment (`Terraform` + `agents-cli deploy`)
 

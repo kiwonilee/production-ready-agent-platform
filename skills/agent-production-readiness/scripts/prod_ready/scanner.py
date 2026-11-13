@@ -98,10 +98,23 @@ def _strip_py_comments(src: str) -> str:
     return "\n".join(line for line in src.splitlines() if not line.lstrip().startswith("#"))
 
 
+def resolve_terraform_rel_dir(project_dir: Path) -> str:
+    """Resolves the active Terraform root across agents-cli layouts.
+
+    - ``agents-cli`` v1.5+ single-project mode: ``deployment/terraform/single-project``
+    - Classic ``agents-cli`` / prototype-upgraded mode: ``deployment/terraform``
+    """
+    single_proj = project_dir / "deployment" / "terraform" / "single-project"
+    if (single_proj / "service.tf").exists():
+        return "deployment/terraform/single-project"
+    return "deployment/terraform"
+
+
 def detect_mcp_a2a_profile(project_dir: Path, service_tf: str = "") -> McpA2aProfile:
     """Detects MCP Server workloads and hardcoded remote MCP/A2A endpoints without false positives on single agents."""
     if not service_tf:
-        service_tf = _read_text(project_dir / "deployment" / "terraform" / "service.tf")
+        tf_rel = resolve_terraform_rel_dir(project_dir)
+        service_tf = _read_text(project_dir / tf_rel / "service.tf")
 
     py_sources: list[str] = []
     seen_paths: set[Path] = set()
@@ -191,7 +204,8 @@ def detect_project_mode_and_target(
     project_dir: Path, target_override: str = "auto"
 ) -> tuple[ProjectMode, TargetType, str]:
     """Detects whether the project is a pure prototype or an agents-cli project, and its target."""
-    tf_service = project_dir / "deployment" / "terraform" / "service.tf"
+    tf_rel = resolve_terraform_rel_dir(project_dir)
+    tf_service = project_dir / tf_rel / "service.tf"
     tf_dev_service = project_dir / "deployment" / "terraform" / "dev" / "service.tf"
     staging_yaml = project_dir / ".cloudbuild" / "staging.yaml"
 
@@ -301,12 +315,14 @@ def scan_project(
     active_ids = set(resolve_item_ids(selected_items))
     skipped_item_ids = [spec.id for spec in CHECKLIST_ITEMS if spec.id not in active_ids]
 
-    service_tf = _read_text(root / "deployment" / "terraform" / "service.tf")
-    variables_tf = _read_text(root / "deployment" / "terraform" / "variables.tf")
-    apis_tf = _read_text(root / "deployment" / "terraform" / "apis.tf")
-    prod_ready_tf = _read_text(root / "deployment" / "terraform" / "production_ready.tf")
-    alerts_tf = _read_text(root / "deployment" / "terraform" / "alerts.tf")
+    tf_dir = root / resolve_terraform_rel_dir(root)
+    service_tf = _read_text(tf_dir / "service.tf")
+    variables_tf = _read_text(tf_dir / "variables.tf")
+    apis_tf = _read_text(tf_dir / "apis.tf")
+    prod_ready_tf = _read_text(tf_dir / "production_ready.tf")
+    alerts_tf = _read_text(tf_dir / "alerts.tf")
     dockerfile = _read_text(root / "Dockerfile")
+    pyproject_toml = _read_text(root / "pyproject.toml")
     agent_py = _read_text(root / "app" / "agent.py")
     fast_api_py = _read_text(root / "app" / "fast_api_app.py")
     services_py = _read_text(root / "app" / "app_utils" / "services.py")
@@ -334,6 +350,7 @@ def scan_project(
             prod_ready_tf=prod_ready_tf,
             alerts_tf=alerts_tf,
             dockerfile=dockerfile,
+            pyproject_toml=pyproject_toml,
             agent_py=agent_py,
             fast_api_py=fast_api_py,
             services_py=services_py,
@@ -429,6 +446,37 @@ def scan_project(
     )
 
 
+def _has_otel_to_cloud_enabled(fast_api_py: str) -> bool:
+    """Checks whether fast_api_app.py actively enables otel_to_cloud on Cloud Run."""
+    if not fast_api_py:
+        return False
+    if re.search(r"otel_to_cloud\s*=\s*False\b", fast_api_py):
+        return False
+    # Agent Runtime telemetry gate evaluates to False on Cloud Run where that env var isn't set
+    if "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY" in fast_api_py:
+        return False
+    return bool(
+        re.search(r"otel_to_cloud\s*=\s*True\b", fast_api_py)
+        or re.search(r"otel_to_cloud\s*=\s*otel_to_cloud\b", fast_api_py)
+    )
+
+
+def _has_adk_otel_gcp_extras(pyproject_toml: str) -> bool:
+    """Returns False when pyproject.toml declares google-adk without [gcp,otel-gcp] (or [all]) extras."""
+    if not pyproject_toml or not re.search(r'["\']google-adk\b', pyproject_toml):
+        return True
+    if (
+        "opentelemetry-exporter-otlp-proto-http" in pyproject_toml
+        and "opentelemetry-instrumentation-google-genai" in pyproject_toml
+    ):
+        return True
+    for m in re.finditer(r'["\']google-adk(?:\[([^\]]+)\])?(?:[^"\']*)["\']', pyproject_toml):
+        extras = {e.strip().lower() for e in (m.group(1) or "").split(",") if e.strip()}
+        if "all" in extras or ({"gcp", "otel-gcp"} <= extras):
+            return True
+    return False
+
+
 def _evaluate_item(
     *,
     spec: ChecklistItemSpec,
@@ -440,6 +488,7 @@ def _evaluate_item(
     prod_ready_tf: str,
     alerts_tf: str,
     dockerfile: str,
+    pyproject_toml: str = "",
     agent_py: str,
     fast_api_py: str,
     services_py: str,
@@ -486,9 +535,12 @@ def _evaluate_item(
     # C2.1: Persistent Multi-Turn Session Store (Default: Agent Platform Managed Sessions)
     if cid == "C2.1":
         has_managed_code = "VertexAiSessionService" in services_py
+        has_session_env = '"AGENT_ENGINE_SESSION_ID"' in service_tf
+        has_legacy_ae_env = '"GOOGLE_CLOUD_AGENT_ENGINE_ID"' in service_tf
         has_managed_tf = (
-            "GOOGLE_CLOUD_AGENT_ENGINE_ID" in service_tf
-            or "ADK_SESSION_SERVICE_URI" in service_tf
+            has_session_env
+            or has_legacy_ae_env
+            or '"ADK_SESSION_SERVICE_URI"' in service_tf
         )
         has_hardened_self_sql = (
             "google_sql_database_instance" in service_tf
@@ -497,10 +549,16 @@ def _evaluate_item(
             and "postgresql+asyncpg" in services_py
         )
         if has_managed_code and has_managed_tf:
+            if has_session_env:
+                return (
+                    "GREEN",
+                    False,
+                    "Agent Platform Managed Session Service (VertexAiSessionService + AGENT_ENGINE_SESSION_ID) 연동 완료 — Cloud Run OTel 리소스 감지 보존",
+                )
             return (
                 "GREEN",
                 False,
-                "Agent Platform Managed Session Service (VertexAiSessionService + GOOGLE_CLOUD_AGENT_ENGINE_ID) 연동 완료",
+                "Agent Platform Managed Session Service (VertexAiSessionService) 연동 완료 (참고: Cloud Run OTel 리소스 충돌 방지를 위해 AGENT_ENGINE_SESSION_ID 사용 권장)",
             )
         if has_hardened_self_sql:
             return (
@@ -512,7 +570,7 @@ def _evaluate_item(
             return (
                 "AMBER",
                 False,
-                "services.py 또는 service.tf의 Managed Session (GOOGLE_CLOUD_AGENT_ENGINE_ID) 설정이 일부 누락됨",
+                "services.py 또는 service.tf의 Managed Session (AGENT_ENGINE_SESSION_ID) 설정이 일부 누락됨",
             )
         return (
             "RED",
@@ -756,10 +814,21 @@ def _evaluate_item(
 
     # C5.1: OpenTelemetry GenAI distributed tracing (Cloud Run)
     if cid == "C5.1":
-        if "OTEL_SEMCONV_STABILITY_OPT_IN" in service_tf and "otel_to_cloud" in fast_api_py:
-            return ("GREEN", False, "service.tf 및 fast_api_app.py: OpenTelemetry GenAI 분산 트레이싱 활성화됨")
-        if "otel_to_cloud" in fast_api_py:
-            return ("AMBER", False, "fast_api_app.py에 otel_to_cloud는 있으나 Terraform OTel 환경변수 누락")
+        has_otel_tf = "OTEL_SEMCONV_STABILITY_OPT_IN" in service_tf
+        has_otel_code = _has_otel_to_cloud_enabled(fast_api_py)
+        has_otel_deps = _has_adk_otel_gcp_extras(pyproject_toml)
+        if has_otel_tf and has_otel_code and has_otel_deps:
+            return ("GREEN", False, "service.tf · fast_api_app.py · pyproject.toml: OpenTelemetry GenAI 분산 트레이싱(Cloud Trace) 활성화됨")
+        if has_otel_tf and has_otel_code and not has_otel_deps:
+            return (
+                "AMBER",
+                False,
+                "service.tf와 fast_api_app.py는 설정되었으나 pyproject.toml에 google-adk[gcp,otel-gcp] extra 누락 — OTLP/GenAI 스팬 전송 불가",
+            )
+        if has_otel_code:
+            return ("AMBER", False, "fast_api_app.py에 otel_to_cloud=True는 있으나 Terraform OTel 환경변수 누락")
+        if has_otel_tf:
+            return ("AMBER", False, "service.tf에 OTel 환경변수는 있으나 fast_api_app.py의 otel_to_cloud=True 미활성화")
         return ("RED", False, "OpenTelemetry 분산 트레이싱 미구성")
 
     # C5.2: Trace Span Privacy (NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false)
@@ -857,24 +926,38 @@ def _evaluate_item(
             )
         return ("RED", False, "LLM API 429 재시도 옵션(HttpRetryOptions) 및 GOOGLE_CLOUD_LOCATION 미설정")
 
-    # C7.1: Automated Eval Quality Gate in CI/CD
+    # C7.1: Automated Agent Quality Evaluation (CI/CD-aware: only wires .cloudbuild/staging.yaml if CI/CD exists)
     if cid == "C7.1":
-        has_eval_cmd = "agents-cli eval run" in staging_yaml or "google-agents-cli eval run" in staging_yaml
-        has_bad_flags = "--eval-dataset" in staging_yaml or "--threshold" in staging_yaml
-        if has_eval_cmd and not has_bad_flags and (eval_config or eval_dataset):
+        if staging_yaml:
+            has_eval_cmd = "agents-cli eval run" in staging_yaml or "google-agents-cli eval run" in staging_yaml
+            has_bad_flags = "--eval-dataset" in staging_yaml or "--threshold" in staging_yaml
+            if has_eval_cmd and not has_bad_flags and (eval_config or eval_dataset):
+                return (
+                    "GREEN",
+                    False,
+                    ".cloudbuild/staging.yaml: 공식 agents-cli eval run 품질 게이트 및 평가 데이터셋/설정 확인됨",
+                )
+            if has_eval_cmd and has_bad_flags:
+                return (
+                    "AMBER",
+                    False,
+                    ".cloudbuild/staging.yaml에 미지원 플래그(--eval-dataset/--threshold) 사용 — 공식 --dataset/--metrics 수정 필요",
+                )
+            return ("RED", False, ".cloudbuild/staging.yaml에 agents-cli eval run 품질 게이트 누락")
+
+        # No CI/CD pipeline (.cloudbuild/staging.yaml absent): evaluate standalone eval config & dataset only
+        if eval_config and eval_dataset:
             return (
                 "GREEN",
                 False,
-                ".cloudbuild/staging.yaml: 공식 agents-cli eval run 품질 게이트 및 평가 데이터셋/설정 확인됨",
+                "CI/CD 미구축 프로젝트: tests/eval/eval_config.yaml 및 스모크 데이터셋 구성 완료 (배포 전 agents-cli eval run 실행 가능)",
             )
-        if has_eval_cmd and has_bad_flags:
+        if eval_config or eval_dataset:
             return (
                 "AMBER",
                 False,
-                ".cloudbuild/staging.yaml에 미지원 플래그(--eval-dataset/--threshold) 사용 — 공식 --dataset/--metrics 수정 필요",
+                "CI/CD 미구축 프로젝트: tests/eval/eval_config.yaml 또는 평가 데이터셋 일부 누락",
             )
-        if staging_yaml:
-            return ("RED", False, ".cloudbuild/staging.yaml에 agents-cli eval run 품질 게이트 누락")
-        return ("RED", False, ".cloudbuild/staging.yaml CI/CD 파이프라인 및 Eval 게이트 미구성")
+        return ("RED", False, "에이전트 품질 평가 설정(tests/eval/eval_config.yaml) 및 평가 데이터셋 미구성")
 
     return ("AMBER", False, "점검 필요")

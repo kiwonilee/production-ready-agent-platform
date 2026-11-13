@@ -18,4 +18,4 @@ On `agent_runtime` (`google_vertex_ai_reasoning_engine.app`):
   - `C5.3`: `alerts.tf` targeting `aiplatform.googleapis.com/ReasoningEngine` (P95 Latency + PromQL 5xx Error Ratio)
   - `C6.1`: `CostTokenGuardrailPlugin` (per-turn `invocation_id` reset + opt-in `max_output_tokens=0` for Thinking model safety)
   - `C6.2`: `GOOGLE_CLOUD_LOCATION` (default `global` DSQ) + Fail-Fast `HttpRetryOptions` (preserves `attempts=3`)
-  - `C7.1`: Official `uvx google-agents-cli eval run` CI/CD gate in `.cloudbuild/staging.yaml`
+  - `C7.1`: Official `uvx google-agents-cli eval run` evaluation assets (`tests/eval/eval_config.yaml` + `smoke_dataset.json`), wired into `.cloudbuild/staging.yaml` only when CI/CD exists

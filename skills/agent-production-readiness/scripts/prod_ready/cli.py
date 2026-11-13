@@ -258,8 +258,22 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "ui":
-        import uvicorn
-        from prod_ready.server import create_workbench_app
+        repo_root = Path(__file__).resolve().parents[4] if len(Path(__file__).resolve().parents) > 4 else None
+        if repo_root and (repo_root / "web" / "server.py").is_file() and str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        try:
+            import uvicorn
+            from web.server import create_workbench_app
+        except ImportError as exc:
+            print(
+                "⚠️  The Web Workbench & Hands-On Lab UI lives separately in the repository's `web/` package "
+                "(not bundled inside the standalone Agent Skill).\n"
+                "   • Run from the repository root with `uv run prod-ready ui <project_dir>`, OR\n"
+                "   • Open the hosted Web Workbench directly in your browser.\n"
+                f"   (Import details: {exc})",
+                file=sys.stderr,
+            )
+            return 1
 
         app = create_workbench_app(Path(args.project_dir))
         print(f"🚀 Production-Readiness Workbench running at http://{args.host}:{args.port}")

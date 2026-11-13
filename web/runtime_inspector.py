@@ -636,7 +636,8 @@ def _evaluate_cloud_run_service(
     # 4. [R2.1] Session & Memory Persistence (Cannot inspect Python code from describe JSON!)
     session_uri = env_map.get("ADK_SESSION_SERVICE_URI") or env_map.get("SESSION_SERVICE_URI") or ""
     agent_engine_ref = (
-        env_map.get("GOOGLE_CLOUD_AGENT_ENGINE_ID")
+        env_map.get("AGENT_ENGINE_SESSION_ID")
+        or env_map.get("GOOGLE_CLOUD_AGENT_ENGINE_ID")
         or env_map.get("AGENT_ENGINE_ID")
         or env_map.get("REASONING_ENGINE_ID")
         or ""
@@ -657,7 +658,7 @@ def _evaluate_cloud_run_service(
     else:
         r21_status, r21_score = "REVIEW", None
         r21_current = (
-            "Cloud Run JSON에서 Managed Session(GOOGLE_CLOUD_AGENT_ENGINE_ID / ADK_SESSION_SERVICE_URI) 미감지 "
+            "Cloud Run JSON에서 Managed Session(AGENT_ENGINE_SESSION_ID / ADK_SESSION_SERVICE_URI) 미감지 "
             "(※ 단, 코드 내부 연동 또는 Stateless 단일턴 여부는 JSON만으로 판별 불가)"
         )
 
@@ -671,29 +672,29 @@ def _evaluate_cloud_run_service(
         "score": r21_score,
         "current_state": r21_current,
         "recommended_state": (
-            "멀티턴 운영 기본 권장: Agent Platform Managed Session Service & Memory Bank (`GOOGLE_CLOUD_AGENT_ENGINE_ID` 연동) / "
+            "멀티턴 운영 기본 권장: Agent Platform Managed Session Service & Memory Bank (`AGENT_ENGINE_SESSION_ID` 연동 — Cloud Run OTel 리소스 감지 보존) / "
             "Stateless 단일턴이면 불필요 / (참고 옵션: Self-Hosted Cloud SQL·Redis·Firestore 직접 구축)"
         ),
         "why_it_matters": (
             "`gcloud run services describe` JSON만으로는 컨테이너 Python 코드 내부에서 Agent Platform Managed Session Service·Memory Bank를 호출하는지, "
             "아니면 Stateless 에이전트인지 판별할 수 없습니다. 멀티턴 대화가 필요한데 `InMemorySessionService`만 사용 중이라면 인스턴스 스케일아웃·재시작 시 대화가 유실되므로, "
-            "별도 DB 운영 부담이 없는 **Agent Platform Managed Sessions & Memory Bank**(`GOOGLE_CLOUD_AGENT_ENGINE_ID`) 연동을 기본 권장합니다. "
-            "(사내 규제나 기존 인프라 재사용이 필요한 경우 Self-Hosted Cloud SQL / Memorystore Redis / AlloyDB를 직접 구성할 수도 있습니다.)"
+            "별도 DB 운영 부담이 없는 **Agent Platform Managed Sessions & Memory Bank**(`AGENT_ENGINE_SESSION_ID`) 연동을 기본 권장합니다. "
+            "(※ Cloud Run에서는 `GOOGLE_CLOUD_AGENT_ENGINE_ID` 대신 `AGENT_ENGINE_SESSION_ID`를 사용해야 ADK OTel이 Cloud Run 리소스를 정상 감지합니다.)"
         ),
         "how_to_fix_title": "Agent Platform Managed Sessions & Memory Bank 환경변수 연결",
         "gcloud_cmd": (
-            f"# [기본 권장 · Managed] Agent Platform Session Service & Memory Bank 연결\n"
+            f"# [기본 권장 · Managed] Agent Platform Session Service & Memory Bank 연결 (Cloud Run OTel 충돌 방지용 별도 변수명)\n"
             f"gcloud run services update {service_name} \\\n"
             f"  --region={region} \\\n"
             f"  --project={project_id} \\\n"
-            f"  --update-env-vars=\"GOOGLE_CLOUD_AGENT_ENGINE_ID=<AGENT_ENGINE_ID>\"\n\n"
+            f"  --update-env-vars=\"AGENT_ENGINE_SESSION_ID=<AGENT_ENGINE_ID>\"\n\n"
             f"# (참고: Self-Hosted Cloud SQL을 직접 운영할 경우 --add-cloudsql-instances 옵션 사용 가능)"
         ),
         "terraform_snippet": (
-            '# 기본 권장: Agent Platform Managed Session & Memory Bank\n'
-            'env {\n  name  = "GOOGLE_CLOUD_AGENT_ENGINE_ID"\n  value = google_vertex_ai_reasoning_engine.memory_engine.name\n}'
+            '# 기본 권장: Agent Platform Managed Session & Memory Bank (Cloud Run OTel 리소스 감지 보존)\n'
+            'env {\n  name  = "AGENT_ENGINE_SESSION_ID"\n  value = google_vertex_ai_reasoning_engine.memory_engine.name\n}'
         ),
-        "console_guide": "멀티턴 운영 시 `GOOGLE_CLOUD_AGENT_ENGINE_ID`를 연결해 Managed Session & Memory Bank를 사용하세요. (Stateless이거나 이미 Self-Hosted DB를 운영 중이라면 그대로 유지 가능)",
+        "console_guide": "멀티턴 운영 시 `AGENT_ENGINE_SESSION_ID`를 연결해 Managed Session & Memory Bank를 사용하세요. (Stateless이거나 이미 Self-Hosted DB를 운영 중이라면 그대로 유지 가능)",
     })
 
     # 5. [R3.1] Inbound Ingress Exposure & Auth Check (Public vs Internal depends on intent!)

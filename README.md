@@ -74,7 +74,7 @@ flowchart LR
 
 | ID | 점검 항목 | Cloud Run (`cloud_run`) | Agent Runtime (`agent_runtime`) | 생성/수정 파일 |
 | :---: | :--- | :--- | :--- | :--- |
-| **`C2.1`** | **멀티턴 영구 세션 (Managed Sessions)** | `InMemorySessionService` 제거 → **`VertexAiSessionService`** + `GOOGLE_CLOUD_AGENT_ENGINE_ID` 연동 *(Self-Hosted DB는 참고 옵션)* | 🟢 **MANAGED_NATIVE** (플랫폼 내장 Managed Session Service) | `app/app_utils/services.py`, `app/fast_api_app.py`, `deployment/terraform/service.tf` |
+| **`C2.1`** | **멀티턴 영구 세션 (Managed Sessions)** | `InMemorySessionService` 제거 → **`VertexAiSessionService`** + `AGENT_ENGINE_SESSION_ID` 연동 *(Cloud Run OTel 리소스 감지 보존 · Self-Hosted DB는 참고 옵션)* | 🟢 **MANAGED_NATIVE** (플랫폼 내장 Managed Session Service) | `app/app_utils/services.py`, `app/fast_api_app.py`, `deployment/terraform/service.tf` |
 | **`C2.2`** | **크로스-세션 장기 기억 (Memory Bank)** | **`VertexAiMemoryBankService`** (`shared://memory`) + `after_agent_callback` (`auto_save_session_to_memory`) 장착 | Cloud Run과 동일 (`VertexAiMemoryBankService` + 자동 저장 콜백) | `app/app_utils/services.py`, `app/agent.py`, `app/fast_api_app.py` |
 
 ### 3️⃣ 사내망 프라이빗 아웃바운드 (Private VPC Egress — 가중치 `2x`)
@@ -97,7 +97,7 @@ flowchart LR
 ### 5️⃣ 관측성, 프라이버시 & 타겟별 SRE 알람 (Observability & Alerts — 가중치 `2x`)
 | ID | 점검 항목 | Cloud Run (`cloud_run`) | Agent Runtime (`agent_runtime`) | 생성/수정 파일 |
 | :---: | :--- | :--- | :--- | :--- |
-| **`C5.1`** | **OpenTelemetry GenAI 분산 트레이싱** | `OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"` + `otel_to_cloud = True` | 🟢 **MANAGED_NATIVE** (`GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"`) | `deployment/terraform/service.tf`, `app/fast_api_app.py` |
+| **`C5.1`** | **OpenTelemetry GenAI 분산 트레이싱** | `OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"` + `otel_to_cloud = True` + `google-adk[gcp,otel-gcp]` + `roles/monitoring.metricWriter` | 🟢 **MANAGED_NATIVE** (`GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"`) | `deployment/terraform/service.tf`, `app/fast_api_app.py`, `pyproject.toml`, `deployment/terraform/variables.tf` |
 | **`C5.2`** | **트레이스 `NO_CONTENT` 프라이버시** | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="NO_CONTENT"` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"` | Cloud Run과 동일 (`service.tf` 환경변수) | `deployment/terraform/service.tf` |
 | **`C5.3`** | **타겟별 SRE 골든 시그널 알람** | `cloud_run_revision` P95 지연(`> 15s`) · **PromQL 5xx 비율(`> 2%`)** 알럿 | **`aiplatform.googleapis.com/ReasoningEngine`** 전용 지연/에러 메트릭 알럿 | `deployment/terraform/alerts.tf` |
 
@@ -181,14 +181,14 @@ This toolkit bridges the **Day-2 Production Readiness Gap** after **ADK (`google
 | :---: | :--- | :--- | :--- | :--- |
 | **`C1.1`** | Runtime | `google_cloud_run_v2_service.app` IaC + `lifecycle.ignore_changes` | 🟢 `MANAGED_NATIVE` (`google_vertex_ai_reasoning_engine.app`) | `deployment/terraform/service.tf` |
 | **`C1.2`** | Runtime | `startup_probe` & `liveness_probe` (`/list-apps:8080`) + `startup_cpu_boost=true` *(sizing preserved)* | 🟢 `MANAGED_NATIVE` (platform health probes) | `deployment/terraform/service.tf`, `app/fast_api_app.py` |
-| **`C2.1`** | Session | **Managed**: `VertexAiSessionService` + `GOOGLE_CLOUD_AGENT_ENGINE_ID` *(Optional self-hosted DB)* | 🟢 `MANAGED_NATIVE` (built-in session service) | `app/app_utils/services.py`, `app/fast_api_app.py`, `service.tf` |
+| **`C2.1`** | Session | **Managed**: `VertexAiSessionService` + `AGENT_ENGINE_SESSION_ID` *(preserves Cloud Run OTel resource detection; optional self-hosted DB)* | 🟢 `MANAGED_NATIVE` (built-in session service) | `app/app_utils/services.py`, `app/fast_api_app.py`, `service.tf` |
 | **`C2.2`** | Session | **Managed**: `VertexAiMemoryBankService` (`shared://memory`) + `after_agent_callback` | Same (`VertexAiMemoryBankService` + auto-save callback) | `app/app_utils/services.py`, `app/agent.py`, `fast_api_app.py` |
 | **`C3.1`** | Network | Direct VPC Egress (`PRIVATE_RANGES_ONLY`) binding `var.vpc_network_name` / `var.vpc_subnet_name` | PSC Interface (`google_compute_network_attachment`) wired to `psc_interface_config` + `/28` PGA subnet | `service.tf`, `variables.tf`, `production_ready.tf` *(AR)* |
 | **`C4.1`** | Security | `roles/storage.objectUser`, pinned Secret version *(preserves `deletion_protection`)* | `roles/storage.objectUser`, strip unused `cloudsql.client`, pinned Secret version | `variables.tf`, `service.tf` |
 | **`C4.2`** | Governance | `FUNCTIONAL_TYPE_AGENT` + `IDENTITY_TYPE_AGENT_IDENTITY` + `agentregistry.googleapis.com` *(auto-switches to `FUNCTIONAL_TYPE_MCP_SERVER` for MCP servers; flags hardcoded MCP/A2A URLs)* | `spec.identity_type = "AGENT_IDENTITY"` + `agentregistry.googleapis.com` *(flags hardcoded MCP/A2A URLs for `AgentRegistry` Lazy Discovery)* | `service.tf`, `apis.tf` |
 | **`C4.3`** | Security | Non-root `USER 10001:10001` + `EXECUTION_ENVIRONMENT_GEN2` | Non-root `USER 10001:10001` | `Dockerfile`, `service.tf` |
 | **`C4.4`** | Governance | 🔵 Comment-only staged-adoption guide in `service.tf` *(zero forced Gateway infra)* | Agent Gateway (`AGENT_TO_ANYWHERE`) + UAP V2 `DRY_RUN` + `agent_gateway_config` + BYOC CA | `service.tf`, `production_ready.tf` *(AR)*, `Dockerfile` *(AR)* |
-| **`C5.1`** | Observability | `OTEL_SEMCONV_STABILITY_OPT_IN` + `otel_to_cloud=True` | 🟢 `MANAGED_NATIVE` (`ENABLE_TELEMETRY=true`) | `service.tf`, `app/fast_api_app.py` |
+| **`C5.1`** | Observability | `OTEL_SEMCONV_STABILITY_OPT_IN` + `otel_to_cloud=True` + `google-adk[gcp,otel-gcp]` + `roles/monitoring.metricWriter` | 🟢 `MANAGED_NATIVE` (`ENABLE_TELEMETRY=true`) | `service.tf`, `app/fast_api_app.py`, `pyproject.toml`, `variables.tf` |
 | **`C5.2`** | Observability | `NO_CONTENT` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false` | Same | `deployment/terraform/service.tf` |
 | **`C5.3`** | Observability | Cloud Run P95 latency (`15s`) + PromQL 5xx ratio (`>2%`) | `ReasoningEngine` latency & error metrics | `deployment/terraform/alerts.tf` |
 | **`C6.1`** | FinOps | Per-turn `invocation_id` loop cap + Thinking-model-safe opt-in `max_output_tokens` (`0`=unlimited) | Same | `app/app_utils/cost_guard_plugin.py`, `app/agent.py` |

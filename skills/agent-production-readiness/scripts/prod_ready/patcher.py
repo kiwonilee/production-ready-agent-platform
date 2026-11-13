@@ -24,7 +24,13 @@ from pathlib import Path
 from typing import Any
 
 from prod_ready.checklist import CustomParams, TargetType, resolve_item_ids
-from prod_ready.scanner import detect_mcp_a2a_profile, detect_project_mode_and_target, scan_project
+from prod_ready.scanner import (
+    _has_adk_otel_gcp_extras,
+    detect_mcp_a2a_profile,
+    detect_project_mode_and_target,
+    resolve_terraform_rel_dir,
+    scan_project,
+)
 
 
 @dataclass
@@ -85,10 +91,11 @@ def preview_patches(
     _prepare_production_ready_tf(root, project_name, target, item_ids, params, record)
     _prepare_alerts_tf(root, project_name, target, item_ids, params, record)
 
-    # 3. Application Code & Plugins (services.py, cost_guard_plugin.py, agent.py, fast_api_app.py)
+    # 3. Application Code & Plugins (services.py, cost_guard_plugin.py, agent.py, fast_api_app.py, pyproject.toml)
     _prepare_session_and_memory_services_py(root, project_name, target, item_ids, record)
     _prepare_cost_plugin(root, project_name, item_ids, params, record)
     _prepare_agent_and_fastapi_py(root, project_name, target, item_ids, params, record)
+    _prepare_pyproject_toml(root, target, item_ids, record)
 
     # 4. Dockerfile Non-Root Hardening & Agent Runtime Agent Gateway BYOC CA Trust
     _prepare_dockerfile(root, target, item_ids, record)
@@ -358,8 +365,22 @@ def _prepare_variables_tf(
     params: CustomParams,
     record: Any,
 ) -> None:
-    rel = "deployment/terraform/variables.tf"
+    tf_rel = resolve_terraform_rel_dir(root)
+    rel = f"{tf_rel}/variables.tf"
     path = root / rel
+    service_path = root / f"{tf_rel}/service.tf"
+    existing_service_tf = service_path.read_text(encoding="utf-8") if service_path.exists() else ""
+    mcp_profile = detect_mcp_a2a_profile(root, existing_service_tf) if target == "cloud_run" else None
+    use_cr_agent_identity = (
+        target == "cloud_run"
+        and "C4.2" in item_ids
+        and not (mcp_profile and mcp_profile.is_mcp_server)
+    )
+    use_agent_identity = (
+        "C4.2" in item_ids
+        and not (target == "cloud_run" and mcp_profile and mcp_profile.is_mcp_server)
+    )
+
     if path.exists():
         content = path.read_text(encoding="utf-8")
         applied: list[str] = []
@@ -370,6 +391,13 @@ def _prepare_variables_tf(
             if target == "agent_runtime" and '"roles/cloudsql.client"' in content:
                 content = re.sub(r'\s*"roles/cloudsql\.client",?\n', "\n", content)
                 applied.append("C4.1")
+        if "C5.1" in item_ids and '"roles/cloudtrace.agent"' in content and '"roles/monitoring.metricWriter"' not in content:
+            content = content.replace(
+                '"roles/cloudtrace.agent",',
+                '"roles/cloudtrace.agent",\n    "roles/monitoring.metricWriter",',
+                1,
+            )
+            applied.append("C5.1")
         if ("C2.1" in item_ids or "C2.2" in item_ids) and target == "cloud_run" and 'variable "agent_engine_id"' not in content:
             content = content.rstrip() + f'''
 
@@ -396,6 +424,16 @@ variable "vpc_subnet_name" {{
 }}
 '''
             applied.append("C3.1")
+        if use_cr_agent_identity and 'variable "organization_id"' not in content:
+            content = content.rstrip() + '''
+
+variable "organization_id" {
+  type        = string
+  description = "Optional Google Cloud Organization ID for Cloud Run Agent Identity SPIFFE principal binding (leave empty for org-less projects)"
+  default     = ""
+}
+'''
+            applied.append("C4.2")
         if target == "agent_runtime" and "C4.4" in item_ids and 'variable "agent_gateway_enforcement_mode"' not in content:
             content = content.rstrip() + f'''
 
@@ -413,6 +451,7 @@ variable "agent_gateway_enforcement_mode" {{
             '    "roles/aiplatform.user",',
             '    "roles/logging.logWriter",',
             '    "roles/cloudtrace.agent",',
+            '    "roles/monitoring.metricWriter",',
             f"    {storage_role},",
             '    "roles/serviceusage.serviceUsageConsumer",',
         ]
@@ -442,6 +481,14 @@ variable "vpc_subnet_name" {{
   default     = "{params.vpc_subnet_name}"
 }}
 '''
+        if use_cr_agent_identity:
+            extra_vars += '''
+variable "organization_id" {
+  type        = string
+  description = "Optional Google Cloud Organization ID for Cloud Run Agent Identity SPIFFE principal binding (leave empty for org-less projects)"
+  default     = ""
+}
+'''
         if target == "agent_runtime" and "C4.4" in item_ids:
             extra_vars += f'''
 variable "agent_gateway_enforcement_mode" {{
@@ -451,6 +498,11 @@ variable "agent_gateway_enforcement_mode" {{
 }}
 '''
 
+        roles_desc = (
+            "Least-privilege IAM roles assigned to the Agent Identity (SPIFFE ID)"
+            if use_agent_identity
+            else "Least-privilege IAM roles assigned to the dedicated agent service account"
+        )
         content = f'''variable "project_name" {{
   type        = string
   description = "Project name used as a base for resource naming"
@@ -469,14 +521,14 @@ variable "region" {{
 }}
 
 variable "app_sa_roles" {{
-  description = "Least-privilege IAM roles assigned to the dedicated agent service account"
+  description = "{roles_desc}"
   type        = list(string)
   default = [
 {chr(10).join(roles)}
   ]
 }}
 {extra_vars}'''
-        record(rel, content, ["C1.1", "C4.1"])
+        record(rel, content, ["C1.1", "C4.1", "C4.2"])
 
 
 def _prepare_apis_and_iam_and_storage_tf(
@@ -487,7 +539,8 @@ def _prepare_apis_and_iam_and_storage_tf(
     params: CustomParams,
     record: Any,
 ) -> None:
-    apis_rel = "deployment/terraform/apis.tf"
+    tf_rel = resolve_terraform_rel_dir(root)
+    apis_rel = f"{tf_rel}/apis.tf"
     apis_path = root / apis_rel
     if not apis_path.exists():
         api_list = [
@@ -561,13 +614,70 @@ resource "google_project_service_identity" "vertex_sa" {{
                 updated_apis = existing_apis.rstrip() + "\n" + extra_block
             record(apis_rel, updated_apis, ["C4.2"])
 
-    iam_rel = "deployment/terraform/iam.tf"
-    if not (root / iam_rel).exists():
-        iam_content = '''data "google_project" "project" {
+    iam_rel = f"{tf_rel}/iam.tf"
+    iam_path = root / iam_rel
+    service_path = root / f"{tf_rel}/service.tf"
+    existing_service_tf = service_path.read_text(encoding="utf-8") if service_path.exists() else ""
+    mcp_profile = detect_mcp_a2a_profile(root, existing_service_tf) if target == "cloud_run" else None
+    use_agent_identity = (
+        "C4.2" in item_ids
+        and not (target == "cloud_run" and mcp_profile and mcp_profile.is_mcp_server)
+    )
+    is_multi_env_service = bool(
+        re.search(
+            r'resource\s+"(?:google_vertex_ai_reasoning_engine|google_cloud_run_v2_service)"\s+"app"\s*\{[^}]*for_each',
+            existing_service_tf,
+        )
+    )
+
+    if target == "agent_runtime":
+        agent_identity_iam_block = '''# [C4.2] Least-privilege IAM roles bound directly to the Agent Runtime Agent Identity (SPIFFE ID).
+# Replaces custom runtime Service Account (identity_type = "AGENT_IDENTITY" is mutually exclusive with service_account).
+resource "google_project_iam_member" "agent_identity_roles" {
+  for_each   = toset(var.app_sa_roles)
+  project    = var.project_id
+  role       = each.value
+  member     = "principal://${google_vertex_ai_reasoning_engine.app.spec[0].effective_identity}"
+  depends_on = [resource.google_project_service.services, google_vertex_ai_reasoning_engine.app]
+}
+'''
+    else:
+        agent_identity_iam_block = '''# [C4.2] Least-privilege IAM roles bound directly to the Cloud Run Agent Identity (SPIFFE ID).
+# Replaces custom runtime Service Account (IDENTITY_TYPE_AGENT_IDENTITY is mutually exclusive with service_account).
+# Pass -var="organization_id=<ORG_ID>" for org-backed projects; leave empty ("") for org-less projects.
+locals {
+  agent_identity_trust_domain = (
+    var.organization_id != ""
+    ? "agents.global.org-${var.organization_id}.system.id.goog"
+    : "agents.global.project-${data.google_project.project.number}.system.id.goog"
+  )
+  agent_identity_principal = "principal://${local.agent_identity_trust_domain}/resources/run/projects/${data.google_project.project.number}/locations/${var.region}/services/${google_cloud_run_v2_service.app.name}"
+}
+
+resource "google_project_iam_member" "agent_identity_roles" {
+  for_each   = toset(var.app_sa_roles)
+  project    = var.project_id
+  role       = each.value
+  member     = local.agent_identity_principal
+  depends_on = [resource.google_project_service.services, google_cloud_run_v2_service.app]
+}
+'''
+
+    if not iam_path.exists():
+        if use_agent_identity:
+            iam_content = (
+                'data "google_project" "project" {\n'
+                '  project_id = var.project_id\n'
+                '}\n\n'
+                + agent_identity_iam_block
+            )
+            record(iam_rel, iam_content, ["C1.1", "C4.1", "C4.2"])
+        else:
+            iam_content = '''data "google_project" "project" {
   project_id = var.project_id
 }
 
-# Dedicated least-privilege Service Account for the AI agent (never use default Compute Engine SA)
+# Dedicated least-privilege Service Account for the AI agent / MCP server (never use default Compute Engine SA)
 resource "google_service_account" "app_sa" {
   account_id   = "${var.project_name}-app"
   display_name = "${var.project_name} Agent Service Account"
@@ -583,9 +693,27 @@ resource "google_project_iam_member" "app_sa_roles" {
   depends_on = [resource.google_project_service.services]
 }
 '''
-        record(iam_rel, iam_content, ["C1.1", "C4.1"])
+            record(iam_rel, iam_content, ["C1.1", "C4.1"])
+    elif use_agent_identity:
+        existing_iam = iam_path.read_text(encoding="utf-8")
+        if "agent_identity_roles" not in existing_iam and not is_multi_env_service:
+            updated_iam = existing_iam.rstrip()
+            if 'data "google_project" "project"' not in updated_iam:
+                updated_iam = (
+                    'data "google_project" "project" {\n'
+                    '  project_id = var.project_id\n'
+                    '}\n\n'
+                    + updated_iam
+                )
+            updated_iam = (
+                updated_iam
+                + "\n\n# Note: Existing google_service_account.app_sa (if scaffolded) is preserved for outputs.tf compatibility,\n"
+                + "# while live agent runtime permissions are bound directly to the Agent Identity (SPIFFE ID) below.\n"
+                + agent_identity_iam_block
+            )
+            record(iam_rel, updated_iam, ["C4.2"])
 
-    storage_rel = "deployment/terraform/storage.tf"
+    storage_rel = f"{tf_rel}/storage.tf"
     storage_path = root / storage_rel
     if not storage_path.exists():
         record(
@@ -641,7 +769,8 @@ def _prepare_service_tf(
     params: CustomParams,
     record: Any,
 ) -> None:
-    rel = "deployment/terraform/service.tf"
+    tf_rel = resolve_terraform_rel_dir(root)
+    rel = f"{tf_rel}/service.tf"
     path = root / rel
 
     # === TARGET A: AGENT RUNTIME ===
@@ -1005,14 +1134,19 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
                 applied.append("C1.2")
 
         # [C2.1] Agent Platform Managed Sessions env var (+ safely harden legacy Cloud SQL if already present)
+        # Uses AGENT_ENGINE_SESSION_ID (not GOOGLE_CLOUD_AGENT_ENGINE_ID) on Cloud Run so ADK's
+        # get_gcp_resource() preserves Cloud Run OTel resource detection instead of tagging gcp.agent_engine.
         if "C2.1" in item_ids:
             before = txt
-            txt = _inject_env_before(
-                txt,
-                "LOGS_BUCKET_NAME",
-                "GOOGLE_CLOUD_AGENT_ENGINE_ID",
-                "var.agent_engine_id",
-            )
+            if "GOOGLE_CLOUD_AGENT_ENGINE_ID" in txt and "AGENT_ENGINE_SESSION_ID" not in txt:
+                txt = txt.replace('"GOOGLE_CLOUD_AGENT_ENGINE_ID"', '"AGENT_ENGINE_SESSION_ID"')
+            else:
+                txt = _inject_env_before(
+                    txt,
+                    "LOGS_BUCKET_NAME",
+                    "AGENT_ENGINE_SESSION_ID",
+                    "var.agent_engine_id",
+                )
             if "google_sql_database_instance" in txt and "enabled = false" in txt:
                 txt = txt.replace(
                     "    backup_configuration {\n      enabled = false\n    }",
@@ -1177,7 +1311,8 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
         if "C2.1" in item_ids or "C2.2" in item_ids:
             env_blocks.append(
                 '      # [C2.1 & C2.2] Agent Platform Managed Sessions & Memory Bank\n'
-                '      env {\n        name  = "GOOGLE_CLOUD_AGENT_ENGINE_ID"\n        value = var.agent_engine_id\n      }'
+                '      # Uses AGENT_ENGINE_SESSION_ID so ADK OTel keeps native Cloud Run resource detection.\n'
+                '      env {\n        name  = "AGENT_ENGINE_SESSION_ID"\n        value = var.agent_engine_id\n      }'
             )
         if "C5.1" in item_ids:
             env_blocks.append(
@@ -1295,7 +1430,8 @@ def _prepare_production_ready_tf(
     params: CustomParams,
     record: Any,
 ) -> None:
-    rel = "deployment/terraform/production_ready.tf"
+    tf_rel = resolve_terraform_rel_dir(root)
+    rel = f"{tf_rel}/production_ready.tf"
 
     # Strictly Agent Runtime ONLY (never create production_ready.tf / Agent Gateway on Cloud Run!)
     if target != "agent_runtime":
@@ -1443,7 +1579,8 @@ def _prepare_alerts_tf(
 ) -> None:
     if "C5.3" not in item_ids:
         return
-    rel = "deployment/terraform/alerts.tf"
+    tf_rel = resolve_terraform_rel_dir(root)
+    rel = f"{tf_rel}/alerts.tf"
 
     if target == "agent_runtime":
         content = f'''# deployment/terraform/alerts.tf
@@ -1597,9 +1734,13 @@ def _prepare_session_and_memory_services_py(
     services_content = '''"""Process-wide ADK Session, Memory Bank & Artifact services shared by all serving surfaces.
 
 [C2.1 & C2.2] Default Architecture — Agent Platform Managed Sessions & Memory Bank:
-- Session Store : `VertexAiSessionService` via `GOOGLE_CLOUD_AGENT_ENGINE_ID` (Zero-Ops, auto TTL).
-- Memory Bank   : `VertexAiMemoryBankService` via `GOOGLE_CLOUD_AGENT_ENGINE_ID` (automatic cross-session fact extraction).
+- Session Store : `VertexAiSessionService` via `AGENT_ENGINE_SESSION_ID` (fallback: `GOOGLE_CLOUD_AGENT_ENGINE_ID`).
+- Memory Bank   : `VertexAiMemoryBankService` via `AGENT_ENGINE_SESSION_ID` (fallback: `GOOGLE_CLOUD_AGENT_ENGINE_ID`).
 - Artifacts     : `GcsArtifactService` via `LOGS_BUCKET_NAME`.
+
+Note (Cloud Run OTel Safety):
+  On Cloud Run, prefer `AGENT_ENGINE_SESSION_ID` instead of `GOOGLE_CLOUD_AGENT_ENGINE_ID`
+  so ADK's `get_gcp_resource()` keeps native Cloud Run OTel resource detection.
 
 Note (Self-Hosted Option):
   If your workload strictly requires private-VPC-only relational storage or sub-ms custom caching,
@@ -1619,6 +1760,14 @@ MEMORY_SERVICE_URI = "shared://memory"
 ARTIFACT_SERVICE_URI = "shared://artifact"
 
 
+def _managed_agent_engine_id() -> str:
+    """Resolves Reasoning Engine ID for Managed Sessions/Memory Bank without breaking Cloud Run OTel detection."""
+    return (
+        os.environ.get("AGENT_ENGINE_SESSION_ID", "").strip()
+        or os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID", "").strip()
+    )
+
+
 def _agent_engine_location() -> str:
     """Resolves regional location for Agent Platform Session & Memory Bank (never 'global')."""
     loc = (
@@ -1633,7 +1782,7 @@ def _agent_engine_location() -> str:
 @functools.cache
 def get_session_service():
     """Returns Agent Platform Managed `VertexAiSessionService`, with InMemory fallback for local dev."""
-    agent_engine_id = os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID", "").strip()
+    agent_engine_id = _managed_agent_engine_id()
     if agent_engine_id:
         from google.adk.sessions.vertex_ai_session_service import VertexAiSessionService
 
@@ -1651,7 +1800,7 @@ def get_session_service():
 @functools.cache
 def get_memory_service():
     """Returns Agent Platform Managed `VertexAiMemoryBankService`, with InMemory fallback for local dev."""
-    agent_engine_id = os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID", "").strip()
+    agent_engine_id = _managed_agent_engine_id()
     if agent_engine_id:
         from google.adk.memory import VertexAiMemoryBankService
 
@@ -1958,6 +2107,66 @@ app: FastAPI = get_fast_api_app(
 app.title = "{project_name}"
 '''
         record(fastapi_rel, fastapi_content, ["C1.2", "C2.1", "C2.2", "C5.1"])
+    elif target == "cloud_run" and "C5.1" in item_ids:
+        # [C5.1] Surgically enable otel_to_cloud=True on an existing Cloud Run fast_api_app.py
+        # even when C2.2 is not selected (e.g., custom/lightweight profile).
+        existing_fa = fastapi_path.read_text(encoding="utf-8")
+        updated_fa = existing_fa
+        if re.search(r"otel_to_cloud\s*=\s*False\b", updated_fa):
+            updated_fa = re.sub(r"(otel_to_cloud\s*=\s*)False\b", r"\1True", updated_fa)
+        elif "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY" in updated_fa:
+            updated_fa = re.sub(
+                r"otel_to_cloud\s*=\s*os\.environ\.get\([\s\S]*?\)\.lower\(\)\s*in\s*\([^)]*\)",
+                "otel_to_cloud = True",
+                updated_fa,
+            )
+        elif "otel_to_cloud" not in updated_fa and "get_fast_api_app(" in updated_fa:
+            updated_fa = updated_fa.replace(
+                "get_fast_api_app(",
+                "get_fast_api_app(\n    otel_to_cloud=True,",
+                1,
+            )
+        if updated_fa != existing_fa:
+            record(fastapi_rel, updated_fa, ["C5.1"])
+
+
+def _prepare_pyproject_toml(
+    root: Path, target: TargetType, item_ids: set[str], record: Any
+) -> None:
+    """[C5.1] Ensures Cloud Run ADK projects declare google-adk[gcp,otel-gcp] for Cloud Trace OTLP export."""
+    if target != "cloud_run" or "C5.1" not in item_ids:
+        return
+    pyproj_rel = "pyproject.toml"
+    pyproj_path = root / pyproj_rel
+    if not pyproj_path.exists():
+        return
+    txt = pyproj_path.read_text(encoding="utf-8")
+    if _has_adk_otel_gcp_extras(txt):
+        return
+
+    pattern = re.compile(r'(["\'])google-adk(?:\[([^\]]+)\])?([^"\']*)\1')
+    matches = list(pattern.finditer(txt))
+    if not matches:
+        return
+
+    chosen = next(
+        (
+            m
+            for m in matches
+            if {e.strip().lower() for e in (m.group(2) or "").split(",") if e.strip()} != {"eval"}
+        ),
+        matches[0],
+    )
+    quote = chosen.group(1)
+    existing_extras = [e.strip() for e in (chosen.group(2) or "").split(",") if e.strip()]
+    for req_extra in ("gcp", "otel-gcp"):
+        if req_extra not in {e.lower() for e in existing_extras}:
+            existing_extras.append(req_extra)
+    spec = chosen.group(3) or ""
+    replacement = f'{quote}google-adk[{",".join(existing_extras)}]{spec}{quote}'
+    updated = txt[: chosen.start()] + replacement + txt[chosen.end() :]
+    if updated != txt:
+        record(pyproj_rel, updated, ["C5.1"])
 
 
 # ---------------------------------------------------------------------------
@@ -2072,6 +2281,8 @@ def _prepare_cicd_and_canary(
           --metrics ${_EVAL_METRICS}
 
 """
+        # Only wire CI/CD eval gate when the project actually uses Cloud Build (.cloudbuild/staging.yaml exists).
+        # Never fabricate an orphaned .cloudbuild/staging.yaml for projects without CI/CD (--cicd-runner skip).
         if staging_path.exists():
             txt = staging_path.read_text(encoding="utf-8")
             if "agent_eval_gate" not in txt or "--eval-dataset" in txt or "--threshold" in txt:
@@ -2100,34 +2311,6 @@ def _prepare_cicd_and_canary(
                         f'substitutions:\n  _EVAL_METRICS: "{params.eval_metrics}"\n',
                     )
                 record(staging_rel, txt, ["C7.1"])
-        else:
-            record(
-                staging_rel,
-                f'''steps:
-  - name: "gcr.io/cloud-builders/gcloud"
-    id: deploy-staging
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        uvx google-agents-cli deploy --project ${{_STAGING_PROJECT_ID}} --region ${{_REGION}} --no-confirm-project
-
-{eval_step}  - name: "gcr.io/cloud-builders/gcloud"
-    id: load_test
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        uvx locust==2.31.1 -f tests/load_test/load_test.py --headless -t 30s -u 10 -r 0.5
-
-substitutions:
-  _STAGING_PROJECT_ID: YOUR_STAGING_PROJECT_ID
-  _REGION: us-east1
-  _EVAL_DATASET_PATH: tests/eval/datasets/smoke_dataset.json
-  _EVAL_METRICS: "{params.eval_metrics}"
-''',
-                ["C7.1"],
-            )
 
         eval_cfg_rel = "tests/eval/eval_config.yaml"
         if not (root / eval_cfg_rel).exists():
@@ -2179,7 +2362,13 @@ def reset_project_to_baseline(
     root = Path(project_dir).resolve()
     mode, target, project_name = detect_project_mode_and_target(root, target_override)
 
+    tf_rel = resolve_terraform_rel_dir(root)
     extra_files = [
+        f"{tf_rel}/production_ready.tf",
+        f"{tf_rel}/alerts.tf",
+        f"{tf_rel}/apis.tf",
+        f"{tf_rel}/iam.tf",
+        f"{tf_rel}/budget.tf",
         "deployment/terraform/production_ready.tf",
         "deployment/terraform/alerts.tf",
         "deployment/terraform/apis.tf",

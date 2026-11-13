@@ -1,9 +1,13 @@
 """Process-wide ADK Session, Memory Bank & Artifact services shared by all serving surfaces.
 
 [C2.1 & C2.2] Default Architecture — Agent Platform Managed Sessions & Memory Bank:
-- Session Store : `VertexAiSessionService` via `GOOGLE_CLOUD_AGENT_ENGINE_ID` (Zero-Ops, auto TTL).
-- Memory Bank   : `VertexAiMemoryBankService` via `GOOGLE_CLOUD_AGENT_ENGINE_ID` (automatic cross-session fact extraction).
+- Session Store : `VertexAiSessionService` via `AGENT_ENGINE_SESSION_ID` (fallback: `GOOGLE_CLOUD_AGENT_ENGINE_ID`).
+- Memory Bank   : `VertexAiMemoryBankService` via `AGENT_ENGINE_SESSION_ID` (fallback: `GOOGLE_CLOUD_AGENT_ENGINE_ID`).
 - Artifacts     : `GcsArtifactService` via `LOGS_BUCKET_NAME`.
+
+Note (Cloud Run OTel Safety):
+  On Cloud Run, prefer `AGENT_ENGINE_SESSION_ID` instead of `GOOGLE_CLOUD_AGENT_ENGINE_ID`
+  so ADK's `get_gcp_resource()` keeps native Cloud Run OTel resource detection.
 
 Note (Self-Hosted Option):
   If your workload strictly requires private-VPC-only relational storage or sub-ms custom caching,
@@ -23,6 +27,14 @@ MEMORY_SERVICE_URI = "shared://memory"
 ARTIFACT_SERVICE_URI = "shared://artifact"
 
 
+def _managed_agent_engine_id() -> str:
+    """Resolves Reasoning Engine ID for Managed Sessions/Memory Bank without breaking Cloud Run OTel detection."""
+    return (
+        os.environ.get("AGENT_ENGINE_SESSION_ID", "").strip()
+        or os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID", "").strip()
+    )
+
+
 def _agent_engine_location() -> str:
     """Resolves regional location for Agent Platform Session & Memory Bank (never 'global')."""
     loc = (
@@ -37,7 +49,7 @@ def _agent_engine_location() -> str:
 @functools.cache
 def get_session_service():
     """Returns Agent Platform Managed `VertexAiSessionService`, with InMemory fallback for local dev."""
-    agent_engine_id = os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID", "").strip()
+    agent_engine_id = _managed_agent_engine_id()
     if agent_engine_id:
         from google.adk.sessions.vertex_ai_session_service import VertexAiSessionService
 
@@ -55,7 +67,7 @@ def get_session_service():
 @functools.cache
 def get_memory_service():
     """Returns Agent Platform Managed `VertexAiMemoryBankService`, with InMemory fallback for local dev."""
-    agent_engine_id = os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID", "").strip()
+    agent_engine_id = _managed_agent_engine_id()
     if agent_engine_id:
         from google.adk.memory import VertexAiMemoryBankService
 

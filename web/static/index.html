@@ -58,18 +58,179 @@
       font-size: 0.88em;
       font-weight: 600;
     }
-    .topbar-g {
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: 76px;
       background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-bottom: 1px solid rgba(66, 133, 244, 0.14);
     }
-    .topbar-g::before {
+    .topbar::before {
       content: "";
       position: absolute;
       inset: 0 0 auto 0;
       height: 3.5px;
       background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .topbar-inner {
+      max-width: 1560px;
+      width: 100%;
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .brand-divider {
+      width: 1.5px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.14);
+      flex-shrink: 0;
+    }
+    .brand-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .topbar-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: #E6F4EA;
+      border: 1px solid rgba(52, 168, 83, 0.25);
+      color: #137333;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .topbar-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 15px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: background 0.16s ease, transform 0.08s ease, box-shadow 0.16s ease;
+    }
+    .topbar-cta:active { transform: translateY(1px); }
+
+    /* Unified 2-Column Shell (Matches Hands-On Lab Pixel-for-Pixel) */
+    .shell {
+      max-width: 1560px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 96px 24px 72px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .sidebar {
+      position: sticky;
+      top: 96px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+    }
+    .card-pad { padding: 24px; }
+    .card-pad-lg { padding: 30px 34px; }
+
+    .step-nav-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border: none;
+      border-radius: 11px;
+      background: transparent;
+      color: #0F172A;
+      font-size: 13.5px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .step-nav-btn:hover { background: #F1F6FE; }
+    .step-nav-btn.active {
+      background: #E8F0FE;
+      color: #1967D2;
+      font-weight: 700;
+    }
+    .step-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: #EEF2F7;
+      color: #475569;
+      font-family: 'Google Sans Mono', 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-nav-btn.active .step-dot {
+      background: #1A73E8;
+      color: #FFFFFF;
+    }
+
+    @media (max-width: 1080px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
+    @media (max-width: 680px) {
+      .topbar-inner { padding: 0 14px; }
+      .topbar-badge-hide { display: none !important; }
+      .shell { padding: 88px 14px 56px; }
+      .card-pad-lg { padding: 20px; }
     }
     .google-dots {
       display: inline-flex;
@@ -163,12 +324,12 @@
 </head>
 <body class="min-h-screen text-[#0F172A] antialiased">
 
-  <!-- ==================== FROSTED GLASS TOP NAVBAR (Google 4-Color) ==================== -->
-  <header class="topbar-g fixed top-0 inset-x-0 z-50 h-[76px]">
-    <div class="mx-auto flex h-full w-full max-w-[1880px] items-center justify-between gap-6 px-4 sm:px-6">
-      <!-- Left Brand: Google Cloud SVG + Divider + Prominent Header Title -->
-      <div class="flex items-center gap-4 select-none min-w-0">
-        <svg viewBox="0 0 224 36" fill="none" class="h-7 w-auto shrink-0 select-none" xmlns="http://www.w3.org/2000/svg">
+  <!-- ==================== FROSTED GLASS TOP NAVBAR (Unified with Hands-On Lab) ==================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <!-- Left Brand: Google Cloud SVG + Divider + Header Title -->
+      <div class="brand select-none" onclick="openInputView()" title="런타임 진단 첫 화면으로 이동">
+        <svg viewBox="0 0 224 36" fill="none" style="height:26px;width:auto;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud">
           <path d="M110.371 27.915C107.508 27.915 105.137 26.9938 103.257 25.1515C101.39 23.3092 100.456 20.8818 100.456 17.8693C100.456 14.9191 101.359 12.4917 103.164 10.5872C104.981 8.67018 107.352 7.71167 110.278 7.71167C112.195 7.71167 113.85 8.20337 115.244 9.18677C116.651 10.1702 117.759 11.7075 118.568 13.7988C118.643 14.0104 118.711 14.2283 118.773 14.4523C118.836 14.6764 118.892 14.9316 118.942 15.2179L103.63 21.7158L102.566 18.6349L115.244 13.2573L114.89 14.9565C114.417 13.6245 113.757 12.6598 112.91 12.0623C112.076 11.4648 111.149 11.166 110.128 11.166C108.385 11.166 106.998 11.7635 105.964 12.9586C104.931 14.1411 104.415 15.6971 104.415 17.6266C104.415 19.444 105.012 20.9938 106.207 22.276C107.402 23.5581 108.852 24.1992 110.558 24.1992C111.578 24.1992 112.531 23.944 113.415 23.4336C114.298 22.9233 115.07 22.2075 115.73 21.2863L118.755 23.2656C117.908 24.6598 116.751 25.7863 115.282 26.6453C113.813 27.4917 112.176 27.915 110.371 27.915Z" fill="#FC413D"/>
           <path d="M94.2754 27.336V0.597412H98.3459V27.336H94.2754Z" fill="#00AF57"/>
           <path d="M81.784 36C79.6429 36 77.8753 35.5519 76.4811 34.6556C75.0994 33.7593 73.9479 32.334 73.0268 30.3797L76.5371 28.8299C77.1222 29.9378 77.8317 30.8029 78.6658 31.4253C79.4998 32.0602 80.5205 32.3776 81.728 32.3776C83.5703 32.3776 84.9707 31.8423 85.9292 30.7718C86.9002 29.7013 87.3857 28.2075 87.3857 26.2905V24.554H87.255C86.9562 25.0021 86.533 25.4565 85.9853 25.917C85.4375 26.3652 84.7653 26.7511 83.9687 27.0747C83.172 27.3859 82.3006 27.5415 81.3546 27.5415C79.4749 27.5415 77.8442 27.1245 76.4624 26.2905C75.0807 25.4565 74.0226 24.2988 73.2882 22.8175C72.5537 21.3237 72.1865 19.6121 72.1865 17.6826C72.1865 15.778 72.5537 14.0727 73.2882 12.5664C74.0226 11.0478 75.0683 9.85897 76.4251 9.00005C77.7944 8.14113 79.3878 7.71167 81.2052 7.71167C82.4998 7.71167 83.6886 7.96686 84.7716 8.47723C85.8546 8.9876 86.701 9.71582 87.311 10.6619H87.3857V8.29051H91.2695V25.1328C91.2695 32.3776 88.1077 36 81.784 36ZM81.784 23.8444C82.9292 23.8444 83.9251 23.5768 84.7716 23.0415C85.618 22.5063 86.2653 21.7656 86.7135 20.8195C87.1616 19.861 87.3857 18.7718 87.3857 17.5519C87.3857 16.3071 87.1616 15.2179 86.7135 14.2843C86.2653 13.3382 85.618 12.61 84.7716 12.0996C83.9251 11.5893 82.9355 11.3341 81.8027 11.3341C80.6948 11.3341 79.7176 11.5955 78.8712 12.1183C78.0247 12.6287 77.3649 13.3569 76.8919 14.3029C76.4189 15.249 76.1824 16.3382 76.1824 17.5706C76.1824 18.8652 76.4189 19.9855 76.8919 20.9316C77.3774 21.8776 78.0434 22.5996 78.8898 23.0975C79.7363 23.5955 80.701 23.8444 81.784 23.8444Z" fill="#3186FF"/>
@@ -181,321 +342,109 @@
           <path d="M192.043 27.9709C189.778 27.9709 188.029 27.3174 186.796 26.0103C185.564 24.6908 184.948 22.8298 184.948 20.4274V8.2531H189.018V19.8112C189.018 21.3672 189.373 22.556 190.083 23.3776C190.805 24.1991 191.832 24.6099 193.164 24.6099C194.558 24.6099 195.734 24.0747 196.693 23.0041C197.651 21.9211 198.13 20.6265 198.13 19.1203V8.2531H202.201V27.3547H198.336V22.8174L200.184 24.6659H198.224C197.688 25.6244 196.854 26.4149 195.722 27.0373C194.589 27.6597 193.363 27.9709 192.043 27.9709Z" fill="#212226"/>
           <path d="M213.481 27.9709C210.879 27.9709 208.72 27.0311 207.002 25.1514C205.296 23.2593 204.444 20.8133 204.444 17.8133C204.444 14.8382 205.309 12.4045 207.039 10.5124C208.782 8.62032 210.96 7.67426 213.574 7.67426C214.894 7.67426 216.108 7.97302 217.215 8.57053C218.336 9.15559 219.176 9.92737 219.736 10.8859H219.867V0.616182H223.9V27.3547H220.016V23.9751L220.446 24.722H219.904C219.307 25.7054 218.429 26.4958 217.271 27.0933C216.114 27.6784 214.85 27.9709 213.481 27.9709ZM214.209 24.4605C215.84 24.4605 217.209 23.8381 218.317 22.5933C219.437 21.3361 219.998 19.7365 219.998 17.7946C219.998 15.8527 219.431 14.2718 218.298 13.0518C217.178 11.8319 215.815 11.222 214.209 11.222C212.603 11.222 211.234 11.8319 210.101 13.0518C208.981 14.2718 208.421 15.8589 208.421 17.8133C208.421 19.7427 208.975 21.3361 210.083 22.5933C211.203 23.8381 212.578 24.4605 214.209 24.4605Z" fill="#212226"/>
         </svg>
-        <span class="h-6 w-[1.5px] shrink-0 bg-black/15" aria-hidden="true"></span>
-        <div class="flex flex-wrap items-baseline gap-3 min-w-0">
-          <span class="text-[20px] sm:text-[22px] font-bold tracking-[-0.025em] text-[#0F172A] truncate">
-            AI Agent Production-Readiness
-          </span>
+        <span class="brand-divider" aria-hidden="true"></span>
+        <div class="brand-title-wrap">
+          <span class="brand-title">AI Agent Production-Readiness Workbench</span>
         </div>
       </div>
 
-      <!-- Right Status Badges -->
-      <div class="hidden md:flex items-center gap-2.5 shrink-0">
-        <span class="inline-flex items-center gap-2 rounded-full border border-[#4285F4]/25 bg-white px-3.5 py-1.5 font-mono text-[12.5px] font-bold text-[#1967D2] shadow-[0_2px_10px_rgba(66,133,244,0.08)]">
-          <span class="google-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-          <span>7 Domains · 15 Checkpoints</span>
-        </span>
-        <span class="inline-flex items-center gap-1.5 rounded-full border border-[#34A853]/25 bg-[#E6F4EA] px-3.5 py-1.5 text-[12.5px] font-bold text-[#137333]">
+      <!-- Right Action Controls (Unified Height & Rhythm with Hands-On Lab) -->
+      <div class="topbar-actions">
+        <span class="topbar-status-pill topbar-badge-hide">
           <span class="h-2 w-2 rounded-full bg-[#34A853]"></span>
           <span>Zero-IAM Read-Only</span>
         </span>
-        <a href="/lab" target="_blank" rel="noopener noreferrer"
-          class="g-btn-blue inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-bold transition">
-          <span class="material-symbols-outlined text-[16px]">menu_book</span>
-          <span>실습 가이드 (Lab)</span>
+        <a href="/lab" target="_blank" rel="noopener noreferrer" class="g-btn-blue topbar-cta">
+          <span>실습 가이드 (Lab) ↗</span>
         </a>
       </div>
     </div>
   </header>
 
-  <!-- ==================== MAIN BODY (2-Column: Left Sidebar + Right Main Content) ==================== -->
-  <div class="mx-auto w-full max-w-[1880px] px-4 pt-[96px] pb-16 sm:px-6">
-    <div class="flex flex-col min-[1150px]:flex-row gap-6 items-start">
-
-      <!-- Left Sticky Sidebar (Play Switcher + Active Play Navigation) -->
-      <aside class="w-full min-[1150px]:w-[360px] xl:w-[380px] shrink-0 min-[1150px]:sticky min-[1150px]:top-[96px] space-y-4">
-        <!-- Play 01 / Play 02 Switcher Card in Left Body (Chronological Order: Play 01 -> Play 02) -->
-        <div class="card-surface g-accent-rainbow p-4 space-y-2.5">
-          <div class="flex items-center justify-between px-1">
-            <span class="text-[12.5px] font-bold uppercase tracking-wider text-[#64748B]">점검 단계 선택 (Playbook)</span>
-            <span class="google-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-          </div>
-          <div class="grid grid-cols-1 gap-2 rounded-xl bg-[#EAEFF6] p-1.5">
-            <button id="navPlay1" onclick="switchStageTab('stage1')"
-              class="flex items-center justify-between gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-[14px] font-bold transition-all bg-white text-[#0F172A] shadow-sm ring-1 ring-[#4285F4]/20">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span id="badgePlay1" class="inline-flex shrink-0 items-center rounded-md bg-gradient-to-r from-[#4285F4] to-[#1A73E8] px-2 py-0.5 font-mono text-[12px] font-bold text-white">Play 01</span>
-                <span class="truncate">배포 전 로컬 코드 하드닝</span>
-              </div>
-              <span id="iconPlay1" class="material-symbols-outlined text-[#1A73E8]">chevron_right</span>
-            </button>
-            <button id="navPlay2" onclick="switchStageTab('stage2')"
-              class="flex items-center justify-between gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-[14px] font-semibold transition-all bg-transparent text-[#475569] hover:text-[#0F172A]">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span id="badgePlay2" class="inline-flex shrink-0 items-center rounded-md bg-[#E6F4EA] px-2 py-0.5 font-mono text-[12px] font-bold text-[#137333]">Play 02</span>
-                <span class="truncate">배포 후 런타임 JSON 진단</span>
-              </div>
-              <span id="iconPlay2" class="material-symbols-outlined text-[#64748B]">chevron_right</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Play 01 Sidebar Navigation Card (Default Active: Play 01 first) -->
-        <div id="sidebarStage1Card" class="card-surface g-accent-blue p-6 space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-[#4285F4] to-[#1A73E8] px-3 py-1 font-mono text-[12.5px] font-bold text-white">
-              Play 01 · Pre-Deploy
-            </span>
-            <span class="inline-flex items-center rounded-lg bg-[#E8F0FE] px-2.5 py-0.5 font-mono text-[12.5px] font-bold text-[#1967D2]">Agent Skill</span>
-          </div>
-
-          <div>
-            <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">배포 전 로컬 코드 하드닝</h2>
-            <p class="mt-1.5 mb-0 text-[14.5px] leading-[1.6] text-[#475569]">
-              소스 코드를 외부에 업로드하지 않고 내 PC의 Antigravity / Gemini CLI에서 가드레일과 인프라 설정을 패치합니다.
-            </p>
-          </div>
-
-          <ul class="space-y-1.5 pt-1">
-            <li>
-              <a href="#play1-step1" class="flex items-center justify-between gap-2.5 rounded-xl px-3.5 py-3 text-[14.5px] font-bold bg-[#E8F0FE] text-[#1967D2] no-underline transition hover:bg-[#D2E3FC]">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-14 shrink-0 font-mono text-[13px] font-bold">Step 1</span>
-                  <span class="truncate">로컬 PC에 Skill 설치</span>
-                </div>
-                <span class="material-symbols-outlined text-[#1A73E8]">chevron_right</span>
-              </a>
-            </li>
-            <li>
-              <a href="#play1-step2" class="flex items-center justify-between gap-2.5 rounded-xl px-3.5 py-3 text-[14.5px] font-bold text-[#475569] hover:bg-[#F1F6FE] hover:text-[#1967D2] no-underline transition">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-14 shrink-0 font-mono text-[13px] font-bold text-[#64748B]">Step 2</span>
-                  <span class="truncate">스캔 및 15개 패치 적용</span>
-                </div>
-                <span class="material-symbols-outlined text-[#64748B]">chevron_right</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Play 02 Sidebar Navigation & Progress Card -->
-        <div id="sidebarStage2Card" class="hidden card-surface g-accent-green p-6 space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-[#34A853] to-[#1E8E3E] px-3 py-1 font-mono text-[12.5px] font-bold text-white">
-              Play 02 · Runtime
-            </span>
-            <span id="sidebarProgressText" class="font-mono text-[13px] font-bold tabular-nums text-[#1967D2]">진단 대기</span>
-          </div>
-
-          <div>
-            <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">배포 후 런타임 진단 위자드</h2>
-            <p class="mt-1.5 mb-0 text-[14.5px] leading-[1.6] text-[#475569]">
-              권한 연동 없이 설정 JSON을 붙여넣고, 항목별 확인 위자드(Wizard)를 거쳐 맞춤형 최종 리포트를 생성합니다.
-            </p>
-          </div>
-
-          <!-- Progress Bar -->
-          <div class="h-2 w-full overflow-hidden rounded-full bg-[#E8EEF5]">
-            <div id="sidebarProgressBar" class="h-full g-progress-fill transition-all duration-300" style="width: 10%"></div>
-          </div>
-
-          <!-- Step Navigation Links -->
-          <ul class="space-y-1.5 pt-1">
-            <li>
-              <button onclick="openInputView('step-01-select')" class="w-full flex items-center justify-between gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-[14px] font-bold bg-[#E8F0FE] text-[#1967D2] transition hover:bg-[#D2E3FC]">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-12 shrink-0 font-mono text-[12.5px] font-bold">Step 1</span>
-                  <span class="truncate">환경 선택 & JSON 입력</span>
-                </div>
-                <span class="material-symbols-outlined text-[#1A73E8]">chevron_right</span>
-              </button>
-            </li>
-          </ul>
-
-          <div id="sidebarCheckSection" class="hidden border-t border-[#4285F4]/15 pt-4 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-[12.5px] font-bold uppercase tracking-wider text-[#64748B]">Step 2 · 위자드 체크리스트</span>
-              <span id="sidebarScoreBadge" class="font-mono text-[12.5px] font-bold text-[#1967D2]">0 / 11 확인</span>
-            </div>
-            <ul id="sidebarCheckList" class="space-y-1 max-h-[340px] overflow-y-auto pr-1"></ul>
-            <button id="sidebarReportBtn" onclick="openReportView()"
-              class="g-btn-green w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13.5px] font-bold transition">
-              <span class="material-symbols-outlined text-[17px]">assessment</span>
-              <span>Step 3 · 최종 진단 리포트 보기</span>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Right Main Content Area -->
-      <main class="w-full min-w-0 flex-1">
-        <!-- ==================== PLAY 01 CONTENT (First in order, Default Active) ==================== -->
-        <div id="viewStage1" class="space-y-6">
-          <!-- Top Info Banner -->
-          <div class="g-tip-banner flex items-start gap-3.5 px-6 py-4 pl-7 text-[14.5px] font-medium text-[#334155]">
-            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#4285F4] to-[#1A73E8] text-white shadow-sm mt-0.5">
-              <span class="material-symbols-outlined text-[18px]">security</span>
-            </span>
-            <div class="space-y-0.5 leading-[1.6]">
-              <div class="text-[15px] font-bold text-[#0F172A]">Play 01 · 소스 코드 외부 반출 없는 로컬 코드 하드닝</div>
-              <p class="m-0 text-[14.5px]">
-                기업 보안 규정상 에이전트 소스 코드(<code>agent.py</code>, <code>Dockerfile</code>, <code>terraform/</code>)는 클라우드 웹에 업로드하지 않고, 개발자 PC의 <strong>Antigravity / Gemini CLI</strong>에서 <strong>Agent Skill</strong>로 안전하게 패치합니다. (이미 배포된 에이전트라면 좌측에서 <strong>Play 02</strong>를 선택하세요.)
-              </p>
-            </div>
-          </div>
-
-          <!-- Play 01 Hero Card -->
-          <section class="card-surface g-accent-blue p-6 md:p-7 space-y-5">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#4285F4] to-[#1A73E8] px-3 py-1 font-mono text-[13px] font-bold text-white">Play 01</span>
-              <span class="inline-flex items-center rounded-xl bg-[#E8F0FE] px-3 py-1 font-mono text-[13px] font-bold text-[#1967D2]">Pre-Deploy · 내 PC 로컬 코드 패치</span>
-              <span class="inline-flex items-center rounded-xl bg-[#E6F4EA] px-3 py-1 text-[13px] font-semibold text-[#137333]">agentskills.io 호환</span>
-            </div>
-
-            <h1 class="m-0 text-[22px] font-bold leading-[1.35] tracking-[-0.025em] text-[#0F172A]">
-              배포 전: 로컬 PC에서 Agent Skill로 에이전트 소스 코드 하드닝하기
-            </h1>
-            <p class="m-0 text-[14.5px] leading-[1.65] text-[#475569]">
-              프로토타입 에이전트를 운영 환경(Cloud Run 또는 Agent Runtime)에 배포하기 전에, 영속 세션·Memory Bank, Agent Identity(SPIFFE)·Agent Registry 자동 등록, Agent Gateway(Agent Runtime 우선 적용), 턴별 루프 가드레일, OTel <code>NO_CONTENT</code> 트레이싱, Non-Root 컨테이너, 최소 권한 IAM/Terraform 템플릿을 자동 주입합니다.
-            </p>
-
-            <!-- 3-Column Flow Grid (Google Blue / Yellow / Green) -->
-            <div class="rounded-2xl bg-[#F4F7FB] border border-[#4285F4]/12 p-4 sm:p-5">
-              <div class="mb-3 flex items-center gap-2 text-[12.5px] font-bold uppercase tracking-wider text-[#64748B]">
-                <span class="google-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-                <span>Play 01 동작 흐름 (로컬 PC 전용)</span>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="rounded-xl bg-[#E8F0FE]/55 border border-[#4285F4]/20 border-l-4 border-l-[#4285F4] p-4">
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <span class="inline-flex items-center rounded-md bg-[#D2E3FC] px-2 py-0.5 font-mono text-[12px] font-bold text-[#1967D2]">Step 1</span>
-                    <span class="text-[15px] font-bold text-[#0F172A]">내 PC에 Skill 설치</span>
-                  </div>
-                  <p class="m-0 text-[13.5px] leading-[1.55] text-[#334155]">
-                    <code>~/.gemini/config/skills/</code> 경로에 <code>agent-production-readiness</code> 스킬을 복사합니다.
-                  </p>
-                </div>
-                <div class="rounded-xl bg-[#FEF7E0]/70 border border-[#FBBC04]/25 border-l-4 border-l-[#FBBC04] p-4">
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <span class="inline-flex items-center rounded-md bg-[#FEEFC3] px-2 py-0.5 font-mono text-[12px] font-bold text-[#B06000]">Step 2</span>
-                    <span class="text-[15px] font-bold text-[#0F172A]">15개 프로덕션 기준 스캔 & 패치</span>
-                  </div>
-                  <p class="m-0 text-[13.5px] leading-[1.55] text-[#334155]">
-                    Antigravity 프롬프트 또는 <code>prod-ready apply</code>로 <code>agent.py</code>·<code>Dockerfile</code>·<code>terraform/</code>을 하드닝합니다.
-                  </p>
-                </div>
-                <div class="rounded-xl bg-[#E6F4EA]/60 border border-[#34A853]/20 border-l-4 border-l-[#34A853] p-4">
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <span class="inline-flex items-center rounded-md bg-[#CEEAD6] px-2 py-0.5 font-mono text-[12px] font-bold text-[#137333]">Next</span>
-                    <span class="text-[15px] font-bold text-[#0F172A]">배포 후 Play 02 런타임 검증</span>
-                  </div>
-                  <p class="m-0 text-[13.5px] leading-[1.55] text-[#334155]">
-                    GCP 배포 후 <strong>Play 02</strong>로 이동해 실제 런타임 환경 JSON이 규격을 충족하는지 최종 검증합니다.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Play 01 Step 1 Card -->
-          <section id="play1-step1" class="scroll-mt-[88px] card-surface g-accent-blue p-6 md:p-7 space-y-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex items-center rounded-xl bg-[#E8F0FE] px-3 py-1 font-mono text-[13px] font-bold text-[#1967D2]">Step 1</span>
-              <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">
-                내 PC에 프로덕션 준비도 스킬 복사 (최초 1회)
-              </h2>
-            </div>
-            <p class="m-0 text-[14.5px] leading-[1.65] text-[#475569]">
-              로컬 터미널에서 아래 명령어를 실행하여 Antigravity / Gemini CLI가 인식할 수 있도록 스킬 디렉터리에 복사합니다.
-            </p>
-            <div class="overflow-hidden rounded-xl bg-[#0F172A]">
-              <div class="flex items-center justify-between bg-[#1E293B] px-4 py-2.5">
-                <div class="flex items-center gap-2 text-[13px] font-semibold text-white/80">
-                  <span class="material-symbols-outlined text-[#60A5FA]">terminal</span>
-                  <span>내 PC 로컬 터미널에서 실행</span>
-                </div>
-                <button onclick="copyText('mkdir -p ~/.gemini/config/skills\ncp -r skills/agent-production-readiness ~/.gemini/config/skills/', this)"
-                  class="inline-flex h-7 items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 px-2.5 text-[12.5px] font-semibold text-white transition">
-                  <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                  <span>복사</span>
-                </button>
-              </div>
-              <pre class="m-0 p-4 font-mono text-[13.5px] leading-[1.65] text-[#F8FAFC] overflow-x-auto">mkdir -p ~/.gemini/config/skills
-cp -r skills/agent-production-readiness ~/.gemini/config/skills/</pre>
-            </div>
-          </section>
-
-          <!-- Play 01 Step 2 Card -->
-          <section id="play1-step2" class="scroll-mt-[88px] card-surface g-accent-green p-6 md:p-7 space-y-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex items-center rounded-xl bg-[#E6F4EA] px-3 py-1 font-mono text-[13px] font-bold text-[#137333]">Step 2</span>
-              <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">
-                내 로컬 에이전트 프로젝트 스캔 및 15개 프로덕션 패치 적용
-              </h2>
-            </div>
-            <p class="m-0 text-[14.5px] leading-[1.65] text-[#475569]">
-              Antigravity 대화창에 <strong>"이 에이전트 프로덕션 준비도 스캔하고 부족한 부분 패치해줘"</strong>라고 입력하거나, 에이전트 프로젝트 폴더에서 아래 CLI를 실행합니다.
-            </p>
-            <div class="overflow-hidden rounded-xl bg-[#0F172A]">
-              <div class="flex items-center justify-between bg-[#1E293B] px-4 py-2.5">
-                <div class="flex items-center gap-2 text-[13px] font-semibold text-white/80">
-                  <span class="material-symbols-outlined text-[#34A853]">terminal</span>
-                  <span>에이전트 소스 코드 폴더에서 실행</span>
-                </div>
-                <button onclick="copyText('uv run prod-ready scan .\nuv run prod-ready apply .', this)"
-                  class="inline-flex h-7 items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 px-2.5 text-[12.5px] font-semibold text-white transition">
-                  <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                  <span>복사</span>
-                </button>
-              </div>
-              <pre class="m-0 p-4 font-mono text-[13.5px] leading-[1.65] text-[#F8FAFC] overflow-x-auto">uv run prod-ready scan .
-uv run prod-ready apply .</pre>
-            </div>
-
-            <div class="flex justify-end pt-2">
-              <button onclick="switchStageTab('stage2')"
-                class="g-btn-green inline-flex h-11 items-center gap-2 rounded-xl px-6 text-[14.5px] font-bold transition">
-                <span>Play 02 · 배포 후 런타임 JSON 진단으로 이동</span>
-                <span class="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
-          </section>
-        </div>
-
-        <!-- ==================== PLAY 02 CONTENT (Second in order) ==================== -->
-        <div id="viewStage2" class="hidden space-y-6">
-        <!-- ==================== PLAY 02 SETUP (JSON Input) ==================== -->
-        <div id="play2SetupSections" class="space-y-6">
-        <!-- Top Info Banner -->
-        <div class="g-tip-banner flex items-start gap-3.5 px-6 py-4 pl-7 text-[14.5px] font-medium text-[#334155]">
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#34A853] to-[#1E8E3E] text-white shadow-sm mt-0.5">
-            <span class="material-symbols-outlined text-[18px]">verified_user</span>
+  <!-- ==================== MAIN BODY (Unified 2-Column Shell: 340px Sidebar + Fluid Main) ==================== -->
+  <div class="shell">
+    <!-- Left Sticky Sidebar -->
+    <aside class="sidebar">
+      <!-- Runtime Diagnosis Wizard Sidebar Card -->
+      <div id="sidebarRuntimeCard" class="card-surface g-accent-green card-pad space-y-4">
+        <div class="flex items-center justify-between gap-2">
+          <span class="inline-flex items-center rounded-[10px] bg-gradient-to-r from-[#34A853] to-[#1E8E3E] px-3 py-1 font-mono text-[12.5px] font-bold text-white">
+            Runtime Wizard
           </span>
-          <div class="space-y-0.5 leading-[1.6]">
-            <div class="text-[15px] font-bold text-[#0F172A]">Zero-IAM 범용 웹 진단 위자드 안내</div>
-            <p class="m-0 text-[14.5px]">
-              이 웹 가이드는 사용자의 GCP 프로젝트에 어떠한 권한도 요구하지 않으며 운영 환경을 임의로 변경하지 않습니다.
-              <strong>내 터미널에서 조회한 설정 JSON</strong>을 붙여넣으면 항목별 위자드 점검을 거쳐 맞춤형 리포트와 명령어를 생성합니다.
-            </p>
-          </div>
+          <span id="sidebarProgressText" class="font-mono text-[12.5px] font-bold tabular-nums text-[#1A73E8]">진단 대기</span>
         </div>
 
+        <!-- Progress Bar -->
+        <div class="h-2 w-full overflow-hidden rounded-full bg-[#E8EEF5]">
+          <div id="sidebarProgressBar" class="h-full g-progress-fill transition-all duration-300" style="width: 10%"></div>
+        </div>
+
+        <div>
+          <h2 class="m-0 text-[16.5px] font-bold tracking-[-0.02em] text-[#0F172A]">배포 후 런타임 진단 위자드</h2>
+          <p class="mt-1.5 mb-0 text-[13.5px] leading-[1.6] text-[#475569]">
+            권한 연동 없이 설정 JSON을 붙여넣고, 항목별 위자드 점검을 거쳐 맞춤형 리포트와 명령어를 생성합니다.
+          </p>
+        </div>
+
+        <!-- Step Navigation Links -->
+        <div class="border-t border-[#4285F4]/15 pt-3.5">
+          <div class="text-[11.5px] font-bold uppercase tracking-[0.04em] text-[#64748B] mb-2">진단 단계 (Step 1 ~ Step 3)</div>
+          <ul class="space-y-1 p-0 m-0 list-none">
+            <li>
+              <button id="sidebarNavStep1" onclick="openInputView('step-01-select')" class="step-nav-btn active">
+                <span class="step-dot">1</span>
+                <span class="truncate">환경 선택 &amp; 조회 명령어</span>
+              </button>
+            </li>
+            <li>
+              <button id="sidebarNavStep2" onclick="openInputView('step-02-paste')" class="step-nav-btn">
+                <span class="step-dot">2</span>
+                <span class="truncate">JSON 붙여넣기 &amp; 진단 시작</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div id="sidebarCheckSection" class="hidden border-t border-[#4285F4]/15 pt-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[11.5px] font-bold uppercase tracking-[0.04em] text-[#64748B]">위자드 체크리스트</span>
+            <span id="sidebarScoreBadge" class="font-mono text-[12.5px] font-bold text-[#1967D2]">0 / 11 확인</span>
+          </div>
+          <ul id="sidebarCheckList" class="space-y-1 max-h-[340px] overflow-y-auto pr-1 p-0 m-0 list-none"></ul>
+          <button id="sidebarReportBtn" onclick="openReportView()"
+            class="g-btn-green w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13.5px] font-bold transition">
+            <span class="material-symbols-outlined text-[17px]">assessment</span>
+            <span>Step 3 · 최종 진단 리포트 보기</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Content Area -->
+    <main class="main-col">
+      <!-- ==================== RUNTIME SETUP (JSON Input) ==================== -->
+      <div id="runtimeSetupSections" class="space-y-5">
         <!-- Hero Overview Section Card -->
-        <section class="card-surface g-accent-green p-6 md:p-7">
-          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section class="card-surface g-accent-green card-pad-lg">
+          <div class="mb-3.5 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-[#34A853] to-[#1E8E3E] px-3 py-1 font-mono text-[13px] font-bold text-white">Play 02</span>
-              <span class="inline-flex items-center rounded-xl bg-[#E8F0FE] px-3 py-1 font-mono text-[13px] font-bold text-[#1967D2]">Cloud Run & Agent Runtime</span>
-              <span class="inline-flex items-center rounded-xl bg-[#FEF7E0] px-3 py-1 text-[13px] font-semibold text-[#B06000]">Interactive Wizard · 약 3분 소요</span>
+              <span class="inline-flex items-center rounded-[10px] bg-gradient-to-r from-[#34A853] to-[#1E8E3E] px-3 py-1 font-mono text-[12.5px] font-bold text-white">RUNTIME WIZARD</span>
+              <span class="inline-flex items-center rounded-[10px] bg-[#E8F0FE] px-3 py-1 font-mono text-[12.5px] font-bold text-[#1967D2]">Cloud Run &amp; Agent Runtime</span>
+              <span class="inline-flex items-center rounded-[10px] bg-[#FEF7E0] px-3 py-1 text-[12.5px] font-bold text-[#B06000]">Zero-IAM · 약 3분 소요</span>
             </div>
           </div>
 
           <h1 class="m-0 text-[22px] font-bold leading-[1.35] tracking-[-0.025em] text-[#0F172A]">
-            배포된 에이전트 설정 JSON을 기반으로 단계별 위자드 점검 및 최종 리포트 생성
+            배포된 에이전트 설정 JSON 기반 단계별 위자드 점검 및 최종 리포트 생성
           </h1>
           <p class="mt-2.5 mb-0 text-[14.5px] leading-[1.65] text-[#475569]">
             Cloud Run 또는 Agent Runtime의 설정 JSON을 붙여넣으면, <strong>JSON으로 검증된 항목</strong>과 <strong>아키텍처·부하테스트 의도를 확인해야 할 항목</strong>을 위자드 형태로 하나씩 점검한 뒤 최종 프로덕션 준비도 리포트와 맞춤형 실행 명령어를 완성해 드립니다.
           </p>
+
+          <!-- Compact Zero-IAM Notice Strip (Inside Hero Card so Top Aligns with Sidebar & Lab) -->
+          <div class="mt-4 rounded-[14px] bg-[#E6F4EA]/60 border border-[#34A853]/25 border-l-4 border-l-[#34A853] px-4 py-3 text-[13.8px] leading-[1.6] text-[#0D652D]">
+            <strong>Zero-IAM 읽기 전용 진단:</strong> GCP 프로젝트에 어떠한 IAM 권한도 요구하지 않으며 운영 환경을 임의로 변경하지 않습니다. 터미널에서 조회한 설정 JSON만 붙여넣으면 브라우저에서 안전하게 진단합니다.
+          </div>
 
           <!-- Clean 3-Step Flow Grid (Google Blue / Yellow / Green) -->
           <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3.5 rounded-2xl bg-[#F4F7FB] border border-[#4285F4]/12 p-4">
@@ -511,18 +460,18 @@ uv run prod-ready apply .</pre>
             </div>
             <div class="rounded-xl bg-[#E6F4EA]/65 border border-[#34A853]/25 border-l-4 border-l-[#34A853] p-4">
               <div class="font-mono text-[12px] font-bold text-[#137333]">STEP 03 · FINAL REPORT</div>
-              <div class="mt-1 text-[15px] font-bold text-[#0F172A]">맞춤형 리포트 & 실행 명령어 생성</div>
+              <div class="mt-1 text-[15px] font-bold text-[#0F172A]">맞춤형 리포트 &amp; 실행 명령어 생성</div>
               <div class="mt-0.5 text-[13.5px] text-[#137333]">선택 항목만 반영된 명령어 · Markdown 내보내기</div>
             </div>
           </div>
         </section>
 
         <!-- ==================== STEP 1: SELECT ENV & COPY COMMAND ==================== -->
-        <section id="step-01-select" class="scroll-mt-[88px] card-surface g-accent-blue p-6 md:p-7 space-y-5">
+        <section id="step-01-select" class="scroll-mt-[96px] card-surface g-accent-blue card-pad-lg space-y-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <span class="inline-flex items-center rounded-xl bg-[#E8F0FE] px-3 py-1 font-mono text-[13px] font-bold text-[#1967D2]">Step 1</span>
-              <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">
+              <span class="inline-flex items-center rounded-[10px] bg-[#E8F0FE] px-3 py-1 font-mono text-[12.5px] font-bold text-[#1967D2]">Step 1</span>
+              <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A]">
                 내 에이전트 배포 환경을 입력하고 조회 명령어를 복사합니다
               </h2>
             </div>
@@ -582,11 +531,11 @@ uv run prod-ready apply .</pre>
         </section>
 
         <!-- ==================== STEP 2: PASTE JSON & RUN DIAGNOSIS ==================== -->
-        <section id="step-02-paste" class="scroll-mt-[88px] card-surface g-accent-green p-6 md:p-7 space-y-5">
+        <section id="step-02-paste" class="scroll-mt-[96px] card-surface g-accent-green card-pad-lg space-y-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <span class="inline-flex items-center rounded-xl bg-[#E6F4EA] px-3 py-1 font-mono text-[13px] font-bold text-[#137333]">Step 2</span>
-              <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">
+              <span class="inline-flex items-center rounded-[10px] bg-[#E6F4EA] px-3 py-1 font-mono text-[12.5px] font-bold text-[#137333]">Step 2</span>
+              <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A]">
                 터미널에 출력된 JSON을 붙여넣고 진단을 시작합니다
               </h2>
             </div>
@@ -623,20 +572,18 @@ uv run prod-ready apply .</pre>
             </button>
           </div>
         </section>
-        </div><!-- /#play2SetupSections -->
+      </div><!-- /#runtimeSetupSections -->
 
-        <!-- Multi-Agent Switcher (shown if pasted JSON contains multiple agents) -->
-        <div id="multiAgentBar" class="hidden card-surface g-accent-rainbow p-5">
-          <div class="text-[13px] font-bold text-[#475569] mb-2.5">붙여넣은 JSON에서 여러 에이전트가 발견되었습니다. 점검할 에이전트를 선택하세요:</div>
-          <div id="multiAgentButtons" class="flex flex-wrap gap-2"></div>
-        </div>
+      <!-- Multi-Agent Switcher (shown if pasted JSON contains multiple agents) -->
+      <div id="multiAgentBar" class="hidden card-surface g-accent-rainbow p-5">
+        <div class="text-[13px] font-bold text-[#475569] mb-2.5">붙여넣은 JSON에서 여러 에이전트가 발견되었습니다. 점검할 에이전트를 선택하세요:</div>
+        <div id="multiAgentButtons" class="flex flex-wrap gap-2"></div>
+      </div>
 
-          <!-- ==================== WIZARD & FINAL REPORT PANEL ==================== -->
-          <div id="inspectionPanel" class="hidden scroll-mt-[88px] space-y-6"></div>
-        </div>
-      </main>
-    </div>
-  </div>
+      <!-- ==================== WIZARD & FINAL REPORT PANEL ==================== -->
+      <div id="inspectionPanel" class="hidden scroll-mt-[96px] space-y-5"></div>
+    </main>
+  </div><!-- /.shell -->
 
   <!-- Floating Scroll-to-Top Button -->
   <button onclick="window.scrollTo({top:0,behavior:'smooth'})"
@@ -648,8 +595,8 @@ uv run prod-ready apply .</pre>
     let runtimeMode = "cloud_run";
     let analyzedResults = [];
     let activeResultIndex = 0;
-    // Play 02 UI Phase: "input" | "wizard" | "report"
-    let play2Phase = "input";
+    // Runtime Workbench UI Phase: "input" | "wizard" | "report"
+    let workbenchPhase = "input";
     let wizardStepIdx = 0;
     // Per-check user Wizard decision: { [checkId]: { action: "keep_ok" | "keep_public" | "keep_stateless" | "keep_in_code" | "apply_fix" | "apply_vertex" | "apply_cloudsql" | "defer", category: "ok" | "fix" | "defer", label: string } }
     let wizardDecisions = {};
@@ -658,49 +605,11 @@ uv run prod-ready apply .</pre>
     // Per-check user-defined tuning parameters (initialized from detected_config, never hardcoded blindly)
     let userTuningParams = {};
 
-    function switchStageTab(stage) {
-      const s2 = document.getElementById("viewStage2");
-      const s1 = document.getElementById("viewStage1");
-      const sb2 = document.getElementById("sidebarStage2Card");
-      const sb1 = document.getElementById("sidebarStage1Card");
-      const b2 = document.getElementById("navPlay2");
-      const b1 = document.getElementById("navPlay1");
-      const badge2 = document.getElementById("badgePlay2");
-      const badge1 = document.getElementById("badgePlay1");
-      const icon2 = document.getElementById("iconPlay2");
-      const icon1 = document.getElementById("iconPlay1");
-
-      const activeBtnCls = "flex items-center justify-between gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-[14px] font-bold transition-all bg-white text-[#0F172A] shadow-sm ring-1 ring-[#4285F4]/20";
-      const inactiveBtnCls = "flex items-center justify-between gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-[14px] font-semibold transition-all bg-transparent text-[#475569] hover:text-[#0F172A]";
-      const activeBadgePlay1 = "inline-flex shrink-0 items-center rounded-md bg-gradient-to-r from-[#4285F4] to-[#1A73E8] px-2 py-0.5 font-mono text-[12px] font-bold text-white";
-      const inactiveBadgePlay1 = "inline-flex shrink-0 items-center rounded-md bg-[#E8F0FE] px-2 py-0.5 font-mono text-[12px] font-bold text-[#1967D2]";
-      const activeBadgePlay2 = "inline-flex shrink-0 items-center rounded-md bg-gradient-to-r from-[#34A853] to-[#1E8E3E] px-2 py-0.5 font-mono text-[12px] font-bold text-white";
-      const inactiveBadgePlay2 = "inline-flex shrink-0 items-center rounded-md bg-[#E6F4EA] px-2 py-0.5 font-mono text-[12px] font-bold text-[#137333]";
-
-      if (stage === "stage2") {
-        s2.classList.remove("hidden");
-        s1.classList.add("hidden");
-        sb2.classList.remove("hidden");
-        sb1.classList.add("hidden");
-        b2.className = "flex items-center justify-between gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-[14px] font-bold transition-all bg-white text-[#0F172A] shadow-sm ring-1 ring-[#34A853]/25";
-        b1.className = inactiveBtnCls;
-        badge2.className = activeBadgePlay2;
-        badge1.className = inactiveBadgePlay1;
-        icon2.className = "material-symbols-outlined text-[#1E8E3E]";
-        icon1.className = "material-symbols-outlined text-[#64748B]";
-      } else {
-        s2.classList.add("hidden");
-        s1.classList.remove("hidden");
-        sb2.classList.add("hidden");
-        sb1.classList.remove("hidden");
-        b1.className = activeBtnCls;
-        b2.className = inactiveBtnCls;
-        badge1.className = activeBadgePlay1;
-        badge2.className = inactiveBadgePlay2;
-        icon1.className = "material-symbols-outlined text-[#1A73E8]";
-        icon2.className = "material-symbols-outlined text-[#64748B]";
-      }
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    function setSidebarSetupActive(targetId) {
+      const s1 = document.getElementById("sidebarNavStep1");
+      const s2 = document.getElementById("sidebarNavStep2");
+      if (s1) s1.classList.toggle("active", workbenchPhase === "input" && targetId !== "step-02-paste");
+      if (s2) s2.classList.toggle("active", workbenchPhase === "input" && targetId === "step-02-paste");
     }
 
     function setRuntimeMode(mode) {
@@ -845,10 +754,11 @@ uv run prod-ready apply .</pre>
     }
 
     function openInputView(scrollTargetId) {
-      play2Phase = "input";
-      document.getElementById("play2SetupSections").classList.remove("hidden");
+      workbenchPhase = "input";
+      document.getElementById("runtimeSetupSections").classList.remove("hidden");
       document.getElementById("multiAgentBar").classList.add("hidden");
       document.getElementById("inspectionPanel").classList.add("hidden");
+      setSidebarSetupActive(scrollTargetId);
       const d = analyzedResults[activeResultIndex];
       if (d) renderSidebarChecks(d);
       if (scrollTargetId) {
@@ -862,10 +772,11 @@ uv run prod-ready apply .</pre>
     function openWizardView(stepIdx) {
       const d = analyzedResults[activeResultIndex];
       if (!d) return;
-      play2Phase = "wizard";
+      workbenchPhase = "wizard";
       wizardStepIdx = Math.max(0, Math.min(stepIdx, d.checks.length - 1));
-      document.getElementById("play2SetupSections").classList.add("hidden");
+      document.getElementById("runtimeSetupSections").classList.add("hidden");
       document.getElementById("inspectionPanel").classList.remove("hidden");
+      setSidebarSetupActive(null);
       renderMultiAgentBar();
       renderInspectionPanel();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -874,9 +785,10 @@ uv run prod-ready apply .</pre>
     function openReportView() {
       const d = analyzedResults[activeResultIndex];
       if (!d) return;
-      play2Phase = "report";
-      document.getElementById("play2SetupSections").classList.add("hidden");
+      workbenchPhase = "report";
+      document.getElementById("runtimeSetupSections").classList.add("hidden");
       document.getElementById("inspectionPanel").classList.remove("hidden");
+      setSidebarSetupActive(null);
       renderMultiAgentBar();
       renderInspectionPanel();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1303,9 +1215,9 @@ uv run prod-ready apply .</pre>
               id: "apply_fix",
               category: "fix",
               badge: "🛡️ 거버넌스 점검",
-              title: "Model Armor Floor Settings 정책 확인 및 Play 01 로컬 스캔",
+              title: "Model Armor Floor Settings 정책 확인 및 로컬 Agent Skill 스캔",
               shortLabel: "Model Armor Floor Settings 확인",
-              desc: "최종 리포트에 Model Armor Floor Settings 조회 명령과 Play 01 로컬 스캔 안내를 포함합니다.",
+              desc: "최종 리포트에 Model Armor Floor Settings 조회 명령과 로컬 Agent Skill 스캔 안내를 포함합니다.",
             },
             {
               id: "defer",
@@ -1363,7 +1275,7 @@ uv run prod-ready apply .</pre>
               badge: "🟢 검증 통과",
               title: "GOOGLE_CLOUD_LOCATION=global (Global DSQ) 설정 확인됨",
               shortLabel: "JSON 검증 통과 (Global DSQ)",
-              desc: "Global Dynamic Shared Quota를 통해 429 쿼터 오류를 완화하도록 구성되어 있습니다. (무한 루프 상한 로직은 Play 01 코드에서 확인)",
+              desc: "Global Dynamic Shared Quota를 통해 429 쿼터 오류를 완화하도록 구성되어 있습니다. (무한 루프 상한 로직은 로컬 코드/Agent Skill에서 확인)",
             }];
           }
           if (c.status === "REVIEW") {
@@ -1510,7 +1422,7 @@ uv run prod-ready apply .</pre>
               badge: "🛠️ 게이트웨이 적용",
               title: "Agent Gateway + UAP/IAP V2 (DRY_RUN 시작) & BYOC CA 번들 적용",
               shortLabel: "Agent Gateway (DRY_RUN) 적용",
-              desc: "Play 01 C4.4 하드닝으로 Agent Gateway(HTTP 498 방지를 위해 iamEnforcementMode=DRY_RUN 기본)와 Dockerfile CA 번들을 구성하고 Model Armor Floor Settings를 확인합니다.",
+              desc: "로컬 Agent Skill C4.4 하드닝으로 Agent Gateway(HTTP 498 방지를 위해 iamEnforcementMode=DRY_RUN 기본)와 Dockerfile CA 번들을 구성하고 Model Armor Floor Settings를 확인합니다.",
             },
             {
               id: "keep_ok",
@@ -1734,7 +1646,7 @@ uv run prod-ready apply .</pre>
         const preCmds = [];
         const updateFlags = [];
         const envPairs = [];
-        const stage1Items = [];
+        const localVerifyItems = [];
 
         if (wantsPublicIamAudit) {
           preCmds.push(`# [R3.1 참고 · 읽기 전용] 퍼블릭 에이전트 IAM 정책(allUsers 여부) 확인\ngcloud run services get-iam-policy ${svc} --region=${reg} --project=${proj}`);
@@ -1787,7 +1699,7 @@ uv run prod-ready apply .</pre>
           );
         }
         if (idSet.has("R4.3")) {
-          stage1Items.push("R4.3");
+          localVerifyItems.push("R4.3");
         }
         if (idSet.has("R5.1")) {
           envPairs.push(
@@ -1819,7 +1731,7 @@ uv run prod-ready apply .</pre>
           }
           blocks.push(lines.join("\n"));
         }
-        if (stage1Items.length > 0) {
+        if (localVerifyItems.length > 0) {
           blocks.push(
             `# [R4.3 · Cloud Run Agent Gateway 단계적 도입 가이드 & Model Armor Floor Settings 확인]\n` +
             `# Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에\n` +
@@ -1833,7 +1745,7 @@ uv run prod-ready apply .</pre>
         const preCmds = [];
         const deployFlags = [];
         const envPairs = [];
-        const stage1Items = [];
+        const localVerifyItems = [];
 
         if (idSet.has("R3.2")) deployFlags.push(`--network-attachment=projects/${proj}/regions/${reg}/networkAttachments/${p.psc_attachment || "agent-psc"}`);
         if (idSet.has("R4.2")) {
@@ -1842,13 +1754,13 @@ uv run prod-ready apply .</pre>
         } else if (idSet.has("R4.1")) {
           deployFlags.push(`--service-account=sa-agent@${proj}.iam.gserviceaccount.com`);
         }
-        if (idSet.has("R4.3")) stage1Items.push("R4.3");
+        if (idSet.has("R4.3")) localVerifyItems.push("R4.3");
         if (idSet.has("R5.1")) envPairs.push("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT");
         if (idSet.has("R6.1")) envPairs.push("GOOGLE_CLOUD_LOCATION=global");
 
         const blocks = [];
         if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
-        if (stage1Items.length > 0) {
+        if (localVerifyItems.length > 0) {
           blocks.push(
             `# [R4.3 · Agent Gateway(DRY_RUN) 프로비저닝 & Model Armor Floor Settings 확인]\n` +
             `uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items C4.4\n` +
@@ -2055,7 +1967,7 @@ uv run prod-ready apply .</pre>
     function renderMultiAgentBar() {
       const bar = document.getElementById("multiAgentBar");
       const btns = document.getElementById("multiAgentButtons");
-      if (analyzedResults.length <= 1 || play2Phase === "input") {
+      if (analyzedResults.length <= 1 || workbenchPhase === "input") {
         bar.classList.add("hidden");
         return;
       }
@@ -2080,7 +1992,7 @@ uv run prod-ready apply .</pre>
       if (scope === "RUNTIME_VERIFIED") return "JSON 객관적 검증";
       if (scope === "WORKLOAD_TUNING") return "성능·SLA 튜닝";
       if (scope === "ARCH_DECISION") return "아키텍처 의도 확인";
-      if (scope === "CODE_VERIFY") return "Play 01 · 코드 확인";
+      if (scope === "CODE_VERIFY") return "로컬 코드 확인";
       return "런타임 설정";
     }
 
@@ -2111,7 +2023,7 @@ uv run prod-ready apply .</pre>
       const pct = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
       document.getElementById("sidebarProgressText").textContent =
-        play2Phase === "report" ? "최종 리포트 완료" : `진행 ${answeredCount} / ${total}`;
+        workbenchPhase === "report" ? "최종 리포트 완료" : `진행 ${answeredCount} / ${total}`;
       document.getElementById("sidebarProgressBar").style.width = `${Math.max(10, pct)}%`;
 
       const sb = document.getElementById("sidebarScoreBadge");
@@ -2120,7 +2032,7 @@ uv run prod-ready apply .</pre>
       const listEl = document.getElementById("sidebarCheckList");
       listEl.innerHTML = d.checks.map((c, idx) => {
         const dec = wizardDecisions[c.id];
-        const isCurrent = play2Phase === "wizard" && idx === wizardStepIdx;
+        const isCurrent = workbenchPhase === "wizard" && idx === wizardStepIdx;
         const rowCls = isCurrent
           ? "bg-[#E8F0FE] text-[#1967D2] font-bold"
           : "text-[#0F172A] hover:bg-[#F1F6FE] font-medium";
@@ -2140,7 +2052,7 @@ uv run prod-ready apply .</pre>
 
       const repBtn = document.getElementById("sidebarReportBtn");
       if (repBtn) {
-        repBtn.className = play2Phase === "report"
+        repBtn.className = workbenchPhase === "report"
           ? "g-btn-blue w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13.5px] font-bold ring-2 ring-[#4285F4]/30"
           : "g-btn-green w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13.5px] font-bold transition";
       }
@@ -2151,7 +2063,7 @@ uv run prod-ready apply .</pre>
       if (!d) return;
       renderSidebarChecks(d);
 
-      if (play2Phase === "report") {
+      if (workbenchPhase === "report") {
         renderReportView(d);
       } else {
         renderWizardView(d);
@@ -2239,7 +2151,7 @@ uv run prod-ready apply .</pre>
 
       panel.innerHTML = `
         <!-- Wizard Top Progress Header -->
-        <section class="card-surface ${runtimeAccent} p-5 md:p-6 space-y-4">
+        <section class="card-surface ${runtimeAccent} card-pad-lg space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2.5">
               <span class="inline-flex items-center rounded-xl ${runtimePillCls} px-3 py-1 font-mono text-[12.5px] font-bold text-white">${escapeHtml(d.runtime_label)}</span>
@@ -2277,7 +2189,7 @@ uv run prod-ready apply .</pre>
         </section>
 
         <!-- Focused Single Checkpoint Wizard Card -->
-        <section class="card-surface g-accent-rainbow p-6 md:p-8 space-y-5">
+        <section class="card-surface g-accent-rainbow card-pad-lg space-y-5">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center rounded-xl bg-[#E8F0FE] px-3 py-1 font-mono text-[13px] font-bold text-[#1967D2]">Step ${wizardStepIdx + 1} · ${escapeHtml(c.id)}</span>
@@ -2470,7 +2382,7 @@ uv run prod-ready apply .</pre>
 
       const followUpSection = pendingCount > 0
         ? `
-          <section class="card-surface g-accent-rainbow p-6 md:p-7 space-y-3">
+          <section class="card-surface g-accent-rainbow card-pad-lg space-y-3">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-[#B06000]">pending_actions</span>
               <h3 class="m-0 text-[17px] font-bold text-[#0F172A]">후속 확인이 필요한 항목 (${pendingCount}건)</h3>
@@ -2499,7 +2411,7 @@ uv run prod-ready apply .</pre>
 
       panel.innerHTML = `
         <!-- Final Assessment Report Header -->
-        <section class="card-surface g-accent-rainbow p-6 md:p-8 space-y-6">
+        <section class="card-surface g-accent-rainbow card-pad-lg space-y-6">
           <div class="flex flex-wrap items-start justify-between gap-4 border-b border-[#4285F4]/14 pb-5">
             <div class="space-y-2 min-w-0">
               <div class="flex flex-wrap items-center gap-2">

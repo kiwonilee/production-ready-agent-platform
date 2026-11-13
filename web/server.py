@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 import io
+import sys
 import tarfile
 from pathlib import Path
 from typing import Any
+
+# Ensure standalone `prod_ready` skill scripts are importable when running `web` directly from repo root.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_SKILL_SCRIPTS_DIR = _REPO_ROOT / "skills" / "agent-production-readiness" / "scripts"
+if _SKILL_SCRIPTS_DIR.is_dir() and str(_SKILL_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SKILL_SCRIPTS_DIR))
 
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
@@ -20,7 +27,8 @@ from prod_ready.patcher import (
     preview_patches,
     reset_project_to_baseline,
 )
-from prod_ready.runtime_inspector import (
+from prod_ready.scanner import scan_project
+from web.runtime_inspector import (
     DEFAULT_PROJECT_ID,
     DEFAULT_REGION,
     get_sample_runtime_json,
@@ -28,23 +36,17 @@ from prod_ready.runtime_inspector import (
     inspect_pasted_json,
     list_deployed_agents,
 )
-from prod_ready.scanner import scan_project
 
-STATIC_DIR = Path(__file__).parent / "static"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 def _find_skill_dir() -> Path | None:
     """Locates the standalone `agent-production-readiness` skill directory."""
-    parents = Path(__file__).resolve().parents
-    candidates: list[Path] = []
-    if len(parents) > 2:
-        candidates.append(parents[2])
-    candidates.extend(
-        [
-            Path.cwd() / "skills" / "agent-production-readiness",
-            Path("/app/skills/agent-production-readiness"),
-        ]
-    )
+    candidates: list[Path] = [
+        _REPO_ROOT / "skills" / "agent-production-readiness",
+        Path.cwd() / "skills" / "agent-production-readiness",
+        Path("/app/skills/agent-production-readiness"),
+    ]
     for cand in candidates:
         if (cand / "SKILL.md").is_file():
             return cand

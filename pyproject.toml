@@ -25,8 +25,8 @@ dev = [
 prod-ready = "prod_ready.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["skills/agent-production-readiness/scripts/prod_ready"]
+packages = ["skills/agent-production-readiness/scripts/prod_ready", "web"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["skills/agent-production-readiness/scripts"]
+pythonpath = ["skills/agent-production-readiness/scripts", "."]

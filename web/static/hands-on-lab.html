@@ -137,6 +137,8 @@
       letter-spacing: -0.025em;
       color: var(--ink);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .brand-sub {
       font-size: 13.5px;
@@ -216,6 +218,26 @@
     }
     .btn-subtle:hover { background: #E2E8F0; }
     .btn-sm { padding: 6px 11px; font-size: 12.5px; border-radius: 8px; }
+    .btn.topbar-action-btn {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn.topbar-cta {
+      height: 36px;
+      padding: 0 15px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      gap: 6px;
+      white-space: nowrap;
+    }
     .btn:disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
 
     /* ==================== CLEAN DUAL-TRACK BLUEPRINT LANDING ==================== */
@@ -405,6 +427,44 @@
       background: #1A73E8;
       color: #FFFFFF;
       border-color: #1A73E8;
+    }
+    .home-track-card.selected-track {
+      box-shadow: 0 18px 42px rgba(52, 168, 83, 0.18);
+      border-color: #34A853;
+    }
+    .home-track-card[data-track-card="agent_runtime"].selected-track {
+      box-shadow: 0 18px 42px rgba(66, 133, 244, 0.2);
+      border-color: #4285F4;
+    }
+    .home-track-card.selected-track .htc-duration {
+      background: #1E8E3E;
+      color: #FFFFFF;
+      border-color: #1E8E3E;
+    }
+    .home-track-card[data-track-card="agent_runtime"].selected-track .htc-duration {
+      background: #1A73E8;
+      color: #FFFFFF;
+      border-color: #1A73E8;
+    }
+    .lab-step .home-hero {
+      padding-bottom: 18px;
+      margin: 12px 0 22px;
+    }
+    .lab-step .home-hero h1 {
+      font-size: 27px;
+    }
+    .step-nav-group {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px 10px 4px;
+      margin-top: 4px;
+    }
+    .step-nav-group:first-child {
+      padding-top: 2px;
+      margin-top: 0;
     }
 
     .htc-sub {
@@ -1411,7 +1471,7 @@
   <!-- ==================== FIXED TOP NAVBAR (v1 Original Preserved) ==================== -->
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand" onclick="showLanding()" title="런타임 트랙 선택 화면으로 이동">
+      <div class="brand" onclick="goToStep(0)" title="실습 첫 단계(Step 0)로 이동">
         <!-- Official Google Cloud SVG Wordmark -->
         <svg viewBox="0 0 224 36" fill="none" style="height:26px;width:auto;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud">
           <path d="M110.371 27.915C107.508 27.915 105.137 26.9938 103.257 25.1515C101.39 23.3092 100.456 20.8818 100.456 17.8693C100.456 14.9191 101.359 12.4917 103.164 10.5872C104.981 8.67018 107.352 7.71167 110.278 7.71167C112.195 7.71167 113.85 8.20337 115.244 9.18677C116.651 10.1702 117.759 11.7075 118.568 13.7988C118.643 14.0104 118.711 14.2283 118.773 14.4523C118.836 14.6764 118.892 14.9316 118.942 15.2179L103.63 21.7158L102.566 18.6349L115.244 13.2573L114.89 14.9565C114.417 13.6245 113.757 12.6598 112.91 12.0623C112.076 11.4648 111.149 11.166 110.128 11.166C108.385 11.166 106.998 11.7635 105.964 12.9586C104.931 14.1411 104.415 15.6971 104.415 17.6266C104.415 19.444 105.012 20.9938 106.207 22.276C107.402 23.5581 108.852 24.1992 110.558 24.1992C111.578 24.1992 112.531 23.944 113.415 23.4336C114.298 22.9233 115.07 22.2075 115.73 21.2863L118.755 23.2656C117.908 24.6598 116.751 25.7863 115.282 26.6453C113.813 27.4917 112.176 27.915 110.371 27.915Z" fill="#FC413D"/>
@@ -1433,52 +1493,25 @@
       </div>
 
       <div class="topbar-actions">
-        <button id="topTrackBtn" class="btn btn-subtle btn-sm topbar-badge-hide hidden" onclick="showLanding()">
-          <span id="topTrackLabel">Cloud Run</span> · 트랙 변경
+        <button id="topTrackBtn" class="btn btn-subtle topbar-action-btn topbar-badge-hide" onclick="showLanding()">
+          <span id="topTrackLabel">Cloud Run</span> · 배포 환경 변경
         </button>
-        <a id="topWorkbenchLink" href="https://prod-ready-workbench-1018407696981.us-central1.run.app" target="_blank" rel="noopener noreferrer" class="btn btn-navy btn-sm">
+        <a id="topWorkbenchLink" href="https://prod-ready-workbench-1018407696981.us-central1.run.app" target="_blank" rel="noopener noreferrer" class="btn btn-navy topbar-cta">
           <span>Web Workbench 열기 ↗</span>
         </a>
       </div>
     </div>
   </header>
 
-  <!-- ==================== VIEW 1: CLEAN DUAL-TRACK LANDING ==================== -->
-  <main id="landingView" class="home-shell">
-    <section class="home-hero">
-      <div>
-        <div class="home-hero-eyebrow">
-          <span class="google-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-          <span>DUAL-TRACK ARCHITECTURE LAB</span>
-        </div>
-        <h1>프로덕션 AI 에이전트, 어떤 런타임으로 배포할까요?</h1>
-        <p>Agent Runtime과 Cloud Run의 특징과 선택 기준을 비교하고, 원하는 카드를 선택해 실습을 시작하세요.</p>
-      </div>
-    </section>
-
-    <section id="landingTrackGrid" class="home-track-grid" aria-label="배포 런타임 트랙 선택"></section>
-
-    <aside class="home-tip-bar" aria-label="배포 선택 팁">
-      <div class="home-tip-icon" aria-hidden="true">✓</div>
-      <div class="home-tip-body">
-        <h4>배포 팁 · 망설여진다면 Cloud Run으로 시작하세요</h4>
-        <p>
-          코드 변경 없이 두 환경을 오갈 수 있으므로, 우선 비용 부담이 적은 <strong>Cloud Run으로 시작</strong>하는 것을 권장합니다.
-          장기 문맥 유지가 중요해지면 단일 명령어(<code>adk deploy agent_engine</code> 또는 <code>uvx google-agents-cli deploy</code>)로 타겟만 전환할 수 있습니다.
-        </p>
-      </div>
-    </aside>
-  </main>
-
-  <!-- ==================== VIEW 2: 2-COLUMN CODELAB SHELL (v1 Original) ==================== -->
-  <div id="workspaceView" class="shell hidden">
+  <!-- ==================== 2-COLUMN CODELAB SHELL (ADK-First Standard Flow) ==================== -->
+  <div id="workspaceView" class="shell">
     <!-- Left Sticky Sidebar -->
     <aside class="sidebar">
       <!-- Lab Progress & Step Nav Card -->
       <div class="card card-pad">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span id="sidebarTrackBadge" class="pill pill-navy mono">Cloud Run</span>
-          <span id="sidebarProgressLabel" class="mono" style="font-size:12.5px;font-weight:700;color:var(--accent);">0 / 9 완료 (0%)</span>
+          <span id="sidebarTrackBadge" class="pill pill-navy mono">ADK 공통</span>
+          <span id="sidebarProgressLabel" class="mono" style="font-size:12.5px;font-weight:700;color:var(--accent);">0 / 11 완료 (0%)</span>
         </div>
 
         <div class="progress-track">
@@ -1486,7 +1519,7 @@
         </div>
 
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(66,133,244,0.12);">
-          <div style="font-size:11.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">실습 목차 (Step 0 ~ Step 8)</div>
+          <div style="font-size:11.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">실습 목차 (Step 0 ~ Step 10)</div>
           <ul id="stepNavList" class="step-nav"></ul>
         </div>
       </div>
@@ -1499,14 +1532,17 @@
       <section class="card card-pad-lg lab-step" data-step="0" id="step-0">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 0 / 8</span>
+            <span class="pill pill-navy mono">STEP 0 / 10</span>
             <span class="pill pill-gray mono">약 5분</span>
             <h2>실습 환경 준비 및 GCP 프로젝트 설정</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(0)">✓ 완료 표시</button>
         </div>
 
-        <p>실습 시작 전, 필수 CLI(<code>python3</code>, <code>uv</code>, <code>gcloud</code>, <code>agy</code>)를 확인하고 본인의 GCP 프로젝트 정보를 입력합니다.</p>
+        <p>
+          먼저 공통 실습 환경(<code>python3</code>, <code>uv</code>, <code>gcloud</code>, <code>agy</code>)을 확인하고 GCP 프로젝트를 설정합니다.
+          <strong>에이전트 비즈니스 코드는 배포 환경과 무관하게 동일</strong>하므로, Step 1~2에서 표준 ADK 에이전트와 Agent Skill을 먼저 준비한 뒤 <strong>Step 3에서 배포 환경(<code>Agent Runtime</code> vs <code>Cloud Run</code>)을 선택</strong>합니다.
+        </p>
 
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0 8px;">
           <h3 style="margin:0;">0-1. 내 실습 환경 변수 맞춤 설정</h3>
@@ -1527,7 +1563,7 @@
               <input id="envAgentMain" type="text" oninput="updateEnvFromInputs('main')" />
             </div>
             <div class="field track-only" data-track="agent_runtime">
-              <label for="envEngineIdMain">Reasoning Engine ID (Step 5 배포 후 입력)</label>
+              <label for="envEngineIdMain">Reasoning Engine ID (Step 7 배포 후 입력)</label>
               <input id="envEngineIdMain" type="text" oninput="updateEnvFromInputs('main')" />
             </div>
           </div>
@@ -1536,11 +1572,11 @@
         <h3>0-2. Cloud Shell 열기 및 필수 CLI 도구 설치·확인</h3>
         <ol>
           <li><a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;text-decoration:underline;">Google Cloud Console ↗</a>에 로그인한 뒤, 우측 상단의 <strong>Cloud Shell 활성화 (<code>&gt;_</code>)</strong> 아이콘을 클릭해 터미널을 엽니다.</li>
-          <li>열린 Cloud Shell 터미널에 아래 명령어를 복사·실행하여 <code>python3</code>, <code>gcloud</code> 버전을 확인하고, 파이썬 패키지 매니저 <strong><code>uv</code></strong>를 설치(미설치 시 자동 설치)합니다.</li>
+          <li>열린 Cloud Shell 터미널에 아래 명령어를 복사·실행하여 <code>python3</code>, <code>gcloud</code> 버전을 확인하고, 파이썬 패키지 매니저 <strong><code>uv</code></strong>와 Google 공식 에이전트 CLI인 <strong><code>agents-cli</code></strong>를 설치(미설치 시 자동 설치)합니다.</li>
         </ol>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · Cloud Shell에서 도구 버전 확인 및 uv 설치</span>
+            <span class="code-label">bash · Cloud Shell에서 도구 버전 확인 및 uv · agents-cli 설치</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="python3 --version
@@ -1548,6 +1584,8 @@ gcloud --version | head -n 1
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH=&quot;$HOME/.local/bin:$PATH&quot;
 uv --version
+command -v agents-cli >/dev/null 2>&1 || uv tool install google-agents-cli
+agents-cli --version
 agy --version"></pre>
         </div>
 
@@ -1555,16 +1593,17 @@ agy --version"></pre>
           <div class="callout-title">🧰 실습에 사용하는 필수 CLI 도구 안내</div>
           <ul style="margin:6px 0 0 18px;">
             <li><strong><code>python3</code> · <code>gcloud</code></strong> — Python 실행 및 Google Cloud 배포용 CLI로, <strong>Cloud Shell에 기본 설치</strong>되어 있습니다.</li>
-            <li><strong><code>uv</code></strong> — <code>google-agents-cli</code> 실행과 패키지 설치를 빠르게 처리하는 Python 도구입니다. 위 명령어로 자동 설치됩니다.</li>
+            <li><strong><code>uv</code></strong> — Python 가상환경·패키지 설치 및 <code>agents-cli</code> 도구 설치를 빠르게 처리하는 패키지 매니저입니다.</li>
+            <li><strong><code>agents-cli</code> (<code>google-agents-cli</code>)</strong> — ADK 에이전트 생성(<code>scaffold</code>), 로컬 실행(<code>run</code>), 배포(<code>deploy</code>)를 담당하는 Google 공식 CLI입니다. 위 명령어로 자동 설치됩니다.</li>
             <li><strong><code>agy</code></strong> — 대화형 AI 코딩 CLI(Antigravity)입니다.</li>
           </ul>
         </div>
 
-        <h3>0-3. GCP 프로젝트 설정 및 필수 API 활성화</h3>
-        <p>Cloud Shell 터미널에서 <code>0-1</code>에 입력한 GCP 프로젝트를 기본값으로 지정하고, 에이전트 배포·진단에 필요한 Google Cloud API를 한 번에 활성화합니다.</p>
+        <h3>0-3. GCP 프로젝트 설정 및 공통 필수 API 활성화</h3>
+        <p>Cloud Shell 터미널에서 <code>0-1</code>에 입력한 GCP 프로젝트를 기본값으로 지정하고, 에이전트 개발·등록·배포에 공통으로 필요한 Google Cloud API를 한 번에 활성화합니다.</p>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · 프로젝트 설정 및 GCP API 활성화</span>
+            <span class="code-label">bash · 프로젝트 설정 및 공통 GCP API 활성화</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="gcloud config set project {{PROJECT_ID}}
@@ -1580,20 +1619,8 @@ gcloud services enable \
   --project={{PROJECT_ID}}"></pre>
         </div>
 
-        <div class="code-wrap track-only" data-track="agent_runtime">
-          <div class="code-head">
-            <span class="code-label">bash · Agent Runtime 전용 Agent Gateway &amp; IAP/UAP API 추가 활성화</span>
-            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-          </div>
-          <pre class="code-pre" data-tpl="gcloud services enable \
-  networkservices.googleapis.com \
-  networksecurity.googleapis.com \
-  iap.googleapis.com \
-  --project={{PROJECT_ID}}"></pre>
-        </div>
-
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="showLanding()">← 트랙 선택으로</button>
+          <button class="btn btn-subtle" onclick="showLanding()">배포 환경 비교 미리보기 →</button>
           <button class="btn btn-primary" onclick="completeAndNext(0)">Step 0 완료하고 Step 1로 이동 →</button>
         </div>
       </section>
@@ -1602,119 +1629,69 @@ gcloud services enable \
       <section class="card card-pad-lg lab-step" data-step="1" id="step-1">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 1 / 8</span>
-            <span class="pill pill-gray mono">약 7분</span>
-            <h2>심플한 AI Agent 만들기 (ADK 프로토타입)</h2>
+            <span class="pill pill-navy mono">STEP 1 / 10</span>
+            <span class="pill pill-gray mono">약 6분</span>
+            <h2>심플한 AI Agent 만들기 (<code>agents-cli</code> 표준 프로토타입)</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(1)">✓ 완료 표시</button>
         </div>
 
         <p>
-          먼저 <strong>Google ADK</strong> 기반의 단순한 환율 안내 에이전트(<code>{{AGENT_NAME}}</code>)를 만듭니다.
-          아무런 보안·세션·관측성 가드레일이 없는 상태에서 시작해야 Step 3~4의 Before/After 효과를 확실하게 확인할 수 있습니다.
+          Google의 공식 표준 도구인 <strong><code>agents-cli</code></strong>의 <strong>Prototype First</strong> 패턴으로 <strong>Google ADK</strong> 에이전트(<code>{{AGENT_NAME}}</code>)를 생성합니다.
+          이 단계에서는 <code>--deployment-target none --prototype</code>으로 <strong>특정 배포 환경에 묶이지 않은 표준 ADK 코드</strong>만 먼저 만들고 로컬에서 동작을 검증합니다.
         </p>
 
-        <div class="tab-bar" data-tabgroup="step1">
-          <button class="tab-btn active" onclick="switchTab('step1', 'scaffold', this)">방법 A · agents-cli 로 스캐폴딩 (권장)</button>
-          <button class="tab-btn" onclick="switchTab('step1', 'manual', this)">방법 B · 직접 ADK 코드 직접 생성</button>
-          <button class="tab-btn" onclick="switchTab('step1', 'existing', this)">방법 C · 기존 ADK 코드 활용하기</button>
-        </div>
+        <h3>1-1. <code>agents-cli</code>로 런타임 독립 ADK 프로토타입 생성</h3>
+        <p>
+          <code>app/agent.py</code>, <code>app/fast_api_app.py</code>, <code>Dockerfile</code>, <code>tests/eval/</code> 등 Google 표준 구조가 자동 생성되며, 아직 Terraform이나 CI/CD 인프라가 없는 깨끗한 상태(<code>deployment_target: none</code>)로 시작합니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · agents-cli 표준 ADK 프로토타입 생성 (런타임 미정)</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="mkdir -p ~/agent-lab && cd ~/agent-lab
 
-        <div class="tab-panel active" data-tabgroup="step1" data-tab="scaffold">
-          <h3>1-1. <code>agents-cli</code>로 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 템플릿 스캐폴딩</h3>
-          <p><code>agents-cli</code>로 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 타겟의 표준 프로젝트를 생성합니다. <span class="track-only" data-track="agent_runtime">(<code>agent_runtime</code> 타겟은 4개 <code>MANAGED_NATIVE</code> 항목이 기본 인식되어 시작 점수가 약 <code>31.8 / 100</code>부터 출발합니다.)</span></p>
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label" data-auto-tpl="1">bash · agents-cli ({{TARGET_KEY}}) 스캐폴딩</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="mkdir -p ~/agent-lab && cd ~/agent-lab
-uvx google-agents-cli scaffold create {{AGENT_NAME}} \
-  --agent adk_python \
-  --deployment-target {{TARGET_KEY}} \
-  --region {{REGION}} \
+agents-cli scaffold create {{AGENT_NAME}} \
+  --agent adk \
+  --deployment-target none \
+  --prototype \
+  --skip-checks \
   --yes
+
 cd {{AGENT_NAME}}
 uv sync"></pre>
-          </div>
+          <div class="code-output">✅ Success! Your agent project is ready.
+💡 Tip: Add a deployment target later with: agents-cli scaffold enhance</div>
         </div>
 
-        <div class="tab-panel" data-tabgroup="step1" data-tab="manual">
-          <h3>1-1. 프로젝트 디렉터리 및 <code>pyproject.toml</code> · <code>app/agent.py</code> 직접 생성</h3>
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · 최소 ADK 에이전트 생성</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="mkdir -p ~/agent-lab/{{AGENT_NAME}}/app
-cd ~/agent-lab/{{AGENT_NAME}}
-
-cat &lt;&lt; 'EOF' &gt; pyproject.toml
-[project]
-name = &quot;{{AGENT_NAME}}&quot;
-version = &quot;0.1.0&quot;
-description = &quot;Simple ADK Currency Assistant for Production-Readiness Lab&quot;
-requires-python = &quot;&gt;=3.11&quot;
-dependencies = [
-    &quot;google-adk&gt;=1.0.0&quot;,
-    &quot;fastapi&gt;=0.115.0&quot;,
-    &quot;uvicorn&gt;=0.32.0&quot;,
-    &quot;python-dotenv&gt;=1.0.1&quot;,
-]
-EOF
-
-touch app/__init__.py
-
-cat &lt;&lt; 'EOF' &gt; app/agent.py
-from google.adk.agents import Agent
-from google.adk.apps import App
-from google.adk.models import Gemini
-from google.genai import types
-
-def get_exchange_rate(currency_from: str = &quot;USD&quot;, currency_to: str = &quot;KRW&quot;) -&gt; dict:
-    &quot;&quot;&quot;Returns a sample FX exchange rate between two currencies.&quot;&quot;&quot;
-    sample_rates = {(&quot;USD&quot;, &quot;KRW&quot;): 1385.50, (&quot;EUR&quot;, &quot;KRW&quot;): 1498.20, (&quot;JPY&quot;, &quot;KRW&quot;): 9.12}
-    rate = sample_rates.get((currency_from.upper(), currency_to.upper()), 1.0)
-    return {&quot;from&quot;: currency_from.upper(), &quot;to&quot;: currency_to.upper(), &quot;rate&quot;: rate}
-
-root_agent = Agent(
-    name=&quot;root_agent&quot;,
-    model=Gemini(model=&quot;gemini-2.5-flash&quot;, retry_options=types.HttpRetryOptions(attempts=3)),
-    instruction=&quot;You are a concise enterprise currency assistant. Use get_exchange_rate when asked.&quot;,
-    tools=[get_exchange_rate],
-)
-
-app = App(root_agent=root_agent, name=&quot;app&quot;)
-EOF
-
-uv sync
-uv run python -c &quot;from app.agent import root_agent, app; print('Loaded:', root_agent.name, 'app:', app.name)&quot;"></pre>
-            <div class="code-output">Loaded: root_agent app: app</div>
+        <h3>1-2. 생성된 ADK 코드 확인 및 <code>agents-cli run</code> 로컬 실행 테스트</h3>
+        <p>
+          생성된 <code>app/agent.py</code> 구조를 확인하고, Step 0에서 설치한 <strong><code>agents-cli run</code></strong>으로 로컬 서버 기동부터 도구 호출·응답까지 한 번에 검증합니다.
+          <strong>이후 Step 3에서 <code>Agent Runtime</code>과 <code>Cloud Run</code> 중 무엇을 고르든 이 에이전트 코드는 그대로 유지됩니다.</strong>
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · ADK 구조 확인 및 agents-cli run 로컬 스모크 테스트</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
+          <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+ls -la app/
+agents-cli run &quot;What is the weather in San Francisco?&quot;"></pre>
+          <div class="code-output">[user]: What is the weather in San Francisco?
+[root_agent]:
+[tool_call: get_weather({"query": "San Francisco"})]
+[tool_response: get_weather -> {"result": "It's 60 degrees and foggy."}]
+The weather in San Francisco is 60 degrees and foggy.
+Local server stopped.</div>
         </div>
 
-        <div class="tab-panel" data-tabgroup="step1" data-tab="existing">
-          <h3>1-1. 기존에 개발 중인 Agent 프로젝트 바로 연결하기</h3>
-          <p>
-            이미 로컬에 개발 중인 Google ADK 또는 Python 에이전트 코드가 있다면 새 프로젝트를 만들지 않고 그대로 활용할 수 있습니다.
-            <code>agent-production-readiness</code> 스킬이 기존 구조(단순 프로토타입 / <code>agents-cli</code> 프로젝트 모두 지원)를 자동 감지해 진단·패치합니다.
+        <div class="callout callout-blue">
+          <div class="callout-title">💡 왜 <code>agents-cli</code> Prototype First로 시작하나요?</div>
+          <p style="margin-top:4px;">
+            실습은 Google Cloud 권장 표준인 <code>agents-cli</code> 단일 경로로 진행합니다. 먼저 에이전트 로직과 평가 구조에만 집중해 개발한 뒤, 배포 시점(<strong>Step 3~4</strong>)에 런타임을 선택하고 <code>agents-cli scaffold enhance</code> 한 줄로 원하는 인프라만 붙일 수 있습니다.
+            <span style="color:var(--ink-faint);">(참고: <code>agent-production-readiness</code> 스킬 자체는 <code>agents-cli</code> 없이 직접 작성한 순수 <code>app/agent.py</code> 프로젝트에서도 동일하게 동작합니다.)</span>
           </p>
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · 기존 Agent 프로젝트 폴더 이동 및 환경 확인</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="# 기존 에이전트 프로젝트 루트 경로로 이동 (실제 경로로 변경)
-cd /path/to/{{AGENT_NAME}}
-
-# 프로젝트 구조 및 의존성 동기화 확인
-ls -la
-uv sync"></pre>
-          </div>
-          <div class="callout callout-blue">
-            <div class="callout-title">💡 기존 코드로 실습할 때 참고</div>
-            <p>이후 <strong>Step 2 ~ Step 5</strong>의 <code>cd ~/agent-lab/{{AGENT_NAME}}</code> 명령 대신 본인 기존 프로젝트 경로에서 그대로 진행하시면 됩니다. <code>0-1</code>의 <strong>실습 Agent 서비스명</strong>을 본인 서비스명으로 입력해 두면 배포·진단 명령어도 자동으로 맞춰집니다.</p>
-          </div>
         </div>
 
         <div class="step-footer">
@@ -1727,7 +1704,7 @@ uv sync"></pre>
       <section class="card card-pad-lg lab-step" data-step="2" id="step-2">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 2 / 8</span>
+            <span class="pill pill-navy mono">STEP 2 / 10</span>
             <span class="pill pill-blue mono">PLAY 01</span>
             <span class="pill pill-gray mono">약 3분</span>
             <h2>Agent Skill 설치 및 <code>agy</code> 실행 · 확인</h2>
@@ -1785,95 +1762,180 @@ agy"></pre>
         </div>
 
         <div class="callout callout-green">
-          <div class="callout-title">✅ 준비 완료 · <code>agy</code> 대화창을 그대로 열어 두세요</div>
-          <p>스킬 목록에 <code>agent-production-readiness</code>가 보이면 설치 완료입니다! 열린 <code>agy &gt;</code> 창을 닫지 않고 다음 단계(<strong>Play 02</strong>)로 바로 이어갑니다. (<code>agy</code> 없는 CI/헤드리스 환경이라면 2-1 설치만 마치고 바로 Step 3의 <strong>방법 B</strong>로 이동하세요.)</p>
+          <div class="callout-title">✅ 준비 완료 · 이제 배포할 런타임 환경을 선택합니다</div>
+          <p>스킬 목록에 <code>agent-production-readiness</code>가 보이면 설치 완료입니다! 다음 단계(<strong>Step 3</strong>)에서 이 ADK 에이전트를 <strong>Agent Runtime</strong>과 <strong>Cloud Run</strong> 중 어디에 배포할지 선택합니다.</p>
         </div>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(1)">← 이전 (Step 1)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(2)">Step 2 완료하고 Step 3(Play 02)로 이동 →</button>
+          <button class="btn btn-primary" onclick="completeAndNext(2)">Step 2 완료하고 Step 3(배포 환경 선택)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 3 (PLAY 02: agy 사전 진단 Before) ==================== -->
+      <!-- ==================== STEP 3 (DEPLOYMENT RUNTIME SELECTION — Original Dual-Track UI Reused) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="3" id="step-3">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 3 / 8</span>
-            <span class="pill pill-blue mono">PLAY 02</span>
-            <span class="pill pill-gray mono">약 6분</span>
-            <h2><code>agy</code>로 사전 진단 (Before Scan)</h2>
+            <span class="pill pill-navy mono">STEP 3 / 10</span>
+            <span class="pill pill-amber mono">RUNTIME DECISION</span>
+            <span class="pill pill-gray mono">약 2분</span>
+            <h2>배포 환경 선택 (<code>Agent Runtime</code> vs <code>Cloud Run</code>)</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(3)">✓ 완료 표시</button>
         </div>
 
+        <div id="landingView">
+          <section class="home-hero">
+            <div>
+              <div class="home-hero-eyebrow">
+                <span class="google-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+                <span>DUAL-TRACK ARCHITECTURE LAB</span>
+              </div>
+              <h1>프로덕션 AI 에이전트, 어떤 런타임으로 배포할까요?</h1>
+              <p>Agent Runtime과 Cloud Run의 특징과 선택 기준을 비교하고, 원하는 카드를 클릭해 다음 단계(인프라 추가)로 진행하세요.</p>
+            </div>
+          </section>
+
+          <section id="landingTrackGrid" class="home-track-grid" aria-label="배포 런타임 트랙 선택"></section>
+
+          <aside class="home-tip-bar" aria-label="배포 선택 팁">
+            <div class="home-tip-icon" aria-hidden="true">✓</div>
+            <div class="home-tip-body">
+              <h4>배포 팁 · 망설여진다면 Cloud Run으로 시작하세요</h4>
+              <p>
+                코드 변경 없이 두 환경을 오갈 수 있으므로, 우선 비용 부담이 적은 <strong>Cloud Run으로 시작</strong>하는 것을 권장합니다.
+                장기 문맥 유지가 중요해지면 단일 명령어(<code>agents-cli scaffold enhance . --deployment-target agent_runtime</code> 또는 <code>agents-cli deploy</code>)로 타겟만 전환할 수 있습니다.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(2)">← 이전 (Step 2)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(3)">선택 완료 · <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 기준 Step 4(인프라 추가)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 4 (INFRA ENHANCE: scaffold enhance + Agent Runtime APIs) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 4 / 10</span>
+            <span class="pill pill-blue mono">INFRA ENHANCE</span>
+            <span class="pill pill-gray mono">약 3분</span>
+            <h2><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 배포 인프라 추가 (<code>agents-cli scaffold enhance</code>)</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
+        </div>
+
         <p>
-          <strong>Play 02</strong>에서는 열어 둔 <strong>Antigravity CLI (<code>agy</code>) 대화창에 자연어로 지시</strong>하여
-          운영 환경 프로필을 선택한 뒤 <code>scan</code>(7대 도메인 · 15개 핵심 프로덕션 항목 정적 점검)을 실행해 패치 전(Before) 점수와 취약점을 파악합니다.
+          Step 3에서 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 타겟의 표준 Terraform 인프라만 현재 ADK 프로젝트에 덧붙입니다.
+          실행 시 <code>Skipping (your code): app/agent.py</code>로 <strong>Step 1에서 만든 에이전트 코드는 단 한 줄도 변경되지 않습니다.</strong>
+          <span class="track-only" data-track="agent_runtime">(<code>agent_runtime</code> 타겟은 4개 <code>MANAGED_NATIVE</code> 항목이 기본 인식됩니다.)</span>
         </p>
 
-        <h3>3-1. Antigravity CLI (<code>agy</code>)로 Before 진단 실행</h3>
-        <div class="tab-bar" data-tabgroup="step3diag">
-          <button class="tab-btn active" onclick="switchTab('step3diag', 'agy', this)">방법 A · Antigravity CLI (agy) 대화형 실행 (권장)</button>
-          <button class="tab-btn" onclick="switchTab('step3diag', 'cli', this)">방법 B · AI CLI 없이 스크립트 직접 실행 (CI/Headless)</button>
+        <h3>4-1. 선택한 런타임(<span data-auto-tpl="1">{{TARGET_LABEL}}</span>) 인프라 스캐폴딩 추가 (<code>agents-cli scaffold enhance</code>)</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label" data-auto-tpl="1">bash · agents-cli scaffold enhance ({{TARGET_KEY}}) — 코드 변경 없이 인프라만 추가</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+
+agents-cli scaffold enhance . \
+  --deployment-target {{TARGET_KEY}} \
+  --region {{REGION}} \
+  --cicd-runner skip \
+  --skip-checks \
+  --yes
+
+uv sync"></pre>
+          <div class="code-output">Skipping (your code):
+  - .env
+  - app/agent.py
+✅ Enhancement complete!</div>
         </div>
 
-        <div class="tab-panel active" data-tabgroup="step3diag" data-tab="agy">
-          <p><strong>① 열려 있는 <code>agy &gt;</code> 대화창에 아래 프롬프트를 그대로 붙여넣으세요:</strong></p>
-          <div class="code-wrap prompt-card">
-            <div class="code-head">
-              <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 기준 scan 요청</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 scan 해줘.
-조치사항에 대해 아직 수정하지 말고, 현재 종합 점수와 주요 RED/AMBER 블로커, Non-Scoring Advisory를 표로 요약해줘."></pre>
-          </div>
-
-          <p><strong>② 진단 실행 전 나타나는 운영 환경 선택 메뉴(Pre-Scan Gate)에서 화살표(<code>↑↓</code>) + <code>Enter</code>로 환경을 고릅니다:</strong></p>
-          <div class="code-wrap track-only" data-track="cloud_run">
-            <div class="code-head">
-              <span class="code-label">agy &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
-            </div>
-            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 15개 핵심 하드닝 (C4.4는 단계적 도입 가이드 주석)
-  2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 14개 하드닝
-  3. 경량 / PoC — 단발성 · 최소 비용 · 핵심 기본선 9개 (Agent Identity·Registry 포함)
-  4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
-          </div>
-          <div class="code-wrap track-only" data-track="agent_runtime">
-            <div class="code-head">
-              <span class="code-label">agy &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
-            </div>
-            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 15개 (플랫폼 자동 4개 + 직접 하드닝 11개)
-  2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 14개 (플랫폼 자동 4개 + 직접 하드닝 10개)
-  3. 경량 / PoC — 단발성 · 핵심 기본선 9개 (플랫폼 자동 3개 + 직접 하드닝 6개)
-  4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
-          </div>
-
-          <div class="callout callout-blue">
-            <div class="callout-title">💡 프로필 선택 &amp; <code>agy</code> 실행 팁</div>
-            <ul style="margin:6px 0 0 18px;">
-              <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>15개 풀 프로덕션</code> / <code>14개 표준 프로덕션</code> / <code>9개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, 불필요한 <code>N/A</code> 항목은 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 15개 체험은 <strong>1번</strong> 권장)</span></li>
-              <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>15개 풀 프로덕션</code> / <code>14개 표준 프로덕션</code> / <code>9개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, Agent Runtime이 기본 제공하는 <strong>4개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 15개 체험은 <strong>1번</strong> 권장)</span></li>
-              <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>3가지 질문(<code>Question 1/3</code>–<code>3/3</code>)</strong> — ① 대화 기억(단발성/멀티턴 Managed) · ② 사내 VPC/DB 연동 · ③ 운영 단계(Agent Gateway · SRE 알람 · Eval 게이트) — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
-              <li><strong>과도한 인프라 강제 변경 금지 &amp; 런타임별 거버넌스 원칙 (v2.1)</strong>: <strong>Agent Identity &amp; Registry(<code>C4.2</code>)</strong>는 Cloud Run·Agent Runtime 모두에 적용하고, <strong>Agent Gateway(<code>C4.4</code>)</strong>는 Agent Runtime에 우선 적용(<code>DRY_RUN</code> 기본)하며 Cloud Run에는 검증된 GA 보안 위에 단계적 도입을 안내하는 주석만 삽입합니다. CPU·메모리·<code>min_instances</code>·인바운드 WAF·PT GSU는 비감점 <code>Advisory</code>로만 안내합니다.</li>
-              <li>권한 확인 창이 뜨면 <strong>Allow(허용)</strong>를 선택하세요. 터미널이 중간에 끊겨도 같은 폴더에서 <code>agy -c</code>를 입력하면 직전 대화에 바로 이어집니다.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="tab-panel" data-tabgroup="step3diag" data-tab="cli">
-          <p><code>agy</code>를 사용할 수 없는 CI/헤드리스 환경에서는 스킬 내부 스크립트를 직접 실행해도 동일한 결과를 얻습니다.</p>
+        <div class="track-only" data-track="agent_runtime">
+          <h3>4-2. Agent Runtime 전용 Agent Gateway &amp; IAP/UAP API 추가 활성화</h3>
+          <p>Agent Runtime 트랙에서는 중앙 아웃바운드 <strong>Agent Gateway(<code>C4.4</code>)</strong>를 우선 적용하므로 아래 3개 API를 추가로 활성화합니다.</p>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label" data-auto-tpl="1">bash · 직접 실행 (scan · {{TARGET_KEY}})</span>
+              <span class="code-label">bash · Agent Runtime 전용 Agent Gateway &amp; IAP/UAP API 추가 활성화</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan . --target {{TARGET_KEY}}"></pre>
+            <pre class="code-pre" data-tpl="gcloud services enable \
+  networkservices.googleapis.com \
+  networksecurity.googleapis.com \
+  iap.googleapis.com \
+  --project={{PROJECT_ID}}"></pre>
           </div>
         </div>
 
-        <h3>3-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 15개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C7.1</code> · v2.1)</h3>
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(3)">← 이전 (Step 3 · 배포 환경 변경)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5(Play 02)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 5 (PLAY 02: agy 사전 진단 Before) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="5" id="step-5">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 5 / 10</span>
+            <span class="pill pill-blue mono">PLAY 02</span>
+            <span class="pill pill-gray mono">약 6분</span>
+            <h2><code>agy</code>로 사전 진단 (Before Scan)</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(5)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          <strong>Play 02</strong>에서는 열어 둔 <strong>Antigravity CLI (<code>agy</code>) 대화창에 자연어로 지시</strong>하여
+          운영 환경 프로필을 선택한 뒤 <code>scan</code>(6대 도메인 · 14개 핵심 프로덕션 항목 정적 점검)을 실행해 패치 전(Before) 점수와 취약점을 파악합니다.
+        </p>
+
+        <h3>5-1. Antigravity CLI (<code>agy</code>)로 Before 진단 실행</h3>
+        <p><strong>① 열려 있는 <code>agy &gt;</code> 대화창에 아래 프롬프트를 그대로 붙여넣으세요:</strong></p>
+        <div class="code-wrap prompt-card">
+          <div class="code-head">
+            <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 기준 scan 요청</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 scan 해줘 (CI/CD 미구축 실습이므로 C7.1은 제외).
+조치사항에 대해 아직 수정하지 말고, 현재 종합 점수와 주요 RED/AMBER 블로커, Non-Scoring Advisory를 표로 요약해줘."></pre>
+        </div>
+
+        <p><strong>② 진단 실행 전 나타나는 운영 환경 선택 메뉴(Pre-Scan Gate)에서 화살표(<code>↑↓</code>) + <code>Enter</code>로 환경을 고릅니다:</strong></p>
+        <div class="code-wrap track-only" data-track="cloud_run">
+          <div class="code-head">
+            <span class="code-label">agy &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
+          </div>
+          <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 14개 핵심 하드닝 (C4.4는 단계적 도입 가이드 주석)
+  2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 13개 하드닝
+  3. 경량 / PoC — 단발성 · 최소 비용 · 핵심 기본선 9개 (Agent Identity·Registry 포함)
+  4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
+        </div>
+        <div class="code-wrap track-only" data-track="agent_runtime">
+          <div class="code-head">
+            <span class="code-label">agy &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
+          </div>
+          <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 14개 (플랫폼 자동 4개 + 직접 하드닝 10개)
+  2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 13개 (플랫폼 자동 4개 + 직접 하드닝 9개)
+  3. 경량 / PoC — 단발성 · 핵심 기본선 9개 (플랫폼 자동 3개 + 직접 하드닝 6개)
+  4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
+        </div>
+
+        <div class="callout callout-blue">
+          <div class="callout-title">💡 프로필 선택</div>
+          <ul style="margin:6px 0 0 18px;">
+            <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>14개 풀 프로덕션</code> / <code>13개 표준 프로덕션</code> / <code>9개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, 불필요한 <code>N/A</code> 항목은 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 14개 체험은 <strong>1번</strong> 권장)</span></li>
+            <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>14개 풀 프로덕션</code> / <code>13개 표준 프로덕션</code> / <code>9개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, Agent Runtime이 기본 제공하는 <strong>4개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 14개 체험은 <strong>1번</strong> 권장)</span></li>
+            <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>3가지 질문(<code>Question 1/3</code>–<code>3/3</code>)</strong> — ① 대화 기억(단발성/멀티턴 Managed) · ② 사내 VPC/DB 연동 · ③ 운영 단계(Agent Gateway · SRE 알람) — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
+          </ul>
+        </div>
+
+        <h3>5-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 14개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C6.2</code> · v2.1)</h3>
         <p class="track-only" data-track="cloud_run">
           Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q3</code>)</strong>에 따라
           <strong>Cloud Run</strong> 환경에서 각 체크포인트가 무엇을 점검·자동 패치하는지, 그리고 <strong>내 선택에서 적용/제외(<code>N/A</code>)되는 항목</strong>이 무엇인지 한눈에 확인할 수 있습니다.
@@ -1881,7 +1943,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
         <p class="track-only" data-track="agent_runtime">
           Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q3</code>)</strong>에 따라
           <strong>Agent Runtime</strong> 환경에서 각 체크포인트가 어떻게 처리되는지 확인할 수 있습니다.
-          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>4개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 11개 항목</strong>을 집중 하드닝합니다.)
+          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>4개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 10개 항목</strong>을 집중 하드닝합니다.)
         </p>
 
         <!-- 프로필 3종 요약 카드 (클릭 시 아래 테이블 강조/필터 연동) -->
@@ -1889,30 +1951,30 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
           <div class="cp-summary-card" data-cp-card="p1" onclick="filterCheckpointProfile('p1')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">1. 풀 프로덕션 (VPC 포함)</span>
-              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">15 / 15 (전체)</span>
-              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">15 / 15 (4 자동 · 11 패치)</span>
+              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">14 / 14 (전체)</span>
+              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">14 / 14 (4 자동 · 10 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. Direct VPC Egress · Managed Sessions &amp; Memory Bank · Agent Identity/Registry · Non-Root 격리 · PromQL SRE 알람 · 공식 Eval 게이트까지 전 영역 15개 풀 하드닝을 적용합니다. (<code>C4.4</code>는 단계적 도입 가이드 주석)</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. 플랫폼 기본 제공 4개 항목에 더해 Memory Bank · PSC-I 사설망 · Agent Identity/Registry · Agent Gateway(<code>DRY_RUN</code>) · ReasoningEngine SRE 알람 · 공식 평가 게이트까지 11개 항목을 집중 하드닝합니다.</p>
-            <div class="cp-sc-meta">적용 범위: <strong>7대 영역 전체</strong> (세션·VPC·신원·게이트웨이·관측성·비용·Eval)</div>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. Direct VPC Egress · Managed Sessions &amp; Memory Bank · Agent Identity/Registry · Non-Root 격리 · PromQL SRE 알람까지 전 영역 14개 풀 하드닝을 적용합니다. (<code>C4.4</code>는 단계적 도입 가이드 주석)</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. 플랫폼 기본 제공 4개 항목에 더해 Memory Bank · PSC-I 사설망 · Agent Identity/Registry · Agent Gateway(<code>DRY_RUN</code>) · ReasoningEngine SRE 알람까지 10개 항목을 집중 하드닝합니다.</p>
+            <div class="cp-sc-meta">적용 범위: <strong>6대 영역 전체</strong> (세션·VPC·신원·게이트웨이·관측성·비용)</div>
           </div>
 
           <div class="cp-summary-card" data-cp-card="p2" onclick="filterCheckpointProfile('p2')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">2. 표준 프로덕션 (외부 API)</span>
-              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">14 / 15 (VPC 제외)</span>
-              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">14 / 15 (4 자동 · 10 패치)</span>
+              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">13 / 14 (VPC 제외)</span>
+              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">13 / 14 (4 자동 · 9 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. 불필요한 사내 VPC 아웃바운드(<code>C3.1</code>)만 제외하고 Agent Identity/Registry 등 나머지 14개 핵심 항목을 모두 적용합니다.</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. PSC-I 사설망(<code>C3.1</code>)만 제외하고 Memory Bank · Agent Identity/Registry · Agent Gateway · SRE 알람 · Eval 게이트를 모두 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. 불필요한 사내 VPC 아웃바운드(<code>C3.1</code>)만 제외하고 Agent Identity/Registry 등 나머지 13개 핵심 항목을 모두 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. PSC-I 사설망(<code>C3.1</code>)만 제외하고 Memory Bank · Agent Identity/Registry · Agent Gateway · SRE 알람을 모두 적용합니다.</p>
             <div class="cp-sc-meta">적용 범위: <strong>사내 VPC(<code>C3.1</code>) 제외</strong> 상용 멀티턴 표준</div>
           </div>
 
           <div class="cp-summary-card" data-cp-card="p3" onclick="filterCheckpointProfile('p3')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">3. 경량 / PoC</span>
-              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">9 / 15 적용</span>
-              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">9 / 15 (3 자동 · 6 패치)</span>
+              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">9 / 14 적용</span>
+              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">9 / 14 (3 자동 · 6 패치)</span>
             </div>
             <p class="cp-sc-desc track-only" data-track="cloud_run">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 추가 인프라 비용이 없는 <strong>공통 기본선 9개</strong>(<code>C4.2</code> Agent Identity/Registry 포함)만 적용해 불필요한 <code>N/A</code> 경고를 모두 제거합니다.</p>
             <p class="cp-sc-desc track-only" data-track="agent_runtime">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 공통 기본선 9개(플랫폼 자동 3개 + 코드/IAM/Agent Identity/비루트/비용 가드 6개)만 적용해 불필요한 <code>N/A</code> 경고를 제거합니다.</p>
@@ -1926,21 +1988,21 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
           <div class="cp-q-grid track-only" data-track="cloud_run">
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q1 멀티턴·장기기억</span><span>+ <code>C2.1</code>(Managed Sessions) · <code>C2.2</code>(Memory Bank)</span></div>
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 사내 DB·VPC</span><span>+ <code>C3.1</code>(Direct VPC Egress — 기존 <code>var.vpc_network_name</code>/<code>vpc_subnet_name</code> 바인딩)</span></div>
-            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 거버넌스/Eval</span><span>+ <code>C4.4</code>(단계적 도입 주석) · <code>C5.3</code>(PromQL SRE 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 거버넌스/알람</span><span>+ <code>C4.4</code>(단계적 도입 주석) · <code>C5.3</code>(PromQL SRE 알람)</span></div>
           </div>
           <div class="cp-q-grid track-only" data-track="agent_runtime">
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q1 멀티턴·장기기억</span><span>+ <code>C2.1</code>(⚡ 세션 자동) · <code>C2.2</code>(Memory Bank)</span></div>
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 사내 DB·VPC</span><span>+ <code>C3.1</code>(PSC Interface Network Attachment + <code>/28</code> PGA 서브넷)</span></div>
-            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 게이트웨이/Eval</span><span>+ <code>C4.4</code>(Agent Gateway <code>DRY_RUN</code>) · <code>C5.3</code>(ReasoningEngine 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 게이트웨이/알람</span><span>+ <code>C4.4</code>(Agent Gateway <code>DRY_RUN</code>) · <code>C5.3</code>(ReasoningEngine 알람)</span></div>
           </div>
         </div>
 
         <!-- 인터랙티브 프로필 필터 바 -->
         <div class="cp-toolbar">
           <div class="cp-filter-group" role="tablist" aria-label="프로필별 테이블 필터">
-            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (15개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 풀 프로덕션 (15개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')">2. 표준 프로덕션 (14개)</button>
+            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (14개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 풀 프로덕션 (14개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')">2. 표준 프로덕션 (13개)</button>
             <button type="button" class="cp-filter-btn" data-cp-filter="p3" onclick="filterCheckpointProfile('p3')">3. 경량 PoC (9개)</button>
           </div>
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
@@ -1956,15 +2018,15 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
           </div>
         </div>
 
-        <!-- 15개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
+        <!-- 14개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
         <div class="cp-matrix-wrap">
           <table class="cp-matrix-table" id="cpMatrixTable">
             <thead>
               <tr>
                 <th style="width:84px;">ID · 등급</th>
                 <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 체크포인트 의미 · 프로덕션 Best Practice · 자동 패치 내역</th>
-                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션 (사내 VPC 포함 · 15개)">1. 풀<br><span style="font-weight:500;color:var(--ink-faint);">(15)</span></th>
-                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션 (외부 API · 14개)">2. 표준<br><span style="font-weight:500;color:var(--ink-faint);">(14)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션 (사내 VPC 포함 · 14개)">1. 풀<br><span style="font-weight:500;color:var(--ink-faint);">(14)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션 (외부 API · 13개)">2. 표준<br><span style="font-weight:500;color:var(--ink-faint);">(13)</span></th>
                 <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 경량 / PoC (9개)">3. PoC<br><span style="font-weight:500;color:var(--ink-faint);">(9)</span></th>
               </tr>
             </thead>
@@ -2063,7 +2125,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                   <div class="cp-ba-list track-only" data-track="cloud_run">
                     <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>휘발성 메모리 세션(<code>InMemorySessionService</code>)을 사용 중인지, 또는 외부 영속 세션 서비스 연동이 누락되어 있는지 체크합니다.</span></div>
                     <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>별도 DB 구축·운영 부담이 없는 <strong>Agent Platform Managed Session Service(<code>VertexAiSessionService</code> / <code>agentengine://</code>)</strong>를 기본 사용하여 모든 컨테이너가 중앙 세션을 공유하도록 설계해야 합니다. <em>(※ 폐쇄망 규제 등 특수 요건 시에만 Self-Hosted Cloud SQL / Memorystore Redis 자체 구축 옵션 선택)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/services.py</code>를 생성해 <code>GOOGLE_CLOUD_AGENT_ENGINE_ID</code>가 설정되면 <strong>Managed Session Service</strong>를 반환하도록 구성하고, <code>app/fast_api_app.py</code>의 <code>get_fast_api_app(session_service_uri=...)</code> 및 <code>service.tf</code> 환경변수를 자동 연결합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/services.py</code>를 생성해 <code>AGENT_ENGINE_SESSION_ID</code>가 설정되면 <strong>Managed Session Service</strong>를 반환하도록 구성하고(Cloud Run OTel 리소스 감지 충돌 방지), <code>app/fast_api_app.py</code>의 <code>get_fast_api_app(session_service_uri=...)</code> 및 <code>service.tf</code> 환경변수를 자동 연결합니다.</span></div>
                   </div>
                   <div class="cp-ba-list track-only" data-track="agent_runtime">
                     <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Agent Runtime은 별도 설정 없이도 플랫폼 내장 <strong>Managed Session Service</strong>가 자동 바인딩되어 멀티턴 대화를 영속 저장합니다.</span></div>
@@ -2151,19 +2213,19 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                 <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
                 <td>
                   <div class="cp-title-row">
-                    <span class="cp-title">최소 권한 전용 서비스 계정(SA) &amp; Secret 버전 고정</span>
+                    <span class="cp-title">최소 권한 IAM (Agent Identity / 전용 SA) &amp; Secret 버전 고정</span>
                   </div>
                   <p class="cp-desc">
                     에이전트 런타임에 과도한 IAM 권한(예: 버킷 삭제가 가능한 <code>roles/storage.admin</code>이나 미사용 DB 권한)이 부여되어 있으면, 프롬프트 인젝션이나 도구 취약점 발생 시 프로젝트 전체 데이터 삭제로 피해가 확산됩니다.
                   </p>
                   <div class="cp-ba-list track-only" data-track="cloud_run">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>variables.tf</code>의 서비스 계정 권한에 <code>roles/storage.admin</code>이 포함되어 있는지, Secret Manager 참조가 <code>latest</code>로 열려 있는지 점검합니다. <em>(리소스 정리를 막는 <code>deletion_protection</code>은 강제 변경하지 않음)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>전용 SA 권한을 객체 읽기/쓰기만 가능한 <strong><code>roles/storage.objectUser</code></strong>로 축소하고, Secret은 검증된 특정 버전(<code>"1"</code>)으로 고정해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>variables.tf</code>의 런타임 IAM 권한에 <code>roles/storage.admin</code>이 포함되어 있는지, Secret Manager 참조가 <code>latest</code>로 열려 있는지 점검합니다. <em>(리소스 정리를 막는 <code>deletion_protection</code>은 강제 변경하지 않음)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>에이전트 런타임 권한을 객체 읽기/쓰기만 가능한 <strong><code>roles/storage.objectUser</code></strong>로 축소하고, Secret은 검증된 특정 버전(<code>"1"</code>)으로 고정해야 합니다.</span></div>
                     <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>variables.tf</code>의 <code>roles/storage.admin</code>을 <code>roles/storage.objectUser</code>로 교체하고, Secret 버전 <code>"latest"</code>를 고정 버전으로 자동 패치합니다.</span></div>
                   </div>
                   <div class="cp-ba-list track-only" data-track="agent_runtime">
                     <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>variables.tf</code>의 <code>app_sa_roles</code>에 과도한 <code>roles/storage.admin</code>이나 사용하지 않는 <code>roles/cloudsql.client</code> 권한이 부여되어 있는지 점검합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>에이전트 전용 SA에서 불필요한 <code>roles/cloudsql.client</code>를 제거하고 <strong><code>roles/storage.objectUser</code></strong> 등 실제 필요한 최소 권한만 유지해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>에이전트 런타임 권한에서 불필요한 <code>roles/cloudsql.client</code>를 제거하고 <strong><code>roles/storage.objectUser</code></strong> 등 실제 필요한 최소 권한만 유지해야 합니다.</span></div>
                     <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>variables.tf</code>에서 <code>roles/storage.admin</code> → <code>roles/storage.objectUser</code> 축소 및 미사용 <code>roles/cloudsql.client</code> 제거를 수행하고, Secret 버전을 고정합니다.</span></div>
                   </div>
                   <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/variables.tf</code><code>deployment/terraform/service.tf</code></div>
@@ -2183,15 +2245,15 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                   </p>
                   <div class="cp-ba-list track-only" data-track="cloud_run">
                     <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>에 <code>functional_type = "FUNCTIONAL_TYPE_AGENT"</code> 및 <code>identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"</code> 선언 여부와 <code>apis.tf</code>의 <code>agentregistry.googleapis.com</code> 활성화 여부를 점검합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Cloud Run 에이전트에 <strong><code>FUNCTIONAL_TYPE_AGENT</code></strong>와 <strong><code>IDENTITY_TYPE_AGENT_IDENTITY</code></strong>를 지정해 에이전트별 SPIFFE ID를 발급하고 Agent Registry 자동 등록을 활성화합니다. <em>(<code>service_account</code>와 상호 배타)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>·<code>apphub.googleapis.com</code>을 추가하고, <code>service.tf</code>에 <code>functional_type</code>·<code>identity_type</code>을 주입하며 기존 <code>service_account</code> 충돌을 자동 정리합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Cloud Run 에이전트에 <strong><code>FUNCTIONAL_TYPE_AGENT</code></strong>와 <strong><code>IDENTITY_TYPE_AGENT_IDENTITY</code></strong>를 지정해 에이전트별 SPIFFE ID를 발급하고 <code>iam.tf</code>에서 SPIFFE Principal에 직접 최소 권한을 바인딩합니다. <em>(<code>service_account</code>와 상호 배타 · MCP 서버만 전용 SA 유지)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>·<code>apphub.googleapis.com</code>을 추가하고, <code>service.tf</code>에 <code>functional_type</code>·<code>identity_type</code>을 주입하며 <code>iam.tf</code>에 <code>agent_identity_roles</code> SPIFFE 바인딩을 자동 추가합니다.</span></div>
                   </div>
                   <div class="cp-ba-list track-only" data-track="agent_runtime">
                     <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>의 <code>spec.identity_type = "AGENT_IDENTITY"</code> 선언 여부와 <code>apis.tf</code>의 <code>agentregistry.googleapis.com</code> 활성화 여부를 점검합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Agent Runtime에 <strong><code>identity_type = "AGENT_IDENTITY"</code></strong>를 활성화해 플랫폼이 에이전트 수명주기에 바인딩된 SPIFFE ID를 자동 발급하고 Agent Registry에 등록하도록 구성합니다. <em>(<code>service_account</code>와 상호 배타)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>·<code>apphub.googleapis.com</code>을 추가하고, <code>service.tf</code> <code>spec</code> 블록에 <code>identity_type = "AGENT_IDENTITY"</code>를 설정하며 기존 <code>service_account</code>를 정리합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Agent Runtime에 <strong><code>identity_type = "AGENT_IDENTITY"</code></strong>를 활성화해 플랫폼이 SPIFFE ID를 자동 발급하고, <code>iam.tf</code>에서 <code>spec[0].effective_identity</code>에 최소 권한을 직접 바인딩합니다. <em>(<code>service_account</code>와 상호 배타)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>·<code>apphub.googleapis.com</code>을 추가하고, <code>service.tf</code>에 <code>identity_type = "AGENT_IDENTITY"</code>를 설정하며 <code>iam.tf</code>에 <code>spec[0].effective_identity</code> 기반 IAM 바인딩을 자동 추가합니다.</span></div>
                   </div>
-                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>deployment/terraform/apis.tf</code></div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>deployment/terraform/iam.tf</code><code>deployment/terraform/apis.tf</code></div>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
@@ -2275,16 +2337,16 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                     에이전트 응답이 느려졌을 때 분산 트레이싱이 없으면 Gemini 모델 추론이 느린지, 외부 도구 API가 느린지, 서브에이전트 라우팅이 반복된 것인지 병목 구간을 전혀 찾을 수 없습니다.
                   </p>
                   <div class="cp-ba-list track-only" data-track="cloud_run">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>Cloud Trace 연동 옵션(<code>otel_to_cloud = True</code>)과 OpenTelemetry GenAI 시맨틱 컨벤션 환경변수가 활성화되어 있는지 점검합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>ADK FastAPI 앱에서 <strong><code>otel_to_cloud = True</code></strong>를 켜고 <strong><code>OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"</code></strong>을 설정해 모든 LLM·도구 스팬을 Cloud Trace로 수집해야 합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/fast_api_app.py</code>에 <code>otel_to_cloud=True</code>를 설정하고, <code>service.tf</code> 컨테이너 환경변수에 <code>OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"</code>을 자동 주입합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>Cloud Trace 연동 옵션(<code>otel_to_cloud = True</code>), <code>pyproject.toml</code>의 <code>google-adk[gcp,otel-gcp]</code> 의존성, 그리고 OpenTelemetry GenAI 시맨틱 컨벤션 환경변수가 활성화되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>ADK FastAPI 앱에서 <strong><code>otel_to_cloud = True</code></strong>와 <code>google-adk[gcp,otel-gcp]</code>를 갖추고 <strong><code>OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"</code></strong> 및 <code>roles/cloudtrace.agent</code> · <code>roles/monitoring.metricWriter</code>를 설정해 모든 LLM·도구 스팬을 Cloud Trace로 수집합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/fast_api_app.py</code>에 <code>otel_to_cloud=True</code>를 강제 활성화하고, <code>pyproject.toml</code>에 <code>google-adk[gcp,otel-gcp]</code>, <code>variables.tf</code>에 <code>roles/monitoring.metricWriter</code>, <code>service.tf</code>에 <code>OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"</code>을 자동 주입합니다.</span></div>
                   </div>
                   <div class="cp-ba-list track-only" data-track="agent_runtime">
                     <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Agent Runtime은 <code>GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"</code> 설정만으로 플랫폼이 Cloud Trace 분산 스팬을 자동 수집합니다.</span></div>
                     <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>플랫폼 내장 텔레메트리 환경변수를 활성화하고 GenAI 시맨틱 컨벤션 표준을 유지합니다.</span></div>
                     <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>service.tf</code> 내 <code>GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"</code> 설정을 검증·유지하고 자동 통과 처리합니다.</span></div>
                   </div>
-                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>app/fast_api_app.py</code></div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>app/fast_api_app.py</code><code>pyproject.toml</code><code>deployment/terraform/variables.tf</code></div>
                   <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
@@ -2388,235 +2450,105 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                 <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
               </tr>
 
-              <!-- D7 -->
-              <tr class="cp-domain-row">
-                <td colspan="5">
-                  <div class="cp-domain-head">
-                    <span class="cp-domain-name">7️⃣ Day-2 CI/CD 품질 게이트 (CI/CD &amp; Eval Gate · 1개 항목)</span>
-                    <span class="cp-domain-weight">도메인 가중치 1x</span>
-                  </div>
-                </td>
-              </tr>
-              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
-                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C7.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
-                <td>
-                  <div class="cp-title-row">
-                    <span class="cp-title">CI/CD 공식 <code>agents-cli eval run</code> 자동 품질 평가 게이트</span>
-                  </div>
-                  <p class="cp-desc">
-                    프롬프트 한 줄이나 도구 설명만 수정해도 에이전트가 엉뚱한 도구를 호출하거나 답변 품질이 급락(Regression)할 수 있습니다. 일반 단위 테스트(pytest)만으로는 에이전트 지능 저하를 걸러낼 수 없습니다.
-                  </p>
-                  <div class="cp-ba-list">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>CI/CD 파이프라인(<code>.cloudbuild/staging.yaml</code>)에 스테이징 배포 직후 골든 데이터셋으로 에이전트 품질을 검증하는 <code>agents-cli eval run</code> 단계가 있는지 체크합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>스테이징 배포 후 <strong><code>uvx google-agents-cli eval run --dataset tests/eval/datasets/smoke_dataset.json --metrics tool_trajectory_avg_score,response_match_score</code></strong>를 자동 실행해 합격 기준 미달 시 프로덕션 승격을 차단해야 합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>tests/eval/eval_config.yaml</code> 및 골든 데이터셋(<code>smoke_dataset.json</code>)을 생성하고, <code>.cloudbuild/staging.yaml</code>에 공식 <code>agents-cli eval run</code> 품질 게이트 스텝을 삽입합니다.</span></div>
-                  </div>
-                  <div class="cp-meta"><span>📄 파일:</span><code>.cloudbuild/staging.yaml</code><code>tests/eval/eval_config.yaml</code><code>tests/eval/datasets/smoke_dataset.json</code></div>
-                </td>
-                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
-                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
-                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
-              </tr>
             </tbody>
           </table>
         </div>
 
-        <h3>3-3. 예상 진단 결과 (Before Hardening · 1번 전체 기준)</h3>
-        <div class="track-only" data-track="cloud_run">
-          <div class="code-wrap">
-            <div class="code-output" style="border-top:none;">Target: cloud_run  |  Weighted Score: 6.8 / 100.0 (Mode B 스캐폴딩 시작 시: 22.7 / 100.0 · 🔴 Not Production Ready)
-Advisories: 사이징 · 인바운드 인증/WAF · Cloud Run 단계적 거버넌스(C4.4) · Model Armor Floor Settings · PT SLA 안내
-주요 RED/AMBER: InMemory 세션·Memory Bank 미연동 / Agent Identity·Registry 미구성 / Non-Root·최소권한 SA 미비 / Trace PII 평문 / 루프 가드·Eval 누락</div>
-          </div>
-        </div>
-        <div class="track-only" data-track="agent_runtime">
-          <div class="code-wrap">
-            <div class="code-output" style="border-top:none;">Target: agent_runtime  |  Weighted Score: 2.3 / 100.0 (Mode B 스캐폴딩 시작 시: 31.8 / 100.0 · 4 MANAGED_NATIVE)
-Gate Verdict: 🔴 Not Production Ready
-주요 RED/AMBER: Memory Bank 미연동 / PSC-I 미구성 / Agent Identity·Registry 및 Agent Gateway(DRY_RUN) 미구성 / 과권한 SA / Trace PII 평문 / 루프 가드·SRE 알람·Eval 누락</div>
-          </div>
-        </div>
-
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(2)">← 이전 (Step 2)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(3)">Step 3 완료하고 Step 4(Play 03)로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(Play 03)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 4 (PLAY 03: 15개 핵심 항목 자동 하드닝) ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
+      <!-- ==================== STEP 6 (PLAY 03: 14개 핵심 항목 자동 하드닝) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="6" id="step-6">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 4 / 8</span>
+            <span class="pill pill-navy mono">STEP 6 / 10</span>
             <span class="pill pill-blue mono">PLAY 03</span>
             <span class="pill pill-gray mono">약 7분</span>
-            <h2><code>agy</code>로 15개 핵심 프로덕션 항목 자동 하드닝</h2>
+            <h2><code>agy</code>로 14개 핵심 프로덕션 항목 자동 하드닝</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(6)">✓ 완료 표시</button>
         </div>
 
         <p>
           <strong>Play 03</strong>에서는 열려 있는 <code>agy</code> 대화창에서 그대로 이어서 <strong>Diff 검토 → 프로덕션 항목 일괄 패치 → <code>uv lock</code> → 재검증(<code>100.0점</code>) → 보안 리포트(<code>READINESS_REPORT.md / .html</code>) 생성</strong>까지 한 번에 진행합니다.
+          생성된 리포트에는 <strong>Google Cloud 공식 Best Practice 14개 검증 결과</strong>와 함께, 조직 정책에 따라 사용자가 선택 후 직접 설정할 항목(<strong>Post-Setup Decision Guide</strong>) 체크리스트가 함께 정리됩니다.
         </p>
 
-        <div class="tab-bar" data-tabgroup="step4harden">
-          <button class="tab-btn active" onclick="switchTab('step4harden', 'agy', this)">방법 A · Antigravity CLI (agy) 대화형 자동 패치 (권장)</button>
-          <button class="tab-btn" onclick="switchTab('step4harden', 'cli', this)">방법 B · 스크립트 직접 실행 (CI/Headless)</button>
-        </div>
-
-        <div class="tab-panel active" data-tabgroup="step4harden" data-tab="agy">
-          <div class="code-wrap prompt-card">
-            <div class="code-head">
-              <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 자동 하드닝 패치 &amp; 재검증 요청</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="방금 진단한 {{TARGET_LABEL}} 운영 프로필 기준으로 수정될 파일별 주요 변경점(diff)을 요약해 주고, 프로덕션 하드닝 패치를 적용(apply)해줘.
+        <div class="code-wrap prompt-card">
+          <div class="code-head">
+            <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 자동 하드닝 패치 &amp; 재검증 요청</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="방금 진단한 {{TARGET_LABEL}} 운영 프로필 기준으로 수정될 파일별 주요 변경점(diff)을 요약해 주고, 프로덕션 하드닝 패치를 적용(apply)해줘.
 패치 완료 후에는 순서대로:
 1) `uv lock` 으로 의존성 lockfile 을 갱신하고,
 2) 동일한 프로필 기준으로 scan 을 다시 실행해 100.0점 (🟢 Production Ready) 통과를 검증한 뒤,
 3) 보안·인프라 심의 제출용 READINESS_REPORT.md 와 READINESS_REPORT.html 을 생성해줘."></pre>
-          </div>
-        </div>
-
-        <div class="tab-panel" data-tabgroup="step4harden" data-tab="cli">
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label" data-auto-tpl="1">bash · diff → apply → uv lock → scan → report ({{TARGET_KEY}})</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-export SKILL_BIN=&quot;$HOME/.gemini/skills/agent-production-readiness/scripts/prod_ready.py&quot;
-
-# ① 1번(풀 프로덕션 15개) 기준 실행 예시
-#    - 2번(표준 프로덕션 14개) 선택 시: --items C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1 로 변경
-#    - 3번(경량 PoC 9개) 선택 시: --items C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2 로 변경
-python3 &quot;$SKILL_BIN&quot; diff . --target {{TARGET_KEY}} --items ALL | head -n 60
-python3 &quot;$SKILL_BIN&quot; apply . --target {{TARGET_KEY}} --items ALL
-uv lock
-python3 &quot;$SKILL_BIN&quot; scan . --target {{TARGET_KEY}} --items ALL
-python3 &quot;$SKILL_BIN&quot; report . --target {{TARGET_KEY}} --items ALL -o READINESS_REPORT.md"></pre>
-            <div class="code-output">✅ Readiness Score: 100.0 / 100.0 (🟢 Production Ready)
+          <div class="code-output">✅ Readiness Score: 100.0 / 100.0 (🟢 Production Ready)
 📄 Exported: READINESS_REPORT.md &amp; READINESS_REPORT.html</div>
-          </div>
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(3)">← 이전 (Step 3)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7(배포)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 5 ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="5" id="step-5">
+      <!-- ==================== STEP 7 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="7" id="step-7">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 5 / 8</span>
+            <span class="pill pill-navy mono">STEP 7 / 10</span>
             <span class="pill pill-gray mono" id="step5TimePill">약 8분</span>
             <h2 data-auto-tpl="1">{{TARGET_LABEL}}에 하드닝된 에이전트 배포하기</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(5)">✓ 완료 표시</button>
-        </div>
-
-        <h3>5-1. 최소 권한 전용 서비스 계정(SA) 생성 (공통)</h3>
-        <p>기본 공유 SA 대신 에이전트 전용 서비스 계정(<code>{{SA_EMAIL}}</code>)을 생성해 최소 권한만 부여합니다.</p>
-        <div class="code-wrap">
-          <div class="code-head">
-            <span class="code-label">bash · 전용 서비스 계정 생성 및 최소 권한 부여</span>
-            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-          </div>
-          <pre class="code-pre" data-tpl="gcloud iam service-accounts create {{SA_ID}} \
-  --display-name=&quot;{{AGENT_NAME}} Runtime SA&quot; \
-  --project={{PROJECT_ID}}
-
-gcloud projects add-iam-policy-binding {{PROJECT_ID}} \
-  --member=&quot;serviceAccount:{{SA_EMAIL}}&quot; \
-  --role=&quot;roles/aiplatform.user&quot;
-
-gcloud projects add-iam-policy-binding {{PROJECT_ID}} \
-  --member=&quot;serviceAccount:{{SA_EMAIL}}&quot; \
-  --role=&quot;roles/logging.logWriter&quot;
-
-gcloud projects add-iam-policy-binding {{PROJECT_ID}} \
-  --member=&quot;serviceAccount:{{SA_EMAIL}}&quot; \
-  --role=&quot;roles/cloudtrace.agent&quot;"></pre>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(7)">✓ 완료 표시</button>
         </div>
 
         <!-- CLOUD RUN DEPLOY -->
         <div class="track-only" data-track="cloud_run">
-          <div class="callout callout-blue" style="margin-top:16px;">
-            <div class="callout-title">🚀 5-2 배포 모드 선택 안내</div>
-            <ul style="margin:6px 0 0 18px;">
-              <li><strong>엔터프라이즈 Terraform + <code>agents-cli deploy</code> (권장 · 기본)</strong> — Step 4에서 하드닝한 전체 인프라(Direct VPC · PromQL SRE 알람 · 최소 권한 SA · 헬스 프로브)를 실제 GCP에 프로비저닝하고 Managed Sessions/Memory Bank 연동 에이전트를 배포합니다. <span style="color:var(--ink-faint);">(약 10~15분 소요 · 실운영/PoC 표준)</span></li>
-              <li><strong>빠른 Cloud Run 배포 (간편 실습)</strong> — 외부 인프라 생성을 생략하고 하드닝된 앱 컨테이너와 전용 SA만 3분 만에 배포합니다. <span style="color:var(--ink-faint);">(Qwiklabs 등 시간·권한이 제한된 샌드박스용)</span></li>
-            </ul>
-          </div>
-
-          <div class="tab-bar" data-tabgroup="step5cr">
-            <button class="tab-btn active" onclick="switchTab('step5cr', 'tf', this)">엔터프라이즈 Terraform + agents-cli 배포 (권장)</button>
-            <button class="tab-btn" onclick="switchTab('step5cr', 'fast', this)">빠른 Cloud Run 배포 (간편 실습 · 3분)</button>
-          </div>
-
-          <div class="tab-panel active" data-tabgroup="step5cr" data-tab="tf">
-            <h3>5-2. Terraform 프로비저닝 + <code>agents-cli deploy</code></h3>
-            <div class="code-wrap">
-              <div class="code-head">
-                <span class="code-label">bash · Terraform + google-agents-cli deploy</span>
-                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-              </div>
-              <pre class="code-pre" data-tpl="# Cloud Shell에 terraform 미설치 시 HashiCorp 공식 저장소에서 자동 설치
+          <h3>7-1. Terraform 프로비저닝 &amp; <code>agents-cli deploy</code></h3>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Terraform + agents-cli deploy</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="# Cloud Shell에 terraform 미설치 시 HashiCorp 공식 저장소에서 자동 설치
 if ! terraform -version 2>/dev/null | grep -q &quot;^Terraform v&quot;; then
   wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
   echo &quot;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?&lt;=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main&quot; | sudo tee /etc/apt/sources.list.d/hashicorp.list
   sudo apt-get update &amp;&amp; sudo apt-get install -y terraform
 fi
 
-cd ~/agent-lab/{{AGENT_NAME}}/deployment/terraform
-terraform init
-terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;
+cd ~/agent-lab/{{AGENT_NAME}}
+ORG_ID=$(gcloud projects get-ancestors {{PROJECT_ID}} --format='value(id)' --filter='type:organization' 2>/dev/null || true)
+TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
+(cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply \
+  -var=&quot;project_id={{PROJECT_ID}}&quot; \
+  -var=&quot;region={{REGION}}&quot; \
+  -var=&quot;organization_id=${ORG_ID}&quot;)
 
-cd ../..
-uvx google-agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --service-account={{SA_EMAIL}} --no-confirm-project"></pre>
-            </div>
+agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --no-confirm-project"></pre>
           </div>
 
-          <div class="tab-panel" data-tabgroup="step5cr" data-tab="fast">
-            <h3>5-2. 빠른 Cloud Run 컨테이너 빌드 및 1차 배포</h3>
-            <div class="code-wrap">
-              <div class="code-head">
-                <span class="code-label">bash · gcloud run deploy --source=.</span>
-                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-              </div>
-              <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-
-gcloud run deploy {{AGENT_NAME}} \
-  --source=. \
-  --region={{REGION}} \
-  --project={{PROJECT_ID}} \
-  --service-account={{SA_EMAIL}} \
-  --set-env-vars=&quot;GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_PROJECT={{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=global&quot; \
-  --cpu=1 \
-  --memory=1Gi \
-  --concurrency=40 \
-  --no-allow-unauthenticated \
-  --quiet"></pre>
-            </div>
-          </div>
-
-          <h3>5-3. 라이브 엔드포인트 스모크 테스트 &amp; Agent Identity / Registry 확인</h3>
+          <h3>7-2. 라이브 엔드포인트 스모크 테스트 &amp; Agent Identity / Registry 확인</h3>
           <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            엔터프라이즈 Cloud Run 및 Qwiklabs 환경(<code>iam.allowedPolicyMemberDomains</code> 조직 정책)은 익명 호출(<code>allUsers</code>)을 차단하므로, 반드시 <strong>IAM Identity Token(<code>Authorization: Bearer ...</code>)</strong> 헤더를 포함해 호출합니다. 또한 <strong>Agent Identity(<code>C4.2</code>)</strong> 활성화 후에는 <code>gcloud agent-registry agents list</code>로 자동 등록 여부를 확인하세요.
+            엔터프라이즈 Cloud Run 및 Qwiklabs 환경(<code>iam.allowedPolicyMemberDomains</code> 조직 정책)은 익명 호출(<code>allUsers</code>)을 차단하므로, 반드시 <strong>IAM Identity Token(<code>Authorization: Bearer ...</code>)</strong> 헤더를 포함해 호출합니다. 이어서 활성 Revision의 <strong>Agent Identity(SPIFFE ID)</strong>와 <code>gcloud beta agent-registry agents list</code> 등록 상태를 확인하세요.
           </p>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · IAM Identity Token 확인 &amp; Agent Identity / Registry 조회</span>
+              <span class="code-label">bash · IAM Identity Token 확인 &amp; Revision Agent Identity / Registry 조회</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
 echo &quot;Deployed URL: ${SERVICE_URL}&quot;
 curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-identity-token)&quot; &quot;${SERVICE_URL}/list-apps&quot; ; echo
 
-# (선택 · 간편 배포로 시작한 경우) Agent Identity + Agent Registry 전환 예시 (--service-account와 상호 배타)
-# gcloud beta run services update {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --functional-type=agent --identity-type=agent-identity --no-traffic
+LATEST_REV=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.latestReadyRevisionName)')
+gcloud beta run revisions describe &quot;${LATEST_REV}&quot; --region={{REGION}} --project={{PROJECT_ID}} --format='yaml(metadata.annotations,spec.serviceAccountName)'
 gcloud beta agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}"></pre>
             <div class="code-output">["app"]</div>
           </div>
@@ -2632,107 +2564,66 @@ gcloud beta agent-registry agents list --location={{REGION}} --project={{PROJECT
 
         <!-- AGENT RUNTIME DEPLOY -->
         <div class="track-only" data-track="agent_runtime">
-          <div class="callout callout-blue">
-            <div class="callout-title">🚀 5-2 Agent Runtime 배포 모드 선택 안내</div>
-            <p style="margin-top:4px;">Agent Runtime은 별도 <code>gcloud</code> 명령 대신 <code>uvx google-agents-cli deploy</code>로 컨테이너를 배포하며 최초 배포는 <strong>5~10분</strong> 소요됩니다(<code>--no-wait</code> + <code>--status</code> 사용).</p>
-            <ul style="margin:6px 0 0 18px;">
-              <li><strong>Terraform PSC-I 포함 엔터프라이즈 배포 (권장 · 기본)</strong> — 사내망 프라이빗 연동용 PSC-I(<code>Network Attachment</code>)와 <code>--agent-identity</code>를 포함해 실제 운영 표준으로 배포합니다.</li>
-              <li><strong>빠른 <code>agents-cli</code> 배포 (간편 실습)</strong> — VPC/PSC-I 프로비저닝 없이 Agent Runtime 컨테이너와 전용 SA만 빠르게 배포합니다.</li>
-            </ul>
-          </div>
-
-          <div class="tab-bar" data-tabgroup="step5ar">
-            <button class="tab-btn active" onclick="switchTab('step5ar', 'tf', this)">Terraform PSC-I 포함 엔터프라이즈 배포 (권장)</button>
-            <button class="tab-btn" onclick="switchTab('step5ar', 'fast', this)">빠른 agents-cli 배포 (간편 실습)</button>
-          </div>
-
-          <div class="tab-panel active" data-tabgroup="step5ar" data-tab="tf">
-            <h3>5-2. Terraform PSC-I 생성 후 <code>agents-cli deploy</code></h3>
-            <div class="code-wrap">
-              <div class="code-head">
-                <span class="code-label">bash · Terraform PSC-I + agents-cli deploy</span>
-                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-              </div>
-              <pre class="code-pre" data-tpl="# Cloud Shell에 terraform 미설치 시 HashiCorp 공식 저장소에서 자동 설치
+          <h3>7-1. Terraform 프로비저닝 &amp; <code>agents-cli deploy</code></h3>
+          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
+            Agent Runtime은 Terraform으로 PSC-I·Agent Identity Shell·IAM 바인딩을 생성한 뒤 <code>agents-cli deploy --agent-identity</code>로 컨테이너를 배포합니다(최초 배포 약 5~10분 소요 · <code>--no-wait</code> + <code>--status</code> 사용).
+          </p>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Terraform + agents-cli deploy --agent-identity</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="# Cloud Shell에 terraform 미설치 시 HashiCorp 공식 저장소에서 자동 설치
 if ! terraform -version 2>/dev/null | grep -q &quot;^Terraform v&quot;; then
   wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
   echo &quot;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?&lt;=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main&quot; | sudo tee /etc/apt/sources.list.d/hashicorp.list
   sudo apt-get update &amp;&amp; sudo apt-get install -y terraform
 fi
 
-cd ~/agent-lab/{{AGENT_NAME}}/deployment/terraform
-terraform init
-terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;
-cd ../..
+cd ~/agent-lab/{{AGENT_NAME}}
+TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
+(cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;)
 
-# ※ --agent-identity 와 --service-account 는 상호 배타적이므로 Agent Identity 모드에서는 --service-account 를 생략합니다.
-# ※ 초기 Agent Gateway(C4.4) 정책 모드는 DRY_RUN 으로 배포해 HTTP 498 차단 장애를 방지합니다.
-uvx google-agents-cli deploy \
+agents-cli deploy \
   --project={{PROJECT_ID}} \
   --region={{REGION}} \
   --network-attachment=&quot;projects/{{PROJECT_ID}}/regions/{{REGION}}/networkAttachments/{{AGENT_NAME}}-psc-attachment&quot; \
   --agent-identity \
   --min-instances=1 --max-instances=10 \
-  --no-confirm-project --no-wait"></pre>
-            </div>
+  --no-confirm-project --no-wait
+
+agents-cli deploy --status"></pre>
           </div>
 
-          <div class="tab-panel" data-tabgroup="step5ar" data-tab="fast">
-            <h3>5-2. 빠른 <code>agents-cli deploy</code>로 Agent Runtime 배포</h3>
-            <div class="code-wrap">
-              <div class="code-head">
-                <span class="code-label">bash · google-agents-cli deploy (--no-wait / --status)</span>
-                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-              </div>
-              <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-
-# 방법 B(최소 코드 직접 생성)로 시작했다면 배포 메타데이터 1회 초기화
-uvx google-agents-cli scaffold enhance . --deployment-target agent_runtime --region {{REGION}} --yes
-
-# Agent Runtime 배포 시작 (5~10분 소요 · Agent Identity 우선 권장, 전용 SA 사용 시 --service-account={{SA_EMAIL}} 로 대체)
-uvx google-agents-cli deploy \
-  --project={{PROJECT_ID}} \
-  --region={{REGION}} \
-  --agent-identity \
-  --update-env-vars=&quot;GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=global&quot; \
-  --min-instances=1 \
-  --max-instances=10 \
-  --no-confirm-project \
-  --no-wait
-
-# 배포 진행 상태 확인 (완료 시 Engine ID 출력)
-uvx google-agents-cli deploy --status"></pre>
-            </div>
-          </div>
-
-          <h3>5-3. 배포 목록 · Agent Registry 등록 확인 &amp; ADK 스트리밍 호출 테스트</h3>
+          <h3>7-2. 배포 목록 · Agent Identity / Registry 확인 &amp; ADK 스트리밍 호출 테스트</h3>
           <div class="code-wrap">
             <div class="code-head">
               <span class="code-label">bash · Engine ID · Agent Registry 조회 및 실시간 질의 테스트</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
-            <pre class="code-pre" data-tpl="uvx google-agents-cli deploy --list
+            <pre class="code-pre" data-tpl="agents-cli deploy --list
 gcloud beta agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
-uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"></pre>
+ENGINE_RESOURCE=$(python3 -c 'import json; print(json.load(open(&quot;deployment_metadata.json&quot;))[&quot;remote_agent_runtime_id&quot;])')
+agents-cli run --url &quot;https://{{REGION}}-aiplatform.googleapis.com/reasoningEngines/v1/${ENGINE_RESOURCE}/api&quot; --mode=adk &quot;What is the weather in San Francisco?&quot;"></pre>
           </div>
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(Play 04)로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료하고 Step 8(Play 04)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 6 (PLAY 04: Web JSON 위자드 진단) ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="6" id="step-6">
+      <!-- ==================== STEP 8 (PLAY 04: Web JSON 위자드 진단) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="8" id="step-8">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 6 / 8</span>
+            <span class="pill pill-navy mono">STEP 8 / 10</span>
             <span class="pill pill-green mono">PLAY 04</span>
             <span class="pill pill-gray mono">약 6분</span>
             <h2>Web Workbench에서 런타임 JSON 진단 위자드 실행</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(6)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(8)">✓ 완료 표시</button>
         </div>
 
         <p>
@@ -2740,7 +2631,7 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
           <strong>Step-by-Step 위자드</strong>로 점검합니다.
         </p>
 
-        <h3>6-1. 배포된 실서비스 설정 JSON 추출</h3>
+        <h3>8-1. 배포된 실서비스 설정 JSON 추출</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
             <div class="code-head">
@@ -2767,7 +2658,7 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
           </div>
         </div>
 
-        <h3>6-2. Web Workbench 열기 &amp; 위자드 시작</h3>
+        <h3>8-2. Web Workbench 열기 &amp; 위자드 시작</h3>
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0 16px;">
           <a id="step6WorkbenchBtn" href="https://prod-ready-workbench-1018407696981.us-central1.run.app" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
             <span>🚀 Production-Readiness Web Workbench 열기 ↗</span>
@@ -2775,11 +2666,11 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
           <span class="mono" style="font-size:12.5px;color:var(--ink-faint);" id="step6WorkbenchUrlText"></span>
         </div>
         <ol>
-          <li>웹 화면에서 <strong><code>Play 02 · 실서비스 런타임 JSON 진단</code></strong> 탭을 열고, 런타임 모드로 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong>을 선택합니다.</li>
-          <li>복사한 JSON을 붙여넣고(또는 GCP 미배포 시 <strong>[샘플 JSON 불러오기]</strong> 클릭) <strong><code>[진단 위자드 시작하기]</code></strong>를 누릅니다.</li>
+          <li>웹 화면(<strong>런타임 JSON 진단 위자드</strong>)에서 <strong>Step 1</strong> 런타임 모드로 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong>을 선택합니다.</li>
+          <li>복사한 JSON을 붙여넣고(또는 GCP 미배포 시 <strong>[샘플 채우기]</strong> 클릭) <strong><code>[진단 위자드 시작하기]</code></strong>를 누릅니다.</li>
         </ol>
 
-        <h3>6-3. 위자드 체크포인트 선택 가이드 (<span data-auto-tpl="1">{{TARGET_LABEL}}</span>)</h3>
+        <h3>8-3. 위자드 체크포인트 선택 가이드 (<span data-auto-tpl="1">{{TARGET_LABEL}}</span>)</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="table-wrap">
             <table>
@@ -2791,8 +2682,8 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R2.1</td><td>멀티턴 세션·메모리 영속성</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>단일턴은 <strong>Stateless 유지</strong> / 멀티턴은 <code>agentengine://</code> 등 선택</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>인바운드 노출 범위</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭은 <strong>퍼블릭 의도</strong> / 사내 전용은 <strong>인바운드 제한</strong></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>아웃바운드 Direct VPC Egress</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭 API만 호출 시 <strong>미연결 적합</strong></td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정 (또는 Agent Identity)</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 또는 Agent Identity 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Agent Identity (SPIFFE ID) &amp; Agent Registry 등록</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ Agent Identity 전환</strong> (<code>--functional-type=agent --identity-type=agent-identity</code>)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정 (또는 Agent Identity)</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Agent Identity (SPIFFE ID) 또는 전용 SA 확인 완료</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Agent Identity (SPIFFE ID) &amp; Agent Registry 등록</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Step 7에서 Agent Identity로 배포 완료 <em>(미적용 기존 서비스 진단 시 🟡 보완 권고)</em></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.3</td><td>Cloud Run 단계적 거버넌스 &amp; Model Armor Advisory</td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>GA 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 위 <strong>단계적 AGW 도입</strong> 확인</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
@@ -2810,8 +2701,8 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R2.1</td><td>Managed Session Service &amp; Memory Bank</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>제로 트러스트 IAM 인바운드</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>PSC Interface (사설 VPC 접근)</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>사설 DB 접근이 없으면 <strong>미연결 적합</strong></td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정 (또는 Agent Identity)</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA 또는 Agent Identity 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Agent Identity (SPIFFE ID) &amp; Agent Registry 등록</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ <code>--agent-identity</code> 적용</strong> (전용 SA와 상호 배타)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정 (또는 Agent Identity)</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Agent Identity (SPIFFE ID) 확인 완료</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Agent Identity (SPIFFE ID) &amp; Agent Registry 등록</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Step 7에서 <code>--agent-identity</code>로 배포 완료 <em>(미적용 기존 엔진 진단 시 🟡 보완 권고)</em></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.3</td><td>Agent Gateway 중앙 정책 게이트웨이 (UAP V2 <code>DRY_RUN</code>) &amp; Model Armor</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ Agent Gateway 바인딩</strong> (초기 <code>DRY_RUN</code>으로 HTTP 498 차단 방지)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
@@ -2821,21 +2712,21 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(7)">← 이전 (Step 7)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(8)">Step 8 완료하고 Step 9로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 7 ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="7" id="step-7">
+      <!-- ==================== STEP 9 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="9" id="step-9">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 7 / 8</span>
+            <span class="pill pill-navy mono">STEP 9 / 10</span>
             <span class="pill pill-green mono">PLAY 04</span>
             <span class="pill pill-gray mono">약 5분</span>
             <h2>최종 진단 리포트 생성 · 맞춤형 명령어 반영 · 재검증</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(7)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(9)">✓ 완료 표시</button>
         </div>
 
         <p>
@@ -2843,7 +2734,7 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
           내가 변경 대상으로 선택한 항목만 조합된 맞춤형 실행 명령어와 <strong>Markdown(<code>.md</code>) 리포트</strong>가 생성됩니다.
         </p>
 
-        <h3>7-1. 리포트에서 생성된 맞춤형 업데이트 명령어 실행</h3>
+        <h3>9-1. 리포트에서 생성된 맞춤형 업데이트 명령어 실행</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
             <div class="code-head">
@@ -2866,67 +2757,66 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-uvx google-agents-cli deploy \
+agents-cli deploy \
   --project={{PROJECT_ID}} \
   --region={{REGION}} \
-  --service-account={{SA_EMAIL}} \
+  --agent-identity \
   --update-env-vars=&quot;OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT,GOOGLE_CLOUD_LOCATION=global&quot; \
   --no-confirm-project --no-wait
 
-uvx google-agents-cli deploy --status"></pre>
+agents-cli deploy --status"></pre>
           </div>
         </div>
 
         <div class="callout callout-green">
           <div class="callout-title">🎉 End-to-End 검증 완료</div>
-          <p>반영 후 Step 6의 JSON 조회 명령어를 다시 붙여넣어 모든 검증 항목이 <strong><code>🟢 GREEN</code></strong>인지 확인하고, 우측 상단의 <strong><code>[리포트(.md) 다운로드]</code></strong>로 증적 파일을 저장하세요.</p>
+          <p>반영 후 Step 8의 JSON 조회 명령어를 다시 붙여넣어 모든 검증 항목이 <strong><code>🟢 GREEN</code></strong>인지 확인하고, 우측 상단의 <strong><code>[리포트(.md) 다운로드]</code></strong>로 증적 파일을 저장하세요.</p>
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료하고 Step 8로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(8)">← 이전 (Step 8)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(9)">Step 9 완료하고 Step 10으로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 8 ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="8" id="step-8">
+      <!-- ==================== STEP 10 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="10" id="step-10">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 8 / 8</span>
+            <span class="pill pill-navy mono">STEP 10 / 10</span>
             <span class="pill pill-gray mono">약 3분</span>
             <h2>실습 리소스 정리 (Clean-Up) &amp; 트러블슈팅 FAQ</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(8)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(10)">✓ 완료 표시</button>
         </div>
 
-        <h3>8-1. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 실습 리소스 삭제</h3>
+        <h3>10-1. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 실습 리소스 삭제</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · Cloud Run 서비스 및 실습용 SA 삭제</span>
+              <span class="code-label">bash · Terraform 인프라 및 Cloud Run 리소스 일괄 삭제</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
-            <pre class="code-pre" data-tpl="gcloud run services delete {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --quiet
-gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet"></pre>
+            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+ORG_ID=$(gcloud projects get-ancestors {{PROJECT_ID}} --format='value(id)' --filter='type:organization' 2>/dev/null || true)
+TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
+(cd &quot;$TF_DIR&quot; &amp;&amp; terraform destroy -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot; -var=&quot;organization_id=${ORG_ID}&quot;)"></pre>
           </div>
         </div>
 
         <div class="track-only" data-track="agent_runtime">
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · Agent Runtime (Reasoning Engine) 및 SA 삭제</span>
+              <span class="code-label">bash · Terraform 인프라 및 Agent Runtime 리소스 일괄 삭제</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
-            <pre class="code-pre" data-tpl="curl -X DELETE \
-  -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; \
-  -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; \
-  &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/projects/{{PROJECT_ID}}/locations/{{REGION}}/reasoningEngines/{{ENGINE_ID}}?force=true&quot;
-
-gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet"></pre>
+            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
+(cd &quot;$TF_DIR&quot; &amp;&amp; terraform destroy -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;)"></pre>
           </div>
         </div>
 
-        <h3>8-2. 자주 묻는 질문 &amp; 트러블슈팅 FAQ</h3>
+        <h3>10-2. 자주 묻는 질문 &amp; 트러블슈팅 FAQ</h3>
 
         <details class="faq">
           <summary>Q1. <code>agy</code>에서 <code>agent-production-readiness</code> 스킬을 찾지 못한다고 나와요.</summary>
@@ -2938,7 +2828,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         <details class="faq">
           <summary>Q2. <code>agy</code> 세션이 끊겼거나 Agent Runtime 배포가 타임아웃되었어요.</summary>
           <div class="faq-body">
-            <p><code>agy</code>는 같은 폴더에서 <code>agy -c</code>로 직전 대화를 그대로 복구할 수 있습니다. Agent Runtime 배포는 서버 측에서 계속 진행되므로 <code>uvx google-agents-cli deploy --status</code>로 완료를 확인하세요.</p>
+            <p><code>agy</code>는 같은 폴더에서 <code>agy -c</code>로 직전 대화를 그대로 복구할 수 있습니다. Agent Runtime 배포는 서버 측에서 계속 진행되므로 <code>agents-cli deploy --status</code>로 완료를 확인하세요.</p>
           </div>
         </details>
 
@@ -2957,9 +2847,9 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         </details>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(7)">← 이전 (Step 7)</button>
+          <button class="btn btn-subtle" onclick="goToStep(9)">← 이전 (Step 9)</button>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-subtle" onclick="showLanding()">다른 트랙 체험하기</button>
+            <button class="btn btn-subtle" onclick="showLanding()">다른 배포 환경 체험하기 (Step 3)</button>
             <button class="btn btn-green" onclick="markAllComplete()">🎉 실습 완료 처리</button>
           </div>
         </div>
@@ -2970,15 +2860,17 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
 
   <script>
     const STEPS_META = [
-      { id: 0, code: "0", title: "실습 환경 준비 & API 활성화", time: "5분" },
-      { id: 1, code: "1", title: "심플 ADK Agent 생성", time: "7분" },
-      { id: 2, code: "2", title: "Play 01 · Skill 설치 & agy 실행", time: "3분" },
-      { id: 3, code: "3", title: "Play 02 · agy 사전 진단 (Before)", time: "6분" },
-      { id: 4, code: "4", title: "Play 03 · 15개 항목 자동 하드닝", time: "7분" },
-      { id: 5, code: "5", title: "Google Cloud 배포", time: "8분" },
-      { id: 6, code: "6", title: "Play 04 · Web JSON 위자드 진단", time: "6분" },
-      { id: 7, code: "7", title: "최종 리포트 & 명령어 재검증", time: "5분" },
-      { id: 8, code: "8", title: "리소스 정리 & FAQ", time: "3분" },
+      { id: 0, code: "0", title: "실습 환경 준비 & 공통 API", time: "5분", group: "common" },
+      { id: 1, code: "1", title: "표준 ADK Agent 프로토타입", time: "6분", group: "common" },
+      { id: 2, code: "2", title: "Play 01 · Skill 설치 & agy 실행", time: "3분", group: "common" },
+      { id: 3, code: "3", title: "배포 환경 선택", time: "2분", group: "decision" },
+      { id: 4, code: "4", title: "배포 인프라 추가 (enhance)", time: "3분", group: "runtime" },
+      { id: 5, code: "5", title: "Play 02 · agy 사전 진단 (Before)", time: "6분", group: "runtime" },
+      { id: 6, code: "6", title: "Play 03 · 14개 항목 자동 하드닝", time: "7분", group: "runtime" },
+      { id: 7, code: "7", title: "Google Cloud 배포", time: "8분", group: "runtime" },
+      { id: 8, code: "8", title: "Play 04 · Web JSON 위자드 진단", time: "6분", group: "runtime" },
+      { id: 9, code: "9", title: "최종 리포트 & 명령어 재검증", time: "5분", group: "runtime" },
+      { id: 10, code: "10", title: "리소스 정리 & FAQ", time: "3분", group: "runtime" },
     ];
 
     const TRACKS = {
@@ -3005,7 +2897,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         deployTitle: "3. Agent Runtime 배포",
         deployCmd: "agents-cli deploy --no-wait",
         wizardSub: "JSON 붙여넣기 → 9개 위자드",
-        kpiPlay01: "4 기본 + 11 패치",
+        kpiPlay01: "4 기본 + 10 패치",
         kpiPlay01Sub: "4개 MANAGED_NATIVE 자동 가점",
         kpiPlay02: "9개 위자드"
       },
@@ -3032,8 +2924,8 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         deployTitle: "3. Cloud Run 배포",
         deployCmd: "gcloud run deploy / Terraform",
         wizardSub: "JSON 붙여넣기 → 11개 위자드",
-        kpiPlay01: "15개 패치",
-        kpiPlay01Sub: "7대 영역 직접 코드·IaC 하드닝",
+        kpiPlay01: "14개 패치",
+        kpiPlay01Sub: "6대 영역 직접 코드·IaC 하드닝",
         kpiPlay02: "11개 위자드"
       }
     };
@@ -3061,11 +2953,12 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       engineId: "1234567890123456789",
     };
 
-    const STORAGE_KEY = "prod_ready_hands_on_lab_v3";
+    const STORAGE_KEY = "prod_ready_hands_on_lab_v5";
 
     let state = {
-      pageMode: "landing", // "landing" | "workspace"
+      pageMode: "workspace", // ADK-first: starts directly at Step 0; Step 3 handles runtime decision
       track: "cloud_run",
+      trackChosen: false,
       previewTrack: "cloud_run",
       env: { ...DEFAULT_ENV },
       activeStep: 0,
@@ -3080,12 +2973,14 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === "object") {
-            if (parsed.pageMode === "workspace") state.pageMode = "workspace";
             if (parsed.track && TRACKS[parsed.track]) state.track = parsed.track;
+            if (typeof parsed.trackChosen === "boolean") state.trackChosen = parsed.trackChosen;
             if (parsed.previewTrack && TRACKS[parsed.previewTrack]) state.previewTrack = parsed.previewTrack;
             state.env = { ...DEFAULT_ENV, ...(parsed.env || {}) };
             if (state.env.projectId === "geap-sandbox-kwlee") state.env.projectId = "";
-            state.activeStep = Number.isInteger(parsed.activeStep) ? parsed.activeStep : 0;
+            if (Number.isInteger(parsed.activeStep) && parsed.activeStep >= 0 && parsed.activeStep < STEPS_META.length) {
+              state.activeStep = parsed.activeStep;
+            }
             state.viewMode = parsed.viewMode === "all" ? "all" : "step";
             state.doneSteps = parsed.doneSteps || {};
             state.checkedItems = parsed.checkedItems || {};
@@ -3096,12 +2991,6 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
 
     function saveState() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
-    }
-
-    function deriveSaId(agentName) {
-      const clean = (agentName || "my-currency-agent").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "");
-      const base = `sa-${clean || "agent"}`;
-      return base.slice(0, 28).replace(/-+$/, "");
     }
 
     function registerInlineTemplates() {
@@ -3119,8 +3008,6 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       const agent = state.env.agentName.trim() || DEFAULT_ENV.agentName;
       const wb = WORKBENCH_URL;
       const engineId = (state.env.engineId || DEFAULT_ENV.engineId).trim();
-      const saId = deriveSaId(agent);
-      const saEmail = `${saId}@${proj}.iam.gserviceaccount.com`;
 
       const map = {
         "{{PROJECT_ID}}": proj,
@@ -3129,8 +3016,6 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         "{{WORKBENCH_URL}}": wb,
         "{{SKILL_DOWNLOAD_URL}}": SKILL_DOWNLOAD_URL,
         "{{ENGINE_ID}}": engineId,
-        "{{SA_ID}}": saId,
-        "{{SA_EMAIL}}": saEmail,
         "{{TARGET_KEY}}": tr.key,
         "{{TARGET_LABEL}}": tr.label,
       };
@@ -3197,9 +3082,12 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       const order = ["agent_runtime", "cloud_run"];
       grid.innerHTML = order.map((key) => {
         const tr = TRACKS[key];
+        const isSelected = state.trackChosen && state.track === key;
+        const selectedCls = isSelected ? " selected-track" : "";
+        const badgeLabel = isSelected ? `✓ 선택됨 · ${tr.shortLabel}` : `${tr.duration} · 선택 →`;
 
         return `
-          <article class="home-track-card" data-track-card="${key}" role="button" tabindex="0" aria-label="${tr.cardTitle} 실습 시작하기" onclick="selectTrack('${key}', true, 0)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectTrack('${key}', true, 0);}">
+          <article class="home-track-card${selectedCls}" data-track-card="${key}" role="button" tabindex="0" aria-pressed="${isSelected}" aria-label="${tr.cardTitle} 배포 환경 선택 후 Step 4로 이동" onclick="selectTrack('${key}', true, 4)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectTrack('${key}', true, 4);}">
             <div class="htc-head">
               <div class="htc-identity">
                 <div class="htc-emblem">${TRACK_EMBLEMS[key]}</div>
@@ -3208,7 +3096,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
                   <h2 class="htc-title">${tr.cardTitle}</h2>
                 </div>
               </div>
-              <span class="htc-duration">${tr.duration} · 시작 →</span>
+              <span class="htc-duration">${badgeLabel}</span>
             </div>
 
             <p class="htc-sub">${tr.subtitle}</p>
@@ -3231,9 +3119,14 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
     function applyTrackUI() {
       const tr = TRACKS[state.track];
       document.body.setAttribute("data-track", tr.key);
-      document.getElementById("sidebarTrackBadge").textContent = tr.shortLabel;
-      document.getElementById("topTrackLabel").textContent = tr.shortLabel;
+      const badgeEl = document.getElementById("sidebarTrackBadge");
+      if (badgeEl) {
+        badgeEl.textContent = (state.activeStep <= 2 && !state.trackChosen) ? "ADK 공통" : tr.shortLabel;
+      }
+      const topLabelEl = document.getElementById("topTrackLabel");
+      if (topLabelEl) topLabelEl.textContent = tr.shortLabel;
 
+      renderLandingCards();
       applyTemplates();
       renderSidebarNav();
     }
@@ -3241,6 +3134,10 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
     function selectTrack(trackKey, enterWorkspace, targetStep) {
       if (!TRACKS[trackKey]) return;
       state.track = trackKey;
+      state.trackChosen = true;
+      if (state.activeStep === 3 || targetStep === 4) {
+        state.doneSteps[3] = true;
+      }
       if (typeof targetStep === "number") state.activeStep = targetStep;
       applyTrackUI();
       if (enterWorkspace) {
@@ -3250,20 +3147,11 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
     }
 
     function showLanding() {
-      state.pageMode = "landing";
-      document.getElementById("landingView").classList.remove("hidden");
-      document.getElementById("workspaceView").classList.add("hidden");
-      document.getElementById("topTrackBtn").classList.add("hidden");
-      renderLandingCards();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      saveState();
+      goToStep(3);
     }
 
     function showWorkspace(stepIdx) {
       state.pageMode = "workspace";
-      document.getElementById("landingView").classList.add("hidden");
-      document.getElementById("workspaceView").classList.remove("hidden");
-      document.getElementById("topTrackBtn").classList.remove("hidden");
       if (typeof stepIdx === "number") state.activeStep = stepIdx;
       renderStepVisibility();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3279,12 +3167,25 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       document.getElementById("sidebarProgressLabel").textContent = `${doneCount} / ${STEPS_META.length} 완료 (${pct}%)`;
       document.getElementById("sidebarProgressFill").style.width = `${Math.max(4, pct)}%`;
 
+      const groupLabels = {
+        common: "1. 공통 · ADK 개발",
+        decision: "2. 배포 환경 선택",
+        runtime: `3. ${tr.shortLabel} 하드닝 & 배포`,
+      };
+      let lastGroup = null;
       ul.innerHTML = STEPS_META.map(s => {
         const isDone = Boolean(state.doneSteps[s.id]);
         const isActive = state.activeStep === s.id;
         const cls = ["step-nav-btn", isActive ? "active" : "", isDone ? "done" : ""].filter(Boolean).join(" ");
-        const title = s.id === 5 ? `${tr.shortLabel} 배포` : s.title;
-        return `
+        const title = s.id === 4
+          ? `${tr.shortLabel} 인프라 추가`
+          : (s.id === 7 ? `${tr.shortLabel} 배포` : s.title);
+        let headerHtml = "";
+        if (s.group !== lastGroup) {
+          lastGroup = s.group;
+          headerHtml = `<li class="step-nav-group">${groupLabels[s.group]}</li>`;
+        }
+        return `${headerHtml}
           <li>
             <button class="${cls}" onclick="goToStep(${s.id})">
               <span class="step-dot">${isDone ? "✓" : s.code}</span>
@@ -3316,6 +3217,11 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         cb.checked = Boolean(state.checkedItems[key]);
       });
 
+      const badgeEl = document.getElementById("sidebarTrackBadge");
+      if (badgeEl) {
+        badgeEl.textContent = (state.activeStep <= 2 && !state.trackChosen) ? "ADK 공통" : TRACKS[state.track].shortLabel;
+      }
+
       renderSidebarNav();
     }
 
@@ -3345,6 +3251,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
 
     function completeAndNext(stepId) {
       state.doneSteps[stepId] = true;
+      if (stepId === 3) state.trackChosen = true;
       state.activeStep = Math.min(stepId + 1, STEPS_META.length - 1);
       saveState();
       renderStepVisibility();
@@ -3428,12 +3335,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       registerInlineTemplates();
       syncEnvInputs();
       applyTrackUI();
-      renderLandingCards();
-      if (state.pageMode === "workspace") {
-        showWorkspace(state.activeStep);
-      } else {
-        showLanding();
-      }
+      renderStepVisibility();
     }
 
     window.addEventListener("DOMContentLoaded", init);

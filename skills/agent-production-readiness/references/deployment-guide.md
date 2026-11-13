@@ -1,4 +1,4 @@
-# End-to-End Deployment Guide (`deployment-guide.md`, v2 — 14 Core Items)
+# End-to-End Deployment Guide (`deployment-guide.md`, v2 — 13 Core Items)
 
 ## 1. Install the Skill from GitHub
 ```bash

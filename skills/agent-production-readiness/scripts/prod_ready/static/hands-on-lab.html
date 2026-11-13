@@ -1795,10 +1795,10 @@ agy"></pre>
 
         <p>
           <strong>Play 02</strong>에서는 열어 둔 <strong>Antigravity CLI (<code>agy</code>) 대화창에 자연어로 지시</strong>하여
-          운영 환경 프로필을 선택한 뒤 <code>scan</code>(14개 핵심 프로덕션 항목 점검)과 <code>simulate</code>(4대 모의 공격 시뮬레이션)를 한 번에 실행합니다.
+          운영 환경 프로필을 선택한 뒤 <code>scan</code>(13개 핵심 프로덕션 항목 점검)과 <code>simulate</code>(4대 장애·보안 시뮬레이션)를 한 번에 실행합니다.
         </p>
 
-        <h3>3-1. Antigravity CLI (<code>agy</code>)로 Before 진단 &amp; 모의 공격 시뮬레이션</h3>
+        <h3>3-1. Antigravity CLI (<code>agy</code>)로 Before 진단 &amp; 장애·보안 시뮬레이션</h3>
         <div class="tab-bar" data-tabgroup="step3diag">
           <button class="tab-btn active" onclick="switchTab('step3diag', 'agy', this)">방법 A · Antigravity CLI (agy) 대화형 실행 (권장)</button>
           <button class="tab-btn" onclick="switchTab('step3diag', 'cli', this)">방법 B · AI CLI 없이 스크립트 직접 실행 (CI/Headless)</button>
@@ -1820,8 +1820,8 @@ agy"></pre>
             <div class="code-head">
               <span class="code-label">agy &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
             </div>
-            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 14개 핵심 하드닝
-  2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 13개 하드닝
+            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 13개 핵심 하드닝
+  2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 12개 하드닝
   3. 경량 / PoC — 단발성 · 최소 비용 · 핵심 기본선 8개
   4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
           </div>
@@ -1829,8 +1829,8 @@ agy"></pre>
             <div class="code-head">
               <span class="code-label">agy &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
             </div>
-            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 14개 (플랫폼 자동 4개 + 직접 하드닝 10개)
-  2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 13개 (플랫폼 자동 4개 + 직접 하드닝 9개)
+            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 13개 (플랫폼 자동 4개 + 직접 하드닝 9개)
+  2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 12개 (플랫폼 자동 4개 + 직접 하드닝 8개)
   3. 경량 / PoC — 단발성 · 핵심 기본선 8개 (플랫폼 자동 3개 + 직접 하드닝 5개)
   4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
           </div>
@@ -1838,10 +1838,10 @@ agy"></pre>
           <div class="callout callout-blue">
             <div class="callout-title">💡 프로필 선택 &amp; <code>agy</code> 실행 팁</div>
             <ul style="margin:6px 0 0 18px;">
-              <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>14개 풀 프로덕션</code> / <code>13개 표준 프로덕션</code> / <code>8개 경량 PoC</code>)로 즉시 <code>scan</code> + <code>simulate</code>가 실행되며, 불필요한 <code>N/A</code> 항목과 시나리오는 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 14개 체험은 <strong>1번</strong> 권장)</span></li>
-              <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>14개 풀 프로덕션</code> / <code>13개 표준 프로덕션</code> / <code>8개 경량 PoC</code>)로 즉시 <code>scan</code> + <code>simulate</code>가 실행되며, Agent Runtime이 기본 제공하는 <strong>4개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 14개 체험은 <strong>1번</strong> 권장)</span></li>
-              <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>3가지 질문(<code>Question 1/3</code>–<code>3/3</code>)</strong> — ① 대화 기억(단발성/멀티턴 Managed) · ② 사내 VPC/DB 연동 · ③ 운영 단계 &amp; PII 가드레일 — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
-              <li><strong>과도한 인프라 강제 변경 금지 (v2 원칙)</strong>: CPU·메모리·<code>min_instances</code>·인바운드 노출/인증 토폴로지(공개 OAuth vs IAM vs IAP vs GCLB+WAF)·<code>deletion_protection</code>은 강제 변경하지 않고 비감점 권고(<code>Advisory</code>)로만 안내합니다.</li>
+              <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>13개 풀 프로덕션</code> / <code>12개 표준 프로덕션</code> / <code>8개 경량 PoC</code>)로 즉시 <code>scan</code> + <code>simulate</code>가 실행되며, 불필요한 <code>N/A</code> 항목과 시나리오는 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 13개 체험은 <strong>1번</strong> 권장)</span></li>
+              <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>13개 풀 프로덕션</code> / <code>12개 표준 프로덕션</code> / <code>8개 경량 PoC</code>)로 즉시 <code>scan</code> + <code>simulate</code>가 실행되며, Agent Runtime이 기본 제공하는 <strong>4개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 13개 체험은 <strong>1번</strong> 권장)</span></li>
+              <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>3가지 질문(<code>Question 1/3</code>–<code>3/3</code>)</strong> — ① 대화 기억(단발성/멀티턴 Managed) · ② 사내 VPC/DB 연동 · ③ 운영 단계(SRE 알람 · Eval 게이트) — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
+              <li><strong>과도한 인프라·거버넌스 강제 변경 금지 (v2 원칙)</strong>: CPU·메모리·<code>min_instances</code>·인바운드 노출/인증 토폴로지(공개 OAuth vs IAM vs IAP vs GCLB+WAF)·AI 거버넌스(<code>Agent Gateway + Model Armor Floor Settings</code>)·프로덕션 SLA(<code>Provisioned Throughput GSU</code>)는 강제 변경하지 않고 비감점 권고(<code>Advisory</code>)로만 안내합니다.</li>
               <li>권한 확인 창이 뜨면 <strong>Allow(허용)</strong>를 선택하세요. 터미널이 중간에 끊겨도 같은 폴더에서 <code>agy -c</code>를 입력하면 직전 대화에 바로 이어집니다.</li>
             </ul>
           </div>
@@ -1860,7 +1860,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
           </div>
         </div>
 
-        <h3>3-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 14개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C7.1</code> · v2)</h3>
+        <h3>3-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 13개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C7.1</code> · v2)</h3>
         <p class="track-only" data-track="cloud_run">
           Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q3</code>)</strong>에 따라
           <strong>Cloud Run</strong> 환경에서 각 체크포인트가 무엇을 점검·자동 패치하는지, 그리고 <strong>내 선택에서 적용/제외(<code>N/A</code>)되는 항목</strong>이 무엇인지 한눈에 확인할 수 있습니다.
@@ -1868,7 +1868,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
         <p class="track-only" data-track="agent_runtime">
           Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q3</code>)</strong>에 따라
           <strong>Agent Runtime</strong> 환경에서 각 체크포인트가 어떻게 처리되는지 확인할 수 있습니다.
-          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>4개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 10개 항목</strong>을 집중 하드닝합니다.)
+          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>4개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 9개 항목</strong>을 집중 하드닝합니다.)
         </p>
 
         <!-- 프로필 3종 요약 카드 (클릭 시 아래 테이블 강조/필터 연동) -->
@@ -1876,34 +1876,34 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
           <div class="cp-summary-card" data-cp-card="p1" onclick="filterCheckpointProfile('p1')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">1. 풀 프로덕션 (VPC 포함)</span>
-              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">14 / 14 (전체)</span>
-              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">14 / 14 (4 자동 · 10 패치)</span>
+              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">13 / 13 (전체)</span>
+              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">13 / 13 (4 자동 · 9 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. Direct VPC Egress · Managed Sessions &amp; Memory Bank · Model Armor API · PromQL SRE 알람 · 공식 Eval 게이트까지 전 영역 14개 풀 하드닝을 적용합니다.</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. 플랫폼 기본 제공 4개 항목에 더해 Memory Bank · PSC-I 사설망 연동 · Model Armor API · ReasoningEngine SRE 알람 · 공식 평가 게이트까지 10개 항목을 집중 하드닝합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. Direct VPC Egress · Managed Sessions &amp; Memory Bank · Non-Root 격리 · PromQL SRE 알람 · 공식 Eval 게이트까지 전 영역 13개 풀 하드닝을 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. 플랫폼 기본 제공 4개 항목에 더해 Memory Bank · PSC-I 사설망 연동 · Non-Root/최소권한 SA · ReasoningEngine SRE 알람 · 공식 평가 게이트까지 9개 항목을 집중 하드닝합니다.</p>
             <div class="cp-sc-meta">시뮬레이션: <strong>4 / 4 전체 검증</strong> (SIM-1 ~ SIM-4)</div>
           </div>
 
           <div class="cp-summary-card" data-cp-card="p2" onclick="filterCheckpointProfile('p2')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">2. 표준 프로덕션 (외부 API)</span>
-              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">13 / 14 (VPC 제외)</span>
-              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">13 / 14 (4 자동 · 9 패치)</span>
+              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">12 / 13 (VPC 제외)</span>
+              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">12 / 13 (4 자동 · 8 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. 불필요한 사내 VPC 아웃바운드(<code>C3.1</code>)만 제외하고 나머지 13개 핵심 항목을 모두 적용합니다.</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. PSC-I 사설망(<code>C3.1</code>)만 제외하고 Memory Bank · Model Armor · SRE 알람 · Eval 게이트를 모두 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. 불필요한 사내 VPC 아웃바운드(<code>C3.1</code>)만 제외하고 나머지 12개 핵심 항목을 모두 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. PSC-I 사설망(<code>C3.1</code>)만 제외하고 Memory Bank · 최소권한 SA · SRE 알람 · Eval 게이트를 모두 적용합니다.</p>
             <div class="cp-sc-meta">시뮬레이션: <strong>4 / 4 전체 검증</strong> (SIM-1 ~ SIM-4)</div>
           </div>
 
           <div class="cp-summary-card" data-cp-card="p3" onclick="filterCheckpointProfile('p3')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">3. 경량 / PoC</span>
-              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">8 / 14 적용</span>
-              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">8 / 14 (3 자동 · 5 패치)</span>
+              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">8 / 13 적용</span>
+              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">8 / 13 (3 자동 · 5 패치)</span>
             </div>
             <p class="cp-sc-desc track-only" data-track="cloud_run">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 추가 인프라 비용이 없는 <strong>공통 기본선 8개</strong>만 적용해 불필요한 <code>N/A</code> 경고를 모두 제거합니다.</p>
             <p class="cp-sc-desc track-only" data-track="agent_runtime">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 공통 기본선 8개(플랫폼 자동 3개 + 코드/IAM/비루트/비용 가드 5개)만 적용해 불필요한 <code>N/A</code> 경고를 제거합니다.</p>
-            <div class="cp-sc-meta">시뮬레이션: <strong>1 / 1 검증</strong> (SIM-3 턴별 루프·토큰 상한만 검증)</div>
+            <div class="cp-sc-meta">시뮬레이션: <strong>3 / 3 검증</strong> (SIM-1 · SIM-2 · SIM-3 검증, SIM-4 생략)</div>
           </div>
         </div>
 
@@ -1913,21 +1913,21 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
           <div class="cp-q-grid track-only" data-track="cloud_run">
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q1 멀티턴·장기기억</span><span>+ <code>C2.1</code>(Managed Sessions) · <code>C2.2</code>(Memory Bank)</span></div>
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 사내 DB·VPC</span><span>+ <code>C3.1</code>(Direct VPC Egress — 기존 <code>var.vpc_network_name</code>/<code>vpc_subnet_name</code> 바인딩)</span></div>
-            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · PII</span><span>+ <code>C4.2</code>(Model Armor + SSRF/IDOR) · <code>C5.3</code>(PromQL SRE 알람) · <code>C7.1</code>(Eval 게이트)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 알람/Eval</span><span>+ <code>C5.3</code>(PromQL SRE 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
           </div>
           <div class="cp-q-grid track-only" data-track="agent_runtime">
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q1 멀티턴·장기기억</span><span>+ <code>C2.1</code>(⚡ 세션 자동) · <code>C2.2</code>(Memory Bank)</span></div>
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 사내 DB·VPC</span><span>+ <code>C3.1</code>(PSC Interface Network Attachment + <code>/28</code> PGA 서브넷)</span></div>
-            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · PII</span><span>+ <code>C4.2</code>(Model Armor + SSRF/IDOR) · <code>C5.3</code>(ReasoningEngine 알람) · <code>C7.1</code>(Eval 게이트)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 알람/Eval</span><span>+ <code>C5.3</code>(ReasoningEngine 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
           </div>
         </div>
 
         <!-- 인터랙티브 프로필 필터 바 -->
         <div class="cp-toolbar">
           <div class="cp-filter-group" role="tablist" aria-label="프로필별 테이블 필터">
-            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (14개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 풀 프로덕션 (14개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')">2. 표준 프로덕션 (13개)</button>
+            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (13개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 풀 프로덕션 (13개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')">2. 표준 프로덕션 (12개)</button>
             <button type="button" class="cp-filter-btn" data-cp-filter="p3" onclick="filterCheckpointProfile('p3')">3. 경량 PoC (8개)</button>
           </div>
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
@@ -1943,15 +1943,15 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
           </div>
         </div>
 
-        <!-- 14개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
+        <!-- 13개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
         <div class="cp-matrix-wrap">
           <table class="cp-matrix-table" id="cpMatrixTable">
             <thead>
               <tr>
                 <th style="width:84px;">ID · 등급</th>
                 <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 체크포인트 의미 · 프로덕션 Best Practice · 자동 패치 내역</th>
-                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션 (사내 VPC 포함 · 14개)">1. 풀<br><span style="font-weight:500;color:var(--ink-faint);">(14)</span></th>
-                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션 (외부 API · 13개)">2. 표준<br><span style="font-weight:500;color:var(--ink-faint);">(13)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션 (사내 VPC 포함 · 13개)">1. 풀<br><span style="font-weight:500;color:var(--ink-faint);">(13)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션 (외부 API · 12개)">2. 표준<br><span style="font-weight:500;color:var(--ink-faint);">(12)</span></th>
                 <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 경량 / PoC (8개)">3. PoC<br><span style="font-weight:500;color:var(--ink-faint);">(8)</span></th>
               </tr>
             </thead>
@@ -2129,7 +2129,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
               <tr class="cp-domain-row">
                 <td colspan="5">
                   <div class="cp-domain-head">
-                    <span class="cp-domain-name">4️⃣ 보안, 최소 권한 &amp; 가드레일 (Security &amp; Guardrails · 3개 항목 · 구 C4.4 통합)</span>
+                    <span class="cp-domain-name">4️⃣ 보안 &amp; 격리 (Security &amp; Isolation · 2개 항목 · AI 거버넌스는 Advisory)</span>
                     <span class="cp-domain-weight">도메인 가중치 2x</span>
                   </div>
                 </td>
@@ -2158,26 +2158,6 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
-              </tr>
-              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
-                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.2</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
-                <td>
-                  <div class="cp-title-row">
-                    <span class="cp-title">Model Armor 입출력/PII 가드레일 &amp; 도구 SSRF·호출자 신원(IDOR) 방어</span>
-                  </div>
-                  <p class="cp-desc">
-                    시스템 프롬프트 지시만으로는 탈옥(Prompt Injection)이나 개인정보(주민번호·카드번호) 유출을 막을 수 없습니다. 또한 LLM이 도구(Function Calling) 인자에 내부 메타데이터 주소(<code>169.254.169.254</code>)나 다른 사람의 <code>user_id</code>를 넣도록 유도당하면 토큰 탈취(SSRF)와 타인 정보 조회(IDOR) 사고가 발생합니다.
-                  </p>
-                  <div class="cp-ba-list">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>코드 레벨에서 입출력 프롬프트/PII를 검사하는 가드레일 플러그인과 도구 실행 직전 인자를 검증하는 콜백이 등록되어 있는지 체크합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>세션 저장 전(<code>on_user_message_callback</code>), LLM 호출 전/후(<code>before/after_model_callback</code>)에 <strong>Google Cloud Model Armor API(<code>modelarmor_v1</code>) + 로컬 PII/인젝션 방어</strong>를 수행하고, <strong><code>before_tool_callback</code></strong>에서 사설/메타데이터 IP(SSRF)와 세션 <code>user_id</code> 불일치(IDOR)를 코드로 강제 차단해야 합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/model_armor_plugin.py</code>(<code>ModelArmorGuardrailPlugin</code>)를 생성하고, <code>app/agent.py</code>의 <code>App(..., plugins=[ModelArmorGuardrailPlugin(), ...])</code> 및 <code>service.tf</code>의 <code>MODEL_ARMOR_TEMPLATE_ID</code> 환경변수를 자동 주입합니다.</span></div>
-                  </div>
-                  <div class="cp-meta"><span>📄 파일:</span><code>app/app_utils/model_armor_plugin.py</code><code>app/agent.py</code><code>deployment/terraform/service.tf</code></div>
-                </td>
-                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
-                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
-                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
               </tr>
               <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
                 <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.3</span><span class="cp-sev cp-sev-std">High</span></div></td>
@@ -2274,14 +2254,14 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
                     로그와 트레이스를 수집하더라도 자동 알람 정책이 없으면, 에이전트 5xx 장애·응답 지연 급증·프롬프트 인젝션 공격이 발생했을 때 고객 불만이 접수되기 전까지 운영팀이 장애를 인지할 수 없습니다.
                   </p>
                   <div class="cp-ba-list track-only" data-track="cloud_run">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>deployment/terraform/alerts.tf</code>에 Cloud Run 리소스(<code>cloud_run_revision</code>) 대상 에러율·지연시간·가드레일 차단 알람이 정의되어 있는지 점검합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>단순 건수가 아닌 <strong>PromQL 5xx 에러 비율(&gt; 2%)</strong>, 에이전트 추론 특성을 반영한 <strong>P95 응답 지연(&gt; 15,000ms)</strong>, 그리고 <strong>Model Armor 차단 로그 급증(Log-based Metric)</strong> 3대 골든 시그널 알람을 Terraform으로 구성해야 합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/alerts.tf</code>를 생성해 Cloud Run PromQL 5xx 비율 알람, P95 15초 지연 알람, <code>guardrail_block</code> 로그 기반 알람 정책을 일괄 선언합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>deployment/terraform/alerts.tf</code>에 Cloud Run 리소스(<code>cloud_run_revision</code>) 대상 에러율·지연시간 알람이 정의되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>단순 건수가 아닌 <strong>PromQL 5xx 에러 비율(&gt; 2%)</strong>과 에이전트 추론 특성을 반영한 <strong>P95 응답 지연(&gt; 15,000ms)</strong> 2대 골든 시그널 알람을 Terraform으로 구성해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/alerts.tf</code>를 생성해 Cloud Run PromQL 5xx 비율 알람과 P95 15초 지연 알람 정책을 일괄 선언합니다.</span></div>
                   </div>
                   <div class="cp-ba-list track-only" data-track="agent_runtime">
                     <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>deployment/terraform/alerts.tf</code>에 <code>aiplatform.googleapis.com/ReasoningEngine</code> 전용 메트릭 기반 알람이 구성되어 있는지 점검합니다. <em>(런타임과 맞지 않는 메트릭을 걸어두면 알람이 동작하지 않음)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Agent Runtime 리소스 타입(<strong><code>aiplatform.googleapis.com/ReasoningEngine</code></strong>)의 에러 메트릭, <strong>P95 응답 지연(&gt; 15,000ms)</strong>, 그리고 <strong>Model Armor 차단 급증</strong> 알람을 구성해야 합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/alerts.tf</code>를 생성해 <code>ReasoningEngine</code> 전용 에러·P95 지연(15초)·가드레일 차단 급증 알람 정책을 선언합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Agent Runtime 리소스 타입(<strong><code>aiplatform.googleapis.com/ReasoningEngine</code></strong>)의 에러 메트릭과 <strong>P95 응답 지연(&gt; 15,000ms)</strong> 골든 시그널 알람을 구성해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/alerts.tf</code>를 생성해 <code>ReasoningEngine</code> 전용 에러·P95 지연(15초) 알람 정책을 선언합니다.</span></div>
                   </div>
                   <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/alerts.tf</code></div>
                 </td>
@@ -2303,14 +2283,14 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
                 <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C6.1</span><span class="cp-sev cp-sev-std">High</span></div></td>
                 <td>
                   <div class="cp-title-row">
-                    <span class="cp-title">무한 도구 루프 차단(턴별 리셋) &amp; 출력 토큰 상한 가드레일</span>
+                    <span class="cp-title">무한 도구 루프 차단(턴별 리셋) &amp; 선택적 출력 토큰 상한 (Thinking 안전)</span>
                   </div>
                   <p class="cp-desc">
                     에이전트가 도구 호출 실패 후 재시도 루프에 빠지면 단일 사용자 질문 한 번에 수십~수백 번 LLM을 재귀 호출하여 수분 만에 막대한 토큰 과금과 쿼터 고갈을 일으킵니다.
                   </p>
                   <div class="cp-ba-list">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>단일 사용자 질문(<code>invocation_id</code>)당 LLM 호출 횟수 상한과 <code>max_output_tokens</code> 제한 플러그인이 장착되어 있는지 점검합니다. <em>(Billing Admin 권한이 필요한 조직 예산 리소스 <code>budget.tf</code>는 강제 생성하지 않음)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><strong><code>invocation_id</code>(단일 턴) 단위로 카운터를 자동 리셋</strong>해 정상적인 멀티턴 대화는 막지 않으면서 한 턴 내 과도한 루프(기본 10회 초과)만 정확히 차단하고, 매 요청의 <code>max_output_tokens</code>(기본 2,048)를 함께 제어해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>단일 사용자 질문(<code>invocation_id</code>)당 LLM 호출 횟수 상한 플러그인이 장착되어 있는지 점검합니다. <em>(Billing Admin 권한이 필요한 조직 예산 리소스 <code>budget.tf</code>는 강제 생성하지 않음)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><strong><code>invocation_id</code>(단일 턴) 단위로 카운터를 자동 리셋</strong>해 정상 멀티턴 대화는 유지하면서 한 턴 내 폭주 루프(기본 10회 초과)만 정확히 차단합니다. Gemini 2.5/3.x Thinking 모델은 내부 추론 토큰(<code>thoughts</code>)도 <code>max_output_tokens</code>에 합산되므로 <strong>기본값 <code>0</code>(무제한)</strong>을 유지하고 필요 시에만 옵트인으로 상한을 지정합니다.</span></div>
                     <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/cost_guard_plugin.py</code>(<code>CostTokenGuardrailPlugin</code>)를 생성해 <code>app/agent.py</code>에 자동 등록합니다.</span></div>
                   </div>
                   <div class="cp-meta"><span>📄 파일:</span><code>app/app_utils/cost_guard_plugin.py</code><code>app/agent.py</code></div>
@@ -2323,15 +2303,15 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
                 <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C6.2</span><span class="cp-sev cp-sev-std">High</span></div></td>
                 <td>
                   <div class="cp-title-row">
-                    <span class="cp-title">Gemini API 429(DSQ) 쿼터 소진 방어 &amp; 지수 백오프 재시도</span>
+                    <span class="cp-title">Gemini API 429 Fail-Fast 지수 백오프 &amp; Global DSQ 엔드포인트</span>
                   </div>
                   <p class="cp-desc">
-                    동시 접속자가 몰리는 피크 시간대에는 Gemini API에서 일시적인 <code>429 RESOURCE_EXHAUSTED</code>(동적 공유 쿼터 경합)가 발생할 수 있습니다. 재시도 설정이 약하면 고객 화면에 즉시 에러가 노출됩니다.
+                    Gemini API PayGo(DSQ) 환경에서는 간헐적 <code>429 RESOURCE_EXHAUSTED</code> 및 일시적 5xx 오류가 발생할 수 있습니다. 재시도가 아예 없으면 즉시 장애로 이어지고, 반대로 재시도 횟수가 과도하면 Retry Storm과 Cloud Run 동시성 고갈을 유발합니다.
                   </p>
                   <div class="cp-ba-list">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>app/agent.py</code>의 Gemini 모델 설정에 충분한 지수 백오프 재시도(<code>attempts &gt;= 5</code>)와 엔드포인트 위치(<code>GOOGLE_CLOUD_LOCATION</code>)가 구성되어 있는지 체크합니다. <em>(기본 스캐폴딩은 <code>attempts=3</code>으로 버스트 트래픽 시 조기 실패 가능)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><code>HttpRetryOptions(attempts=5, initial_delay=1.0, exp_base=2.0, http_status_codes=[429, 500, 502, 503, 504])</code>로 <strong>5회 지수 백오프</strong>를 적용하고, 글로벌 공유 쿼터 풀 활용을 위해 <code>GOOGLE_CLOUD_LOCATION="global"</code>(데이터 레지던시 필요 시 리전 고정)을 설정합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/agent.py</code>의 <code>HttpRetryOptions(attempts=3)</code>를 5회 지수 백오프로 상향 패치하고, <code>service.tf</code>의 <code>GOOGLE_CLOUD_LOCATION</code> 환경변수를 설정합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>app/agent.py</code>에 <code>HttpRetryOptions</code>(Fail-Fast + Jitter)가 구성되어 있는지, 그리고 <code>service.tf</code>에 <code>GOOGLE_CLOUD_LOCATION</code>이 명시되어 있는지 점검합니다. <em>(기존 <code>attempts=3</code> 등 유효한 재시도 설정은 그대로 보존)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>공식 Google Cloud 가이드대로 <strong><code>HttpRetryOptions(attempts=3, initial_delay=1.0, max_delay=15.0, exp_base=2.0, jitter=1.0, http_status_codes=[408, 429, 500, 502, 503, 504])</code></strong>로 Fail-Fast 백오프를 적용하고, <code>GOOGLE_CLOUD_LOCATION="global"</code>(레지던시 필요 시 리전 고정)을 설정합니다. <em>(※ 엄격한 고정 트래픽 SLA에는 Provisioned Throughput GSU 또는 Priority PayGo 검토 — Advisory)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>HttpRetryOptions</code>가 누락된 프로젝트에만 Fail-Fast 백오프(<code>attempts=3, jitter=1.0</code>)를 주입하고, <code>service.tf</code>에 <code>GOOGLE_CLOUD_LOCATION</code> 환경변수를 설정합니다.</span></div>
                   </div>
                   <div class="cp-meta"><span>📄 파일:</span><code>app/agent.py</code><code>deployment/terraform/service.tf</code></div>
                 </td>
@@ -2373,46 +2353,46 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
           </table>
         </div>
 
-        <!-- 4대 장애·공격 시뮬레이션 매핑표 -->
-        <h4 style="margin:18px 0 8px;font-size:14.5px;font-weight:700;color:var(--ink);">🛡️ 4대 모의 공격 · 장애 시뮬레이션 매핑 (<code>SIM-1</code>–<code>SIM-4</code>)</h4>
+        <!-- 4대 장애·보안 시뮬레이션 매핑표 -->
+        <h4 style="margin:18px 0 8px;font-size:14.5px;font-weight:700;color:var(--ink);">🛡️ 4대 장애 · 보안 시뮬레이션 매핑 (<code>SIM-1</code>–<code>SIM-4</code>)</h4>
         <p style="margin:0 0 10px;font-size:13.5px;">선택한 프로필에서 제외(<code>N/A</code>)된 체크포인트와 연결된 시뮬레이션은 자동으로 <strong><code>SKIPPED (N/A)</code></strong> 처리되어 불필요한 거짓 경고를 만들지 않습니다.</p>
         <div class="cp-matrix-wrap">
           <table class="cp-matrix-table" id="simMatrixTable">
             <thead>
               <tr>
                 <th style="width:84px;">시나리오</th>
-                <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 모의 공격 · 장애 시나리오 상세 &amp; 검증 방식</th>
+                <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 모의 장애 · 보안 시나리오 상세 &amp; 검증 방식</th>
                 <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션">1. 풀</th>
                 <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션">2. 표준</th>
                 <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 경량 PoC">3. PoC</th>
               </tr>
             </thead>
             <tbody>
-              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
                 <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-1</span></td>
                 <td>
-                  <div class="cp-title-row"><span class="cp-title">프롬프트 인젝션 &amp; 시스템 프롬프트 · PII 탈취 공격</span><span class="pill pill-gray mono" style="font-size:11px;">C4.2</span></div>
-                  <p class="cp-desc" style="margin-bottom:0;">악의적 사용자가 <code>Ignore previous instructions...</code> 탈옥이나 주민번호·카드번호 입력을 시도할 때 <code>ModelArmorGuardrailPlugin</code>(Model Armor API + 로컬 폴백)이 모델 호출 직전에 차단/마스킹하는지 검증합니다.</p>
+                  <div class="cp-title-row"><span class="cp-title">Cloud Trace 스팬 PII 원문 평문 유출 시나리오</span><span class="pill pill-gray mono" style="font-size:11px;">C5.2</span></div>
+                  <p class="cp-desc" style="margin-bottom:0;">고객 프롬프트와 응답 원문이 Cloud Trace 스팬에 평문 저장되지 않도록 <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT</code>와 <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false</code>가 모두 잠겨 있는지 검증합니다.</p>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
-                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
               </tr>
-              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
                 <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-2</span></td>
                 <td>
-                  <div class="cp-title-row"><span class="cp-title">도구 악용 내부 메타데이터 SSRF &amp; 타인 정보 IDOR 공격</span><span class="pill pill-gray mono" style="font-size:11px;">C4.2</span></div>
-                  <p class="cp-desc" style="margin-bottom:0;">도구 인자에 GCP 메타데이터 URL(<code>http://169.254.169.254</code>)이나 타 사용자 <code>user_id</code>를 주입하는 공격을 <code>ModelArmorGuardrailPlugin.before_tool_callback</code>이 코드 레벨에서 즉시 차단하는지 검증합니다.</p>
+                  <div class="cp-title-row"><span class="cp-title">컨테이너 RCE 루트 권한 상승 &amp; 과도한 SA 권한 폭발 반경</span><span class="pill pill-gray mono" style="font-size:11px;">C4.1 · C4.3</span></div>
+                  <p class="cp-desc" style="margin-bottom:0;">서드파티 패키지 취약점 발생 시 <code>root(UID 0)</code> 탈취와 <code>roles/storage.admin</code> 버킷 삭제 피해를 막도록 Non-Root <code>USER 10001</code>, Gen2 샌드박스(Cloud Run), 최소 권한 SA(<code>roles/storage.objectUser</code>)를 검증합니다.</p>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
-                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
               </tr>
               <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
                 <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-3</span></td>
                 <td>
-                  <div class="cp-title-row"><span class="cp-title">에이전트 무한 도구 루프(15회 연속) &amp; 출력 토큰 폭탄</span><span class="pill pill-gray mono" style="font-size:11px;">C6.1</span></div>
-                  <p class="cp-desc" style="margin-bottom:0;">단일 턴(<code>invocation_id</code>) 내에서 15회 이상 LLM·도구가 재귀 호출될 때 <code>CostTokenGuardrailPlugin</code>이 상한선(기본 10회)과 <code>max_output_tokens</code>에서 즉시 차단하는지 검증합니다.</p>
+                  <div class="cp-title-row"><span class="cp-title">에이전트 무한 도구 루프(15회 연속) 폭주 차단</span><span class="pill pill-gray mono" style="font-size:11px;">C6.1</span></div>
+                  <p class="cp-desc" style="margin-bottom:0;">단일 턴(<code>invocation_id</code>) 내에서 15회 이상 LLM·도구가 재귀 호출될 때 <code>CostTokenGuardrailPlugin</code>이 상한선(기본 10회)에서 즉시 차단하는지 검증합니다.</p>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
@@ -2435,16 +2415,16 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
         <h3>3-3. 예상 진단 결과 (Before Hardening · 1번 전체 기준)</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
-            <div class="code-output" style="border-top:none;">Target: cloud_run  |  Weighted Score: 4.5 / 100.0 (Mode B 스캐폴딩 시작 시: 18.2 / 100.0 · 🔴 Not Production Ready)
-Advisories: CPU/메모리/min_instances · 인바운드 인증/엣지 토폴로지는 강제 변경 없이 기존 값 보존
-Simulator: 0 / 4 Scenarios Protected (프롬프트 인젝션 / SSRF·IDOR / 무한 루프 / 세션 유실 취약)</div>
+            <div class="code-output" style="border-top:none;">Target: cloud_run  |  Weighted Score: 4.5 / 100.0 (Mode B 스캐폴딩 시작 시: 20.5 / 100.0 · 🔴 Not Production Ready)
+Advisories: 사이징 · 인바운드 인증/WAF · AI 거버넌스(Model Armor) · PT SLA는 강제 변경 없이 Advisory로 안내
+Simulator: 0 / 4 Scenarios Protected (Trace PII 노출 / Root+과권한 SA / 무한 루프 / 세션 유실 취약)</div>
           </div>
         </div>
         <div class="track-only" data-track="agent_runtime">
           <div class="code-wrap">
-            <div class="code-output" style="border-top:none;">Target: agent_runtime  |  Weighted Score: 2.3 / 100.0 (Mode B 스캐폴딩 시작 시: 29.5 / 100.0 · 4 MANAGED_NATIVE)
+            <div class="code-output" style="border-top:none;">Target: agent_runtime  |  Weighted Score: 2.3 / 100.0 (Mode B 스캐폴딩 시작 시: 31.8 / 100.0 · 4 MANAGED_NATIVE)
 Gate Verdict: 🔴 Not Production Ready
-Simulator: 0 / 4 Scenarios Protected (Model Armor / Memory Bank / Cost Guard / PSC-I 설정 누락)</div>
+Simulator: 0 / 4 Scenarios Protected (Trace PII 노출 / 과권한 SA·Root / 무한 루프 / Memory Bank 누락)</div>
           </div>
         </div>
 
@@ -2454,14 +2434,14 @@ Simulator: 0 / 4 Scenarios Protected (Model Armor / Memory Bank / Cost Guard / P
         </div>
       </section>
 
-      <!-- ==================== STEP 4 (PLAY 03: 14개 핵심 항목 자동 하드닝) ==================== -->
+      <!-- ==================== STEP 4 (PLAY 03: 13개 핵심 항목 자동 하드닝) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 4 / 8</span>
             <span class="pill pill-blue mono">PLAY 03</span>
             <span class="pill pill-gray mono">약 7분</span>
-            <h2><code>agy</code>로 14개 핵심 프로덕션 항목 자동 하드닝</h2>
+            <h2><code>agy</code>로 13개 핵심 프로덕션 항목 자동 하드닝</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
         </div>
@@ -2498,8 +2478,8 @@ Simulator: 0 / 4 Scenarios Protected (Model Armor / Memory Bank / Cost Guard / P
             <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 export SKILL_BIN=&quot;$HOME/.gemini/skills/agent-production-readiness/scripts/prod_ready.py&quot;
 
-# ① 1번(풀 프로덕션 14개) 기준 실행 예시
-#    - 2번(표준 프로덕션 13개) 선택 시: --items C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1 로 변경
+# ① 1번(풀 프로덕션 13개) 기준 실행 예시
+#    - 2번(표준 프로덕션 12개) 선택 시: --items C1.1,C1.2,C2.1,C2.2,C4.1,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1 로 변경
 #    - 3번(경량 PoC 8개) 선택 시: --items C1.1,C1.2,C4.1,C4.3,C5.1,C5.2,C6.1,C6.2 로 변경
 python3 &quot;$SKILL_BIN&quot; diff . --target {{TARGET_KEY}} --items ALL | head -n 60
 python3 &quot;$SKILL_BIN&quot; apply . --target {{TARGET_KEY}} --items ALL
@@ -2798,7 +2778,7 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>인바운드 노출 범위</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭은 <strong>퍼블릭 의도</strong> / 사내 전용은 <strong>인바운드 제한</strong></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>아웃바운드 Direct VPC Egress</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭 API만 호출 시 <strong>미연결 적합</strong></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Model Armor · SSRF 가드레일</td><td><span class="pill pill-purple mono">🟣 코드 확인</span></td><td>Step 4에서 적용 완료 → <strong>이미 적용됨</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>AI 보안 거버넌스 (Model Armor Advisory)</td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>조직 정책에 따라 <strong>Agent Gateway + Floor Settings</strong> 확인</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
               </tbody>
@@ -2816,7 +2796,7 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>제로 트러스트 IAM 인바운드</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>PSC Interface (사설 VPC 접근)</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>사설 DB 접근이 없으면 <strong>미연결 적합</strong></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Model Armor · SSRF 가드레일</td><td><span class="pill pill-purple mono">🟣 코드 확인</span></td><td>Step 4에서 적용 완료 → <strong>이미 적용됨</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>AI 보안 거버넌스 (Model Armor Advisory)</td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>조직 정책에 따라 <strong>Agent Gateway + Floor Settings</strong> 확인</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
               </tbody>
@@ -2978,7 +2958,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       { id: 1, code: "1", title: "심플 ADK Agent 생성", time: "7분" },
       { id: 2, code: "2", title: "Play 01 · Skill 설치 & agy 실행", time: "3분" },
       { id: 3, code: "3", title: "Play 02 · agy 진단 & 시뮬레이션", time: "6분" },
-      { id: 4, code: "4", title: "Play 03 · 14개 항목 자동 하드닝", time: "7분" },
+      { id: 4, code: "4", title: "Play 03 · 13개 항목 자동 하드닝", time: "7분" },
       { id: 5, code: "5", title: "Google Cloud 배포", time: "8분" },
       { id: 6, code: "6", title: "Play 04 · Web JSON 위자드 진단", time: "6분" },
       { id: 7, code: "7", title: "최종 리포트 & 명령어 재검증", time: "5분" },
@@ -3005,11 +2985,11 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
           "<strong>장기적인 대화(Long-lived)와 문맥 유지(Memory)가 필수적일 때</strong> — 사용자와 며칠~몇 주에 걸쳐 대화하며 이전 맥락을 기억해야 하는 챗봇에 적합합니다.",
           "<strong>세션 DB · 인프라 운영(DevOps)을 최소화하고 싶을 때</strong> — 백엔드 데이터베이스를 팀에서 직접 구축·운영하지 않으려는 경우 가장 좋은 선택입니다."
         ],
-        beforeScore: "초기 점수: 2.3 / 100 (Mode B: 29.5)",
+        beforeScore: "초기 점수: 2.3 / 100 (Mode B: 31.8)",
         deployTitle: "3. Agent Runtime 배포",
         deployCmd: "agents-cli deploy --no-wait",
         wizardSub: "JSON 붙여넣기 → 8개 위자드",
-        kpiPlay01: "4 기본 + 10 패치",
+        kpiPlay01: "4 기본 + 9 패치",
         kpiPlay01Sub: "4개 MANAGED_NATIVE 자동 가점",
         kpiPlay02: "8개 위자드"
       },
@@ -3032,11 +3012,11 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
           "<strong>비용 절감과 예측 가능성이 가장 중요할 때</strong> — 트래픽 패턴이 불규칙해서 유휴 시 인스턴스를 0으로 내리는(Scale-to-zero) 구조가 유리할 때 적합합니다.",
           "<strong>커스텀 컨테이너 · 경량 Stateless 환경</strong> — 사용자 지정 컨테이너 구성이 필요하거나 일회성 질의응답(Stateless) 위주의 가벼운 에이전트에 적합합니다."
         ],
-        beforeScore: "초기 점수: 4.5 / 100 (Mode B: 18.2)",
+        beforeScore: "초기 점수: 4.5 / 100 (Mode B: 20.5)",
         deployTitle: "3. Cloud Run 배포",
         deployCmd: "gcloud run deploy / Terraform",
         wizardSub: "JSON 붙여넣기 → 10개 위자드",
-        kpiPlay01: "14개 패치",
+        kpiPlay01: "13개 패치",
         kpiPlay01Sub: "7대 영역 직접 코드·IaC 하드닝",
         kpiPlay02: "10개 위자드"
       }

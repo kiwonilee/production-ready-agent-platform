@@ -2,19 +2,19 @@ schema: agents-cli-extension/v1alpha1
 name: agent-production-readiness
 version: 2.0.0
 description: >
-  7-Domain, 14-Item Production-Readiness Scanner, Patcher, and Localhost Workbench
+  7-Domain, 13-Item Production-Readiness Scanner, Patcher, and Localhost Workbench
   for Google ADK & google-agents-cli projects targeting Cloud Run and Agent Runtime.
 skills:
   - path: skills/agent-production-readiness
 commands:
   - name: scan
-    description: Scan local agent project against the 14-item Production-Readiness rubric
+    description: Scan local agent project against the 13-item Production-Readiness rubric
     entrypoint: uv run prod-ready scan .
   - name: diff
     description: Preview unified diffs for production hardening patches
     entrypoint: uv run prod-ready diff .
   - name: apply
-    description: Apply selected 14-item production hardening patches in-place
+    description: Apply selected 13-item production hardening patches in-place
     entrypoint: uv run prod-ready apply .
   - name: ui
     description: Launch the interactive Production-Readiness Workbench on localhost:8090

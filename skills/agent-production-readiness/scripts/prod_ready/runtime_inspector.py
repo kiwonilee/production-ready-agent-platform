@@ -796,28 +796,27 @@ def _evaluate_cloud_run_service(
         "domain": "4. 보안 & 가드레일",
         "check_type": "CODE_VERIFY",
         "verification_scope": "CODE_VERIFY",
-        "title": "입출력 가드레일 (Model Armor / 콜백) & 도구 보안 — 소스 코드 확인 필요",
+        "title": "AI 보안 거버넌스 (Agent Gateway · Model Armor) — 선택 거버넌스 확인",
         "status": r42_status,
         "score": r42_score,
         "current_state": r42_current,
-        "recommended_state": "에이전트 코드(Play 01) 또는 앞단 Agent Gateway에서 Model Armor·프롬프트 인젝션·SSRF 방어 적용 여부 확인",
+        "recommended_state": "조직 AI 보안 거버넌스 정책에 따라 앞단 Agent Gateway + Model Armor Floor Settings로 중앙 통제하거나, 필요한 에이전트에만 선택적 ADK ModelArmorPlugin 적용",
         "why_it_matters": (
-            "Cloud Run `describe` JSON은 컨테이너 이미지 내부 Python 코드(`before_model_callback`, Model Armor SDK 호출 등)나 "
-            "앞단 프록시(Agent Gateway / Apigee)의 보안 정책을 노출하지 않습니다. "
-            "이미 코드나 게이트웨이에 적용되어 있다면 정상이며, 미적용 상태라면 Play 01 로컬 Agent Skill로 가드레일 플러그인을 추가할 수 있습니다."
+            "Cloud Run `describe` JSON은 앞단 Agent Gateway(Model Armor Floor Settings)나 컨테이너 내부 콜백의 보안 정책을 노출하지 않습니다. "
+            "모든 에이전트 코드에 일괄 강제하기보다 조직의 AI 보안 거버넌스 기준에 맞춰 게이트웨이 또는 앱 레벨 적용 여부를 결정하세요."
         ),
-        "how_to_fix_title": "Play 01 로컬 소스 코드에서 Model Armor 가드레일 점검/적용",
+        "how_to_fix_title": "Agent Gateway + Model Armor Floor Settings 또는 선택적 ADK ModelArmorPlugin 검토",
         "gcloud_cmd": (
-            f"# [Play 02/03 · 로컬 PC 소스 코드 스캔으로 실제 적용 여부 확인 및 패치]\n"
-            f"uv run prod-ready scan <내_로컬_에이전트_폴더>\n"
-            f"uv run prod-ready apply <내_로컬_에이전트_폴더> --items C4.2"
+            f"# [선택 거버넌스] 조직/프로젝트 단위 Model Armor Floor Settings 또는 Agent Gateway 정책 확인\n"
+            f"gcloud model-armor floorsettings describe --project={project_id} --location=global\n"
+            f"# 로컬 코드 전체 점검 (13개 No-Regret 항목):\n"
+            f"uv run prod-ready scan <내_로컬_에이전트_폴더>"
         ),
         "terraform_snippet": (
-            '# app/agent.py (Play 01 Agent Skill)\n'
-            'from app.app_utils.model_armor_plugin import ModelArmorGuardrailPlugin\n'
-            'app = App(root_agent=root_agent, name="app", plugins=[ModelArmorGuardrailPlugin()])'
+            '# 권장: Agent Gateway + Model Armor Floor Settings로 중앙 거버넌스 통제\n'
+            '# (또는 필요한 서비스에서만 ADK before_model_callback / ModelArmorPlugin 선택 장착)'
         ),
-        "console_guide": "이 항목은 런타임 JSON만으로 판단할 수 없습니다. 로컬 소스 코드(Play 01) 또는 Agent Gateway 설정에서 입출력 가드레일 유무를 확인하세요.",
+        "console_guide": "이 항목은 점수에 반영되지 않는 거버넌스 참고(REVIEW) 항목입니다. 조직 보안 정책상 필요한 경우에만 Model Armor / Agent Gateway를 연동하세요.",
     })
 
     # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT)
@@ -963,7 +962,7 @@ def _evaluate_cloud_run_service(
         },
         "combined_runtime_fix_cmd": combined_gcloud,
         "stage1_skill_cmd": (
-            "# Play 01 (배포 전 로컬 PC): 소스 코드 내부 가드레일(Model Armor, Cost Guard) 점검 및 패치\n"
+            "# Play 01 (배포 전 로컬 PC): 13개 핵심 No-Regret 항목(루프 방지, Non-Root, OTel 프라이버시 등) 점검 및 패치\n"
             "uv run prod-ready scan <내_로컬_에이전트_코드_폴더>"
         ),
         "checks": checks,
@@ -1094,20 +1093,20 @@ def _evaluate_agent_runtime_engine(
             "domain": "4. 보안 & 가드레일",
             "check_type": "CODE_VERIFY",
             "verification_scope": "CODE_VERIFY",
-            "title": "입출력 가드레일 (Model Armor / 콜백) & 도구 보안 — 소스 코드 확인 필요",
+            "title": "AI 보안 거버넌스 (Agent Gateway · Model Armor) — 선택 거버넌스 확인",
             "status": "GREEN" if has_guardrail else "REVIEW",
             "score": 100 if has_guardrail else None,
             "current_state": (
                 "Model Armor 관련 환경변수 감지됨"
                 if has_guardrail
-                else "런타임 JSON에서 Model Armor 환경변수 미감지 (※ 코드 내부 콜백/SDK 직접 호출 여부는 JSON으로 판별 불가)"
+                else "런타임 JSON에서 Model Armor 환경변수 미감지 (※ Agent Gateway / Floor Settings 중앙 통제 여부는 JSON으로 판별 불가)"
             ),
-            "recommended_state": "Play 01 로컬 소스 코드에서 Model Armor 또는 프롬프트/도구 가드레일 적용 여부 확인",
-            "why_it_matters": "ReasoningEngine API JSON은 패키징된 Python 코드 내부의 콜백·가드레일 구현 여부를 노출하지 않습니다. Play 01 로컬 코드 스캔에서 확인하세요.",
-            "how_to_fix_title": "Play 01 로컬 소스 코드에서 Model Armor 가드레일 점검/적용",
-            "gcloud_cmd": "uv run prod-ready scan <내_로컬_에이전트_폴더>\nuv run prod-ready apply <내_로컬_에이전트_폴더> --items C4.2",
-            "terraform_snippet": "plugins = [ModelArmorGuardrailPlugin()]",
-            "console_guide": "로컬 소스 코드(Play 01)에서 입출력 가드레일 적용 여부를 확인하세요.",
+            "recommended_state": "조직 AI 보안 거버넌스 요건에 따라 Agent Gateway + Model Armor Floor Settings 또는 선택적 ADK ModelArmorPlugin 검토",
+            "why_it_matters": "ReasoningEngine API JSON은 앞단 Agent Gateway 정책이나 코드 내부 가드레일을 노출하지 않습니다. 조직 거버넌스 정책상 필요한 경우에만 중앙 게이트웨이 또는 앱 플러그인으로 적용하세요.",
+            "how_to_fix_title": "Model Armor Floor Settings 확인 및 Play 01 핵심 점검",
+            "gcloud_cmd": f"gcloud model-armor floorsettings describe --project={project_id} --location=global\nuv run prod-ready scan <내_로컬_에이전트_폴더>",
+            "terraform_snippet": "# 권장: Agent Gateway + Model Armor Floor Settings 중앙 정책",
+            "console_guide": "점수에 반영되지 않는 거버넌스 참고(REVIEW) 항목입니다. 조직 정책에 따라 적용 여부를 결정하세요.",
         },
         {
             "id": "R5.1",

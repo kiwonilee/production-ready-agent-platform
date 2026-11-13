@@ -1,4 +1,4 @@
-"""Static Scanner & Scoring Engine for the 7-Domain, 14-Item Production-Readiness Checklist (v2)."""
+"""Static Scanner & Scoring Engine for the 7-Domain, 13-Item Production-Readiness Checklist (v2)."""
 
 from __future__ import annotations
 
@@ -139,6 +139,16 @@ def _collect_sizing_advisories(target: TargetType, service_tf: str) -> list[str]
         "[참고 · 세션/메모리 옵션] D2는 운영 부담이 없는 Agent Platform Managed Session & Memory Bank를 기본 적용합니다. "
         "(폐쇄망 DB 강제·서브밀리초 캐시 등 특수 요건 시 Self-Hosted Cloud SQL / Memorystore Redis 자체 구축 옵션도 선택 가능합니다.)"
     )
+    advisories.append(
+        "[참고 · AI 보안 거버넌스 (Model Armor / 도구 SSRF·IDOR)] 프롬프트 인젝션·PII 입출력 필터링과 도구 정책 통제는 "
+        "개별 에이전트 코드에 일괄 강제하기보다 조직 거버넌스 요건에 맞춰 앞단 Agent Gateway + Model Armor Floor Settings로 중앙 통제하거나, "
+        "필요한 워크로드에서만 선택적으로 ADK ModelArmorPlugin / before_tool_callback을 적용하세요."
+    )
+    advisories.append(
+        "[참고 · 상용 SLA / 429 쿼터 전략 (DSQ vs Provisioned Throughput)] Standard PayGo(Global DSQ)는 별도 처리량 SLA를 보장하지 않으며, "
+        "대화형 에이전트에서 무리한 재시도 상향은 Retry Storm과 동시성 고갈을 유발합니다. "
+        "상용 SLA가 필요한 핵심 워크로드는 Provisioned Throughput(GSU + Shared spillover) 또는 Priority PayGo를, 비동기·배치 평가는 Flex PayGo / Batch API를 검토하세요."
+    )
     return advisories
 
 
@@ -162,7 +172,6 @@ def scan_project(
     agent_py = _read_text(root / "app" / "agent.py")
     fast_api_py = _read_text(root / "app" / "fast_api_app.py")
     services_py = _read_text(root / "app" / "app_utils" / "services.py")
-    model_armor_py = _read_text(root / "app" / "app_utils" / "model_armor_plugin.py")
     cost_guard_py = _read_text(root / "app" / "app_utils" / "cost_guard_plugin.py")
     staging_yaml = _read_text(root / ".cloudbuild" / "staging.yaml")
     eval_config = _read_text(root / "tests" / "eval" / "eval_config.yaml")
@@ -188,7 +197,6 @@ def scan_project(
             agent_py=agent_py,
             fast_api_py=fast_api_py,
             services_py=services_py,
-            model_armor_py=model_armor_py,
             cost_guard_py=cost_guard_py,
             staging_yaml=staging_yaml,
             eval_config=eval_config,
@@ -293,7 +301,6 @@ def _evaluate_item(
     agent_py: str,
     fast_api_py: str,
     services_py: str,
-    model_armor_py: str,
     cost_guard_py: str,
     staging_yaml: str,
     eval_config: str,
@@ -459,25 +466,6 @@ def _evaluate_item(
                 )
             return ("RED", False, "variables.tf: 과도한 권한(roles/storage.admin) 부여 상태")
 
-    # C4.2: Model Armor API input/output/PII & Tool SSRF/IDOR guardrails
-    if cid == "C4.2":
-        has_plugin = bool(model_armor_py and "ModelArmorGuardrailPlugin" in agent_py)
-        has_real_api = "modelarmor" in model_armor_py.lower() and "sanitize_user_prompt" in model_armor_py
-        has_tool_guard = "before_tool_callback" in model_armor_py and "169\\.254\\." in model_armor_py
-        if has_plugin and has_real_api and has_tool_guard:
-            return (
-                "GREEN",
-                False,
-                "ModelArmorGuardrailPlugin (Google Cloud Model Armor API + 로컬 PII 폴백 + SSRF/IDOR before_tool_callback) 장착 완료",
-            )
-        if has_plugin:
-            return (
-                "AMBER",
-                False,
-                "가드레일 플러그인은 등록되었으나 실제 Model Armor API 연동 또는 도구 SSRF/IDOR 검증 보강 필요",
-            )
-        return ("RED", False, "Model Armor 입출력/PII 가드레일 및 도구 SSRF/IDOR 차단 플러그인 미장착")
-
     # C4.3: Container non-root hardening & Gen2 sandbox
     if cid == "C4.3":
         has_non_root = "USER 10001" in dockerfile or "USER appuser" in dockerfile
@@ -522,13 +510,13 @@ def _evaluate_item(
     # C5.3: Target-Specific SRE Golden Signal Alert Policies (alerts.tf)
     if cid == "C5.3":
         if not alerts_tf or "google_monitoring_alert_policy" not in alerts_tf:
-            return ("RED", False, "deployment/terraform/alerts.tf 없음 (프로덕션 장애/지연/공격 알람 전무)")
+            return ("RED", False, "deployment/terraform/alerts.tf 없음 (프로덕션 지연·5xx 에러율 알람 전무)")
         if target == "agent_runtime":
             if "ReasoningEngine" in alerts_tf and "cloud_run_revision" not in alerts_tf:
                 return (
                     "GREEN",
                     False,
-                    "alerts.tf: Agent Runtime (ReasoningEngine) 전용 메트릭 및 Guardrail 알럿 구성 완료",
+                    "alerts.tf: Agent Runtime (ReasoningEngine) 전용 P95 지연 및 PromQL 5xx 에러율 알럿 구성 완료",
                 )
             return (
                 "AMBER",
@@ -541,7 +529,7 @@ def _evaluate_item(
                 return (
                     "GREEN",
                     False,
-                    "alerts.tf: Cloud Run P95 지연 · PromQL 5xx 에러율(>2%) · Guardrail 알럿 구성 완료",
+                    "alerts.tf: Cloud Run P95 지연 및 PromQL 5xx 에러율(>2%) 알럿 구성 완료",
                 )
             return (
                 "AMBER",
@@ -549,41 +537,54 @@ def _evaluate_item(
                 "alerts.tf의 5xx 에러 알람이 비율(PromQL)이 아닌 절대 속도로 설정됨 — 업그레이드 필요",
             )
 
-    # C6.1: Per-turn Loop Cap (with invocation reset + max_output_tokens; NO forced budget.tf!)
+    # C6.1: Per-turn Loop Cap (with invocation reset + opt-in max_output_tokens; Thinking-model safe!)
     if cid == "C6.1":
         has_cost_plugin = bool(
             cost_guard_py
             and "CostTokenGuardrailPlugin" in agent_py
             and "invocation_id" in cost_guard_py
-            and "max_output_tokens" in cost_guard_py
         )
         if has_cost_plugin:
             return (
                 "GREEN",
                 False,
-                "CostTokenGuardrailPlugin (invocation_id 턴별 리셋 + max_output_tokens 강제 캡) 장착 완료",
+                "CostTokenGuardrailPlugin (invocation_id 턴별 리셋 + 선택적 max_output_tokens 캡) 장착 완료",
             )
         if cost_guard_py or "CostTokenGuardrailPlugin" in agent_py:
             return (
                 "AMBER",
                 False,
-                "CostTokenGuardrailPlugin 일부 설정(invocation_id 리셋 또는 max_output_tokens 캡) 보강 필요",
+                "CostTokenGuardrailPlugin 일부 설정(invocation_id 턴별 리셋) 보강 필요",
             )
-        return ("RED", False, "단일 턴 무한 루프 차단 및 출력 토큰 상한 플러그인(CostTokenGuardrailPlugin) 미장착")
+        return ("RED", False, "단일 턴 무한 도구 루프 차단 플러그인(CostTokenGuardrailPlugin) 미장착")
 
-    # C6.2: LLM API 429 DSQ quota resilience & exponential backoff
+    # C6.2: Gemini API 429 (DSQ) resilience — Global endpoint + Fail-Fast HttpRetryOptions (accepts attempts >= 3!)
     if cid == "C6.2":
-        has_retry = "attempts=5" in agent_py
+        has_retry = (
+            "HttpRetryOptions" in agent_py
+            and "attempts=0" not in agent_py
+            and "attempts=1" not in agent_py
+        )
         has_loc = "GOOGLE_CLOUD_LOCATION" in service_tf
         if has_retry and has_loc:
             return (
                 "GREEN",
                 False,
-                "agent.py: HttpRetryOptions(attempts=5, 지수 백오프) 및 service.tf GOOGLE_CLOUD_LOCATION 구성 완료",
+                "agent.py: HttpRetryOptions(지수 백오프 Fail-Fast) 및 service.tf GOOGLE_CLOUD_LOCATION 구성 확인됨",
             )
-        if "HttpRetryOptions" in agent_py:
-            return ("AMBER", False, "기본 재시도(attempts=3)만 설정됨 — attempts=5 지수 백오프 강화 권장")
-        return ("RED", False, "LLM API 429 재시도 옵션 미설정")
+        if has_retry:
+            return (
+                "AMBER",
+                False,
+                "agent.py에 HttpRetryOptions는 있으나 service.tf에 GOOGLE_CLOUD_LOCATION(기본 global DSQ) 미설정",
+            )
+        if has_loc:
+            return (
+                "AMBER",
+                False,
+                "service.tf에 GOOGLE_CLOUD_LOCATION은 있으나 agent.py에 HttpRetryOptions 지수 백오프 재시도 누락",
+            )
+        return ("RED", False, "LLM API 429 재시도 옵션(HttpRetryOptions) 및 GOOGLE_CLOUD_LOCATION 미설정")
 
     # C7.1: Automated Eval Quality Gate in CI/CD
     if cid == "C7.1":

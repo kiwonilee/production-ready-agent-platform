@@ -2,10 +2,10 @@
   "name": "agent-production-readiness",
   "displayName": "Enterprise AI Agent Production-Readiness Workbench",
   "version": "2.0.0",
-  "description": "7-Domain, 14-Item (C1.1-C7.1) Production-Readiness Scanner, In-Place Patcher & Localhost Workbench for Google Cloud AI Agents (Cloud Run & Agent Runtime, 100% compatible with google-agents-cli v1.5.0).",
+  "description": "7-Domain, 13-Item (C1.1-C7.1) Production-Readiness Scanner, In-Place Patcher & Localhost Workbench for Google Cloud AI Agents (Cloud Run & Agent Runtime, 100% compatible with google-agents-cli v1.5.0).",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [
-    "현재 로컬 에이전트 프로젝트의 프로덕션 준비도(14개 핵심 체크리스트)를 스캔하고 점수를 알려줘",
+    "현재 로컬 에이전트 프로젝트의 프로덕션 준비도(13개 핵심 체크리스트)를 스캔하고 점수를 알려줘",
     "이 에이전트를 Cloud Run 프로덕션 배포 수준(100점)으로 강화하기 위한 Diff를 보여주고 패치를 적용해줘",
     "Agent Runtime(Agent Platform Agent Engine) 타깃으로 프로덕션 준비도를 점검하고 보안성 심의 리포트(READINESS_REPORT.md)를 생성해줘",
     "로컬호스트에서 인터랙티브 Production-Readiness Workbench 웹 UI를 실행해줘"
@@ -22,6 +22,6 @@
     "agent-runtime",
     "production-readiness",
     "terraform",
-    "model-armor"
+    "finops"
   ]
 }

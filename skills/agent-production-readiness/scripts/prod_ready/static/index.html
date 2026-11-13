@@ -270,7 +270,7 @@
               <a href="#play1-step2" class="flex items-center justify-between gap-2.5 rounded-xl px-3.5 py-3 text-[14.5px] font-bold text-[#475569] hover:bg-[#F1F6FE] hover:text-[#1967D2] no-underline transition">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <span class="w-14 shrink-0 font-mono text-[13px] font-bold text-[#64748B]">Step 2</span>
-                  <span class="truncate">스캔 및 14개 패치 적용</span>
+                  <span class="truncate">스캔 및 13개 패치 적용</span>
                 </div>
                 <span class="material-symbols-outlined text-[#64748B]">chevron_right</span>
               </a>
@@ -356,7 +356,7 @@
               배포 전: 로컬 PC에서 Agent Skill로 에이전트 소스 코드 하드닝하기
             </h1>
             <p class="m-0 text-[14.5px] leading-[1.65] text-[#475569]">
-              프로토타입 에이전트를 운영 환경(Cloud Run 또는 Agent Runtime)에 배포하기 전에, 코드 내부 가드레일(Model Armor, Tool Timeout, 구조화 로깅, OTel 트레이싱)과 최소 권한 IAM/Terraform 템플릿을 자동 주입합니다.
+              프로토타입 에이전트를 운영 환경(Cloud Run 또는 Agent Runtime)에 배포하기 전에, 영속 세션·Memory Bank, 턴별 루프 가드레일, OTel <code>NO_CONTENT</code> 트레이싱, Non-Root 컨테이너, 최소 권한 IAM/Terraform 템플릿을 자동 주입합니다.
             </p>
 
             <!-- 3-Column Flow Grid (Google Blue / Yellow / Green) -->
@@ -378,7 +378,7 @@
                 <div class="rounded-xl bg-[#FEF7E0]/70 border border-[#FBBC04]/25 border-l-4 border-l-[#FBBC04] p-4">
                   <div class="flex items-center gap-2 mb-1.5">
                     <span class="inline-flex items-center rounded-md bg-[#FEEFC3] px-2 py-0.5 font-mono text-[12px] font-bold text-[#B06000]">Step 2</span>
-                    <span class="text-[15px] font-bold text-[#0F172A]">14개 프로덕션 기준 스캔 & 패치</span>
+                    <span class="text-[15px] font-bold text-[#0F172A]">13개 프로덕션 기준 스캔 & 패치</span>
                   </div>
                   <p class="m-0 text-[13.5px] leading-[1.55] text-[#334155]">
                     Antigravity 프롬프트 또는 <code>prod-ready apply</code>로 <code>agent.py</code>·<code>Dockerfile</code>·<code>terraform/</code>을 하드닝합니다.
@@ -430,7 +430,7 @@ cp -r skills/agent-production-readiness ~/.gemini/config/skills/</pre>
             <div class="flex items-center gap-3">
               <span class="inline-flex items-center rounded-xl bg-[#E6F4EA] px-3 py-1 font-mono text-[13px] font-bold text-[#137333]">Step 2</span>
               <h2 class="m-0 text-[18px] font-bold tracking-[-0.02em] text-[#0F172A]">
-                내 로컬 에이전트 프로젝트 스캔 및 14개 프로덕션 패치 적용
+                내 로컬 에이전트 프로젝트 스캔 및 13개 프로덕션 패치 적용
               </h2>
             </div>
             <p class="m-0 text-[14.5px] leading-[1.65] text-[#475569]">
@@ -1264,10 +1264,10 @@ uv run prod-ready apply .</pre>
             {
               id: "apply_fix",
               category: "fix",
-              badge: "🛠️ Play 01 패치",
-              title: "Play 02/03 로컬 Agent Skill로 Model Armor · SSRF/IDOR 가드레일 점검/패치 (C4.2)",
-              shortLabel: "Play 01 로컬 코드 가드레일 패치",
-              desc: "최종 리포트에 Play 01 로컬 소스 코드 스캔 및 패치 명령어를 포함합니다.",
+              badge: "🛡️ 거버넌스 점검",
+              title: "Agent Gateway + Model Armor Floor Settings 정책 확인 (또는 로컬 코드 점검)",
+              shortLabel: "Model Armor / 게이트웨이 거버넌스 확인",
+              desc: "최종 리포트에 Model Armor Floor Settings 조회 명령과 Play 01 로컬 스캔 안내를 포함합니다.",
             },
             {
               id: "defer",
@@ -1449,10 +1449,10 @@ uv run prod-ready apply .</pre>
             {
               id: "apply_fix",
               category: "fix",
-              badge: "🛠️ Play 01 패치",
-              title: "Play 02/03 로컬 소스 코드에서 Model Armor · SSRF/IDOR 가드레일 패치 (C4.2)",
-              shortLabel: "Play 01 코드 가드레일 패치",
-              desc: "최종 리포트에 Play 01 코드 스캔 및 패치 명령어를 포함합니다.",
+              badge: "🛡️ 거버넌스 점검",
+              title: "Agent Gateway + Model Armor Floor Settings 정책 확인 (또는 로컬 코드 점검)",
+              shortLabel: "Model Armor / 게이트웨이 거버넌스 확인",
+              desc: "최종 리포트에 Model Armor Floor Settings 조회 명령과 Play 01 로컬 스캔 안내를 포함합니다.",
             },
             {
               id: "defer",
@@ -1708,7 +1708,7 @@ uv run prod-ready apply .</pre>
           updateFlags.push(`--service-account=${saName}@${proj}.iam.gserviceaccount.com`);
         }
         if (idSet.has("R4.2")) {
-          stage1Items.push("C4.2");
+          stage1Items.push("R4.2");
         }
         if (idSet.has("R5.1")) {
           envPairs.push(
@@ -1741,11 +1741,10 @@ uv run prod-ready apply .</pre>
           blocks.push(lines.join("\n"));
         }
         if (stage1Items.length > 0) {
-          const uniqStage1 = Array.from(new Set(stage1Items));
           blocks.push(
-            `# [Play 01 · 로컬 소스 코드 점검 및 가드레일 패치: ${uniqStage1.join(", ")}]\n` +
-            `uv run prod-ready scan <내_로컬_에이전트_폴더>\n` +
-            `uv run prod-ready apply <내_로컬_에이전트_폴더> --items ${uniqStage1.join(",")}`
+            `# [R4.2 · AI 보안 거버넌스 Advisory — Agent Gateway + Model Armor Floor Settings 확인]\n` +
+            `gcloud model-armor floorsettings describe --full-uri="projects/${proj}/locations/global/floorSetting"\n` +
+            `uv run prod-ready scan <내_로컬_에이전트_폴더>`
           );
         }
         return blocks.join("\n\n");
@@ -1756,17 +1755,16 @@ uv run prod-ready apply .</pre>
 
         if (idSet.has("R3.2")) deployFlags.push(`--network-attachment=projects/${proj}/regions/${reg}/networkAttachments/${p.psc_attachment || "agent-psc"}`);
         if (idSet.has("R4.1")) deployFlags.push(`--service-account=sa-agent@${proj}.iam.gserviceaccount.com`);
-        if (idSet.has("R4.2")) stage1Items.push("C4.2");
+        if (idSet.has("R4.2")) stage1Items.push("R4.2");
         if (idSet.has("R5.1")) envPairs.push("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT");
         if (idSet.has("R6.1")) envPairs.push("GOOGLE_CLOUD_LOCATION=global");
 
         const blocks = [];
         if (stage1Items.length > 0) {
-          const uniqStage1 = Array.from(new Set(stage1Items));
           blocks.push(
-            `# [Play 01 · 로컬 소스 코드 점검 및 패치: ${uniqStage1.join(", ")}]\n` +
-            `uv run prod-ready scan <내_로컬_에이전트_폴더>\n` +
-            `uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items ${uniqStage1.join(",")}`
+            `# [R4.2 · AI 보안 거버넌스 Advisory — Agent Gateway + Model Armor Floor Settings 확인]\n` +
+            `gcloud model-armor floorsettings describe --full-uri="projects/${proj}/locations/global/floorSetting"\n` +
+            `uv run prod-ready scan <내_로컬_에이전트_폴더> --target agent_runtime`
           );
         }
         if (deployFlags.length > 0 || envPairs.length > 0) {

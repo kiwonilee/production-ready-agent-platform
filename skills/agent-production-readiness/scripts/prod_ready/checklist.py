@@ -1,15 +1,18 @@
-"""Canonical 7-Domain, 14-Item Production-Readiness Checklist, Guide & Customization Schema (v2).
+"""Canonical 7-Domain, 13-Item Production-Readiness Checklist, Guide & Customization Schema (v2).
 
-Defines the 7 Domains, 14 core No-Regret Checklist Items (C1.1-C7.1), customizable parameters,
+Defines the 7 Domains, 13 core "True No-Regret" Checklist Items (C1.1-C7.1), customizable parameters,
 and explicit runtime mappings separating Cloud Run (`cloud_run`) and Agent Runtime (`agent_runtime`).
 
 Key v2 Principles:
 1. No unsolicited CPU/Memory/Concurrency/min_instances upsizing — sizing belongs to load testing (`tests/load_test/`).
-2. No over-reaching org/infra mutations (no forced GCLB/Cloud Armor WAF, no forced Billing Account `budget.tf`,
-   no forced GCS log bucket versioning, no forced `deletion_protection=true`, no dummy `canary_rollout.sh`).
-3. Domain 2 defaults to Agent Platform Managed Session Service (`VertexAiSessionService`) and
+2. No over-reaching org/infra/governance mutations (no forced GCLB/Cloud Armor WAF, no forced Billing Account `budget.tf`,
+   no forced GCS log bucket versioning, no forced `deletion_protection=true`, no forced Model Armor / tool SSRF plugin —
+   centralized governance belongs to Agent Gateway / Model Armor Floor Settings advisory).
+3. Thinking-model safe & Retry-Storm safe defaults: `max_output_tokens = 0` (opt-in so Gemini 2.5/3.x thoughts aren't
+   truncated), and `C6.2` preserves `agents-cli`'s Fail-Fast `attempts=3` instead of forcing `attempts=5`.
+4. Domain 2 defaults to Agent Platform Managed Session Service (`VertexAiSessionService`) and
    Memory Bank (`VertexAiMemoryBankService`); Self-Hosted Cloud SQL / Redis is noted only as an optional alternative.
-4. Strict runtime separation between Cloud Run and Agent Runtime.
+5. Strict runtime separation between Cloud Run and Agent Runtime.
 """
 
 from __future__ import annotations
@@ -42,7 +45,7 @@ class CustomParams:
     latency_p95_ms: int = 15000
     model_location: str = "global"
     max_llm_calls_per_turn: int = 10
-    max_output_tokens: int = 2048
+    max_output_tokens: int = 0
     eval_metrics: str = "final_response_quality,safety"
 
     @classmethod
@@ -219,12 +222,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
             ),
         ],
     ),
-    # Domain 4: 보안 & 가드레일 (Weight 2x)
+    # Domain 4: 보안 & 격리 (Weight 2x) — AI 거버넌스(Model Armor/도구 방어)는 Agent Gateway Advisory로 분리
     ChecklistItemSpec(
         id="C4.1",
         code_alias="SEC-01",
         domain_id="D4",
-        domain_name="4. 보안 & 가드레일",
+        domain_name="4. 보안 & 격리",
         domain_weight=2,
         title="최소 권한 전용 서비스 계정(SA) & Secret 버전 고정",
         severity="Critical",
@@ -240,29 +243,10 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         target_files=["deployment/terraform/variables.tf", "deployment/terraform/service.tf"],
     ),
     ChecklistItemSpec(
-        id="C4.2",
-        code_alias="GRD-01",
-        domain_id="D4",
-        domain_name="4. 보안 & 가드레일",
-        domain_weight=2,
-        title="Model Armor 입출력/PII 가드레일 & 도구 SSRF·호출자 신원(IDOR) 방어",
-        severity="Critical",
-        before_summary="입출력 가드레일 및 도구 SSRF/호출자 권한 검증 전무 (인젝션·PII 유출·169.254.169.254 SSRF 무방비)",
-        after_criteria="ModelArmorGuardrailPlugin: 실제 Google Cloud Model Armor API(SanitizeUserPrompt/SanitizeModelResponse) + 로컬 인젝션/PII 폴백 + before_tool_callback SSRF/IDOR 차단",
-        why_it_matters="사용자 입력이 세션/모델에 도달하기 전과 응답 반환 전 Model Armor API로 프롬프트 인젝션·PII를 차단하고, 도구 호출 직전 내부 메타데이터 IP(169.254.169.254) SSRF와 타 사용자 user_id 변조(IDOR)를 코드 레벨에서 강제 차단해야 합니다.",
-        verify_cmd='python3 -c "from app.app_utils.model_armor_plugin import ModelArmorGuardrailPlugin; print(ModelArmorGuardrailPlugin)"',
-        agent_runtime_mode="TIER_1_AUTO",
-        agent_runtime_desc="model_armor_plugin.py (Model Armor API + SSRF/IDOR 가드) 등록 + roles/modelarmor.user 추가",
-        cloud_run_mode="TIER_1_AUTO",
-        cloud_run_desc="model_armor_plugin.py (Model Armor API + SSRF/IDOR 가드) 생성 및 app/agent.py _plugins 등록 + roles/modelarmor.user 추가",
-        gke_desc="동일한 ModelArmorGuardrailPlugin 장착",
-        target_files=["app/app_utils/model_armor_plugin.py", "app/agent.py"],
-    ),
-    ChecklistItemSpec(
         id="C4.3",
         code_alias="SEC-02",
         domain_id="D4",
-        domain_name="4. 보안 & 가드레일",
+        domain_name="4. 보안 & 격리",
         domain_weight=2,
         title="컨테이너 Non-Root(비특권) 실행 & Gen2 샌드박스",
         severity="Critical",
@@ -332,42 +316,42 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         domain_weight=2,
         title="타겟별 SRE 골든 시그널 운영 알람 (alerts.tf)",
         severity="Critical",
-        before_summary="Cloud Monitoring 알럿 정책(alerts.tf) 전무 (지연 급증·5xx 에러율·가드레일 차단 폭증 미감지)",
-        after_criteria="Cloud Run: cloud_run_revision P95 지연 + PromQL 5xx 비율(>2%) + 가드레일 알람 | Agent Runtime: ReasoningEngine 메트릭 + 가드레일 알람",
-        why_it_matters="프로덕션 배포 후 LLM 지연 급증, 에러 비율 상승(>2%), 프롬프트 인젝션 공격 급증을 SRE 팀이 실시간 감지하려면 런타임별 올바른 리소스 메트릭과 비율(Ratio) 수식으로 Alert Policy를 코드화해야 합니다.",
+        before_summary="Cloud Monitoring 알럿 정책(alerts.tf) 전무 (지연 급증·5xx 에러율 상승 미감지)",
+        after_criteria="Cloud Run: cloud_run_revision P95 지연 + PromQL 5xx 비율(>2%) | Agent Runtime: ReasoningEngine P95 지연 + PromQL 5xx 비율(>2%)",
+        why_it_matters="프로덕션 배포 후 LLM 지연 급증과 5xx 에러 비율 상승(>2%)을 SRE 팀이 실시간 감지하려면 런타임별 올바른 리소스 메트릭과 비율(Ratio) 수식으로 Alert Policy를 코드화해야 합니다.",
         verify_cmd='grep -n "google_monitoring_alert_policy" deployment/terraform/alerts.tf',
         agent_runtime_mode="TIER_1_AUTO",
-        agent_runtime_desc="deployment/terraform/alerts.tf에 aiplatform.googleapis.com/ReasoningEngine 전용 메트릭 및 Guardrail 알럿 생성",
+        agent_runtime_desc="deployment/terraform/alerts.tf에 aiplatform.googleapis.com/ReasoningEngine P95 지연 및 PromQL 5xx 비율 알럿 생성",
         cloud_run_mode="TIER_1_AUTO",
-        cloud_run_desc="deployment/terraform/alerts.tf에 cloud_run_revision P95 지연, PromQL 5xx 비율(>2%) 및 Guardrail 알럿 생성",
+        cloud_run_desc="deployment/terraform/alerts.tf에 cloud_run_revision P95 지연 및 PromQL 5xx 비율(>2%) 알럿 생성",
         gke_desc="Managed Prometheus (GMP) PromQL 기반 SRE 알람 정책",
         target_files=["deployment/terraform/alerts.tf"],
         custom_fields=[
             CustomFieldSpec("latency_p95_ms", "P95 지연 알람 임계치 (ms, 멀티스텝 에이전트 기본 15000)", "15000"),
         ],
     ),
-    # Domain 6: 비용 & 회복력 (Weight 1x) — budget.tf 제거, 순수 에이전트 루프/토큰 가드에 집중
+    # Domain 6: 비용 & 회복력 (Weight 1x) — 순수 루프 방어 & Google Cloud 공식 429 회복력 BP
     ChecklistItemSpec(
         id="C6.1",
         code_alias="FIN-01",
         domain_id="D6",
         domain_name="6. 비용 & 회복력",
         domain_weight=1,
-        title="무한 도구 루프 차단(턴별 리셋) & 출력 토큰 상한 가드레일 (FinOps)",
+        title="무한 도구 루프 차단(턴별 리셋) & 선택적 출력 토큰 상한 (FinOps)",
         severity="Critical",
-        before_summary="단일 턴당 LLM 호출 횟수 상한 및 max_output_tokens 캡 미구성 (무한 루프 과금 폭주 위험)",
-        after_criteria="CostTokenGuardrailPlugin (invocation_id 기준 턴별 호출 횟수 자동 리셋 + max_output_tokens 강제 캡)",
-        why_it_matters="에이전트가 도구 오류로 재시도 루프에 빠지면 단일 사용자 질문 한 번에 수십~수백 번 LLM을 호출합니다. invocation_id 단위로 매 턴 리셋되는 호출 상한과 max_output_tokens 캡을 코드 레벨에 장착해 과금 폭주를 차단해야 합니다.",
+        before_summary="단일 턴당 LLM 호출 횟수 상한 미구성 (도구 오류 시 무한 루프 과금 폭주 위험)",
+        after_criteria="CostTokenGuardrailPlugin (invocation_id 기준 턴별 호출 횟수 자동 리셋 + 선택적 max_output_tokens 캡, 기본 0으로 Thinking 모델 안전 보존)",
+        why_it_matters="에이전트가 도구 오류로 재시도 루프에 빠지면 단일 사용자 질문 한 번에 수십~수백 번 LLM을 호출합니다. invocation_id 단위로 매 턴 리셋되는 호출 상한을 장착하되, max_output_tokens는 기본 0(미강제)으로 두어 Gemini 2.5/3.x Thinking 모델의 추론(thoughts) 토큰 잘림 현상을 방지합니다.",
         verify_cmd='grep -n "CostTokenGuardrailPlugin" app/agent.py && grep -n "invocation_id" app/app_utils/cost_guard_plugin.py',
         agent_runtime_mode="TIER_1_AUTO",
-        agent_runtime_desc="cost_guard_plugin.py (invocation_id 턴별 리셋 + max_output_tokens 강제 캡) 생성 및 agent.py 등록",
+        agent_runtime_desc="cost_guard_plugin.py (invocation_id 턴별 리셋 + 선택적 max_output_tokens) 생성 및 agent.py 등록",
         cloud_run_mode="TIER_1_AUTO",
-        cloud_run_desc="cost_guard_plugin.py (invocation_id 턴별 리셋 + max_output_tokens 강제 캡) 생성 및 agent.py 등록",
+        cloud_run_desc="cost_guard_plugin.py (invocation_id 턴별 리셋 + 선택적 max_output_tokens) 생성 및 agent.py 등록",
         gke_desc="동일한 CostTokenGuardrailPlugin 등록",
         target_files=["app/app_utils/cost_guard_plugin.py", "app/agent.py"],
         custom_fields=[
             CustomFieldSpec("max_llm_calls_per_turn", "단일 턴당 최대 LLM 호출 횟수 제한", "10"),
-            CustomFieldSpec("max_output_tokens", "응답당 최대 출력 토큰 수 (max_output_tokens)", "2048"),
+            CustomFieldSpec("max_output_tokens", "응답당 최대 출력 토큰 상한 (0=비활성 · Thinking 모델 안전 권장)", "0"),
         ],
     ),
     ChecklistItemSpec(
@@ -376,17 +360,17 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         domain_id="D6",
         domain_name="6. 비용 & 회복력",
         domain_weight=1,
-        title="LLM API 429(DSQ) 쿼터 방어 & 지수 백오프 재시도",
+        title="Gemini API 429(DSQ) 방어: Global 엔드포인트 & 지수 백오프 재시도",
         severity="Standard",
-        before_summary="기본 attempts=3 또는 재시도 미설정 (피크 트래픽 시 429 Resource Exhausted 즉시 실패)",
-        after_criteria="HttpRetryOptions(attempts=5, initial_delay=1.0, exp_base=2.0) 및 GOOGLE_CLOUD_LOCATION (기본 global DSQ, 데이터 레지던시 규제 시 리전 유지)",
-        why_it_matters="트래픽 피크로 일시적 쿼터 경합(429)이 발생할 때 5회 지수 백오프 재시도와 글로벌 Dynamic Shared Quota(DSQ) 엔드포인트(또는 규제 준수 리전)를 구성해야 사용자 체감 실패율을 최소화할 수 있습니다.",
-        verify_cmd='grep -n "attempts=5" app/agent.py',
+        before_summary="HttpRetryOptions 미설정 또는 GOOGLE_CLOUD_LOCATION 미지정 (일시적 429/5xx 대응 부재)",
+        after_criteria="GOOGLE_CLOUD_LOCATION (기본 global DSQ, 레지던시 규제 시 리전 유지) + HttpRetryOptions 지수 백오프·Jitter (기존 Fail-Fast attempts=3 보존)",
+        why_it_matters="데이터 레지던시 제약이 없는 워크로드는 Global DSQ(global) 엔드포인트로 리전 편중 429를 완화하고, SDK 지수 백오프+Jitter 재시도를 사용해야 합니다. 단, 대화형 에이전트에서 무리하게 attempts를 늘리면 Retry Storm과 Cloud Run 동시성 고갈을 유발하므로 기본 Fail-Fast(attempts=3)를 보존하며, 상용 SLA 워크로드는 Provisioned Throughput(GSU) 또는 Priority PayGo를 검토하세요.",
+        verify_cmd='grep -n "HttpRetryOptions" app/agent.py && grep -n "GOOGLE_CLOUD_LOCATION" deployment/terraform/service.tf',
         agent_runtime_mode="TIER_1_AUTO",
-        agent_runtime_desc="app/agent.py HttpRetryOptions(attempts=5) 강화 및 service.tf GOOGLE_CLOUD_LOCATION 설정",
+        agent_runtime_desc="agent.py에 HttpRetryOptions가 없을 때만 Fail-Fast 지수 백오프(attempts=3, jitter=1.0) 주입(기존 attempts>=3 보존) 및 service.tf GOOGLE_CLOUD_LOCATION 설정",
         cloud_run_mode="TIER_1_AUTO",
-        cloud_run_desc="app/agent.py HttpRetryOptions(attempts=5) 강화 및 service.tf GOOGLE_CLOUD_LOCATION 설정",
-        gke_desc="동일한 HttpRetryOptions(attempts=5) 및 모델 엔드포인트 리전 설정",
+        cloud_run_desc="agent.py에 HttpRetryOptions가 없을 때만 Fail-Fast 지수 백오프(attempts=3, jitter=1.0) 주입(기존 attempts>=3 보존) 및 service.tf GOOGLE_CLOUD_LOCATION 설정",
+        gke_desc="동일한 HttpRetryOptions(Fail-Fast 지수 백오프) 및 모델 엔드포인트 리전 설정",
         target_files=["app/agent.py", "deployment/terraform/service.tf"],
         custom_fields=[
             CustomFieldSpec(
@@ -428,25 +412,27 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
 ITEM_BY_ID: dict[str, ChecklistItemSpec] = {item.id: item for item in CHECKLIST_ITEMS}
 ITEM_BY_ALIAS: dict[str, ChecklistItemSpec] = {item.code_alias: item for item in CHECKLIST_ITEMS}
 
-# Backward-compatible mapping from earlier 20-item / 17-item IDs to the streamlined 14-item IDs
+# Backward-compatible mapping from earlier 20-item / 17-item / 14-item IDs to the streamlined 13-item IDs
 LEGACY_ID_MAP: dict[str, str] = {
     "C1.3": "C1.2",  # Health probes moved into C1.2
     "C2.3": "C2.1",  # GCS bucket versioning removed; maps to D2 session store
     "C3.2": "C3.1",  # Ingress WAF/IAP moved to non-scoring advisory; maps to D3 networking
     "C3.3": "C3.1",  # Private Google Access merged into C3.1
-    "C4.4": "C4.2",  # Tool SSRF/IDOR merged into C4.2
+    "C4.2": "C4.1",  # Model Armor / tool guard moved to Agent Gateway governance advisory; maps to D4
+    "C4.4": "C4.1",  # Tool SSRF/IDOR moved to governance advisory; maps to D4
     "C7.2": "C1.1",  # lifecycle.ignore_changes consolidated into C1.1
     "REL-00": "C1.1",
     "MEM-03": "C2.1",
+    "GRD-01": "C4.1",
     "SEC-03": "C4.1",
-    "SEC-04": "C4.2",
+    "SEC-04": "C4.1",
     "SEC-05": "C4.3",
     "OPS-02": "C1.1",
 }
 
 
 def resolve_item_ids(requested: list[str] | None) -> list[str]:
-    """Resolves 'ALL', canonical C-ids ('C1.1'), aliases, or legacy IDs to active 14-item C-ids."""
+    """Resolves 'ALL', canonical C-ids ('C1.1'), aliases, or legacy IDs to active 13-item C-ids."""
     if not requested or "ALL" in [r.upper() for r in requested]:
         return [item.id for item in CHECKLIST_ITEMS]
     resolved: list[str] = []

@@ -1,7 +1,8 @@
-"""[C6.1] ADK BasePlugin for Per-Turn LLM Loop Prevention & Token Spend Caps.
+"""[C6.1] ADK BasePlugin for Per-Turn LLM Loop Prevention & Opt-In Token Spend Caps.
 
-Tracks call counts strictly per `invocation_id` (resets automatically on every new user turn)
-and enforces `max_output_tokens` directly on each `LlmRequest.config`.
+Tracks call counts strictly per `invocation_id` (resets automatically on every new user turn).
+`max_output_tokens` defaults to `0` (disabled) so Gemini 2.5/3.x Thinking models are never
+truncated while generating internal `thoughts`; set > 0 explicitly when you want a hard cap.
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from google.genai import types
 
 
 class CostTokenGuardrailPlugin(BasePlugin):
-    """Prevents runaway agent loops per user turn and caps max_output_tokens."""
+    """Prevents runaway agent loops per user turn and optionally caps max_output_tokens."""
 
     def __init__(
         self,
@@ -25,11 +26,15 @@ class CostTokenGuardrailPlugin(BasePlugin):
         max_output_tokens: int | None = None,
     ) -> None:
         super().__init__(name="cost_token_guardrail")
-        self.max_llm_calls = max_llm_calls_per_turn or int(
-            os.environ.get("MAX_LLM_CALLS_PER_TURN", "10")
+        self.max_llm_calls = (
+            max_llm_calls_per_turn
+            if max_llm_calls_per_turn is not None
+            else int(os.environ.get("MAX_LLM_CALLS_PER_TURN", "10"))
         )
-        self.max_output_tokens = max_output_tokens or int(
-            os.environ.get("MAX_OUTPUT_TOKENS_PER_TURN", "2048")
+        self.max_output_tokens = (
+            max_output_tokens
+            if max_output_tokens is not None
+            else int(os.environ.get("MAX_OUTPUT_TOKENS_PER_TURN", "0"))
         )
         self._turn_counts: dict[str, int] = {}
 
@@ -69,12 +74,13 @@ class CostTokenGuardrailPlugin(BasePlugin):
                 )
             )
 
-        # Enforce max_output_tokens cap directly on LlmRequest config
-        if llm_request.config is None:
-            llm_request.config = types.GenerateContentConfig(
-                max_output_tokens=self.max_output_tokens
-            )
-        elif not llm_request.config.max_output_tokens or llm_request.config.max_output_tokens > self.max_output_tokens:
-            llm_request.config.max_output_tokens = self.max_output_tokens
+        # Opt-in max_output_tokens cap only when > 0 (keeps Thinking models like Gemini 2.5/3.x safe!)
+        if self.max_output_tokens > 0:
+            if llm_request.config is None:
+                llm_request.config = types.GenerateContentConfig(
+                    max_output_tokens=self.max_output_tokens
+                )
+            elif not llm_request.config.max_output_tokens or llm_request.config.max_output_tokens > self.max_output_tokens:
+                llm_request.config.max_output_tokens = self.max_output_tokens
 
         return None

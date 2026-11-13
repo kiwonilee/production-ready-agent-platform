@@ -1,4 +1,4 @@
-# Pre-Scan Workload Intake & Tailored Item Mapping (`intake-questionnaire.md`, v2 — 14 Core Items)
+# Pre-Scan Workload Intake & Tailored Item Mapping (`intake-questionnaire.md`, v2 — 13 Core Items)
 
 Before running `scan` or `simulate`, confirm the user's workload profile so irrelevant items are skipped (`N/A`) rather than raising false RED blockers.
 
@@ -8,9 +8,9 @@ Before running `scan` or `simulate`, confirm the user's workload profile so irre
 
 | Preset | Description | Selected Items (`--items`) | Active Count |
 | :--- | :--- | :--- | :---: |
-| **1. 풀 프로덕션 (사내 DB/VPC 연동 포함)** | 멀티턴 · 사내 프라이빗 DB/VPC 연동 · Model Armor 가드레일 · SRE 알람 · CI/CD Eval 게이트 | `ALL` (`C1.1,C1.2,C2.1,C2.2,C3.1,C4.1,C4.2,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1`) | **14 / 14** |
-| **2. 표준 프로덕션 (외부/Public API 기반)** | 사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트 (`C3.1` 사내 VPC 제외) | `C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1` | **13 / 14** |
-| **3. 경량 / PoC** | 단발성(Stateless) · 최소 비용 · 추가 인프라 없이 코드/컨테이너/프라이버시/루프 차단 기본선만 적용 | `C1.1,C1.2,C4.1,C4.3,C5.1,C5.2,C6.1,C6.2` | **8 / 14** |
+| **1. 풀 프로덕션 (사내 DB/VPC 연동 포함)** | 멀티턴 · 사내 프라이빗 DB/VPC 연동 · SRE 알람 · CI/CD Eval 게이트 | `ALL` (`C1.1,C1.2,C2.1,C2.2,C3.1,C4.1,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1`) | **13 / 13** |
+| **2. 표준 프로덕션 (외부/Public API 기반)** | 사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트 (`C3.1` 사내 VPC 제외) | `C1.1,C1.2,C2.1,C2.2,C4.1,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1` | **12 / 13** |
+| **3. 경량 / PoC** | 단발성(Stateless) · 최소 비용 · 추가 인프라 없이 코드/컨테이너/프라이버시/루프 차단 기본선만 적용 | `C1.1,C1.2,C4.1,C4.3,C5.1,C5.2,C6.1,C6.2` | **8 / 13** |
 
 ---
 
@@ -26,9 +26,9 @@ Then union based on the 3 answers:
 2. **Q2. 사내 프라이빗 망 연동 (Private VPC Egress)**:
    - `A) Gemini / 외부 공개 API만 호출` → Skip `C3.1`
    - `B) 사내 프라이빗 DB · 내부 VPC 연동` → Add **`C3.1`**
-3. **Q3. 운영 단계 & PII 가드레일 (Prod Guardrails, SRE Alerts & Eval Gate)**:
-   - `A) PoC / 개발 테스트` → Skip `C4.2, C5.3, C7.1` (and skip `SIM-1, SIM-2`)
-   - `B) 실제 상용 운영 · PII 보호 & SRE 알람` → Add **`C4.2, C5.3, C7.1`**
+3. **Q3. 운영 모니터링 & 배포 게이트 (SRE Alerts & CI/CD Eval Gate)**:
+   - `A) PoC / 개발 테스트` → Skip `C5.3, C7.1`
+   - `B) 실제 상용 운영 · SRE 알람 & CI/CD Eval 게이트` → Add **`C5.3, C7.1`**
 
 ---
 
@@ -43,6 +43,6 @@ Then union based on the 3 answers:
 | `enable_bq_analytics` | `false` | Opt-in BigQuery Agent Analytics plugin in `US` multi-region (`C5.2`) |
 | `latency_p95_ms` | `15000` | P95 latency alert threshold in ms (`C5.3`) |
 | `max_llm_calls_per_turn` | `10` | Per-turn (`invocation_id`) LLM call cap (`C6.1`) |
-| `max_output_tokens` | `2048` | Per-request `max_output_tokens` cap (`C6.1`) |
+| `max_output_tokens` | `0` | Opt-in per-request `max_output_tokens` cap (`0` = disabled for Thinking model safety, `C6.1`) |
 | `model_location` | `"global"` | Gemini endpoint location (`global` for DSQ or regional for data residency, `C6.2`) |
 | `eval_metrics` | `"final_response_quality,safety"` | Metrics passed to `agents-cli eval run` (`C7.1`) |

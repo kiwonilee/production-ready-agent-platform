@@ -6,11 +6,12 @@ Before running `scan`, confirm the user's workload profile so irrelevant items a
 
 ## 1. Quick Presets (1-Step Selection)
 
-| Preset | Description | Selected Items (`--items`) | Active Count |
-| :--- | :--- | :--- | :---: |
-| **1. 풀 프로덕션 (사내 DB/VPC 연동 포함)** | 멀티턴 · 사내 프라이빗 DB/VPC 연동 · Agent Identity/Registry & Agent Gateway(AR) · SRE 알람 · CI/CD Eval 게이트 | `ALL` (`C1.1,C1.2,C2.1,C2.2,C3.1,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1`) | **15 / 15** |
-| **2. 표준 프로덕션 (외부/Public API 기반)** | 사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트 (`C3.1` 사내 VPC 제외) | `C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1` | **14 / 15** |
-| **3. 경량 / PoC** | 단발성(Stateless) · 최소 비용 · 추가 인프라 없이 코드/컨테이너/Agent Identity/프라이버시/루프 차단 기본선만 적용 | `C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2` | **9 / 15** |
+| Preset | Description | Selected Items (`--items`) |
+| :--- | :--- | :--- |
+| **1. 풀 프로덕션 (권장)** | 사내 VPC/DB 연동 상용 서비스 (세션 · 보안 · 알람 · Eval 전체) | `ALL` (`C1.1,C1.2,C2.1,C2.2,C3.1,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1`) |
+| **2. 표준 프로덕션** | 외부 공개 API 전용 상용 서비스 (사내 VPC 제외) | `C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1` |
+| **3. 경량 / PoC** | 단발성 · 최소 비용 개발용 (추가 인프라 없는 기본 보안 · 루프 방지) | `C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2` |
+| **4. 직접 맞춤 조합** | 대화 기억 · 사내 VPC · 상용 운영 여부를 직접 선택 | Baseline + Q1–Q3 Union |
 
 ---
 

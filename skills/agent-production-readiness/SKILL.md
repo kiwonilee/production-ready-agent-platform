@@ -77,37 +77,33 @@ Let `<SKILL_DIR>` be the directory containing this `SKILL.md` file. Always execu
 Silently inspect the target runtime (`cloud_run` vs `agent_runtime`) from the prompt/workspace first, then ask using **whichever mode fits your CLI**:
 
 #### Mode A — Interactive Multiple-Choice Tool (`ask_question` / `ask_user`, Preferred in Antigravity CLI)
-1. First ask **1 single question** with these **4 clean options**:
-   - `풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 15개 핵심 하드닝 (권장)`
-   - `표준 프로덕션 (외부/Public API 기반) — 사내 VPC 제외 14개 하드닝`
-   - `경량 / PoC — 단발성 · 핵심 기본선 9개 최소 비용`
-   - `직접 맞춤 조합하기 (3가지 환경 질문으로 선택)`
+1. First ask **1 single question** with these **4 concise options** (brief 1-line description per profile, no raw item counts):
+   - `풀 프로덕션 (권장) — 사내 VPC/DB 연동 상용 서비스 (세션 · 보안 · 알람 · Eval 전체)`
+   - `표준 프로덕션 — 외부 공개 API 전용 상용 서비스 (사내 VPC 제외)`
+   - `경량 / PoC — 단발성 · 최소 비용 개발용 (추가 인프라 없는 기본 보안 · 루프 방지)`
+   - `직접 맞춤 조합 — 대화 기억 · 사내 VPC · 상용 운영 여부를 직접 선택`
 2. If the user selects one of the first 3 presets, **proceed immediately to Step 2**.
-3. **Only if** the user selects **`직접 맞춤 조합하기`**, ask these **3 short multiple-choice questions together (`Question 1/3`–`3/3`)**:
-   - **Q1. 대화 기억**: `단발성 질의응답 (Stateless)` vs `멀티턴 대화 & 장기기억 (Managed Sessions & Memory Bank)`
-   - **Q2. 사내 프라이빗 망 연동**: `Gemini / 공개 API만 호출` vs `사내 프라이빗 DB · 내부 VPC 연동`
-   - **Q3. 운영 거버넌스 & 배포 게이트**: `PoC / 개발 테스트` vs `실제 상용 운영 · Agent Gateway(AR) · SRE 알람 · CI/CD Eval 게이트`
+3. **Only if** the user selects **`직접 맞춤 조합`**, ask these **3 short multiple-choice questions together (`Question 1/3`–`3/3`)**:
+   - **Q1. 대화 기억**: `단발성 (Stateless)` vs `멀티턴 · 장기기억 (Managed Sessions & Memory Bank)`
+   - **Q2. 사내 VPC 연동**: `외부 공개 API만` vs `사내 프라이빗 DB · VPC 연동`
+   - **Q3. 운영 거버넌스**: `PoC / 개발` vs `상용 운영 (AGW · SRE 알람 · Eval 게이트)`
 
 #### Mode B — Plain-Text Fallback (for CLIs without an interactive selection tool)
 Print this exact compact template verbatim:
 
 ```text
-진단 전 운영 환경만 간단히 선택해 주세요. 번호(1~3) 하나만 입력하시면 바로 진행합니다.
+진단할 운영 환경 프로필을 선택해 주세요 (번호 1~4):
 
-  [1] 풀 프로덕션 (사내 VPC 포함) — 멀티턴 · 사내 DB/VPC · Identity/AGW · SRE 알람/Eval · 전체 15개 (권장)
-  [2] 표준 프로덕션 (외부 API만)  — 멀티턴 · Identity/AGW · SRE 알람/Eval · 사내 VPC 제외 14개
-  [3] 경량 / PoC                 — 단발성 · 최소 비용 · Identity 포함 핵심 기본선 9개
-
-※ 직접 조합하려면 3개만 A/B로 답해주세요 (예: B, A, B):
-  1. 대화 기억:  A) 단발성 (Stateless)  / B) 멀티턴·장기기억 (Managed)
-  2. 사내 연동:  A) 외부 공개 API만     / B) 사내 프라이빗 DB·VPC 연동
-  3. 운영·검증:  A) PoC·개발 테스트     / B) 실운영·AGW(AR)·SRE 알람·CI/CD Eval 게이트
+  1. 풀 프로덕션 (권장) — 사내 VPC/DB 연동 상용 서비스 (세션 · 보안 · 알람 · Eval 전체)
+  2. 표준 프로덕션 — 외부 공개 API 전용 상용 서비스 (사내 VPC 제외)
+  3. 경량 / PoC — 단발성 · 최소 비용 개발용 (추가 인프라 없는 기본 보안 · 루프 방지)
+  4. 직접 맞춤 조합 — 대화 기억 · 사내 VPC · 상용 운영 여부를 직접 선택
 ```
 
 #### Deterministic Answer → `--items` Mapping (Internal — see `references/intake-questionnaire.md`)
-- **풀 프로덕션 (사내 VPC 포함)** (`B, B, B`): `--items ALL` (`15 items`: `C1.1,C1.2,C2.1,C2.2,C3.1,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1`)
-- **표준 프로덕션 (외부 API만)** (`B, A, B`): `--items C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1` (`14 items` — skips `C3.1` private VPC egress)
-- **경량 / PoC** (`A, A, A`): `--items C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2` (`9 items`)
+- **풀 프로덕션** (`B, B, B`): `--items ALL` (`C1.1,C1.2,C2.1,C2.2,C3.1,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1`)
+- **표준 프로덕션** (`B, A, B`): `--items C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1` (skips `C3.1` private VPC egress)
+- **경량 / PoC** (`A, A, A`): `--items C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2`
 - **Custom 3-Answer Union**: Start from baseline `C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2`, then union:
   - `Q1 = 멀티턴·장기기억` (`1=B`) → `+ C2.1,C2.2` (Managed Sessions & Memory Bank)
   - `Q2 = 사내 프라이빗 DB·VPC 연동` (`2=B`) → `+ C3.1` (Direct VPC Egress / PSC-I)

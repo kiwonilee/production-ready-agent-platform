@@ -14,7 +14,6 @@ from prod_ready.patcher import (
     generate_readiness_report,
     preview_patches,
     reset_project_to_baseline,
-    run_security_simulation,
 )
 from prod_ready.scanner import ProjectScanReport, scan_project
 
@@ -113,19 +112,13 @@ def main(argv: list[str] | None = None) -> int:
     p_report.add_argument("--format", choices=["md", "html", "both"], default="both", help="Report format (md, html, or both)")
     p_report.add_argument("--output", "-o", default="READINESS_REPORT.md", help="Output path")
 
-    # simulate
-    p_sim = sub.add_parser("simulate", help="Run 4 live attack & production failure simulations")
-    p_sim.add_argument("project_dir", nargs="?", default=".", help="Path to local agent project")
-    p_sim.add_argument("--target", choices=["auto", "cloud_run", "agent_runtime"], default="auto")
-    p_sim.add_argument("--items", default="ALL", help="Comma-separated item IDs in scope (e.g. C1.1,C5.2 or ALL)")
-
     # reset
     p_reset = sub.add_parser("reset", help="Reset a sample project back to its unhardened baseline for demos")
     p_reset.add_argument("project_dir", nargs="?", default="samples/02_cloud_run_agent", help="Path to local agent project")
     p_reset.add_argument("--target", choices=["auto", "cloud_run", "agent_runtime"], default="auto")
 
     # demo
-    p_demo = sub.add_parser("demo", help="Run the 4-stage interactive Before-vs-After live demo showcase")
+    p_demo = sub.add_parser("demo", help="Run the 3-stage interactive Before-vs-After live demo showcase")
     p_demo.add_argument("project_dir", nargs="?", default="samples/02_cloud_run_agent", help="Path to local agent project")
     p_demo.add_argument("--target", choices=["auto", "cloud_run", "agent_runtime"], default="auto")
     p_demo.add_argument("--reset-after", action="store_true", help="Reset project back to unhardened state after demo")
@@ -213,22 +206,6 @@ def main(argv: list[str] | None = None) -> int:
             print(f"📊 Exported HTML Dashboard  : {html_path.resolve()}")
         return 0
 
-    if args.command == "simulate":
-        items = _parse_items(args.items)
-        sim = run_security_simulation(Path(args.project_dir), target_override=args.target, selected_items=items)
-        print("=" * 84)
-        print(f"⚡ Live Attack & Failure Simulation — {sim['project_name']} ({sim['weighted_score']} / 100.0)")
-        print("=" * 84)
-        for s in sim["scenarios"]:
-            print(f"  [{s['id']}] {s['title']} ({', '.join(s['related_items'])})")
-            print(f"       Payload : {s['payload']}")
-            print(f"       Result  : {s['outcome_title']}")
-            print("-" * 84)
-        skipped_note = f" ({sim['skipped_scenarios']} Skipped N/A)" if sim.get("skipped_scenarios") else ""
-        print(f"  Summary: {sim['passed_scenarios']} / {sim['total_scenarios']} Scenarios Protected{skipped_note}")
-        print("=" * 84)
-        return 0
-
     if args.command == "reset":
         res = reset_project_to_baseline(Path(args.project_dir), target_override=args.target)
         rep = res["report"]
@@ -239,10 +216,9 @@ def main(argv: list[str] | None = None) -> int:
         proj = Path(args.project_dir).resolve()
         reset_project_to_baseline(proj, target_override=args.target)
         before_rep = scan_project(proj, target_override=args.target)
-        before_sim = run_security_simulation(proj, target_override=args.target)
 
         print("\n" + "━" * 86)
-        print("🎬 [STAGE 1 / 4] 패치 전(BEFORE) 기본 에이전트 상태 스캔 (`agents-cli` 기본값)")
+        print("🎬 [STAGE 1 / 3] 패치 전(BEFORE) 기본 에이전트 상태 스캔 (`agents-cli` 기본값)")
         print("━" * 86)
         print(f"  • 대상 프로젝트 : {proj}")
         print(f"  • 배포 타겟     : {before_rep.deployment_target}")
@@ -250,14 +226,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  • 항목 요약     : 🟢 {before_rep.green_count} 통과 | 🟡 {before_rep.amber_count} 미흡 | 🔴 {before_rep.red_count} 취약")
 
         print("\n" + "━" * 86)
-        print("🚨 [STAGE 2 / 4] 패치 전(BEFORE) 4대 모의 공격 & 장애 시뮬레이션 실행")
-        print("━" * 86)
-        for s in before_sim["scenarios"]:
-            print(f"  • [{s['id']}] {s['title']}")
-            print(f"    └─ {s['outcome_title']}")
-
-        print("\n" + "━" * 86)
-        print("✨ [STAGE 3 / 4] 7대 영역 · 13개 핵심 프로덕션 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
+        print("✨ [STAGE 2 / 3] 7대 영역 · 13개 핵심 프로덕션 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
         print("━" * 86)
         patch_res = apply_patches(proj, target_override=args.target, selected_items=["ALL"])
         for p in patch_res["patches"]:
@@ -268,12 +237,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\n  🎯 점수 변화: {before_rep.weighted_score} / 100.0  ===>  {after_score} / 100.0 ({after_verdict})")
 
         print("\n" + "━" * 86)
-        print("🛡️  [STAGE 4 / 4] 패치 후(AFTER) 동일한 4대 모의 공격 재실행 & 시각적 성적표 발급")
+        print("🛡️  [STAGE 3 / 3] 패치 후(AFTER) 최종 재검증(`scan`) & 시각적 심의 성적표 발급(`report`)")
         print("━" * 86)
-        after_sim = run_security_simulation(proj, target_override=args.target)
-        for s in after_sim["scenarios"]:
-            print(f"  • [{s['id']}] {s['title']}")
-            print(f"    └─ {s['outcome_title']}")
+        after_rep = scan_project(proj, target_override=args.target)
+        print(f"  • 최종 점수     : {after_rep.weighted_score} / 100.0  -->  {after_rep.verdict}")
+        print(f"  • 항목 요약     : 🟢 {after_rep.green_count} 통과 | 🟡 {after_rep.amber_count} 미흡 | 🔴 {after_rep.red_count} 취약")
 
         md_out = proj / "READINESS_REPORT.md"
         html_out = proj / "READINESS_REPORT.html"

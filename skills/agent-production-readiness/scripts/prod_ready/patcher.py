@@ -1715,156 +1715,8 @@ metrics:
 
 
 # ---------------------------------------------------------------------------
-# 6. 4-Scenario Live Security & Failure Simulation
+# 6. Demo Reset & Visual HTML Report Generation
 # ---------------------------------------------------------------------------
-
-
-def run_security_simulation(
-    project_dir: str | Path,
-    target_override: str = "auto",
-    selected_items: list[str] | None = None,
-) -> dict[str, Any]:
-    """Runs 4 attack & production failure simulations against the target project's current code/IaC."""
-    root = Path(project_dir).resolve()
-    report = scan_project(root, target_override=target_override, selected_items=selected_items)
-    item_map = {item.id: item for item in report.items}
-
-    def _eval_group(related: list[str]) -> tuple[bool, bool]:
-        active = [iid for iid in related if iid in item_map]
-        if not active:
-            return (False, False)
-        return (True, all(item_map[iid].status == "GREEN" for iid in active))
-
-    s1_app, s1_pass = _eval_group(["C5.2"])
-    s2_app, s2_pass = _eval_group(["C4.1", "C4.3"])
-    s3_app, s3_pass = _eval_group(["C6.1"])
-    s4_app, s4_pass = _eval_group(["C2.1", "C2.2"])
-
-    scenarios = [
-        {
-            "id": "SIM-1",
-            "title": "Cloud Trace 분산 트레이스 스팬 내 프롬프트·PII 평문 노출 사고",
-            "related_items": ["C5.2"],
-            "payload": 'User Turn Trace: "내 주민번호 900101-1234567로 계좌 조회해줘" -> Cloud Trace Export',
-            "applicable": s1_app,
-            "passed": s1_pass,
-            "status": "SKIPPED" if not s1_app else ("BLOCKED" if s1_pass else "VULNERABLE"),
-            "outcome_title": (
-                "⚪ [N/A 생략] 사전 워크로드 기준에서 C5.2 항목이 제외되어 시뮬레이션 생략"
-                if not s1_app
-                else (
-                    "🛡️ [평문 차단] NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false로 트레이스 PII 원문 기록 방지"
-                    if s1_pass
-                    else "🚨 [노출 위험] ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 또는 NO_CONTENT 미비로 스팬에 원문 노출 위험"
-                )
-            ),
-            "detail": (
-                "사전 확인된 워크로드 범위에 C5.2가 포함되지 않았습니다."
-                if not s1_app
-                else (
-                    "service.tf에 OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false가 적용되었습니다."
-                    if s1_pass
-                    else "트레이스 뷰어 권한을 가진 개발자·운영자에게 사용자 프롬프트·PII 원문이 노출될 수 있습니다."
-                )
-            ),
-        },
-        {
-            "id": "SIM-2",
-            "title": "컨테이너 Root(UID 0) 탈취 & 과다 IAM 권한(storage.admin) 침해 반경",
-            "related_items": ["C4.1", "C4.3"],
-            "payload": 'Runtime Audit: `id` == uid=0(root) + SA has `roles/storage.admin` (bucket delete) & `version="latest"`',
-            "applicable": s2_app,
-            "passed": s2_pass,
-            "status": "SKIPPED" if not s2_app else ("BLOCKED" if s2_pass else "VULNERABLE"),
-            "outcome_title": (
-                "⚪ [N/A 생략] 사전 워크로드 기준에서 C4.1 · C4.3 항목이 제외되어 시뮬레이션 생략"
-                if not s2_app
-                else (
-                    "🛡️ [최소 권한·격리] Non-Root(UID 10001) + Gen2 샌드박스 + roles/storage.objectUser 최소 권한 적용 완료"
-                    if s2_pass
-                    else "🚨 [피해 반경 과다] 컨테이너 root 실행 또는 roles/storage.admin 과다 권한으로 침해 시 프로젝트 전체 버킷 위협"
-                )
-            ),
-            "detail": (
-                "사전 확인된 워크로드 범위에 C4.1 · C4.3이 포함되지 않았습니다."
-                if not s2_app
-                else (
-                    "Dockerfile USER 10001:10001 격리와 variables.tf 최소 권한(roles/storage.objectUser) 및 Secret 버전 고정이 확인되었습니다."
-                    if s2_pass
-                    else "컨테이너가 root(UID 0)로 동작하거나 SA에 storage.admin/미사용 권한이 남아 침해 사고 시 피해 반경이 극대화됩니다."
-                )
-            ),
-        },
-        {
-            "id": "SIM-3",
-            "title": "에이전트 무한 도구 루프(Runaway Loop) 과금 폭주 시뮬레이션",
-            "related_items": ["C6.1"],
-            "payload": "Agent Loop: 15 consecutive LLM <-> Tool calls in a single user turn (invocation_id)",
-            "applicable": s3_app,
-            "passed": s3_pass,
-            "status": "SKIPPED" if not s3_app else ("BLOCKED" if s3_pass else "VULNERABLE"),
-            "outcome_title": (
-                "⚪ [N/A 생략] 사전 워크로드 기준에서 C6.1 항목이 제외되어 시뮬레이션 생략"
-                if not s3_app
-                else (
-                    "🛡️ [서킷브레이커 작동] CostTokenGuardrailPlugin(invocation_id 턴별 리셋)이 무한 루프 자동 차단"
-                    if s3_pass
-                    else "🚨 [과금 폭주 발생] 단일 턴당 LLM 호출 상한이 없어 15회 이상 무한 루프가 지속됨"
-                )
-            ),
-            "detail": (
-                "사전 확인된 워크로드 범위에 C6.1이 포함되지 않았습니다."
-                if not s3_app
-                else (
-                    "app/app_utils/cost_guard_plugin.py가 단일 턴(invocation_id) 내 초과 LLM 호출을 안전 종료하며 Thinking 모델도 정상 보존합니다."
-                    if s3_pass
-                    else "에이전트 추론 루프 제한 플러그인이 없어 비정상 도구 오류 발생 시 토큰 과금 폭탄이 발생할 수 있습니다."
-                )
-            ),
-        },
-        {
-            "id": "SIM-4",
-            "title": "컨테이너 재시작 · 스케일아웃 시 멀티턴 세션 & 장기 기억(Memory Bank) 유지",
-            "related_items": ["C2.1", "C2.2"],
-            "payload": "Chaos Event: Container cold restart + multi-instance scale-out during active user session",
-            "applicable": s4_app,
-            "passed": s4_pass,
-            "status": "SKIPPED" if not s4_app else ("RESILIENT" if s4_pass else "VULNERABLE"),
-            "outcome_title": (
-                "⚪ [N/A 생략] 단발성(Stateless) 워크로드로 C2.1 · C2.2 제외 — 세션/메모리 테스트 생략"
-                if not s4_app
-                else (
-                    "🛡️ [무중단 유지] Agent Platform Managed Sessions & Memory Bank로 재시작/스케일아웃 시에도 100% 보존"
-                    if s4_pass
-                    else "🚨 [세션/기억 증발] InMemorySessionService 사용 또는 Memory Bank 미연동으로 재시작 시 대화 맥락 유실"
-                )
-            ),
-            "detail": (
-                "사전 확인된 워크로드가 Stateless이므로 멀티턴 세션·장기 기억 시나리오를 N/A로 생략했습니다."
-                if not s4_app
-                else (
-                    "VertexAiSessionService와 VertexAiMemoryBankService(after_agent_callback)를 통해 Zero-Ops로 세션 및 교차 세션 기억을 유지합니다."
-                    if s4_pass
-                    else "인메모리 세션에 의존하고 있어 인스턴스 교체·스케일아웃 시 이전 대화와 사용자 기억이 초기화됩니다."
-                )
-            ),
-        },
-    ]
-
-    applicable_scenarios = [s for s in scenarios if s["applicable"]]
-    passed_count = sum(1 for s in applicable_scenarios if s["passed"])
-    skipped_count = len(scenarios) - len(applicable_scenarios)
-    return {
-        "project_name": report.project_name,
-        "deployment_target": report.deployment_target,
-        "weighted_score": report.weighted_score,
-        "verdict": report.verdict,
-        "passed_scenarios": passed_count,
-        "total_scenarios": len(applicable_scenarios),
-        "skipped_scenarios": skipped_count,
-        "all_passed": passed_count == len(applicable_scenarios),
-        "scenarios": scenarios,
-    }
 
 
 def reset_project_to_baseline(
@@ -1884,6 +1736,8 @@ def reset_project_to_baseline(
     extra_files = [
         "deployment/terraform/production_ready.tf",
         "deployment/terraform/alerts.tf",
+        "deployment/terraform/apis.tf",
+        "deployment/terraform/iam.tf",
         "deployment/terraform/budget.tf",
         "app/app_utils/tiered_session.py",
         "app/app_utils/model_armor_plugin.py",
@@ -1937,7 +1791,6 @@ def generate_html_report(
     """Generates a standalone visual HTML Executive & InfoSec Dashboard Report (READINESS_REPORT.html)."""
     root = Path(project_dir).resolve()
     report = scan_project(root, target_override=target_override, selected_items=selected_items)
-    sim = run_security_simulation(root, target_override=target_override, selected_items=selected_items)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     if report.weighted_score >= 90 and report.red_count == 0:
@@ -1977,34 +1830,6 @@ def generate_html_report(
           <ul style="margin:8px 0 0 18px;padding:0;font-size:12.5px;color:#334155;">{adv_items}</ul>
         </div>
         """
-
-    sim_rows = []
-    for s in sim["scenarios"]:
-        if not s["applicable"]:
-            badge_bg, badge_fg, accent_bar = "#F1F5F9", "#475569", "#94A3B8"
-        elif s["passed"]:
-            badge_bg, badge_fg, accent_bar = "#E6F4EA", "#137333", "#34A853"
-        else:
-            badge_bg, badge_fg, accent_bar = "#FCE8E6", "#C5221F", "#EA4335"
-        sim_rows.append(
-            f"""
-            <div class="card" style="border-left:4px solid {accent_bar};">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <strong style="font-size:14.5px;color:#0F172A;">[{html_lib.escape(s["id"])}] {html_lib.escape(s["title"])}</strong>
-                <span style="background:{badge_bg};color:{badge_fg};padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:700;">{html_lib.escape(s["status"])}</span>
-              </div>
-              <div style="margin-top:8px;padding:8px 12px;background:#0F172A;border-radius:8px;font-family:'Google Sans Mono',monospace;font-size:12px;color:#F8FAFC;overflow-x:auto;">
-                {html_lib.escape(s["payload"])}
-              </div>
-              <div style="margin-top:8px;font-size:13.5px;font-weight:700;color:{badge_fg};">
-                {html_lib.escape(s["outcome_title"])}
-              </div>
-              <div style="margin-top:4px;font-size:12.5px;color:#475569;">
-                {html_lib.escape(s["detail"])}
-              </div>
-            </div>
-            """
-        )
 
     item_rows = []
     for item in report.items:
@@ -2085,7 +1910,6 @@ def generate_html_report(
     }}
     .score-box {{ text-align: right; background: {score_bg}; border: 1.5px solid {score_bd}; padding: 16px 24px; border-radius: 16px; }}
     .grid-domains {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 16px; }}
-    .grid-sim {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 14px; margin-top: 16px; }}
     .card {{ background: #FFFFFF; border: 1.5px solid rgba(66, 133, 244, 0.14); border-radius: 16px; padding: 18px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045); }}
     h2 {{ font-size: 16.5px; font-weight: 700; letter-spacing: -0.015em; color: #0F172A; margin: 32px 0 12px 0; border-bottom: 1.5px solid rgba(66, 133, 244, 0.14); padding-bottom: 8px; }}
     .table-wrap {{ background: #FFFFFF; border: 1.5px solid rgba(66, 133, 244, 0.14); border-radius: 18px; overflow: hidden; box-shadow: 0 12px 34px rgba(15, 23, 42, 0.055); }}
@@ -2123,12 +1947,7 @@ def generate_html_report(
     </div>
     {advisory_html}
 
-    <h2>2. 실시간 보안 공격 & 장애 방어 시뮬레이션 결과 ({sim["passed_scenarios"]} / {sim["total_scenarios"]} 통과)</h2>
-    <div class="grid-sim">
-      {"".join(sim_rows)}
-    </div>
-
-    <h2>3. 13개 상세 프로덕션 체크리스트 심의 매트릭스 (C1.1 ~ C7.1)</h2>
+    <h2>2. 13개 상세 프로덕션 체크리스트 심의 매트릭스 (C1.1 ~ C7.1)</h2>
     <div class="table-wrap">
       <table>
         <thead>

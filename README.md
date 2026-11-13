@@ -139,16 +139,15 @@ flowchart LR
 ```bash
 uv run prod-ready ui samples/02_cloud_run_agent --port 8090
 ```
-브라우저에서 **`http://127.0.0.1:8090`**을 열면 **13개 체크포인트 진단**, **4대 장애·보안 시뮬레이션**, **실시간 Diff 미리보기**, **원클릭 적용**, **HTML 심의 성적표 발급**, 그리고 **`/lab` 핸즈온 가이드**까지 한 번에 확인할 수 있습니다.
+브라우저에서 **`http://127.0.0.1:8090`**을 열면 **13개 체크포인트 진단**, **실시간 Diff 미리보기**, **원클릭 적용**, **HTML 심의 성적표 발급**, 그리고 **`/lab` 핸즈온 가이드**까지 한 번에 확인할 수 있습니다.
 
 ### 방법 3️⃣: 터미널에서 **명령어(`prod-ready`)**로 빠르게 사용하기
 ```bash
-# 🎬 4단계 Before -> Patch -> After -> Report 라이브 데모
+# 🎬 3단계 Before(scan) -> Patch(apply) -> After(scan & report) 라이브 데모
 uv run prod-ready demo samples/02_cloud_run_agent
 
 # 개별 실행 예시
 uv run prod-ready scan samples/02_cloud_run_agent --items ALL
-uv run prod-ready simulate samples/02_cloud_run_agent --items ALL
 uv run prod-ready diff samples/02_cloud_run_agent --items ALL --params '{"vpc_subnet_name":"default"}'
 uv run prod-ready apply samples/02_cloud_run_agent --items ALL --params '{"vpc_subnet_name":"default"}'
 uv run prod-ready report samples/02_cloud_run_agent --items ALL -o READINESS_REPORT.md

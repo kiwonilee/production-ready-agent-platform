@@ -1,6 +1,6 @@
 # Pre-Scan Workload Intake & Tailored Item Mapping (`intake-questionnaire.md`, v2 — 13 Core Items)
 
-Before running `scan` or `simulate`, confirm the user's workload profile so irrelevant items are skipped (`N/A`) rather than raising false RED blockers.
+Before running `scan`, confirm the user's workload profile so irrelevant items are skipped (`N/A`) rather than raising false RED blockers.
 
 ---
 
@@ -21,7 +21,7 @@ Always start from the **8 Common Baseline Items**:
 
 Then union based on the 3 answers:
 1. **Q1. 대화 기억 (Session & Memory)**:
-   - `A) 단발성 질의응답 (Stateless)` → Skip `C2.1, C2.2` (and skip `SIM-4`)
+   - `A) 단발성 질의응답 (Stateless)` → Skip `C2.1, C2.2`
    - `B) 멀티턴 대화 & 장기기억 (Managed Sessions & Memory Bank)` → Add **`C2.1, C2.2`**
 2. **Q2. 사내 프라이빗 망 연동 (Private VPC Egress)**:
    - `A) Gemini / 외부 공개 API만 호출` → Skip `C3.1`

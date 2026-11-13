@@ -19,7 +19,6 @@ from prod_ready.patcher import (
     generate_readiness_report,
     preview_patches,
     reset_project_to_baseline,
-    run_security_simulation,
 )
 from prod_ready.runtime_inspector import (
     DEFAULT_PROJECT_ID,
@@ -226,10 +225,6 @@ def create_workbench_app(project_dir: str | Path) -> FastAPI:
             media_type="text/html; charset=utf-8",
             headers=headers,
         )
-
-    @app.get("/api/simulate")
-    async def api_simulate(target: str = Query(default="auto")) -> dict[str, Any]:
-        return run_security_simulation(app.state.project_dir, target_override=target)
 
     @app.post("/api/reset")
     async def api_reset(target: str = Query(default="auto")) -> dict[str, Any]:

@@ -1575,6 +1575,20 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   aiplatform.googleapis.com \
   secretmanager.googleapis.com \
+  agentregistry.googleapis.com \
+  apphub.googleapis.com \
+  --project={{PROJECT_ID}}"></pre>
+        </div>
+
+        <div class="code-wrap track-only" data-track="agent_runtime">
+          <div class="code-head">
+            <span class="code-label">bash · Agent Runtime 전용 Agent Gateway &amp; IAP/UAP API 추가 활성화</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="gcloud services enable \
+  networkservices.googleapis.com \
+  networksecurity.googleapis.com \
+  iap.googleapis.com \
   --project={{PROJECT_ID}}"></pre>
         </div>
 
@@ -1608,7 +1622,7 @@ gcloud services enable \
 
         <div class="tab-panel active" data-tabgroup="step1" data-tab="scaffold">
           <h3>1-1. <code>agents-cli</code>로 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 템플릿 스캐폴딩</h3>
-          <p><code>agents-cli</code>로 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 타겟의 표준 프로젝트를 생성합니다. <span class="track-only" data-track="agent_runtime">(<code>agent_runtime</code> 타겟은 7개 <code>MANAGED_NATIVE</code> 항목이 기본 인식되어 시작 점수가 약 <code>49.2 / 100</code>부터 출발합니다.)</span></p>
+          <p><code>agents-cli</code>로 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 타겟의 표준 프로젝트를 생성합니다. <span class="track-only" data-track="agent_runtime">(<code>agent_runtime</code> 타겟은 4개 <code>MANAGED_NATIVE</code> 항목이 기본 인식되어 시작 점수가 약 <code>31.8 / 100</code>부터 출발합니다.)</span></p>
           <div class="code-wrap">
             <div class="code-head">
               <span class="code-label" data-auto-tpl="1">bash · agents-cli ({{TARGET_KEY}}) 스캐폴딩</span>
@@ -1795,7 +1809,7 @@ agy"></pre>
 
         <p>
           <strong>Play 02</strong>에서는 열어 둔 <strong>Antigravity CLI (<code>agy</code>) 대화창에 자연어로 지시</strong>하여
-          운영 환경 프로필을 선택한 뒤 <code>scan</code>(7대 도메인 · 13개 핵심 프로덕션 항목 정적 점검)을 실행해 패치 전(Before) 점수와 취약점을 파악합니다.
+          운영 환경 프로필을 선택한 뒤 <code>scan</code>(7대 도메인 · 15개 핵심 프로덕션 항목 정적 점검)을 실행해 패치 전(Before) 점수와 취약점을 파악합니다.
         </p>
 
         <h3>3-1. Antigravity CLI (<code>agy</code>)로 Before 진단 실행</h3>
@@ -1820,28 +1834,28 @@ agy"></pre>
             <div class="code-head">
               <span class="code-label">agy &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
             </div>
-            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 13개 핵심 하드닝
-  2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 12개 하드닝
-  3. 경량 / PoC — 단발성 · 최소 비용 · 핵심 기본선 8개
+            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 15개 핵심 하드닝 (C4.4는 단계적 도입 가이드 주석)
+  2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 14개 하드닝
+  3. 경량 / PoC — 단발성 · 최소 비용 · 핵심 기본선 9개 (Agent Identity·Registry 포함)
   4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
           </div>
           <div class="code-wrap track-only" data-track="agent_runtime">
             <div class="code-head">
               <span class="code-label">agy &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
             </div>
-            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 13개 (플랫폼 자동 4개 + 직접 하드닝 9개)
-  2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 12개 (플랫폼 자동 4개 + 직접 하드닝 8개)
-  3. 경량 / PoC — 단발성 · 핵심 기본선 8개 (플랫폼 자동 3개 + 직접 하드닝 5개)
+            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 15개 (플랫폼 자동 4개 + 직접 하드닝 11개)
+  2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 14개 (플랫폼 자동 4개 + 직접 하드닝 10개)
+  3. 경량 / PoC — 단발성 · 핵심 기본선 9개 (플랫폼 자동 3개 + 직접 하드닝 6개)
   4. 직접 맞춤 조합하기 (3가지 환경 질문으로 선택)</div>
           </div>
 
           <div class="callout callout-blue">
             <div class="callout-title">💡 프로필 선택 &amp; <code>agy</code> 실행 팁</div>
             <ul style="margin:6px 0 0 18px;">
-              <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>13개 풀 프로덕션</code> / <code>12개 표준 프로덕션</code> / <code>8개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, 불필요한 <code>N/A</code> 항목은 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 13개 체험은 <strong>1번</strong> 권장)</span></li>
-              <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>13개 풀 프로덕션</code> / <code>12개 표준 프로덕션</code> / <code>8개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, Agent Runtime이 기본 제공하는 <strong>4개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 13개 체험은 <strong>1번</strong> 권장)</span></li>
-              <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>3가지 질문(<code>Question 1/3</code>–<code>3/3</code>)</strong> — ① 대화 기억(단발성/멀티턴 Managed) · ② 사내 VPC/DB 연동 · ③ 운영 단계(SRE 알람 · Eval 게이트) — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
-              <li><strong>과도한 인프라·거버넌스 강제 변경 금지 (v2 원칙)</strong>: CPU·메모리·<code>min_instances</code>·인바운드 노출/인증 토폴로지(공개 OAuth vs IAM vs IAP vs GCLB+WAF)·AI 거버넌스(<code>Agent Gateway + Model Armor Floor Settings</code>)·프로덕션 SLA(<code>Provisioned Throughput GSU</code>)는 강제 변경하지 않고 비감점 권고(<code>Advisory</code>)로만 안내합니다.</li>
+              <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>15개 풀 프로덕션</code> / <code>14개 표준 프로덕션</code> / <code>9개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, 불필요한 <code>N/A</code> 항목은 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 15개 체험은 <strong>1번</strong> 권장)</span></li>
+              <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>15개 풀 프로덕션</code> / <code>14개 표준 프로덕션</code> / <code>9개 경량 PoC</code>)로 즉시 <code>scan</code>이 실행되며, Agent Runtime이 기본 제공하는 <strong>4개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 15개 체험은 <strong>1번</strong> 권장)</span></li>
+              <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>3가지 질문(<code>Question 1/3</code>–<code>3/3</code>)</strong> — ① 대화 기억(단발성/멀티턴 Managed) · ② 사내 VPC/DB 연동 · ③ 운영 단계(Agent Gateway · SRE 알람 · Eval 게이트) — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
+              <li><strong>과도한 인프라 강제 변경 금지 &amp; 런타임별 거버넌스 원칙 (v2.1)</strong>: <strong>Agent Identity &amp; Registry(<code>C4.2</code>)</strong>는 Cloud Run·Agent Runtime 모두에 적용하고, <strong>Agent Gateway(<code>C4.4</code>)</strong>는 Agent Runtime에 우선 적용(<code>DRY_RUN</code> 기본)하며 Cloud Run에는 검증된 GA 보안 위에 단계적 도입을 안내하는 주석만 삽입합니다. CPU·메모리·<code>min_instances</code>·인바운드 WAF·PT GSU는 비감점 <code>Advisory</code>로만 안내합니다.</li>
               <li>권한 확인 창이 뜨면 <strong>Allow(허용)</strong>를 선택하세요. 터미널이 중간에 끊겨도 같은 폴더에서 <code>agy -c</code>를 입력하면 직전 대화에 바로 이어집니다.</li>
             </ul>
           </div>
@@ -1859,7 +1873,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
           </div>
         </div>
 
-        <h3>3-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 13개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C7.1</code> · v2)</h3>
+        <h3>3-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 15개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C7.1</code> · v2.1)</h3>
         <p class="track-only" data-track="cloud_run">
           Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q3</code>)</strong>에 따라
           <strong>Cloud Run</strong> 환경에서 각 체크포인트가 무엇을 점검·자동 패치하는지, 그리고 <strong>내 선택에서 적용/제외(<code>N/A</code>)되는 항목</strong>이 무엇인지 한눈에 확인할 수 있습니다.
@@ -1867,7 +1881,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
         <p class="track-only" data-track="agent_runtime">
           Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q3</code>)</strong>에 따라
           <strong>Agent Runtime</strong> 환경에서 각 체크포인트가 어떻게 처리되는지 확인할 수 있습니다.
-          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>4개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 9개 항목</strong>을 집중 하드닝합니다.)
+          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>4개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 11개 항목</strong>을 집중 하드닝합니다.)
         </p>
 
         <!-- 프로필 3종 요약 카드 (클릭 시 아래 테이블 강조/필터 연동) -->
@@ -1875,59 +1889,59 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
           <div class="cp-summary-card" data-cp-card="p1" onclick="filterCheckpointProfile('p1')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">1. 풀 프로덕션 (VPC 포함)</span>
-              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">13 / 13 (전체)</span>
-              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">13 / 13 (4 자동 · 9 패치)</span>
+              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">15 / 15 (전체)</span>
+              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">15 / 15 (4 자동 · 11 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. Direct VPC Egress · Managed Sessions &amp; Memory Bank · Non-Root 격리 · PromQL SRE 알람 · 공식 Eval 게이트까지 전 영역 13개 풀 하드닝을 적용합니다.</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. 플랫폼 기본 제공 4개 항목에 더해 Memory Bank · PSC-I 사설망 연동 · Non-Root/최소권한 SA · ReasoningEngine SRE 알람 · 공식 평가 게이트까지 9개 항목을 집중 하드닝합니다.</p>
-            <div class="cp-sc-meta">적용 범위: <strong>7대 영역 전체</strong> (세션·VPC·보안·관측성·비용·Eval)</div>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. Direct VPC Egress · Managed Sessions &amp; Memory Bank · Agent Identity/Registry · Non-Root 격리 · PromQL SRE 알람 · 공식 Eval 게이트까지 전 영역 15개 풀 하드닝을 적용합니다. (<code>C4.4</code>는 단계적 도입 가이드 주석)</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB/VPC 연동이 필요한 상용 서비스. 플랫폼 기본 제공 4개 항목에 더해 Memory Bank · PSC-I 사설망 · Agent Identity/Registry · Agent Gateway(<code>DRY_RUN</code>) · ReasoningEngine SRE 알람 · 공식 평가 게이트까지 11개 항목을 집중 하드닝합니다.</p>
+            <div class="cp-sc-meta">적용 범위: <strong>7대 영역 전체</strong> (세션·VPC·신원·게이트웨이·관측성·비용·Eval)</div>
           </div>
 
           <div class="cp-summary-card" data-cp-card="p2" onclick="filterCheckpointProfile('p2')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">2. 표준 프로덕션 (외부 API)</span>
-              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">12 / 13 (VPC 제외)</span>
-              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">12 / 13 (4 자동 · 8 패치)</span>
+              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">14 / 15 (VPC 제외)</span>
+              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">14 / 15 (4 자동 · 10 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. 불필요한 사내 VPC 아웃바운드(<code>C3.1</code>)만 제외하고 나머지 12개 핵심 항목을 모두 적용합니다.</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. PSC-I 사설망(<code>C3.1</code>)만 제외하고 Memory Bank · 최소권한 SA · SRE 알람 · Eval 게이트를 모두 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. 불필요한 사내 VPC 아웃바운드(<code>C3.1</code>)만 제외하고 Agent Identity/Registry 등 나머지 14개 핵심 항목을 모두 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 프라이빗 DB 없이 Gemini 및 외부 공개 API만 호출하는 상용 멀티턴 에이전트. PSC-I 사설망(<code>C3.1</code>)만 제외하고 Memory Bank · Agent Identity/Registry · Agent Gateway · SRE 알람 · Eval 게이트를 모두 적용합니다.</p>
             <div class="cp-sc-meta">적용 범위: <strong>사내 VPC(<code>C3.1</code>) 제외</strong> 상용 멀티턴 표준</div>
           </div>
 
           <div class="cp-summary-card" data-cp-card="p3" onclick="filterCheckpointProfile('p3')">
             <div class="cp-sc-top">
               <span class="cp-sc-title">3. 경량 / PoC</span>
-              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">8 / 13 적용</span>
-              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">8 / 13 (3 자동 · 5 패치)</span>
+              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">9 / 15 적용</span>
+              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">9 / 15 (3 자동 · 6 패치)</span>
             </div>
-            <p class="cp-sc-desc track-only" data-track="cloud_run">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 추가 인프라 비용이 없는 <strong>공통 기본선 8개</strong>만 적용해 불필요한 <code>N/A</code> 경고를 모두 제거합니다.</p>
-            <p class="cp-sc-desc track-only" data-track="agent_runtime">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 공통 기본선 8개(플랫폼 자동 3개 + 코드/IAM/비루트/비용 가드 5개)만 적용해 불필요한 <code>N/A</code> 경고를 제거합니다.</p>
-            <div class="cp-sc-meta">적용 범위: <strong>추가 인프라 없는 공통 기본선 8개</strong> (Stateless)</div>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 추가 인프라 비용이 없는 <strong>공통 기본선 9개</strong>(<code>C4.2</code> Agent Identity/Registry 포함)만 적용해 불필요한 <code>N/A</code> 경고를 모두 제거합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">개발 테스트 · 단발성(Stateless) · 최소 비용 환경. 공통 기본선 9개(플랫폼 자동 3개 + 코드/IAM/Agent Identity/비루트/비용 가드 6개)만 적용해 불필요한 <code>N/A</code> 경고를 제거합니다.</p>
+            <div class="cp-sc-meta">적용 범위: <strong>추가 인프라 없는 공통 기본선 9개</strong> (Stateless + Identity)</div>
           </div>
         </div>
 
         <!-- 4번 직접 맞춤 조합(Q1~Q3) 가산 규칙 안내 -->
         <div class="cp-q-legend">
-          <div class="cp-q-legend-title">🧩 4번 <code>직접 맞춤 조합하기</code> 선택 시 — 공통 기본선 8개(<code>C1.1 · C1.2 · C4.1 · C4.3 · C5.1 · C5.2 · C6.1 · C6.2</code>) + 선택한 질문 항목 자동 합산</div>
+          <div class="cp-q-legend-title">🧩 4번 <code>직접 맞춤 조합하기</code> 선택 시 — 공통 기본선 9개(<code>C1.1 · C1.2 · C4.1 · C4.2 · C4.3 · C5.1 · C5.2 · C6.1 · C6.2</code>) + 선택한 질문 항목 자동 합산</div>
           <div class="cp-q-grid track-only" data-track="cloud_run">
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q1 멀티턴·장기기억</span><span>+ <code>C2.1</code>(Managed Sessions) · <code>C2.2</code>(Memory Bank)</span></div>
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 사내 DB·VPC</span><span>+ <code>C3.1</code>(Direct VPC Egress — 기존 <code>var.vpc_network_name</code>/<code>vpc_subnet_name</code> 바인딩)</span></div>
-            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 알람/Eval</span><span>+ <code>C5.3</code>(PromQL SRE 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 거버넌스/Eval</span><span>+ <code>C4.4</code>(단계적 도입 주석) · <code>C5.3</code>(PromQL SRE 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
           </div>
           <div class="cp-q-grid track-only" data-track="agent_runtime">
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q1 멀티턴·장기기억</span><span>+ <code>C2.1</code>(⚡ 세션 자동) · <code>C2.2</code>(Memory Bank)</span></div>
             <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 사내 DB·VPC</span><span>+ <code>C3.1</code>(PSC Interface Network Attachment + <code>/28</code> PGA 서브넷)</span></div>
-            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 알람/Eval</span><span>+ <code>C5.3</code>(ReasoningEngine 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q3 실운영 · 게이트웨이/Eval</span><span>+ <code>C4.4</code>(Agent Gateway <code>DRY_RUN</code>) · <code>C5.3</code>(ReasoningEngine 알람) · <code>C7.1</code>(공식 Eval 품질 게이트)</span></div>
           </div>
         </div>
 
         <!-- 인터랙티브 프로필 필터 바 -->
         <div class="cp-toolbar">
           <div class="cp-filter-group" role="tablist" aria-label="프로필별 테이블 필터">
-            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (13개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 풀 프로덕션 (13개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')">2. 표준 프로덕션 (12개)</button>
-            <button type="button" class="cp-filter-btn" data-cp-filter="p3" onclick="filterCheckpointProfile('p3')">3. 경량 PoC (8개)</button>
+            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (15개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 풀 프로덕션 (15개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')">2. 표준 프로덕션 (14개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p3" onclick="filterCheckpointProfile('p3')">3. 경량 PoC (9개)</button>
           </div>
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <span style="display:inline-flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-muted);">
@@ -1942,16 +1956,16 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
           </div>
         </div>
 
-        <!-- 13개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
+        <!-- 15개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
         <div class="cp-matrix-wrap">
           <table class="cp-matrix-table" id="cpMatrixTable">
             <thead>
               <tr>
                 <th style="width:84px;">ID · 등급</th>
                 <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 체크포인트 의미 · 프로덕션 Best Practice · 자동 패치 내역</th>
-                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션 (사내 VPC 포함 · 13개)">1. 풀<br><span style="font-weight:500;color:var(--ink-faint);">(13)</span></th>
-                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션 (외부 API · 12개)">2. 표준<br><span style="font-weight:500;color:var(--ink-faint);">(12)</span></th>
-                <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 경량 / PoC (8개)">3. PoC<br><span style="font-weight:500;color:var(--ink-faint);">(8)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 풀 프로덕션 (사내 VPC 포함 · 15개)">1. 풀<br><span style="font-weight:500;color:var(--ink-faint);">(15)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 표준 프로덕션 (외부 API · 14개)">2. 표준<br><span style="font-weight:500;color:var(--ink-faint);">(14)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 경량 / PoC (9개)">3. PoC<br><span style="font-weight:500;color:var(--ink-faint);">(9)</span></th>
               </tr>
             </thead>
             <tbody>
@@ -2128,7 +2142,7 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
               <tr class="cp-domain-row">
                 <td colspan="5">
                   <div class="cp-domain-head">
-                    <span class="cp-domain-name">4️⃣ 보안 &amp; 격리 (Security &amp; Isolation · 2개 항목 · AI 거버넌스는 Advisory)</span>
+                    <span class="cp-domain-name">4️⃣ 보안, 신원 &amp; 거버넌스 (Security, Identity &amp; Governance · 4개 항목)</span>
                     <span class="cp-domain-weight">도메인 가중치 2x</span>
                   </div>
                 </td>
@@ -2153,6 +2167,31 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                     <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>variables.tf</code>에서 <code>roles/storage.admin</code> → <code>roles/storage.objectUser</code> 축소 및 미사용 <code>roles/cloudsql.client</code> 제거를 수행하고, Secret 버전을 고정합니다.</span></div>
                   </div>
                   <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/variables.tf</code><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.2</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">Agent Identity (SPIFFE ID) &amp; Agent Registry 자동 등록</span>
+                  </div>
+                  <p class="cp-desc">
+                    에이전트에 고유한 SPIFFE 기반 <strong>Agent Identity</strong>를 부여하지 않으면 여러 에이전트·인프라가 동일 SA를 공유해 감사 추적이 불가능해지며, 조직의 <strong>Agent Registry</strong>에 등록되지 않은 Shadow Agent가 양산됩니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>에 <code>functional_type = "FUNCTIONAL_TYPE_AGENT"</code> 및 <code>identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"</code> 선언 여부와 <code>apis.tf</code>의 <code>agentregistry.googleapis.com</code> 활성화 여부를 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Cloud Run 에이전트에 <strong><code>FUNCTIONAL_TYPE_AGENT</code></strong>와 <strong><code>IDENTITY_TYPE_AGENT_IDENTITY</code></strong>를 지정해 에이전트별 SPIFFE ID를 발급하고 Agent Registry 자동 등록을 활성화합니다. <em>(<code>service_account</code>와 상호 배타)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>·<code>apphub.googleapis.com</code>을 추가하고, <code>service.tf</code>에 <code>functional_type</code>·<code>identity_type</code>을 주입하며 기존 <code>service_account</code> 충돌을 자동 정리합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>의 <code>spec.identity_type = "AGENT_IDENTITY"</code> 선언 여부와 <code>apis.tf</code>의 <code>agentregistry.googleapis.com</code> 활성화 여부를 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Agent Runtime에 <strong><code>identity_type = "AGENT_IDENTITY"</code></strong>를 활성화해 플랫폼이 에이전트 수명주기에 바인딩된 SPIFFE ID를 자동 발급하고 Agent Registry에 등록하도록 구성합니다. <em>(<code>service_account</code>와 상호 배타)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>·<code>apphub.googleapis.com</code>을 추가하고, <code>service.tf</code> <code>spec</code> 블록에 <code>identity_type = "AGENT_IDENTITY"</code>를 설정하며 기존 <code>service_account</code>를 정리합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>deployment/terraform/apis.tf</code></div>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
@@ -2184,6 +2223,36 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.4</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">Agent Gateway 단계적 도입 아키텍처 가이드 (Comment Advisory)</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">Agent Gateway 중앙 정책 게이트웨이 (UAP V2 <code>DRY_RUN</code>)</span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    에이전트의 아웃바운드 도구·MCP·LLM 호출을 중앙 <strong>Agent Gateway (<code>AGENT_TO_ANYWHERE</code>)</strong>로 경유시키면 앱 코드 수정 없이 통합 인가(UAP V2)·감사·보안 정책을 일관되게 적용할 수 있습니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>에 Cloud Run 단계적 거버넌스 도입 아키텍처 가이드 주석(<code># [C4.4 Advisory]</code>)이 반영되어 있는지 확인합니다. <em>(불필요한 Gateway 인프라를 강제 생성하지 않음)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><strong>Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor</strong> 검증된 GA 보안 위에 <strong>Agent Identity / Registry / Self-Managed AGW</strong>를 단계적으로 얹는 아키텍처로 운영합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>production_ready.tf</code>나 <code>AGENT_GATEWAY_ROOT_CERTIFICATES</code>를 생성하지 않고, <code>service.tf</code>에 단계적 도입 아키텍처 주석만 안전하게 반영합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>production_ready.tf</code>의 <code>google_network_services_agent_gateway</code> + IAP V2 <code>AuthzExtension</code>/<code>AuthzPolicy</code>, <code>service.tf</code>의 <code>agent_gateway_config</code>, <code>Dockerfile</code>의 <code>AGENT_GATEWAY_ROOT_CERTIFICATES</code> 구성을 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>초기 정책 모드는 반드시 <strong><code>iamEnforcementMode = "DRY_RUN"</code></strong>으로 배포해 필수 플랫폼 API 미허용에 따른 <strong>HTTP 498 차단 장애</strong>를 예방하고, 감사 로그 검증 후 <code>ENFORCED</code>로 승격해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>production_ready.tf</code>에 Agent Gateway + UAP V2 AuthzPolicy(<code>DRY_RUN</code>) 선언, <code>service.tf</code> <code>agent_gateway_config</code> 바인딩, <code>Dockerfile</code> <code>AGENT_GATEWAY_ROOT_CERTIFICATES</code> BYOC CA 신뢰 설정을 주입합니다. <em>(※ 구버전 <code>google-beta</code> Provider가 블록 미지원 시 <code>agents-cli deploy</code> 또는 Python SDK로 바인딩)</em></span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/production_ready.tf</code><code>deployment/terraform/service.tf</code><code>Dockerfile</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
               </tr>
 
               <!-- D5 -->
@@ -2355,16 +2424,16 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan .
         <h3>3-3. 예상 진단 결과 (Before Hardening · 1번 전체 기준)</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
-            <div class="code-output" style="border-top:none;">Target: cloud_run  |  Weighted Score: 4.5 / 100.0 (Mode B 스캐폴딩 시작 시: 20.5 / 100.0 · 🔴 Not Production Ready)
-Advisories: 사이징 · 인바운드 인증/WAF · AI 거버넌스(Model Armor) · PT SLA는 강제 변경 없이 Advisory로 안내
-주요 RED/AMBER: InMemory 세션·Memory Bank 미연동 / Non-Root·최소권한 SA 미비 / Trace PII 평문 / 루프 가드·Eval 누락</div>
+            <div class="code-output" style="border-top:none;">Target: cloud_run  |  Weighted Score: 6.8 / 100.0 (Mode B 스캐폴딩 시작 시: 22.7 / 100.0 · 🔴 Not Production Ready)
+Advisories: 사이징 · 인바운드 인증/WAF · Cloud Run 단계적 거버넌스(C4.4) · Model Armor Floor Settings · PT SLA 안내
+주요 RED/AMBER: InMemory 세션·Memory Bank 미연동 / Agent Identity·Registry 미구성 / Non-Root·최소권한 SA 미비 / Trace PII 평문 / 루프 가드·Eval 누락</div>
           </div>
         </div>
         <div class="track-only" data-track="agent_runtime">
           <div class="code-wrap">
             <div class="code-output" style="border-top:none;">Target: agent_runtime  |  Weighted Score: 2.3 / 100.0 (Mode B 스캐폴딩 시작 시: 31.8 / 100.0 · 4 MANAGED_NATIVE)
 Gate Verdict: 🔴 Not Production Ready
-주요 RED/AMBER: Memory Bank 미연동 / PSC-I 미구성 / 과권한 SA / Trace PII 평문 / 루프 가드·SRE 알람·Eval 누락</div>
+주요 RED/AMBER: Memory Bank 미연동 / PSC-I 미구성 / Agent Identity·Registry 및 Agent Gateway(DRY_RUN) 미구성 / 과권한 SA / Trace PII 평문 / 루프 가드·SRE 알람·Eval 누락</div>
           </div>
         </div>
 
@@ -2374,14 +2443,14 @@ Gate Verdict: 🔴 Not Production Ready
         </div>
       </section>
 
-      <!-- ==================== STEP 4 (PLAY 03: 13개 핵심 항목 자동 하드닝) ==================== -->
+      <!-- ==================== STEP 4 (PLAY 03: 15개 핵심 항목 자동 하드닝) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 4 / 8</span>
             <span class="pill pill-blue mono">PLAY 03</span>
             <span class="pill pill-gray mono">약 7분</span>
-            <h2><code>agy</code>로 13개 핵심 프로덕션 항목 자동 하드닝</h2>
+            <h2><code>agy</code>로 15개 핵심 프로덕션 항목 자동 하드닝</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
         </div>
@@ -2418,9 +2487,9 @@ Gate Verdict: 🔴 Not Production Ready
             <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 export SKILL_BIN=&quot;$HOME/.gemini/skills/agent-production-readiness/scripts/prod_ready.py&quot;
 
-# ① 1번(풀 프로덕션 13개) 기준 실행 예시
-#    - 2번(표준 프로덕션 12개) 선택 시: --items C1.1,C1.2,C2.1,C2.2,C4.1,C4.3,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1 로 변경
-#    - 3번(경량 PoC 8개) 선택 시: --items C1.1,C1.2,C4.1,C4.3,C5.1,C5.2,C6.1,C6.2 로 변경
+# ① 1번(풀 프로덕션 15개) 기준 실행 예시
+#    - 2번(표준 프로덕션 14개) 선택 시: --items C1.1,C1.2,C2.1,C2.2,C4.1,C4.2,C4.3,C4.4,C5.1,C5.2,C5.3,C6.1,C6.2,C7.1 로 변경
+#    - 3번(경량 PoC 9개) 선택 시: --items C1.1,C1.2,C4.1,C4.2,C4.3,C5.1,C5.2,C6.1,C6.2 로 변경
 python3 &quot;$SKILL_BIN&quot; diff . --target {{TARGET_KEY}} --items ALL | head -n 60
 python3 &quot;$SKILL_BIN&quot; apply . --target {{TARGET_KEY}} --items ALL
 uv lock
@@ -2533,26 +2602,30 @@ gcloud run deploy {{AGENT_NAME}} \
             </div>
           </div>
 
-          <h3>5-3. 라이브 엔드포인트 스모크 테스트 (IAM 인증 토큰 포함)</h3>
+          <h3>5-3. 라이브 엔드포인트 스모크 테스트 &amp; Agent Identity / Registry 확인</h3>
           <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            엔터프라이즈 Cloud Run 및 Qwiklabs 환경(<code>iam.allowedPolicyMemberDomains</code> 조직 정책)은 익명 호출(<code>allUsers</code>)을 차단하므로, 반드시 <strong>IAM Identity Token(<code>Authorization: Bearer ...</code>)</strong> 헤더를 포함해 호출합니다.
+            엔터프라이즈 Cloud Run 및 Qwiklabs 환경(<code>iam.allowedPolicyMemberDomains</code> 조직 정책)은 익명 호출(<code>allUsers</code>)을 차단하므로, 반드시 <strong>IAM Identity Token(<code>Authorization: Bearer ...</code>)</strong> 헤더를 포함해 호출합니다. 또한 <strong>Agent Identity(<code>C4.2</code>)</strong> 활성화 후에는 <code>gcloud agent-registry agents list</code>로 자동 등록 여부를 확인하세요.
           </p>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · IAM Identity Token으로 Cloud Run /list-apps 확인</span>
+              <span class="code-label">bash · IAM Identity Token 확인 &amp; Agent Identity / Registry 조회</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
 echo &quot;Deployed URL: ${SERVICE_URL}&quot;
-curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-identity-token)&quot; &quot;${SERVICE_URL}/list-apps&quot; ; echo"></pre>
+curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-identity-token)&quot; &quot;${SERVICE_URL}/list-apps&quot; ; echo
+
+# (선택 · 간편 배포로 시작한 경우) Agent Identity + Agent Registry 전환 예시 (--service-account와 상호 배타)
+# gcloud beta run services update {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --functional-type=agent --identity-type=agent-identity --no-traffic
+gcloud beta agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}"></pre>
             <div class="code-output">["app"]</div>
           </div>
 
           <div class="callout callout-blue" style="margin-top:10px;">
-            <div class="callout-title">💡 인바운드 인증 &amp; 엣지 아키텍처 선택 가이드 (참고)</div>
+            <div class="callout-title">💡 인바운드 인증 &amp; Cloud Run 단계적 거버넌스 가이드 (<code>C4.4</code> 참고)</div>
             <p style="margin-top:4px;">
               이 스킬은 Cloud Run의 기본 URL(<code>*.a.run.app</code>)이나 <code>ingress</code>를 강제로 차단하지 않습니다.
-              실제 서비스 오픈 시에는 호출자 유형과 조직 정책에 맞춰 ① 공개 URL + 자체 OAuth/JWT(<code>--allow-unauthenticated</code>), ② 서버 간 IAM Invoker(위 예시), ③ 사내 IAP, 또는 ④ 앞단 GCLB + Cloud Armor WAF 중 적합한 방식을 선택하세요.
+              실제 서비스 오픈 시에는 <strong>Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.</strong>
             </p>
           </div>
         </div>
@@ -2592,10 +2665,11 @@ terraform init
 terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;
 cd ../..
 
+# ※ --agent-identity 와 --service-account 는 상호 배타적이므로 Agent Identity 모드에서는 --service-account 를 생략합니다.
+# ※ 초기 Agent Gateway(C4.4) 정책 모드는 DRY_RUN 으로 배포해 HTTP 498 차단 장애를 방지합니다.
 uvx google-agents-cli deploy \
   --project={{PROJECT_ID}} \
   --region={{REGION}} \
-  --service-account={{SA_EMAIL}} \
   --network-attachment=&quot;projects/{{PROJECT_ID}}/regions/{{REGION}}/networkAttachments/{{AGENT_NAME}}-psc-attachment&quot; \
   --agent-identity \
   --min-instances=1 --max-instances=10 \
@@ -2615,11 +2689,11 @@ uvx google-agents-cli deploy \
 # 방법 B(최소 코드 직접 생성)로 시작했다면 배포 메타데이터 1회 초기화
 uvx google-agents-cli scaffold enhance . --deployment-target agent_runtime --region {{REGION}} --yes
 
-# Agent Runtime 배포 시작 (5~10분 소요)
+# Agent Runtime 배포 시작 (5~10분 소요 · Agent Identity 우선 권장, 전용 SA 사용 시 --service-account={{SA_EMAIL}} 로 대체)
 uvx google-agents-cli deploy \
   --project={{PROJECT_ID}} \
   --region={{REGION}} \
-  --service-account={{SA_EMAIL}} \
+  --agent-identity \
   --update-env-vars=&quot;GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=global&quot; \
   --min-instances=1 \
   --max-instances=10 \
@@ -2631,13 +2705,14 @@ uvx google-agents-cli deploy --status"></pre>
             </div>
           </div>
 
-          <h3>5-3. 배포 목록 확인 &amp; ADK 스트리밍 호출 테스트</h3>
+          <h3>5-3. 배포 목록 · Agent Registry 등록 확인 &amp; ADK 스트리밍 호출 테스트</h3>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · Engine ID 조회 및 실시간 질의 테스트</span>
+              <span class="code-label">bash · Engine ID · Agent Registry 조회 및 실시간 질의 테스트</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="uvx google-agents-cli deploy --list
+gcloud beta agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
 uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"></pre>
           </div>
         </div>
@@ -2716,8 +2791,9 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R2.1</td><td>멀티턴 세션·메모리 영속성</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>단일턴은 <strong>Stateless 유지</strong> / 멀티턴은 <code>agentengine://</code> 등 선택</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>인바운드 노출 범위</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭은 <strong>퍼블릭 의도</strong> / 사내 전용은 <strong>인바운드 제한</strong></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>아웃바운드 Direct VPC Egress</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭 API만 호출 시 <strong>미연결 적합</strong></td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>AI 보안 거버넌스 (Model Armor Advisory)</td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>조직 정책에 따라 <strong>Agent Gateway + Floor Settings</strong> 확인</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정 (또는 Agent Identity)</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 또는 Agent Identity 확인 완료</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Agent Identity (SPIFFE ID) &amp; Agent Registry 등록</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ Agent Identity 전환</strong> (<code>--functional-type=agent --identity-type=agent-identity</code>)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.3</td><td>Cloud Run 단계적 거버넌스 &amp; Model Armor Advisory</td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>GA 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 위 <strong>단계적 AGW 도입</strong> 확인</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
               </tbody>
@@ -2734,8 +2810,9 @@ uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R2.1</td><td>Managed Session Service &amp; Memory Bank</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>제로 트러스트 IAM 인바운드</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>PSC Interface (사설 VPC 접근)</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>사설 DB 접근이 없으면 <strong>미연결 적합</strong></td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>AI 보안 거버넌스 (Model Armor Advisory)</td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>조직 정책에 따라 <strong>Agent Gateway + Floor Settings</strong> 확인</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정 (또는 Agent Identity)</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA 또는 Agent Identity 확인 완료</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Agent Identity (SPIFFE ID) &amp; Agent Registry 등록</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ <code>--agent-identity</code> 적용</strong> (전용 SA와 상호 배타)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.3</td><td>Agent Gateway 중앙 정책 게이트웨이 (UAP V2 <code>DRY_RUN</code>) &amp; Model Armor</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ Agent Gateway 바인딩</strong> (초기 <code>DRY_RUN</code>으로 HTTP 498 차단 방지)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
               </tbody>
@@ -2897,7 +2974,7 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
       { id: 1, code: "1", title: "심플 ADK Agent 생성", time: "7분" },
       { id: 2, code: "2", title: "Play 01 · Skill 설치 & agy 실행", time: "3분" },
       { id: 3, code: "3", title: "Play 02 · agy 사전 진단 (Before)", time: "6분" },
-      { id: 4, code: "4", title: "Play 03 · 13개 항목 자동 하드닝", time: "7분" },
+      { id: 4, code: "4", title: "Play 03 · 15개 항목 자동 하드닝", time: "7분" },
       { id: 5, code: "5", title: "Google Cloud 배포", time: "8분" },
       { id: 6, code: "6", title: "Play 04 · Web JSON 위자드 진단", time: "6분" },
       { id: 7, code: "7", title: "최종 리포트 & 명령어 재검증", time: "5분" },
@@ -2927,10 +3004,10 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
         beforeScore: "초기 점수: 2.3 / 100 (Mode B: 31.8)",
         deployTitle: "3. Agent Runtime 배포",
         deployCmd: "agents-cli deploy --no-wait",
-        wizardSub: "JSON 붙여넣기 → 8개 위자드",
-        kpiPlay01: "4 기본 + 9 패치",
+        wizardSub: "JSON 붙여넣기 → 9개 위자드",
+        kpiPlay01: "4 기본 + 11 패치",
         kpiPlay01Sub: "4개 MANAGED_NATIVE 자동 가점",
-        kpiPlay02: "8개 위자드"
+        kpiPlay02: "9개 위자드"
       },
       cloud_run: {
         key: "cloud_run",
@@ -2951,13 +3028,13 @@ gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet
           "<strong>비용 절감과 예측 가능성이 가장 중요할 때</strong> — 트래픽 패턴이 불규칙해서 유휴 시 인스턴스를 0으로 내리는(Scale-to-zero) 구조가 유리할 때 적합합니다.",
           "<strong>커스텀 컨테이너 · 경량 Stateless 환경</strong> — 사용자 지정 컨테이너 구성이 필요하거나 일회성 질의응답(Stateless) 위주의 가벼운 에이전트에 적합합니다."
         ],
-        beforeScore: "초기 점수: 4.5 / 100 (Mode B: 20.5)",
+        beforeScore: "초기 점수: 6.8 / 100 (Mode B: 22.7)",
         deployTitle: "3. Cloud Run 배포",
         deployCmd: "gcloud run deploy / Terraform",
-        wizardSub: "JSON 붙여넣기 → 10개 위자드",
-        kpiPlay01: "13개 패치",
+        wizardSub: "JSON 붙여넣기 → 11개 위자드",
+        kpiPlay01: "15개 패치",
         kpiPlay01Sub: "7대 영역 직접 코드·IaC 하드닝",
-        kpiPlay02: "10개 위자드"
+        kpiPlay02: "11개 위자드"
       }
     };
 

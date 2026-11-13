@@ -1,18 +1,22 @@
-"""Canonical 7-Domain, 13-Item Production-Readiness Checklist, Guide & Customization Schema (v2).
+"""Canonical 7-Domain, 15-Item Production-Readiness Checklist, Guide & Customization Schema (v2.1).
 
-Defines the 7 Domains, 13 core "True No-Regret" Checklist Items (C1.1-C7.1), customizable parameters,
+Defines the 7 Domains, 15 core "True No-Regret" + GEAP Governance Checklist Items (C1.1-C7.1), customizable parameters,
 and explicit runtime mappings separating Cloud Run (`cloud_run`) and Agent Runtime (`agent_runtime`).
 
-Key v2 Principles:
+Key v2.1 Principles:
 1. No unsolicited CPU/Memory/Concurrency/min_instances upsizing — sizing belongs to load testing (`tests/load_test/`).
 2. No over-reaching org/infra/governance mutations (no forced GCLB/Cloud Armor WAF, no forced Billing Account `budget.tf`,
-   no forced GCS log bucket versioning, no forced `deletion_protection=true`, no forced Model Armor / tool SSRF plugin —
-   centralized governance belongs to Agent Gateway / Model Armor Floor Settings advisory).
-3. Thinking-model safe & Retry-Storm safe defaults: `max_output_tokens = 0` (opt-in so Gemini 2.5/3.x thoughts aren't
+   no forced GCS log bucket versioning, no forced `deletion_protection=true`, no forced in-app Model Armor / tool SSRF plugin).
+3. GEAP Governance Split:
+   - `C4.2` Agent Identity (SPIFFE ID) & Agent Registry auto-registration applies to BOTH Cloud Run and Agent Runtime.
+   - `C4.4` Agent Gateway (`AGENT_TO_ANYWHERE` + UAP V2 `DRY_RUN` default to prevent HTTP 498 outage) applies to
+     Agent Runtime ONLY; Cloud Run receives a non-blocking architectural comment/advisory documenting staged adoption
+     over Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor.
+4. Thinking-model safe & Retry-Storm safe defaults: `max_output_tokens = 0` (opt-in so Gemini 2.5/3.x thoughts aren't
    truncated), and `C6.2` preserves `agents-cli`'s Fail-Fast `attempts=3` instead of forcing `attempts=5`.
-4. Domain 2 defaults to Agent Platform Managed Session Service (`VertexAiSessionService`) and
+5. Domain 2 defaults to Agent Platform Managed Session Service (`VertexAiSessionService`) and
    Memory Bank (`VertexAiMemoryBankService`); Self-Hosted Cloud SQL / Redis is noted only as an optional alternative.
-5. Strict runtime separation between Cloud Run and Agent Runtime.
+6. Strict runtime separation between Cloud Run and Agent Runtime.
 """
 
 from __future__ import annotations
@@ -46,6 +50,7 @@ class CustomParams:
     max_llm_calls_per_turn: int = 10
     max_output_tokens: int = 0
     eval_metrics: str = "final_response_quality,safety"
+    agent_gateway_enforcement_mode: str = "DRY_RUN"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> CustomParams:
@@ -221,12 +226,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
             ),
         ],
     ),
-    # Domain 4: 보안 & 격리 (Weight 2x) — AI 거버넌스(Model Armor/도구 방어)는 Agent Gateway Advisory로 분리
+    # Domain 4: 보안, 신원 & 거버넌스 (Weight 2x)
     ChecklistItemSpec(
         id="C4.1",
         code_alias="SEC-01",
         domain_id="D4",
-        domain_name="4. 보안 & 격리",
+        domain_name="4. 보안, 신원 & 거버넌스",
         domain_weight=2,
         title="최소 권한 전용 서비스 계정(SA) & Secret 버전 고정",
         severity="Critical",
@@ -242,10 +247,29 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         target_files=["deployment/terraform/variables.tf", "deployment/terraform/service.tf"],
     ),
     ChecklistItemSpec(
+        id="C4.2",
+        code_alias="GOV-01",
+        domain_id="D4",
+        domain_name="4. 보안, 신원 & 거버넌스",
+        domain_weight=2,
+        title="Agent Identity (SPIFFE ID) & Agent Registry 자동 등록",
+        severity="Critical",
+        before_summary="공유 Service Account만 사용 중이며 Agent Identity(SPIFFE) 및 Agent Registry 자동 등록 미구성",
+        after_criteria="Cloud Run: functional_type=FUNCTIONAL_TYPE_AGENT + workload_identity_config(IDENTITY_TYPE_AGENT_IDENTITY) | Agent Runtime: spec.identity_type=AGENT_IDENTITY + agentregistry.googleapis.com / apphub.googleapis.com 활성화",
+        why_it_matters="에이전트별 고유 SPIFFE 신원(Agent Identity)과 mTLS 인증서 바인딩으로 토큰 탈취·재사용을 차단하고, Agent Registry 자동 등록을 통해 조직 내 에이전트 가시성과 거버넌스 기반을 확보합니다. (※ 한 번 설정한 identity_type / functional_type은 변경 불가하므로 기존 서비스 전환 시 IAM 사전 매핑 및 --no-traffic 검증 권장)",
+        verify_cmd=r'grep -nE "IDENTITY_TYPE_AGENT_IDENTITY|identity_type\s*=\s*\"AGENT_IDENTITY\"" deployment/terraform/service.tf && grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf',
+        agent_runtime_mode="TIER_1_AUTO",
+        agent_runtime_desc="service.tf(google-beta)에 spec.identity_type = \"AGENT_IDENTITY\" 선언 및 apis.tf에 agentregistry.googleapis.com / apphub.googleapis.com 활성화 (Agent Registry 자동 등록)",
+        cloud_run_mode="TIER_1_AUTO",
+        cloud_run_desc="service.tf(google-beta)에 functional_type = \"FUNCTIONAL_TYPE_AGENT\" + workload_identity_config(IDENTITY_TYPE_AGENT_IDENTITY) 선언 및 apis.tf에 agentregistry.googleapis.com / apphub.googleapis.com 활성화",
+        gke_desc="GKE Workload Identity SPIFFE ID 및 Agent Registry 서비스 등록",
+        target_files=["deployment/terraform/service.tf", "deployment/terraform/apis.tf"],
+    ),
+    ChecklistItemSpec(
         id="C4.3",
         code_alias="SEC-02",
         domain_id="D4",
-        domain_name="4. 보안 & 격리",
+        domain_name="4. 보안, 신원 & 거버넌스",
         domain_weight=2,
         title="컨테이너 Non-Root(비특권) 실행 & Gen2 샌드박스",
         severity="Critical",
@@ -259,6 +283,33 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         cloud_run_desc="Dockerfile 내 USER 10001:10001 패치 및 service.tf 내 EXECUTION_ENVIRONMENT_GEN2 지정",
         gke_desc="Pod SecurityContext runAsNonRoot=true, runAsUser=10001",
         target_files=["Dockerfile", "deployment/terraform/service.tf"],
+    ),
+    ChecklistItemSpec(
+        id="C4.4",
+        code_alias="GOV-02",
+        domain_id="D4",
+        domain_name="4. 보안, 신원 & 거버넌스",
+        domain_weight=2,
+        title="Agent Gateway 중앙 정책 게이트웨이 (Agent Runtime 우선 적용 / Cloud Run은 단계적 도입 가이드)",
+        severity="Standard",
+        before_summary="Agent Runtime: 아웃바운드 Agent Gateway(UAP V2 DRY_RUN) & BYOC CA 신뢰 미구성 | Cloud Run: 단계적 거버넌스 도입 아키텍처 주석 미기재",
+        after_criteria="Agent Runtime: google_network_services_agent_gateway(AGENT_TO_ANYWHERE) + IAP V2 AuthzPolicy(기본 DRY_RUN으로 HTTP 498 차단 방지) + agent_gateway_config + Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES | Cloud Run: service.tf에 단계적 도입 아키텍처 주석 반영 (인프라 강제 생성 없음)",
+        why_it_matters="Agent Runtime에서는 Agent-to-Anywhere Agent Gateway를 통해 모든 도구·API 호출을 중앙 통제·감사하며, 초기 iamEnforcementMode=DRY_RUN으로 필수 플랫폼 API 미허용에 따른 HTTP 498 장애를 방지합니다. 반면 Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적이므로 인프라를 강제 생성하지 않고 아키텍처 주석으로 명시합니다.",
+        verify_cmd='grep -nE "agent_gateway_config|google_network_services_agent_gateway|C4.4 Advisory" deployment/terraform/service.tf deployment/terraform/production_ready.tf 2>/dev/null',
+        agent_runtime_mode="TIER_1_AUTO",
+        agent_runtime_desc="production_ready.tf에 Agent Gateway(AGENT_TO_ANYWHERE) + UAP V2 AuthzPolicy(기본 DRY_RUN) 생성, service.tf agent_gateway_config 바인딩, Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES CA 신뢰 설정",
+        cloud_run_mode="TIER_2_TEMPLATE",
+        cloud_run_desc="인프라 강제 생성 없이 service.tf에 Cloud Run 단계적 도입 가이드 주석 반영 (Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor GA 보안 위에 Agent Identity / Registry / Self-Managed AGW 단계적 적용)",
+        gke_desc="Cloud Service Mesh / Gateway API + AuthzPolicy 중앙 정책 적용",
+        target_files=["deployment/terraform/service.tf", "deployment/terraform/production_ready.tf", "Dockerfile"],
+        custom_fields=[
+            CustomFieldSpec(
+                key="agent_gateway_enforcement_mode",
+                label="Agent Gateway UAP V2 정책 모드 (Agent Runtime 전용 · 초기 DRY_RUN으로 HTTP 498 방지 권장)",
+                default="DRY_RUN",
+                options=["DRY_RUN", "ENFORCED"],
+            )
+        ],
     ),
     # Domain 5: 관측성 & 알람 (Weight 2x)
     ChecklistItemSpec(
@@ -403,27 +454,25 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
 ITEM_BY_ID: dict[str, ChecklistItemSpec] = {item.id: item for item in CHECKLIST_ITEMS}
 ITEM_BY_ALIAS: dict[str, ChecklistItemSpec] = {item.code_alias: item for item in CHECKLIST_ITEMS}
 
-# Backward-compatible mapping from earlier 20-item / 17-item / 14-item IDs to the streamlined 13-item IDs
+# Backward-compatible mapping from earlier 20-item / 17-item / 14-item IDs to active 15-item IDs
 LEGACY_ID_MAP: dict[str, str] = {
     "C1.3": "C1.2",  # Health probes moved into C1.2
     "C2.3": "C2.1",  # GCS bucket versioning removed; maps to D2 session store
     "C3.2": "C3.1",  # Ingress WAF/IAP moved to non-scoring advisory; maps to D3 networking
     "C3.3": "C3.1",  # Private Google Access merged into C3.1
-    "C4.2": "C4.1",  # Model Armor / tool guard moved to Agent Gateway governance advisory; maps to D4
-    "C4.4": "C4.1",  # Tool SSRF/IDOR moved to governance advisory; maps to D4
     "C7.2": "C1.1",  # lifecycle.ignore_changes consolidated into C1.1
     "REL-00": "C1.1",
     "MEM-03": "C2.1",
-    "GRD-01": "C4.1",
-    "SEC-03": "C4.1",
-    "SEC-04": "C4.1",
+    "GRD-01": "C4.4",
+    "SEC-03": "C4.2",
+    "SEC-04": "C4.4",
     "SEC-05": "C4.3",
     "OPS-02": "C1.1",
 }
 
 
 def resolve_item_ids(requested: list[str] | None) -> list[str]:
-    """Resolves 'ALL', canonical C-ids ('C1.1'), aliases, or legacy IDs to active 13-item C-ids."""
+    """Resolves 'ALL', canonical C-ids ('C1.1'), aliases, or legacy IDs to active 15-item C-ids."""
     if not requested or "ALL" in [r.upper() for r in requested]:
         return [item.id for item in CHECKLIST_ITEMS]
     resolved: list[str] = []

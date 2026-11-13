@@ -1,4 +1,4 @@
-# 🛡️ Production-Ready Enterprise AI Agent Platform (v2)
+# 🛡️ Production-Ready Enterprise AI Agent Platform (v2.1)
 
 <p align="center">
   <a href="#-한국어-가이드-korean"><strong>🇰🇷 한국어 가이드 (Korean)</strong></a> ·
@@ -12,14 +12,17 @@
 # 🇰🇷 한국어 가이드 (Korean)
 
 ## 💡 한 줄 요약: 이 도구는 무엇인가요?
-개발자가 로컬에서 만든 **AI 에이전트 프로토타입(`adk create` 또는 `agents-cli scaffold`)**을 스캔하여, **`Agent Runtime`과 `Cloud Run` 각 타겟의 아키텍처 특성에 맞춰 엔터프라이즈 상용 수준(Production-Ready)으로 배포할 수 있도록 7대 영역 · 13개 핵심(True No-Regret) 보안·네트워크·세션·관측성·비용·품질 설정(`Terraform` + `ADK 플러그인`)을 진단하고 자동으로 보강(Hardening)해 주는 도구**입니다.
+개발자가 로컬에서 만든 **AI 에이전트 프로토타입(`adk create` 또는 `agents-cli scaffold`)**을 스캔하여, **`Agent Runtime`과 `Cloud Run` 각 타겟의 아키텍처 특성에 맞춰 엔터프라이즈 상용 수준(Production-Ready)으로 배포할 수 있도록 7대 영역 · 15개 핵심(True No-Regret + GEAP Governance) 보안·신원·거버넌스·네트워크·세션·관측성·비용·품질 설정(`Terraform` + `ADK 플러그인`)을 진단하고 자동으로 보강(Hardening)해 주는 도구**입니다.
 
-### ✨ v2 핵심 설계 원칙
-1. **과도한 인프라·거버넌스 강제 변경 금지 (Zero Over-Reaching Mutations)**:
+### ✨ v2.1 핵심 설계 원칙
+1. **과도한 인프라 강제 변경 금지 (Zero Over-Reaching Mutations)**:
    - CPU·메모리·`concurrency`·`min_instances`는 부하 테스트(`Locust`) 없이 강제 상향하지 않고 기존 값을 그대로 보존합니다.
-   - GCLB + Cloud Armor WAF / IAP 및 `default_uri_disabled` 인바운드 잠금, 조직 Billing Admin 권한이 필요한 `budget.tf`, `deletion_protection = true`, GCS 로그 버킷 강제 Versioning, 임의 카나리 셸 스크립트, **앱 코드 내 Model Armor/도구 거버넌스 플러그인**은 강제 생성하지 않습니다. *(컴퓨트 사이징, 인바운드 인증/엣지 토폴로지, AI 보안 거버넌스(`Agent Gateway + Model Armor Floor Settings`), 프로덕션 SLA(`Provisioned Throughput GSU`)는 비감점 **Advisory**로만 안내)*
-2. **D2 Managed-First 원칙**: 멀티턴 세션(`C2.1`)과 장기 기억(`C2.2`)은 운영 부담이 없는 **Agent Platform Managed Sessions (`VertexAiSessionService`) & Memory Bank (`VertexAiMemoryBankService`)** 를 기본으로 구성합니다. *(규제·기존 인프라 재사용 시 Self-Hosted Cloud SQL / Redis / Vector DB도 별도 옵션으로 선택 가능)*
-3. **`Cloud Run` vs `Agent Runtime` 엄격 분리**: `Agent Runtime`은 4개 플랫폼 내장 항목(`C1.1, C1.2, C2.1, C5.1`)을 `MANAGED_NATIVE`로 자동 처리하고 `ReasoningEngine` 전용 메트릭·PSC-I만 적용하며, `Cloud Run`은 기존 VPC/서브넷을 재사용하는 Direct VPC Egress(`var.vpc_network_name` / `var.vpc_subnet_name`)와 Cloud Run PromQL 5xx 알람을 구성합니다.
+   - GCLB + Cloud Armor WAF / IAP 및 `default_uri_disabled` 인바운드 잠금, 조직 Billing Admin 권한이 필요한 `budget.tf`, `deletion_protection = true`, GCS 로그 버킷 강제 Versioning, 임의 카나리 셸 스크립트, **앱 코드 내 Model Armor/도구 거버넌스 플러그인**은 강제 생성하지 않습니다. *(컴퓨트 사이징, 인바운드 인증/엣지 토폴로지, Model Armor Floor Settings, 프로덕션 SLA(`Provisioned Throughput GSU`)는 비감점 **Advisory**로만 안내)*
+2. **런타임 맞춤형 GEAP 거버넌스 (`C4.2` & `C4.4`)**:
+   - **`C4.2` Agent Identity (SPIFFE ID) & Agent Registry 자동 등록**: **`Cloud Run`과 `Agent Runtime` 모두**에 적용합니다. (`agentregistry.googleapis.com`·`apphub.googleapis.com` 활성화 + 기존 `service_account` 상호 배타성 자동 정리)
+   - **`C4.4` Agent Gateway 중앙 정책 게이트웨이**: **`Agent Runtime`에만 우선 적용**(`AGENT_TO_ANYWHERE` + UAP V2 `AuthzExtension`/`AuthzPolicy`, 초기 **`DRY_RUN`**으로 HTTP 498 장애 방지 + `Dockerfile` `AGENT_GATEWAY_ROOT_CERTIFICATES`)하고, **`Cloud Run`**에는 인프라를 강제 생성하지 않고 `service.tf`에 단계적 도입 아키텍처 주석만 반영합니다. *(Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.)*
+3. **D2 Managed-First 원칙**: 멀티턴 세션(`C2.1`)과 장기 기억(`C2.2`)은 운영 부담이 없는 **Agent Platform Managed Sessions (`VertexAiSessionService`) & Memory Bank (`VertexAiMemoryBankService`)** 를 기본으로 구성합니다. *(규제·기존 인프라 재사용 시 Self-Hosted Cloud SQL / Redis / Vector DB도 별도 옵션으로 선택 가능)*
+4. **`Cloud Run` vs `Agent Runtime` 엄격 분리**: `Agent Runtime`은 4개 플랫폼 내장 항목(`C1.1, C1.2, C2.1, C5.1`)을 `MANAGED_NATIVE`로 자동 처리하고 `ReasoningEngine` 전용 메트릭·PSC-I·Agent Gateway만 적용하며, `Cloud Run`은 기존 VPC/서브넷을 재사용하는 Direct VPC Egress(`var.vpc_network_name` / `var.vpc_subnet_name`)와 Cloud Run PromQL 5xx 알람을 구성합니다.
 
 ---
 
@@ -27,10 +30,10 @@
 
 1. **프로토타입(Day-1)과 엔터프라이즈 상용화(Day-2) 사이의 공백 해소**:
    - **ADK (`google-adk`)**로 에이전트 로직을 빠르게 만들고, **`agents-cli` (`google-agents-cli`)**로 기본 스캐폴딩·평가·배포를 수행할 수 있습니다.
-   - 하지만 실제 기업 상용 오픈을 위해서는 **사내 폐쇄망 연동, 영속 세션/장기기억, 최소 권한 SA & Non-Root 컨테이너 격리, 트레이스 PII 유출 차단(`NO_CONTENT`), 턴별 무한 루프 상한, 429 Fail-Fast 백오프 & Global DSQ, 타겟별 SRE 알람, 공식 Eval 품질 게이트**가 필수입니다.
+   - 하지만 실제 기업 상용 오픈을 위해서는 **사내 폐쇄망 연동, 영속 세션/장기기억, 최소 권한 SA & Agent Identity/Registry, Agent Gateway(AR), Non-Root 컨테이너 격리, 트레이스 PII 유출 차단(`NO_CONTENT`), 턴별 무한 루프 상한, 429 Fail-Fast 백오프 & Global DSQ, 타겟별 SRE 알람, 공식 Eval 품질 게이트**가 필수입니다.
 2. **플랫폼 간 Production-Ready 격차 해소 (`Cloud Run` vs `Agent Runtime`)**:
    - **Agent Runtime**은 4개 런타임/프로브/세션/트레이싱 영역을 플랫폼이 기본 제공하는 반면, **Cloud Run**에서는 이를 코드와 Terraform으로 직접 구성해야 합니다.
-   - 본 프로젝트는 **7대 영역 · 13개 핵심 체크리스트(`C1.1`~`C7.1`)**로 양 플랫폼 모두에서 **100% Production-Ready** 상태에 도달할 수 있게 해줍니다.
+   - 본 프로젝트는 **7대 영역 · 15개 핵심 체크리스트(`C1.1`~`C7.1`)**로 양 플랫폼 모두에서 **100% Production-Ready** 상태에 도달할 수 있게 해줍니다.
 
 ```mermaid
 flowchart LR
@@ -40,9 +43,9 @@ flowchart LR
         ADK --> ACLI
     end
 
-    subgraph OurProject["🚀 Day 2: 본 프로젝트 (Production-Ready Platform v2)"]
-        Check["3️⃣ 7대 영역 13개 체크리스트 진단<br/>(Agent Skill / 웹 UI / CLI)"]
-        Patch["4️⃣ 타겟별 원클릭 코드 & IaC 자동 보강<br/>(Managed Session/Memory + VPC/PSC-I + SRE/FinOps)"]
+    subgraph OurProject["🚀 Day 2: 본 프로젝트 (Production-Ready Platform v2.1)"]
+        Check["3️⃣ 7대 영역 15개 체크리스트 진단<br/>(Agent Skill / 웹 UI / CLI)"]
+        Patch["4️⃣ 타겟별 원클릭 코드 & IaC 자동 보강<br/>(Identity/Registry + AGW[AR] + Managed Session + VPC/PSC-I)"]
         Check --> Patch
     end
 
@@ -56,7 +59,7 @@ flowchart LR
 
 ---
 
-## 🔍 무엇을 체크하고 어떻게 조치해 주나요? (7대 영역 · 13개 핵심 항목 상세)
+## 🔍 무엇을 체크하고 어떻게 조치해 주나요? (7대 영역 · 15개 핵심 항목 상세)
 
 ### 1️⃣ 런타임 & 헬스체크 (Runtime & Probes — 가중치 `1x`)
 > 💡 **사이징 보존**: `cpu`, `memory`, `concurrency`, `min_instances`는 강제 상향하지 않으며 `Locust` 부하 테스트 권고(`Advisory`)로만 안내합니다.
@@ -81,13 +84,15 @@ flowchart LR
 | :---: | :--- | :--- | :--- | :--- |
 | **`C3.1`** | **사내 VPC 프라이빗 아웃바운드** *(사내 DB·내부 API 연동 시)* | `service.tf`에 `Direct VPC Egress (PRIVATE_RANGES_ONLY)` 바인딩 (`var.vpc_network_name` / `var.vpc_subnet_name` 재사용으로 CIDR 충돌 방지) | `PSC Interface (google_compute_network_attachment)` 생성 후 `service.tf` `psc_interface_config`에 직접 연결 + `/28` PGA 서브넷 | `deployment/terraform/service.tf`, `deployment/terraform/variables.tf`, `production_ready.tf` *(AR)* |
 
-### 4️⃣ 보안 & 격리 (Security & Isolation — 가중치 `2x`)
-> 💡 **AI 보안 거버넌스 (Advisory)**: 프롬프트 인젝션·PII 필터링 및 도구 정책 통제는 중앙 **Agent Gateway + Model Armor Floor Settings**(인프라 레이어)에서 일괄 적용하는 것이 플랫폼 권장 아키텍처이므로 앱 코드에 강제 주입하지 않습니다. *(필요 시 ADK `ModelArmorPlugin` 및 `before_tool_callback`을 옵트인 적용)*
+### 4️⃣ 보안, 신원 & 거버넌스 (Security, Identity & Governance — 가중치 `2x`)
+> 💡 **Cloud Run vs Agent Runtime 거버넌스 전략**: **Agent Identity & Registry(`C4.2`)**는 두 런타임 모두에 적용하며, **Agent Gateway(`C4.4`)**는 **Agent Runtime에 우선 적용**(`DRY_RUN` 기본)하고 Cloud Run에는 검증된 GA 보안 위에 단계적 도입을 안내하는 주석만 반영합니다. Model Armor Floor Settings는 비감점 Advisory로 안내합니다.
 
 | ID | 점검 항목 | Cloud Run (`cloud_run`) | Agent Runtime (`agent_runtime`) | 생성/수정 파일 |
 | :---: | :--- | :--- | :--- | :--- |
 | **`C4.1`** | **최소 권한 SA & Secret 버전 고정** | `roles/storage.admin` → **`roles/storage.objectUser`** 축소, Secret 버전 고정 *(삭제 보호 `deletion_protection`은 기존 값 유지)* | `roles/storage.objectUser` 축소 + 불필요한 `roles/cloudsql.client` 제거, Secret 버전 고정 | `deployment/terraform/variables.tf`, `deployment/terraform/service.tf` |
+| **`C4.2`** | **Agent Identity (SPIFFE ID) & Agent Registry** | `FUNCTIONAL_TYPE_AGENT` + `IDENTITY_TYPE_AGENT_IDENTITY` + `agentregistry.googleapis.com` *(MCP 서버 자동 감지 시 `FUNCTIONAL_TYPE_MCP_SERVER` + 전용 SA 유지, 하드코딩 MCP/A2A URL은 `AMBER` + `AgentRegistry` 전환 안내)* | `spec.identity_type = "AGENT_IDENTITY"` + `agentregistry.googleapis.com` *(하드코딩 MCP/A2A URL 감지 시 `AMBER` + `AgentRegistry` Lazy Discovery 전환 안내)* | `deployment/terraform/service.tf`, `deployment/terraform/apis.tf` |
 | **`C4.3`** | **컨테이너 Non-Root & Gen2 샌드박스** | `Dockerfile` **`USER 10001:10001`** + Cloud Run **`EXECUTION_ENVIRONMENT_GEN2`** | `Dockerfile` **`USER 10001:10001`** | `Dockerfile`, `deployment/terraform/service.tf` |
+| **`C4.4`** | **Agent Gateway 중앙 정책 게이트웨이** | 🔵 **Comment Advisory (`TIER_2_TEMPLATE`)** — `service.tf`에 단계적 도입 아키텍처 주석만 반영 *(Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor GA 보안 위 단계적 적용 · 인프라 강제 생성 없음)* | `google_network_services_agent_gateway` (`AGENT_TO_ANYWHERE`) + UAP V2 `AuthzExtension`/`AuthzPolicy` (기본 **`DRY_RUN`**으로 HTTP 498 장애 방지) + `agent_gateway_config` + `Dockerfile` `AGENT_GATEWAY_ROOT_CERTIFICATES` | `deployment/terraform/service.tf`, `production_ready.tf` *(AR)*, `Dockerfile` *(AR)* |
 
 ### 5️⃣ 관측성, 프라이버시 & 타겟별 SRE 알람 (Observability & Alerts — 가중치 `2x`)
 | ID | 점검 항목 | Cloud Run (`cloud_run`) | Agent Runtime (`agent_runtime`) | 생성/수정 파일 |
@@ -139,7 +144,7 @@ flowchart LR
 ```bash
 uv run prod-ready ui samples/02_cloud_run_agent --port 8090
 ```
-브라우저에서 **`http://127.0.0.1:8090`**을 열면 **13개 체크포인트 진단**, **실시간 Diff 미리보기**, **원클릭 적용**, **HTML 심의 성적표 발급**, 그리고 **`/lab` 핸즈온 가이드**까지 한 번에 확인할 수 있습니다.
+브라우저에서 **`http://127.0.0.1:8090`**을 열면 **15개 체크포인트 진단**, **실시간 Diff 미리보기**, **원클릭 적용**, **HTML 심의 성적표 발급**, 그리고 **`/lab` 핸즈온 가이드**까지 한 번에 확인할 수 있습니다.
 
 ### 방법 3️⃣: 터미널에서 **명령어(`prod-ready`)**로 빠르게 사용하기
 ```bash
@@ -162,14 +167,15 @@ uv run prod-ready reset samples/02_cloud_run_agent
 # 🇺🇸 English Guide
 
 ## 💡 What is this in one sentence?
-This toolkit bridges the **Day-2 Production Readiness Gap** after **ADK (`google-adk`)** and **`agents-cli` (`google-agents-cli`)**: it scans your local agent project against a **streamlined 7-Domain, 13-Item True No-Regret Production Checklist (`C1.1`–`C7.1`, v2)** with strict runtime differentiation between **Cloud Run** and **Agent Runtime**, and **automatically patches your Terraform and Python ADK code in-place**.
+This toolkit bridges the **Day-2 Production Readiness Gap** after **ADK (`google-adk`)** and **`agents-cli` (`google-agents-cli`)**: it scans your local agent project against a **7-Domain, 15-Item True No-Regret + GEAP Governance Production Checklist (`C1.1`–`C7.1`, v2.1)** with strict runtime differentiation between **Cloud Run** and **Agent Runtime**, and **automatically patches your Terraform and Python ADK code in-place**.
 
-### Key v2 Engineering Principles
-- **Zero Over-Reaching Mutations**: Existing `cpu`, `memory`, `concurrency`, `min_instances`, `ingress`, `default_uri_disabled`, and `deletion_protection` are preserved untouched; no forced GCLB/Cloud Armor WAF, no Billing Account `budget.tf`, no GCS log bucket versioning, no dummy shell scripts, and no mandatory in-app Model Armor / tool governance boilerplate. Compute sizing, inbound auth/edge topology, AI Security Governance (**Agent Gateway + Model Armor Floor Settings**), and Production SLA (**Provisioned Throughput GSU / Priority PayGo**) are surfaced as non-scoring **Advisories**.
+### Key v2.1 Engineering Principles
+- **Zero Over-Reaching Mutations**: Existing `cpu`, `memory`, `concurrency`, `min_instances`, `ingress`, `default_uri_disabled`, and `deletion_protection` are preserved untouched; no forced GCLB/Cloud Armor WAF, no Billing Account `budget.tf`, no GCS log bucket versioning, no dummy shell scripts, and no mandatory in-app Model Armor / tool governance boilerplate. Compute sizing, inbound auth/edge topology, Model Armor Floor Settings, and Production SLA (**Provisioned Throughput GSU / Priority PayGo**) are surfaced as non-scoring **Advisories**.
+- **Runtime-Tailored GEAP Governance (`C4.2` & `C4.4`)**: **Agent Identity (SPIFFE ID) & Agent Registry (`C4.2`)** is applied to **BOTH** `cloud_run` and `agent_runtime`. **Agent Gateway (`C4.4`, `AGENT_TO_ANYWHERE` + UAP V2 `DRY_RUN` default to prevent HTTP 498 outages + `AGENT_GATEWAY_ROOT_CERTIFICATES`)** is applied **ONLY to `agent_runtime`**, while `cloud_run` receives a non-blocking architectural comment in `service.tf` guiding staged adoption on top of proven GA infrastructure security (Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor).
 - **Managed-First Session & Memory (`D2`)**: Wires **Agent Platform Managed Sessions (`VertexAiSessionService`)** and **Memory Bank (`VertexAiMemoryBankService`)** by default *(with Self-Hosted Cloud SQL / Redis / Vector DB noted briefly as an optional alternative)*.
-- **Strict Target Separation (`cloud_run` vs `agent_runtime`)**: 4 platform-managed items (`C1.1`, `C1.2`, `C2.1`, `C5.1`) are `MANAGED_NATIVE` on Agent Runtime; `alerts.tf` uses `ReasoningEngine` metrics vs Cloud Run PromQL 5xx ratio; `psc_interface_config` is wired directly into `service.tf` on Agent Runtime while Cloud Run binds existing `var.vpc_network_name` / `var.vpc_subnet_name`.
+- **Strict Target Separation (`cloud_run` vs `agent_runtime`)**: 4 platform-managed items (`C1.1`, `C1.2`, `C2.1`, `C5.1`) are `MANAGED_NATIVE` on Agent Runtime; `alerts.tf` uses `ReasoningEngine` metrics vs Cloud Run PromQL 5xx ratio; `psc_interface_config` and `agent_gateway_config` are wired directly into `service.tf` on Agent Runtime while Cloud Run binds existing `var.vpc_network_name` / `var.vpc_subnet_name`.
 
-## 🔍 7 Domains · 13 Core Checklist Items (`C1.1`–`C7.1`)
+## 🔍 7 Domains · 15 Core Checklist Items (`C1.1`–`C7.1`)
 
 | ID | Domain | Cloud Run (`cloud_run`) | Agent Runtime (`agent_runtime`) | Target Files |
 | :---: | :--- | :--- | :--- | :--- |
@@ -179,7 +185,9 @@ This toolkit bridges the **Day-2 Production Readiness Gap** after **ADK (`google
 | **`C2.2`** | Session | **Managed**: `VertexAiMemoryBankService` (`shared://memory`) + `after_agent_callback` | Same (`VertexAiMemoryBankService` + auto-save callback) | `app/app_utils/services.py`, `app/agent.py`, `fast_api_app.py` |
 | **`C3.1`** | Network | Direct VPC Egress (`PRIVATE_RANGES_ONLY`) binding `var.vpc_network_name` / `var.vpc_subnet_name` | PSC Interface (`google_compute_network_attachment`) wired to `psc_interface_config` + `/28` PGA subnet | `service.tf`, `variables.tf`, `production_ready.tf` *(AR)* |
 | **`C4.1`** | Security | `roles/storage.objectUser`, pinned Secret version *(preserves `deletion_protection`)* | `roles/storage.objectUser`, strip unused `cloudsql.client`, pinned Secret version | `variables.tf`, `service.tf` |
+| **`C4.2`** | Governance | `FUNCTIONAL_TYPE_AGENT` + `IDENTITY_TYPE_AGENT_IDENTITY` + `agentregistry.googleapis.com` *(auto-switches to `FUNCTIONAL_TYPE_MCP_SERVER` for MCP servers; flags hardcoded MCP/A2A URLs)* | `spec.identity_type = "AGENT_IDENTITY"` + `agentregistry.googleapis.com` *(flags hardcoded MCP/A2A URLs for `AgentRegistry` Lazy Discovery)* | `service.tf`, `apis.tf` |
 | **`C4.3`** | Security | Non-root `USER 10001:10001` + `EXECUTION_ENVIRONMENT_GEN2` | Non-root `USER 10001:10001` | `Dockerfile`, `service.tf` |
+| **`C4.4`** | Governance | 🔵 Comment-only staged-adoption guide in `service.tf` *(zero forced Gateway infra)* | Agent Gateway (`AGENT_TO_ANYWHERE`) + UAP V2 `DRY_RUN` + `agent_gateway_config` + BYOC CA | `service.tf`, `production_ready.tf` *(AR)*, `Dockerfile` *(AR)* |
 | **`C5.1`** | Observability | `OTEL_SEMCONV_STABILITY_OPT_IN` + `otel_to_cloud=True` | 🟢 `MANAGED_NATIVE` (`ENABLE_TELEMETRY=true`) | `service.tf`, `app/fast_api_app.py` |
 | **`C5.2`** | Observability | `NO_CONTENT` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false` | Same | `deployment/terraform/service.tf` |
 | **`C5.3`** | Observability | Cloud Run P95 latency (`15s`) + PromQL 5xx ratio (`>2%`) | `ReasoningEngine` latency & error metrics | `deployment/terraform/alerts.tf` |

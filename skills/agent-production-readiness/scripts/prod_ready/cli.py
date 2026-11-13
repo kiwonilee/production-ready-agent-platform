@@ -79,7 +79,7 @@ def _print_report(report: ProjectScanReport) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="prod-ready",
-        description="7-Domain, 13-Item Production-Readiness Scanner, Patcher & Workbench (v2) for Google Cloud AI Agents",
+        description="7-Domain, 15-Item Production-Readiness Scanner, Patcher & Workbench (v2.1) for Google Cloud AI Agents",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -226,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  • 항목 요약     : 🟢 {before_rep.green_count} 통과 | 🟡 {before_rep.amber_count} 미흡 | 🔴 {before_rep.red_count} 취약")
 
         print("\n" + "━" * 86)
-        print("✨ [STAGE 2 / 3] 7대 영역 · 13개 핵심 프로덕션 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
+        print("✨ [STAGE 2 / 3] 7대 영역 · 15개 핵심 프로덕션 & 거버넌스 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
         print("━" * 86)
         patch_res = apply_patches(proj, target_override=args.target, selected_items=["ALL"])
         for p in patch_res["patches"]:

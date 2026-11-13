@@ -1,4 +1,4 @@
-# End-to-End Deployment Guide (`deployment-guide.md`, v2 — 13 Core Items)
+# End-to-End Deployment Guide (`deployment-guide.md`, v2.1 — 15 Core Items)
 
 ## 1. Install the Skill from GitHub
 ```bash
@@ -23,5 +23,13 @@ terraform init
 terraform apply -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
 cd ../..
 
+# Agent Runtime (with Agent Identity — mutually exclusive with --service-account):
+uvx google-agents-cli deploy --project="${PROJECT_ID}" --region="${REGION}" --agent-identity --no-confirm-project
+
+# Cloud Run (or traditional SA mode when not using Agent Identity):
 uvx google-agents-cli deploy --project="${PROJECT_ID}" --region="${REGION}" --service-account="${SA_EMAIL}" --no-confirm-project
+
+# Verify Agent Registry auto-registration (C4.2)
+gcloud beta agent-registry agents list --location="${REGION}" --project="${PROJECT_ID}"
 ```
+> **Note (Agent Runtime `C4.4`)**: `agent_gateway_config` inside `google_vertex_ai_reasoning_engine` requires a recent `google-beta` Terraform provider. If an older provider rejects that block, deploy the Agent Gateway resource via Terraform and bind it via `agents-cli deploy` or the Python SDK instead. Keep `agent_gateway_enforcement_mode = "DRY_RUN"` initially to prevent HTTP 498 outages before promoting to `"ENFORCED"`.

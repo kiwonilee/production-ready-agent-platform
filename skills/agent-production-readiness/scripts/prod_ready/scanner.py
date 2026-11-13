@@ -1,4 +1,4 @@
-"""Static Scanner & Scoring Engine for the 7-Domain, 13-Item Production-Readiness Checklist (v2)."""
+"""Static Scanner & Scoring Engine for the 7-Domain, 15-Item Production-Readiness Checklist (v2.1)."""
 
 from __future__ import annotations
 
@@ -83,6 +83,110 @@ def _read_text(path: Path) -> str:
         return ""
 
 
+@dataclass
+class McpA2aProfile:
+    """Context-aware MCP Server / MCP Client / A2A Sub-Agent signals detected in a local project."""
+
+    is_mcp_server: bool = False
+    hardcoded_mcp_urls: list[str] = field(default_factory=list)
+    hardcoded_a2a_urls: list[str] = field(default_factory=list)
+    uses_agent_registry: bool = False
+
+
+def _strip_py_comments(src: str) -> str:
+    """Drops full-line Python comments so commented-out examples don't trigger false positives."""
+    return "\n".join(line for line in src.splitlines() if not line.lstrip().startswith("#"))
+
+
+def detect_mcp_a2a_profile(project_dir: Path, service_tf: str = "") -> McpA2aProfile:
+    """Detects MCP Server workloads and hardcoded remote MCP/A2A endpoints without false positives on single agents."""
+    if not service_tf:
+        service_tf = _read_text(project_dir / "deployment" / "terraform" / "service.tf")
+
+    py_sources: list[str] = []
+    seen_paths: set[Path] = set()
+    app_dir = project_dir / "app"
+    if app_dir.is_dir():
+        for py_file in sorted(app_dir.rglob("*.py")):
+            if "__pycache__" in py_file.parts:
+                continue
+            seen_paths.add(py_file)
+            py_sources.append(_strip_py_comments(_read_text(py_file)))
+    for py_file in sorted(project_dir.glob("*.py")):
+        if py_file not in seen_paths:
+            py_sources.append(_strip_py_comments(_read_text(py_file)))
+
+    combined_py = "\n".join(py_sources)
+
+    has_mcp_server_code = bool(
+        re.search(
+            r"\bFastMCP\s*\(|from\s+mcp\.server\b|import\s+mcp\.server\b|mcp\.server\.fastmcp|from\s+fastmcp\s+import\b",
+            combined_py,
+        )
+    )
+    has_adk_agent_code = bool(
+        re.search(r"from\s+google\.adk\b|\bLlmAgent\s*\(|\bAgent\s*\(", combined_py)
+    )
+    explicit_mcp_tf = bool(re.search(r'functional_type\s*=\s*"FUNCTIONAL_TYPE_MCP_SERVER"', service_tf))
+    is_mcp_server = explicit_mcp_tf or (has_mcp_server_code and not has_adk_agent_code)
+
+    uses_agent_registry = bool(
+        re.search(
+            r"google\.adk\.integrations\.agent_registry|\bAgentRegistry\s*\(|\bget_mcp_toolset\s*\(|\bget_remote_a2a_agent\s*\(",
+            combined_py,
+        )
+    )
+
+    mcp_urls: list[str] = []
+    a2a_urls: list[str] = []
+
+    def _add_unique(bucket: list[str], val: str) -> None:
+        cleaned = val.strip()
+        if cleaned and cleaned not in bucket:
+            bucket.append(cleaned)
+
+    # 1. Python hardcoded remote MCP URLs
+    mcp_py_patterns = [
+        r"""(?:StreamableHTTPConnectionParams|SseConnectionParams)\s*\([^)]*?\burl\s*=\s*(?:os\.(?:getenv|environ\.get)\(\s*["'][^"']+["']\s*,\s*)?["'](https?://[^"']+)["']""",
+        r"""\b(?:MCP_SERVER_URL|MCP_URL)\s*=\s*["'](https?://[^"']+)["']""",
+        r"""os\.(?:getenv|environ\.get)\(\s*["'](?:MCP_SERVER_URL|MCP_URL)["']\s*,\s*["'](https?://[^"']+)["']""",
+    ]
+    for pat in mcp_py_patterns:
+        for m in re.finditer(pat, combined_py, flags=re.DOTALL):
+            _add_unique(mcp_urls, m.group(1))
+
+    # 2. Terraform env vars with hardcoded MCP URLs
+    for m in re.finditer(
+        r'name\s*=\s*"(?:MCP_SERVER_URL|MCP_URL|[A-Z0-9_]*_MCP(?:_SERVER)?_URL)"\s*\n\s*value\s*=\s*"(https?://[^"]+)"',
+        service_tf,
+    ):
+        _add_unique(mcp_urls, m.group(1))
+
+    # 3. Python hardcoded remote A2A Agent Card URLs
+    a2a_py_patterns = [
+        r"""\bRemoteA2aAgent\s*\([^)]*?\bagent_card\s*=\s*(?:os\.(?:getenv|environ\.get)\(\s*["'][^"']+["']\s*,\s*)?["'](https?://[^"']+)["']""",
+        r"""\b(?:A2A_AGENT_URL|A2A_SERVER_URL|AGENT_CARD_URL)\s*=\s*["'](https?://[^"']+)["']""",
+        r"""os\.(?:getenv|environ\.get)\(\s*["'](?:A2A_AGENT_URL|A2A_SERVER_URL|AGENT_CARD_URL)["']\s*,\s*["'](https?://[^"']+)["']""",
+    ]
+    for pat in a2a_py_patterns:
+        for m in re.finditer(pat, combined_py, flags=re.DOTALL):
+            _add_unique(a2a_urls, m.group(1))
+
+    # 4. Terraform env vars with hardcoded A2A URLs
+    for m in re.finditer(
+        r'name\s*=\s*"(?:A2A_AGENT_URL|A2A_SERVER_URL|AGENT_CARD_URL|[A-Z0-9_]*_(?:A2A|AGENT_CARD)_URL)"\s*\n\s*value\s*=\s*"(https?://[^"]+)"',
+        service_tf,
+    ):
+        _add_unique(a2a_urls, m.group(1))
+
+    return McpA2aProfile(
+        is_mcp_server=is_mcp_server,
+        hardcoded_mcp_urls=mcp_urls,
+        hardcoded_a2a_urls=a2a_urls,
+        uses_agent_registry=uses_agent_registry,
+    )
+
+
 def detect_project_mode_and_target(
     project_dir: Path, target_override: str = "auto"
 ) -> tuple[ProjectMode, TargetType, str]:
@@ -118,7 +222,11 @@ def detect_project_mode_and_target(
     return mode, target, project_name
 
 
-def _collect_sizing_advisories(target: TargetType, service_tf: str) -> list[str]:
+def _collect_sizing_advisories(
+    target: TargetType,
+    service_tf: str,
+    mcp_a2a: McpA2aProfile | None = None,
+) -> list[str]:
     """Produces non-scoring REVIEW advisories for sizing, ingress topology, and session options."""
     advisories: list[str] = []
     if target == "cloud_run":
@@ -130,10 +238,18 @@ def _collect_sizing_advisories(target: TargetType, service_tf: str) -> list[str]
             "[참고 · 인바운드 & 인증 아키텍처] 인바운드 노출 및 인증 방식(자체 OAuth/JWT + 공개 URL vs 서버 간 IAM Invoker 인증 vs 사내 IAP vs 앞단 GCLB + Cloud Armor WAF)은 "
             "호출 주체와 조직 네트워크 정책에 따라 선택하세요 (스킬이 기본 URL이나 인그레스를 강제 잠그지 않습니다)."
         )
+        advisories.append(
+            "[참고 · Cloud Run Agent Gateway 단계적 도입 (C4.4)] Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
+            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다."
+        )
     else:
         advisories.append(
             "[REVIEW · 컴퓨트 사이징] Agent Runtime의 cpu/memory/container_concurrency/min_instances는 임의 상향하지 않습니다. "
             "tests/load_test/ 부하 테스트 결과에 맞춰 deployment_spec을 직접 조정하세요."
+        )
+        advisories.append(
+            "[참고 · Agent Gateway 단계적 전환 (DRY_RUN → ENFORCED)] C4.4 기본값은 HTTP 498 차단을 방지하기 위해 iamEnforcementMode=DRY_RUN으로 생성됩니다. "
+            "필수 플랫폼 API 및 MCP/A2A 대상을 Agent Registry와 UAP V2 정책에 Allowlist한 뒤 ENFORCED로 전환하세요."
         )
     advisories.append(
         "[참고 · 세션/메모리 옵션] D2는 운영 부담이 없는 Agent Platform Managed Session & Memory Bank를 기본 적용합니다. "
@@ -149,6 +265,27 @@ def _collect_sizing_advisories(target: TargetType, service_tf: str) -> list[str]
         "대화형 에이전트에서 무리한 재시도 상향은 Retry Storm과 동시성 고갈을 유발합니다. "
         "상용 SLA가 필요한 핵심 워크로드는 Provisioned Throughput(GSU + Shared spillover) 또는 Priority PayGo를, 비동기·배치 평가는 Flex PayGo / Batch API를 검토하세요."
     )
+    if mcp_a2a is not None:
+        if mcp_a2a.is_mcp_server:
+            advisories.append(
+                "[참고 · Cloud Run MCP Server 자동 등록 (Agent Registry)] MCP Server 워크로드로 자동 감지되어 "
+                "functional_type = \"FUNCTIONAL_TYPE_MCP_SERVER\"를 적용하며 전용 서비스 계정을 유지합니다(IDENTITY_TYPE_AGENT_IDENTITY 불필요). "
+                "배포 후 Streamable HTTP(/mcp) 엔드포인트와 `gcloud beta agent-registry mcp-servers list` 등록 상태를 확인하세요 (references/agent-registry-mcp-a2a.md)."
+            )
+        if (mcp_a2a.hardcoded_mcp_urls or mcp_a2a.hardcoded_a2a_urls) and not mcp_a2a.uses_agent_registry:
+            detected_preview = ", ".join((mcp_a2a.hardcoded_mcp_urls + mcp_a2a.hardcoded_a2a_urls)[:3])
+            advisories.append(
+                f"[REVIEW · MCP/A2A Agent Registry Lazy Discovery & Tool-Level RBAC] 원격 MCP/A2A 정적 URL 하드코딩({detected_preview})이 감지되었습니다. "
+                "google.adk.integrations.agent_registry.AgentRegistry의 get_mcp_toolset() / get_remote_a2a_agent()로 전환하면 엔드포인트 자동 해석·GCP 인증·"
+                "gcp.mcp.server.destination.id 텔레메트리가 통합되며, Agent Gateway의 UAP V2 CEL(iap.googleapis.com/mcp.toolName, iap.googleapis.com/mcp.tool.isReadOnly)로 "
+                "도구 단위 최소 권한 통제가 가능합니다 (references/agent-registry-mcp-a2a.md)."
+            )
+        elif mcp_a2a.uses_agent_registry:
+            advisories.append(
+                "[참고 · MCP/A2A Agent Registry 거버넌스] ADK AgentRegistry Lazy Discovery 연동이 확인되었습니다. "
+                "외부 비-GCP MCP 서버는 `gcloud agent-registry services create` 또는 Terraform `google_agent_registry_service`(toolspec.json 최대 10KB)로 등록하고, "
+                "Agent Gateway(AGENT_TO_ANYWHERE)에서는 `iap.googleapis.com/mcp.toolName` / `mcp.tool.isReadOnly` CEL 정책을 DRY_RUN 검증 후 ENFORCED로 전환하세요 (references/agent-registry-mcp-a2a.md)."
+            )
     return advisories
 
 
@@ -157,7 +294,7 @@ def scan_project(
     target_override: str = "auto",
     selected_items: list[str] | None = None,
 ) -> ProjectScanReport:
-    """Evaluates active checklist items (all 13 by default, or tailored subset) against the local project."""
+    """Evaluates active checklist items (all 15 by default, or tailored subset) against the local project."""
     root = Path(project_dir).resolve()
     mode, target, project_name = detect_project_mode_and_target(root, target_override)
 
@@ -166,6 +303,7 @@ def scan_project(
 
     service_tf = _read_text(root / "deployment" / "terraform" / "service.tf")
     variables_tf = _read_text(root / "deployment" / "terraform" / "variables.tf")
+    apis_tf = _read_text(root / "deployment" / "terraform" / "apis.tf")
     prod_ready_tf = _read_text(root / "deployment" / "terraform" / "production_ready.tf")
     alerts_tf = _read_text(root / "deployment" / "terraform" / "alerts.tf")
     dockerfile = _read_text(root / "Dockerfile")
@@ -180,6 +318,7 @@ def scan_project(
     )
 
     has_tf = bool(service_tf)
+    mcp_a2a = detect_mcp_a2a_profile(root, service_tf)
 
     results: list[ItemScanResult] = []
     for spec in CHECKLIST_ITEMS:
@@ -191,6 +330,7 @@ def scan_project(
             has_tf=has_tf,
             service_tf=service_tf,
             variables_tf=variables_tf,
+            apis_tf=apis_tf,
             prod_ready_tf=prod_ready_tf,
             alerts_tf=alerts_tf,
             dockerfile=dockerfile,
@@ -201,6 +341,7 @@ def scan_project(
             staging_yaml=staging_yaml,
             eval_config=eval_config,
             eval_dataset=eval_dataset,
+            mcp_a2a=mcp_a2a,
         )
         score = 100 if status == "GREEN" else (50 if status == "AMBER" else 0)
         remediation = (
@@ -284,7 +425,7 @@ def scan_project(
         domains=domain_summaries,
         items=results,
         skipped_item_ids=skipped_item_ids,
-        advisories=_collect_sizing_advisories(target, service_tf),
+        advisories=_collect_sizing_advisories(target, service_tf, mcp_a2a),
     )
 
 
@@ -295,6 +436,7 @@ def _evaluate_item(
     has_tf: bool,
     service_tf: str,
     variables_tf: str,
+    apis_tf: str,
     prod_ready_tf: str,
     alerts_tf: str,
     dockerfile: str,
@@ -305,6 +447,7 @@ def _evaluate_item(
     staging_yaml: str,
     eval_config: str,
     eval_dataset: str,
+    mcp_a2a: McpA2aProfile | None = None,
 ) -> tuple[RAGStatus, bool, str]:
     cid = spec.id
 
@@ -466,6 +609,96 @@ def _evaluate_item(
                 )
             return ("RED", False, "variables.tf: 과도한 권한(roles/storage.admin) 부여 상태")
 
+    # C4.2: Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (BOTH Cloud Run & Agent Runtime)
+    # Context-aware: supports Cloud Run MCP Servers (FUNCTIONAL_TYPE_MCP_SERVER) and flags hardcoded MCP/A2A URLs when AgentRegistry is unused.
+    if cid == "C4.2":
+        profile = mcp_a2a or McpA2aProfile()
+        has_registry_api = (
+            "agentregistry.googleapis.com" in apis_tf
+            or "agentregistry.googleapis.com" in prod_ready_tf
+        )
+        hardcoded_urls = profile.hardcoded_mcp_urls + profile.hardcoded_a2a_urls
+        has_unmanaged_remote = bool(hardcoded_urls) and not profile.uses_agent_registry
+
+        if target == "cloud_run":
+            if profile.is_mcp_server:
+                has_mcp_func = bool(
+                    re.search(r'functional_type\s*=\s*"FUNCTIONAL_TYPE_MCP_SERVER"', service_tf)
+                )
+                if has_mcp_func and has_registry_api:
+                    base_status: RAGStatus = "GREEN"
+                    base_evidence = (
+                        "Cloud Run MCP Server 감지: FUNCTIONAL_TYPE_MCP_SERVER 및 agentregistry.googleapis.com 자동 등록 구성 완료 "
+                        "(MCP 서버는 전용 SA 유지 가능)"
+                    )
+                elif has_mcp_func or has_registry_api:
+                    base_status = "AMBER"
+                    base_evidence = (
+                        "Cloud Run MCP Server 감지: functional_type = \"FUNCTIONAL_TYPE_MCP_SERVER\" 또는 "
+                        "agentregistry.googleapis.com API 활성화 일부 누락"
+                    )
+                else:
+                    base_status = "RED"
+                    base_evidence = (
+                        "Cloud Run MCP Server 감지됨 — functional_type = \"FUNCTIONAL_TYPE_MCP_SERVER\" 및 "
+                        "agentregistry.googleapis.com 자동 등록 미구성"
+                    )
+            else:
+                has_func = bool(re.search(r'functional_type\s*=\s*"FUNCTIONAL_TYPE_AGENT"', service_tf))
+                has_id = bool(re.search(r'identity_type\s*=\s*"IDENTITY_TYPE_AGENT_IDENTITY"', service_tf))
+                if has_func and has_id and has_registry_api:
+                    base_status = "GREEN"
+                    base_evidence = (
+                        "Cloud Run: FUNCTIONAL_TYPE_AGENT + IDENTITY_TYPE_AGENT_IDENTITY 및 agentregistry.googleapis.com 자동 등록 구성 완료"
+                    )
+                elif has_func or has_id or has_registry_api:
+                    base_status = "AMBER"
+                    base_evidence = (
+                        "Cloud Run Agent Identity(IDENTITY_TYPE_AGENT_IDENTITY) 또는 agentregistry.googleapis.com API 활성화 일부 누락"
+                    )
+                else:
+                    base_status = "RED"
+                    base_evidence = (
+                        "Cloud Run Agent Identity(SPIFFE) 및 Agent Registry 자동 등록(functional_type=FUNCTIONAL_TYPE_AGENT) 미구성"
+                    )
+        else:
+            has_ar_id = bool(re.search(r'identity_type\s*=\s*"AGENT_IDENTITY"', service_tf))
+            if has_ar_id and has_registry_api:
+                base_status = "GREEN"
+                base_evidence = (
+                    'Agent Runtime: spec.identity_type = "AGENT_IDENTITY" (SPIFFE ID) 및 agentregistry.googleapis.com 자동 등록 구성 완료'
+                )
+            elif has_ar_id or has_registry_api:
+                base_status = "AMBER"
+                base_evidence = (
+                    'Agent Runtime spec.identity_type = "AGENT_IDENTITY" 또는 agentregistry.googleapis.com 활성화 일부 누락'
+                )
+            else:
+                base_status = "RED"
+                base_evidence = (
+                    'Agent Runtime Agent Identity(identity_type = "AGENT_IDENTITY") 및 Agent Registry API 미구성'
+                )
+
+        if has_unmanaged_remote:
+            url_preview = ", ".join(hardcoded_urls[:3])
+            final_status: RAGStatus = "AMBER" if base_status == "GREEN" else base_status
+            return (
+                final_status,
+                False,
+                (
+                    f"{base_evidence} | ⚠️ 원격 MCP/A2A 정적 URL 하드코딩 감지({url_preview}) — "
+                    "google.adk.integrations.agent_registry.AgentRegistry (get_mcp_toolset / get_remote_a2a_agent) Lazy Discovery 전환 권장 "
+                    "(references/agent-registry-mcp-a2a.md 참고)"
+                ),
+            )
+        if base_status == "GREEN" and profile.uses_agent_registry:
+            return (
+                "GREEN",
+                False,
+                f"{base_evidence} + ADK AgentRegistry Lazy Discovery 연동 확인됨",
+            )
+        return (base_status, False, base_evidence)
+
     # C4.3: Container non-root hardening & Gen2 sandbox
     if cid == "C4.3":
         has_non_root = "USER 10001" in dockerfile or "USER appuser" in dockerfile
@@ -480,6 +713,46 @@ def _evaluate_item(
             if has_non_root:
                 return ("GREEN", False, "Agent Runtime: Dockerfile Non-root(UID 10001) 하드닝 완료")
             return ("RED", False, "Dockerfile이 root(UID 0) 계정으로 실행됨")
+
+    # C4.4: Agent Gateway Centralized Governance (Active on Agent Runtime ONLY; Staged-Adoption Comment/Advisory on Cloud Run)
+    if cid == "C4.4":
+        if target == "cloud_run":
+            has_cr_note = "C4.4 Advisory" in service_tf or "Self-Managed AGW" in service_tf
+            if has_cr_note:
+                return (
+                    "GREEN",
+                    False,
+                    "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다. (service.tf 아키텍처 주석 반영 완료)",
+                )
+            return (
+                "AMBER",
+                False,
+                "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다. (service.tf에 단계적 도입 주석 반영 필요 · 강제 인프라 미생성)",
+            )
+        else:
+            has_agw_res = (
+                "google_network_services_agent_gateway" in prod_ready_tf
+                and "google_network_security_authz_policy" in prod_ready_tf
+            )
+            has_agw_wired = "agent_gateway_config" in service_tf
+            has_ca_bundle = "AGENT_GATEWAY_ROOT_CERTIFICATES" in dockerfile
+            if has_agw_res and has_agw_wired and has_ca_bundle:
+                return (
+                    "GREEN",
+                    False,
+                    "Agent Runtime: Agent Gateway(AGENT_TO_ANYWHERE) + UAP V2 AuthzPolicy + agent_gateway_config + Dockerfile CA 신뢰 구성 완료",
+                )
+            if has_agw_res or has_agw_wired:
+                return (
+                    "AMBER",
+                    False,
+                    "Agent Gateway 리소스·service.tf 바인딩·Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES 중 일부 구성 누락",
+                )
+            return (
+                "RED",
+                False,
+                "Agent Runtime: 아웃바운드 Agent Gateway(AGENT_TO_ANYWHERE + UAP V2 DRY_RUN) 및 BYOC CA 신뢰 미구성",
+            )
 
     # C5.1: OpenTelemetry GenAI distributed tracing (Cloud Run)
     if cid == "C5.1":

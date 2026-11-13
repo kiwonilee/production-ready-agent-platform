@@ -1,11 +1,14 @@
-"""In-Place Patcher, Customizer, Report Generator & Zip Exporter (v2 — 13-Item, google-agents-cli v1.5.0 Compatible).
+"""In-Place Patcher, Customizer, Report Generator & Zip Exporter (v2.1 — 15-Item, google-agents-cli v1.5.0 Compatible).
 
-Key v2 Principles ("True No-Regret"):
+Key v2.1 Principles ("True No-Regret" + GEAP Governance):
 - Never upsizes Cloud Run / Agent Runtime CPU, Memory, Concurrency, or min_instances automatically.
 - Uses Agent Platform Managed Sessions (`VertexAiSessionService`) & Memory Bank (`VertexAiMemoryBankService`) as the default.
 - Strictly separates `cloud_run` vs `agent_runtime` Terraform resources, SRE alerts, and IAM permissions.
+- GEAP Governance Split:
+  - `C4.2` Agent Identity (SPIFFE ID) & Agent Registry auto-registration applied on BOTH `cloud_run` & `agent_runtime`.
+  - `C4.4` Agent Gateway (`AGENT_TO_ANYWHERE` + UAP V2 `DRY_RUN`) applied ONLY on `agent_runtime`;
+    `cloud_run` receives a non-blocking architectural comment documenting staged adoption.
 - Thinking-model safe & Retry-Storm safe: `max_output_tokens=0` (opt-in) and preserves Fail-Fast `attempts=3` (no blind `attempts=5` override).
-- Governance (Model Armor / tool SSRF, GCLB/Cloud Armor WAF, Provisioned Throughput SLA) is surfaced as non-blocking Advisories, never forced into core agent code.
 """
 
 from __future__ import annotations
@@ -21,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from prod_ready.checklist import CustomParams, TargetType, resolve_item_ids
-from prod_ready.scanner import detect_project_mode_and_target, scan_project
+from prod_ready.scanner import detect_mcp_a2a_profile, detect_project_mode_and_target, scan_project
 
 
 @dataclass
@@ -87,8 +90,8 @@ def preview_patches(
     _prepare_cost_plugin(root, project_name, item_ids, params, record)
     _prepare_agent_and_fastapi_py(root, project_name, target, item_ids, params, record)
 
-    # 4. Dockerfile Non-Root Hardening
-    _prepare_dockerfile(root, item_ids, record)
+    # 4. Dockerfile Non-Root Hardening & Agent Runtime Agent Gateway BYOC CA Trust
+    _prepare_dockerfile(root, target, item_ids, record)
 
     # 5. CI/CD Eval Gate
     _prepare_cicd_and_canary(root, project_name, target, item_ids, params, record)
@@ -195,7 +198,7 @@ def generate_readiness_report(
             "",
             "---",
             "",
-            "## 2. 13-Item Detailed Compliance Matrix (`C1.1` – `C7.1`)",
+            "## 2. 15-Item Detailed Compliance Matrix (`C1.1` – `C7.1`)",
             "",
             "| ID | Alias | Domain | Title | Severity | Status | Evidence & Verification |",
             "| :--- | :--- | :--- | :--- | :---: | :---: | :--- |",
@@ -327,6 +330,16 @@ variable "vpc_subnet_name" {{
 }}
 '''
             applied.append("C3.1")
+        if target == "agent_runtime" and "C4.4" in item_ids and 'variable "agent_gateway_enforcement_mode"' not in content:
+            content = content.rstrip() + f'''
+
+variable "agent_gateway_enforcement_mode" {{
+  type        = string
+  description = "Agent Gateway IAP/UAP V2 enforcement mode (DRY_RUN prevents HTTP 498 before essential APIs are allowlisted; switch to ENFORCED for production enforcement)"
+  default     = "{params.agent_gateway_enforcement_mode}"
+}}
+'''
+            applied.append("C4.4")
         record(rel, content, applied or ["C4.1"])
     else:
         storage_role = '"roles/storage.objectUser"' if "C4.1" in item_ids else '"roles/storage.admin"'
@@ -361,6 +374,14 @@ variable "vpc_subnet_name" {{
   type        = string
   description = "Target VPC subnet name for Cloud Run Direct VPC Egress"
   default     = "{params.vpc_subnet_name}"
+}}
+'''
+        if target == "agent_runtime" and "C4.4" in item_ids:
+            extra_vars += f'''
+variable "agent_gateway_enforcement_mode" {{
+  type        = string
+  description = "Agent Gateway IAP/UAP V2 enforcement mode (DRY_RUN prevents HTTP 498 before essential APIs are allowlisted; switch to ENFORCED for production enforcement)"
+  default     = "{params.agent_gateway_enforcement_mode}"
 }}
 '''
 
@@ -401,7 +422,8 @@ def _prepare_apis_and_iam_and_storage_tf(
     record: Any,
 ) -> None:
     apis_rel = "deployment/terraform/apis.tf"
-    if not (root / apis_rel).exists():
+    apis_path = root / apis_rel
+    if not apis_path.exists():
         api_list = [
             "aiplatform.googleapis.com",
             "cloudbuild.googleapis.com",
@@ -414,6 +436,8 @@ def _prepare_apis_and_iam_and_storage_tf(
         ]
         if target == "cloud_run":
             api_list.extend(["run.googleapis.com", "secretmanager.googleapis.com"])
+        if "C4.2" in item_ids:
+            api_list.extend(["agentregistry.googleapis.com", "apphub.googleapis.com"])
         formatted_apis = "\n".join(f'    "{a}",' for a in api_list)
         apis_content = f'''locals {{
   services = [
@@ -434,7 +458,42 @@ resource "google_project_service_identity" "vertex_sa" {{
   service  = "aiplatform.googleapis.com"
 }}
 '''
-        record(apis_rel, apis_content, ["C1.1", "C4.1"])
+        record(apis_rel, apis_content, ["C1.1", "C4.1", "C4.2"])
+    elif "C4.2" in item_ids:
+        existing_apis = apis_path.read_text(encoding="utf-8")
+        missing = [
+            api
+            for api in ("agentregistry.googleapis.com", "apphub.googleapis.com")
+            if api not in existing_apis
+        ]
+        if missing:
+            inject_lines = "\n".join(f'    "{api}",' for api in missing)
+            if "services = [" in existing_apis:
+                updated_apis = existing_apis.replace(
+                    "services = [",
+                    f"services = [\n{inject_lines}",
+                    1,
+                )
+            elif "toset([" in existing_apis:
+                updated_apis = existing_apis.replace(
+                    "toset([",
+                    f"toset([\n{inject_lines}",
+                    1,
+                )
+            else:
+                extra_block = (
+                    '\n# [C4.2] Agent Registry & App Hub APIs\n'
+                    'resource "google_project_service" "agent_registry_apis" {\n'
+                    '  for_each = toset([\n'
+                    f'{inject_lines}\n'
+                    '  ])\n'
+                    '  project            = var.project_id\n'
+                    '  service            = each.value\n'
+                    '  disable_on_destroy = false\n'
+                    '}\n'
+                )
+                updated_apis = existing_apis.rstrip() + "\n" + extra_block
+            record(apis_rel, updated_apis, ["C4.2"])
 
     iam_rel = "deployment/terraform/iam.tf"
     if not (root / iam_rel).exists():
@@ -466,6 +525,12 @@ resource "google_project_iam_member" "app_sa_roles" {
         record(
             storage_rel,
             '''provider "google" {
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
+}
+
+provider "google-beta" {
   project               = var.project_id
   region                = var.region
   user_project_override = true
@@ -519,6 +584,37 @@ def _prepare_service_tf(
             txt = path.read_text(encoding="utf-8")
             applied: list[str] = []
 
+            if ("C4.2" in item_ids or "C4.4" in item_ids) and not re.search(r"provider\s*=\s*google-beta", txt):
+                txt = txt.replace(
+                    'resource "google_vertex_ai_reasoning_engine" "app" {',
+                    'resource "google_vertex_ai_reasoning_engine" "app" {\n  provider     = google-beta',
+                    1,
+                )
+                applied.extend([i for i in ("C4.2", "C4.4") if i in item_ids])
+
+            if "C4.2" in item_ids and not re.search(r'identity_type\s*=\s*"AGENT_IDENTITY"', txt):
+                id_block = (
+                    '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (immutable at creation)\n'
+                    '    # Grants default roles/aiplatform.agentDefaultAccess & roles/aiplatform.agentContextEditor automatically.\n'
+                    '    identity_type   = "AGENT_IDENTITY"\n'
+                    '    # service_account = google_service_account.app_sa.email # Replaced by per-agent SPIFFE ID'
+                )
+                if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
+                    txt = re.sub(
+                        r'^[ \t]*service_account\s*=\s*.+$',
+                        id_block,
+                        txt,
+                        count=1,
+                        flags=re.MULTILINE,
+                    )
+                else:
+                    txt = txt.replace(
+                        'agent_framework = "google-adk"',
+                        'agent_framework = "google-adk"\n' + id_block,
+                        1,
+                    )
+                applied.append("C4.2")
+
             if "C3.1" in item_ids and "psc_interface_config" not in txt:
                 psc_block = """
       # [C3.1] Wire Agent Runtime outbound traffic to PSC Interface Network Attachment
@@ -534,6 +630,32 @@ def _prepare_service_tf(
                         count=1,
                     )
                     applied.append("C3.1")
+
+            if "C4.4" in item_ids and "agent_gateway_config" not in txt:
+                agw_block = """
+      # [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress · requires identity_type = "AGENT_IDENTITY")
+      # IAP/UAP V2 policy defaults to DRY_RUN in production_ready.tf to avoid HTTP 498 before API allowlisting.
+      agent_gateway_config {
+        agent_to_anywhere_config {
+          agent_gateway = google_network_services_agent_gateway.egress_gateway.id
+        }
+      }
+"""
+                if "psc_interface_config" in txt:
+                    txt = re.sub(
+                        r"(psc_interface_config\s*\{[^}]*\})",
+                        r"\1\n" + agw_block.rstrip(),
+                        txt,
+                        count=1,
+                    )
+                elif "resource_limits" in txt:
+                    txt = re.sub(
+                        r"(resource_limits\s*=\s*\{[^}]*\})",
+                        r"\1\n" + agw_block.rstrip(),
+                        txt,
+                        count=1,
+                    )
+                applied.append("C4.4")
 
             if "C5.2" in item_ids:
                 before = txt
@@ -589,6 +711,14 @@ def _prepare_service_tf(
             record(rel, txt, applied or ["C1.1"])
         else:
             # Mode A Prototype -> Agent Runtime service.tf (neutral defaults; sizing tuned via load test)
+            provider_line = "  provider     = google-beta\n" if ("C4.2" in item_ids or "C4.4" in item_ids) else ""
+            identity_block = (
+                '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (immutable at creation)\n'
+                '    identity_type   = "AGENT_IDENTITY"\n'
+                '    # service_account = google_service_account.app_sa.email # Replaced by per-agent SPIFFE ID'
+                if "C4.2" in item_ids
+                else "    service_account = google_service_account.app_sa.email"
+            )
             psc_cfg = (
                 """
       # [C3.1] PSC Interface Private VPC Egress
@@ -597,6 +727,18 @@ def _prepare_service_tf(
       }
 """
                 if "C3.1" in item_ids
+                else ""
+            )
+            agw_cfg = (
+                """
+      # [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress · UAP V2 starts in DRY_RUN)
+      agent_gateway_config {
+        agent_to_anywhere_config {
+          agent_gateway = google_network_services_agent_gateway.egress_gateway.id
+        }
+      }
+"""
+                if "C4.4" in item_ids
                 else ""
             )
             env_blocks = [
@@ -623,18 +765,18 @@ def _prepare_service_tf(
             )
             record(
                 rel,
-                f'''# Generated by Production-Readiness Workbench v2 — Agent Runtime Target
+                f'''# Generated by Production-Readiness Workbench v2.1 — Agent Runtime Target
 # Sizing note: Uses official agents-cli neutral defaults; adjust cpu/memory/concurrency after load testing (`tests/load_test/`).
 
 resource "google_vertex_ai_reasoning_engine" "app" {{
-  display_name = var.project_name
+{provider_line}  display_name = var.project_name
   description  = "Enterprise Production Agent deployed via Terraform"
   region       = var.region
   project      = var.project_id
 {memory_note}
   spec {{
     agent_framework = "google-adk"
-    service_account = google_service_account.app_sa.email
+{identity_block}
 
     deployment_spec {{
       # Tune scaling & concurrency after running `tests/load_test/`
@@ -646,7 +788,7 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
         cpu    = "1"
         memory = "4Gi"
       }}
-{psc_cfg}
+{psc_cfg}{agw_cfg}
 {chr(10).join(env_blocks)}
     }}
   }}
@@ -662,14 +804,100 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
   depends_on = [google_project_service.services]
 }}
 ''',
-                ["C1.1", "C2.2", "C3.1", "C5.1", "C5.2", "C6.2"],
+                ["C1.1", "C2.2", "C3.1", "C4.2", "C4.4", "C5.1", "C5.2", "C6.2"],
             )
         return
 
     # === TARGET B: CLOUD RUN ===
+    cr_agw_comment = (
+        "# [C4.4 Advisory · Cloud Run Agent Gateway 단계적 도입 가이드]\n"
+        "# Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에\n"
+        "# Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.\n"
+        "# (Agent Gateway 중앙 프록시 기본 프로비저닝은 Agent Runtime 트랙에 우선 적용하며, Cloud Run에는 강제 생성하지 않습니다.)\n"
+    )
+    existing_cr_tf = path.read_text(encoding="utf-8") if path.exists() else ""
+    mcp_profile = detect_mcp_a2a_profile(root, existing_cr_tf)
+
     if path.exists():
-        txt = path.read_text(encoding="utf-8")
+        txt = existing_cr_tf
         applied = []
+
+        # [C4.4] Non-blocking staged-adoption comment ONLY on Cloud Run (never forces Agent Gateway infra)
+        if "C4.4" in item_ids and "C4.4 Advisory" not in txt:
+            txt = cr_agw_comment + "\n" + txt
+            applied.append("C4.4")
+
+        # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration on Cloud Run (google-beta)
+        # Context-aware: MCP Servers receive FUNCTIONAL_TYPE_MCP_SERVER and keep dedicated least-privilege SA.
+        if "C4.2" in item_ids:
+            before_c42 = txt
+            if not re.search(r"provider\s*=\s*google-beta", txt):
+                txt = txt.replace(
+                    'resource "google_cloud_run_v2_service" "app" {',
+                    'resource "google_cloud_run_v2_service" "app" {\n  provider            = google-beta',
+                    1,
+                )
+            if mcp_profile.is_mcp_server:
+                if "FUNCTIONAL_TYPE_MCP_SERVER" not in txt:
+                    func_line = '  functional_type     = "FUNCTIONAL_TYPE_MCP_SERVER" # [C4.2] Auto-register MCP Server in Agent Registry (immutable)'
+                    if 'ingress             = "INGRESS_TRAFFIC_ALL"' in txt:
+                        txt = txt.replace(
+                            'ingress             = "INGRESS_TRAFFIC_ALL"',
+                            'ingress             = "INGRESS_TRAFFIC_ALL"\n' + func_line,
+                            1,
+                        )
+                    elif "deletion_protection = false" in txt:
+                        txt = txt.replace(
+                            "deletion_protection = false",
+                            "deletion_protection = false\n" + func_line,
+                            1,
+                        )
+                    else:
+                        txt = re.sub(
+                            r'(^[ \t]*project\s*=\s*.+$)',
+                            r'\1\n' + func_line,
+                            txt,
+                            count=1,
+                            flags=re.MULTILINE,
+                        )
+            else:
+                if "FUNCTIONAL_TYPE_AGENT" not in txt:
+                    txt = txt.replace(
+                        'ingress             = "INGRESS_TRAFFIC_ALL"',
+                        'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)',
+                        1,
+                    )
+                    if "FUNCTIONAL_TYPE_AGENT" not in txt:
+                        txt = txt.replace(
+                            'deletion_protection = false',
+                            'deletion_protection = false\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)',
+                            1,
+                        )
+                if "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
+                    wi_block = (
+                        '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                        '    # Pre-grant least-privilege IAM roles to the SPIFFE principal before migrating live traffic (--no-traffic).\n'
+                        '    workload_identity_config {\n'
+                        '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                        '    }\n'
+                        '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)'
+                    )
+                    if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
+                        txt = re.sub(
+                            r'^[ \t]*service_account\s*=\s*.+$',
+                            wi_block,
+                            txt,
+                            count=1,
+                            flags=re.MULTILINE,
+                        )
+                    else:
+                        txt = txt.replace(
+                            "    max_instance_request_concurrency",
+                            wi_block + "\n    max_instance_request_concurrency",
+                            1,
+                        )
+            if txt != before_c42:
+                applied.append("C4.2")
 
         # Never alter user CPU/Memory/Concurrency/min_instances/cpu_idle!
         # [C1.2] Startup CPU Boost + Health Probes only
@@ -748,6 +976,11 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
     session_affinity = true"""
             if "session_affinity = true" in txt:
                 txt = txt.replace("    session_affinity = true", vpc_block)
+            elif "    workload_identity_config" in txt:
+                txt = txt.replace(
+                    "    workload_identity_config",
+                    vpc_block.replace("\n\n    session_affinity = true", "") + "\n\n    workload_identity_config",
+                )
             else:
                 txt = txt.replace(
                     "    service_account",
@@ -775,6 +1008,11 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
                 txt = txt.replace(
                     "    session_affinity = true",
                     '    execution_environment = "EXECUTION_ENVIRONMENT_GEN2"\n    session_affinity      = true',
+                )
+            elif "    workload_identity_config" in txt:
+                txt = txt.replace(
+                    "    workload_identity_config",
+                    '    execution_environment = "EXECUTION_ENVIRONMENT_GEN2"\n    workload_identity_config',
                 )
             else:
                 txt = txt.replace(
@@ -905,20 +1143,40 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
             else ""
         )
         gen2_line = '    execution_environment            = "EXECUTION_ENVIRONMENT_GEN2"\n' if "C4.3" in item_ids else ""
+        cr_provider_line = "  provider             = google-beta\n" if "C4.2" in item_ids else ""
+        if "C4.2" in item_ids and mcp_profile.is_mcp_server:
+            cr_func_line = '  functional_type      = "FUNCTIONAL_TYPE_MCP_SERVER" # [C4.2] Auto-register MCP Server in Agent Registry (immutable)\n'
+            cr_identity_block = (
+                '    # [C4.2] Cloud Run MCP Server retains dedicated least-privilege Service Account (Agent Identity not required)\n'
+                '    service_account                  = google_service_account.app_sa.email\n'
+            )
+        elif "C4.2" in item_ids:
+            cr_func_line = '  functional_type      = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)\n'
+            cr_identity_block = (
+                '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                '    workload_identity_config {\n'
+                '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                '    }\n'
+                '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)\n'
+            )
+        else:
+            cr_func_line = ""
+            cr_identity_block = "    service_account                  = google_service_account.app_sa.email\n"
+        cr_agw_hdr = (cr_agw_comment + "\n") if "C4.4" in item_ids else ""
 
         record(
             rel,
-            f'''# Generated by Production-Readiness Workbench v2 — 100% compatible with google-agents-cli v1.5.0
+            f'''{cr_agw_hdr}# Generated by Production-Readiness Workbench v2.1 — 100% compatible with google-agents-cli v1.5.0
 # Sizing note: Uses official agents-cli neutral defaults (1 vCPU, 4Gi, concurrency=8, min=0).
 # Run `tests/load_test/` (Locust) against your staging agent and tune cpu/memory/concurrency/min_instances to match your SLA.
 
 resource "google_cloud_run_v2_service" "app" {{
-  name                 = var.project_name
+{cr_provider_line}  name                 = var.project_name
   location             = var.region
   project              = var.project_id
   deletion_protection  = {del_prot}
 {ingress_lines}
-  labels = {{
+{cr_func_line}  labels = {{
     "created-by" = "agents-cli"
   }}
 
@@ -936,8 +1194,7 @@ resource "google_cloud_run_v2_service" "app" {{
 {chr(10).join(env_blocks)}
     }}
 {vpc_block}
-    service_account                  = google_service_account.app_sa.email
-{gen2_line}    max_instance_request_concurrency = 8
+{cr_identity_block}{gen2_line}    max_instance_request_concurrency = 8
     session_affinity                 = true
 
     scaling {{
@@ -955,12 +1212,12 @@ resource "google_cloud_run_v2_service" "app" {{
   depends_on = [resource.google_project_service.services]
 }}
 ''',
-            ["C1.1", "C1.2", "C2.1", "C3.1", "C4.1", "C4.3", "C5.1", "C5.2", "C6.2"],
+            ["C1.1", "C1.2", "C2.1", "C3.1", "C4.1", "C4.2", "C4.3", "C4.4", "C5.1", "C5.2", "C6.2"],
         )
 
 
 # ---------------------------------------------------------------------------
-# 3. Drop-In Production Terraform Modules (production_ready.tf for Agent Runtime PSC-I, alerts.tf)
+# 3. Drop-In Production Terraform Modules (production_ready.tf for Agent Runtime PSC-I & Agent Gateway, alerts.tf)
 # ---------------------------------------------------------------------------
 
 
@@ -974,14 +1231,25 @@ def _prepare_production_ready_tf(
 ) -> None:
     rel = "deployment/terraform/production_ready.tf"
 
-    # Only needed when Agent Runtime private networking (C3.1 PSC Interface) is selected
-    if "C3.1" not in item_ids or target != "agent_runtime":
+    # Strictly Agent Runtime ONLY (never create production_ready.tf / Agent Gateway on Cloud Run!)
+    if target != "agent_runtime":
         return
 
-    content = f'''# deployment/terraform/production_ready.tf
-# Generated by Production-Readiness Workbench v2 — Agent Runtime (Private Egress via PSC Interface)
+    need_psc = "C3.1" in item_ids
+    need_agw = "C4.4" in item_ids
+    if not (need_psc or need_agw):
+        return
 
-resource "google_project_service" "compute_api" {{
+    blocks: list[str] = [
+        "# deployment/terraform/production_ready.tf",
+        "# Generated by Production-Readiness Workbench v2.1 — Agent Runtime (PSC Interface & Agent Gateway)",
+        "",
+    ]
+    applied_items: list[str] = []
+
+    if need_psc:
+        applied_items.append("C3.1")
+        blocks.append(f'''resource "google_project_service" "compute_api" {{
   project            = var.project_id
   service            = "compute.googleapis.com"
   disable_on_destroy = false
@@ -1013,8 +1281,90 @@ resource "google_compute_network_attachment" "agent_psc_interface" {{
   subnetworks           = [google_compute_subnetwork.agent_psc_subnet.self_link]
   depends_on            = [google_compute_subnetwork.agent_psc_subnet]
 }}
-'''
-    record(rel, content, ["C3.1"])
+''')
+
+    if need_agw:
+        applied_items.append("C4.4")
+        blocks.append('''# [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress) + IAP/UAP V2 AuthzPolicy (Agent Runtime)
+# Note: iamEnforcementMode defaults to "DRY_RUN" so platform calls (Sessions/Logging/Telemetry) are audited
+# without HTTP 498 disruption. Switch var.agent_gateway_enforcement_mode = "ENFORCED" after allowlisting APIs.
+
+resource "google_project_service" "agent_gateway_apis" {
+  for_each = toset([
+    "networkservices.googleapis.com",
+    "networksecurity.googleapis.com",
+    "iap.googleapis.com",
+  ])
+  project            = var.project_id
+  service            = each.value
+  disable_on_destroy = false
+}
+
+resource "google_network_services_agent_gateway" "egress_gateway" {
+  project   = var.project_id
+  location  = var.region
+  name      = "${var.project_name}-egress-gw"
+  protocols = ["MCP"]
+
+  google_managed {
+    governed_access_path = "AGENT_TO_ANYWHERE"
+  }
+
+  registries = [
+    "//agentregistry.googleapis.com/projects/${var.project_id}/locations/${var.region}",
+  ]
+
+  depends_on = [
+    google_project_service.agent_gateway_apis,
+    google_project_service.services,
+  ]
+}
+
+resource "google_network_services_authz_extension" "iap_request_authz_ext" {
+  project   = var.project_id
+  location  = var.region
+  name      = "${var.project_name}-iap-authz-ext"
+  service   = "iap.googleapis.com"
+  timeout   = "1s"
+  fail_open = false
+
+  metadata = {
+    iapPolicyVersion   = "V2"
+    iamEnforcementMode = var.agent_gateway_enforcement_mode
+  }
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}
+
+resource "google_network_security_authz_policy" "iap_request_authz_policy" {
+  project        = var.project_id
+  location       = var.region
+  name           = "${var.project_name}-iap-authz-policy"
+  policy_profile = "REQUEST_AUTHZ"
+  action         = "CUSTOM"
+
+  target {
+    resources = [
+      google_network_services_agent_gateway.egress_gateway.id,
+    ]
+  }
+
+  custom_provider {
+    authz_extension {
+      resources = [
+        google_network_services_authz_extension.iap_request_authz_ext.id,
+      ]
+    }
+  }
+
+  depends_on = [
+    google_network_services_agent_gateway.egress_gateway,
+    google_network_services_authz_extension.iap_request_authz_ext,
+  ]
+}
+''')
+
+    record(rel, "\n".join(blocks).rstrip() + "\n", applied_items)
 
 
 def _prepare_alerts_tf(
@@ -1549,29 +1899,60 @@ app.title = "{project_name}"
 # ---------------------------------------------------------------------------
 
 
-def _prepare_dockerfile(root: Path, item_ids: set[str], record: Any) -> None:
-    if "C4.3" not in item_ids:
+def _prepare_dockerfile(
+    root: Path, target: TargetType, item_ids: set[str], record: Any
+) -> None:
+    need_non_root = "C4.3" in item_ids
+    need_agw_ca = target == "agent_runtime" and "C4.4" in item_ids
+    if not (need_non_root or need_agw_ca):
         return
+
+    agw_ca_snippet = """# [C4.4] Trust Agent Gateway TLS inspection root CA certificates for BYOC Agent Runtime egress
+ARG AGENT_GATEWAY_ROOT_CERTIFICATES
+RUN if [ -n "$AGENT_GATEWAY_ROOT_CERTIFICATES" ]; then \\
+      echo "Installing Agent Gateway root certificates..."; \\
+      printf "%b" "$AGENT_GATEWAY_ROOT_CERTIFICATES" | awk 'BEGIN {c=0} /BEGIN CERTIFICATE/ {c++} c > 0 { print > "/usr/local/share/ca-certificates/agw-" c ".crt" }'; \\
+      update-ca-certificates; \\
+    fi
+ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=${AGENT_GATEWAY_ROOT_CERTIFICATES:+/etc/ssl/certs/ca-certificates.crt}
+ENV REQUESTS_CA_BUNDLE=${AGENT_GATEWAY_ROOT_CERTIFICATES:+/etc/ssl/certs/ca-certificates.crt}
+ENV SSL_CERT_FILE=${AGENT_GATEWAY_ROOT_CERTIFICATES:+/etc/ssl/certs/ca-certificates.crt}
+"""
+
+    non_root_only = """# [C4.3] Create and switch to non-root user (UID 10001) for container runtime security
+RUN groupadd --gid 10001 appuser && \\
+    useradd --uid 10001 --gid 10001 --create-home --shell /sbin/nologin appuser && \\
+    chown -R appuser:appuser /code
+USER 10001:10001"""
+
     rel = "Dockerfile"
     path = root / rel
     if path.exists():
         txt = path.read_text(encoding="utf-8")
-        if "USER 10001" not in txt:
-            non_root_snippet = """# [C4.3] Create and switch to non-root user (UID 10001) for container runtime security
-RUN groupadd --gid 10001 appuser && \\
-    useradd --uid 10001 --gid 10001 --create-home --shell /sbin/nologin appuser && \\
-    chown -R appuser:appuser /code
-USER 10001:10001
+        applied: list[str] = []
 
-EXPOSE 8080"""
-            if "EXPOSE 8080" in txt:
-                txt = txt.replace("EXPOSE 8080", non_root_snippet)
+        if need_agw_ca and "AGENT_GATEWAY_ROOT_CERTIFICATES" not in txt:
+            if "# [C4.3]" in txt:
+                txt = txt.replace("# [C4.3]", agw_ca_snippet + "\n# [C4.3]", 1)
+            elif "USER 10001" in txt:
+                txt = txt.replace("USER 10001", agw_ca_snippet + "\nUSER 10001", 1)
+            elif "EXPOSE 8080" in txt:
+                txt = txt.replace("EXPOSE 8080", agw_ca_snippet + "\nEXPOSE 8080", 1)
             else:
-                txt += "\n" + non_root_snippet + "\n"
-            record(rel, txt, ["C4.3"])
+                txt += "\n" + agw_ca_snippet + "\n"
+            applied.append("C4.4")
+
+        if need_non_root and "USER 10001" not in txt:
+            if "EXPOSE 8080" in txt:
+                txt = txt.replace("EXPOSE 8080", non_root_only + "\n\nEXPOSE 8080", 1)
+            else:
+                txt += "\n" + non_root_only + "\n"
+            applied.append("C4.3")
+
+        if applied:
+            record(rel, txt, applied)
     else:
-        record(
-            rel,
+        sections = [
             '''FROM python:3.12-slim
 
 RUN pip install --no-cache-dir uv==0.8.13
@@ -1584,20 +1965,19 @@ COPY ./app ./app
 RUN uv sync --frozen
 
 ARG AGENT_VERSION=0.0.0
-ENV AGENT_VERSION=${AGENT_VERSION}
-
-# [C4.3] Create and switch to non-root user (UID 10001) for container runtime security
-RUN groupadd --gid 10001 appuser && \\
-    useradd --uid 10001 --gid 10001 --create-home --shell /sbin/nologin appuser && \\
-    chown -R appuser:appuser /code
-USER 10001:10001
-
-EXPOSE 8080
-
-CMD ["uv", "run", "uvicorn", "app.fast_api_app:app", "--host", "0.0.0.0", "--port", "8080"]
-''',
-            ["C4.3"],
+ENV AGENT_VERSION=${AGENT_VERSION}'''
+        ]
+        applied_new: list[str] = []
+        if need_agw_ca:
+            sections.append(agw_ca_snippet.rstrip())
+            applied_new.append("C4.4")
+        if need_non_root:
+            sections.append(non_root_only)
+            applied_new.append("C4.3")
+        sections.append(
+            'EXPOSE 8080\n\nCMD ["uv", "run", "uvicorn", "app.fast_api_app:app", "--host", "0.0.0.0", "--port", "8080"]\n'
         )
+        record(rel, "\n\n".join(sections), applied_new)
 
 
 def _prepare_cicd_and_canary(
@@ -1947,7 +2327,7 @@ def generate_html_report(
     </div>
     {advisory_html}
 
-    <h2>2. 13개 상세 프로덕션 체크리스트 심의 매트릭스 (C1.1 ~ C7.1)</h2>
+    <h2>2. 15개 상세 프로덕션 · 거버넌스 체크리스트 심의 매트릭스 (C1.1 ~ C7.1)</h2>
     <div class="table-wrap">
       <table>
         <thead>

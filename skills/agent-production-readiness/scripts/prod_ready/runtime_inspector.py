@@ -452,6 +452,30 @@ def _evaluate_cloud_run_service(
     concurrency = int(tmpl_spec.get("containerConcurrency", 80))
     timeout_sec = int(tmpl_spec.get("timeoutSeconds", 300))
     sa_email = tmpl_spec.get("serviceAccountName", "")
+    functional_type = str(
+        meta_ann.get("run.googleapis.com/functional-type")
+        or svc.get("functionalType")
+        or ""
+    ).strip()
+    identity_type = str(
+        tmpl_ann.get("run.googleapis.com/identity-type")
+        or (tmpl_spec.get("workloadIdentityConfig") or {}).get("identityType")
+        or (tmpl.get("workloadIdentityConfig") or {}).get("identityType")
+        or ""
+    ).strip()
+    is_mcp_server = functional_type.lower() in (
+        "mcp-server",
+        "functional_type_mcp_server",
+    )
+    has_functional_agent = functional_type.lower() in (
+        "agent",
+        "functional_type_agent",
+    )
+    has_agent_identity = identity_type.lower() in (
+        "agent-identity",
+        "identity_type_agent_identity",
+        "agent_identity",
+    )
     limits = container.get("resources", {}).get("limits", {})
     cpu_str = limits.get("cpu", "1000m")
     mem_str = limits.get("memory", "512Mi")
@@ -464,6 +488,17 @@ def _evaluate_cloud_run_service(
         k = e.get("name", "")
         if "value" in e:
             env_map[k] = str(e.get("value", ""))
+
+    remote_url_keys = ("MCP_SERVER_URL", "MCP_URL", "A2A_AGENT_URL", "A2A_SERVER_URL", "AGENT_CARD_URL")
+    hardcoded_remote_urls = [
+        f"{k}={v}"
+        for k, v in env_map.items()
+        if (
+            k.upper() in remote_url_keys
+            or k.upper().endswith(("_MCP_URL", "_MCP_SERVER_URL", "_A2A_URL", "_AGENT_CARD_URL"))
+        )
+        and v.strip().lower().startswith(("http://", "https://"))
+    ]
 
     startup_probe = container.get("startupProbe", {})
     liveness_probe = container.get("livenessProbe", {})
@@ -748,7 +783,10 @@ def _evaluate_cloud_run_service(
 
     # 7. [R4.1] Dedicated Least-Privilege Service Account (Objectively verifiable from JSON!)
     is_default_compute_sa = "-compute@developer.gserviceaccount.com" in sa_email or not sa_email
-    if not is_default_compute_sa:
+    if has_agent_identity:
+        r41_status, r41_score = "GREEN", 100
+        r41_current = f"Agent Identity (SPIFFE ID) 활성화됨 ({identity_type}) — 기본 Compute Engine SA 미사용"
+    elif not is_default_compute_sa:
         r41_status, r41_score = "GREEN", 100
         r41_current = f"전용 서비스 계정 사용 중 ({sa_email})"
     else:
@@ -757,18 +795,18 @@ def _evaluate_cloud_run_service(
 
     checks.append({
         "id": "R4.1",
-        "domain": "4. 보안 & 가드레일",
+        "domain": "4. 보안, 신원 & 거버넌스",
         "check_type": "RUNTIME_VERIFIED",
         "verification_scope": "RUNTIME_VERIFIED",
         "title": "전용 최소 권한 서비스 계정 (Dedicated IAM Service Account)",
         "status": r41_status,
         "score": r41_score,
         "current_state": r41_current,
-        "recommended_state": f"에이전트 전용 서비스 계정 사용 + 필요한 최소 IAM Role만 부여",
+        "recommended_state": "에이전트 전용 서비스 계정 또는 Agent Identity (SPIFFE ID) 사용 + 필요한 최소 IAM Role만 부여",
         "why_it_matters": (
-            "Cloud Run `describe` JSON의 `serviceAccountName` 필드로 객관적 검증이 가능한 항목입니다. "
+            "Cloud Run `describe` JSON의 `serviceAccountName` / `identity-type` 필드로 객관적 검증이 가능한 항목입니다. "
             "기본 Compute 서비스 계정은 프로젝트 전체에 광범위한 권한이 부여되어 있는 경우가 많으므로, "
-            "전용 서비스 계정을 분리하고 최소 권한(Agent Platform User 등 필요한 역할만)을 부여하는 것이 안전합니다."
+            "전용 서비스 계정 또는 Agent Identity로 분리하고 최소 권한만 부여하는 것이 안전합니다."
         ),
         "how_to_fix_title": "전용 서비스 계정 생성 및 연결",
         "gcloud_cmd": (
@@ -779,44 +817,143 @@ def _evaluate_cloud_run_service(
             f"  --service-account={service_name}-sa@{project_id}.iam.gserviceaccount.com"
         ),
         "terraform_snippet": "service_account = google_service_account.app_sa.email",
-        "console_guide": f"전용 SA가 이미 연결되어 있더라도 `gcloud projects get-iam-policy {project_id}`로 해당 SA에 과도한 역할(Editor/Owner 등)이 없는지 주기적으로 점검하세요.",
+        "console_guide": f"전용 SA 또는 Agent Identity가 연결되어 있더라도 `gcloud projects get-iam-policy {project_id}`로 과도한 역할(Editor/Owner 등)이 없는지 주기적으로 점검하세요.",
     })
 
-    # 8. [R4.2] Model Armor Guardrail & Tool Security (Cannot inspect Python code from describe JSON!)
-    has_guardrail_env = env_map.get("MODEL_ARMOR_ENABLED", "").lower() == "true" or "MODEL_ARMOR_TEMPLATE_ID" in env_map
-    if has_guardrail_env:
+    # 8. [R4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Agent & MCP Server aware)
+    if is_mcp_server:
         r42_status, r42_score = "GREEN", 100
-        r42_current = "Model Armor 관련 환경변수 감지됨 (MODEL_ARMOR_ENABLED / TEMPLATE_ID)"
+        r42_current = (
+            f"Cloud Run MCP Server 감지: functional-type={functional_type} "
+            "(Agent Registry 자동 등록 구성됨 · MCP 서버는 전용 서비스 계정 유지 가능)"
+        )
+    elif has_functional_agent and has_agent_identity:
+        r42_status, r42_score = "GREEN", 100
+        r42_current = f"functional-type={functional_type}, identity-type={identity_type} (SPIFFE Agent Identity & Agent Registry 자동 등록 구성됨)"
+    elif has_functional_agent or has_agent_identity:
+        r42_status, r42_score = "AMBER", 50
+        r42_current = (
+            f"일부만 설정됨 (functional-type={functional_type or '미설정'}, identity-type={identity_type or '미설정'}) — "
+            "에이전트 서비스는 두 항목을 함께 설정해야 SPIFFE ID 발급과 Agent Registry 자동 등록이 완성됩니다."
+        )
     else:
-        r42_status, r42_score = "REVIEW", None
-        r42_current = "런타임 JSON에서 Model Armor 환경변수 미감지 (※ 코드 내부 콜백/SDK 직접 호출 또는 앞단 Agent Gateway 적용 여부는 JSON으로 판별 불가)"
+        r42_status, r42_score = "AMBER", 50
+        r42_current = "functional-type=agent(또는 mcp-server) 및 identity-type=agent-identity 미설정 (전통적 서비스 계정 모드 · Agent Registry 자동 등록 안 됨)"
+
+    r42_lazy_note = ""
+    if hardcoded_remote_urls:
+        preview_urls = ", ".join(hardcoded_remote_urls[:2])
+        r42_current += (
+            f" · 💡 원격 MCP/A2A 정적 URL 환경변수 감지({preview_urls}) — "
+            "하드코딩 대신 ADK AgentRegistry(get_mcp_toolset / get_remote_a2a_agent) Lazy Discovery 전환 권장"
+        )
+        r42_lazy_note = (
+            " 원격 MCP 서버나 A2A 서브 에이전트를 정적 URL 환경변수로 직접 호출하는 경우, "
+            "ADK의 `google.adk.integrations.agent_registry.AgentRegistry` (`get_mcp_toolset()` / `get_remote_a2a_agent()`)로 전환하면 "
+            "엔드포인트 자동 해석·GCP 인증·도구 단위 거버넌스를 통합할 수 있습니다."
+        )
+
+    r42_verify_list_cmd = (
+        f"gcloud beta agent-registry mcp-servers list --location={region} --project={project_id}"
+        if is_mcp_server
+        else f"gcloud beta agent-registry agents list --location={region} --project={project_id}"
+    )
 
     checks.append({
         "id": "R4.2",
-        "domain": "4. 보안 & 가드레일",
-        "check_type": "CODE_VERIFY",
-        "verification_scope": "CODE_VERIFY",
-        "title": "AI 보안 거버넌스 (Agent Gateway · Model Armor) — 선택 거버넌스 확인",
+        "domain": "4. 보안, 신원 & 거버넌스",
+        "check_type": "RUNTIME_RECOMMENDED",
+        "verification_scope": "RUNTIME_VERIFIED",
+        "title": "Agent Identity (SPIFFE ID) & Agent Registry 자동 등록",
         "status": r42_status,
         "score": r42_score,
         "current_state": r42_current,
-        "recommended_state": "조직 AI 보안 거버넌스 정책에 따라 앞단 Agent Gateway + Model Armor Floor Settings로 중앙 통제하거나, 필요한 에이전트에만 선택적 ADK ModelArmorPlugin 적용",
-        "why_it_matters": (
-            "Cloud Run `describe` JSON은 앞단 Agent Gateway(Model Armor Floor Settings)나 컨테이너 내부 콜백의 보안 정책을 노출하지 않습니다. "
-            "모든 에이전트 코드에 일괄 강제하기보다 조직의 AI 보안 거버넌스 기준에 맞춰 게이트웨이 또는 앱 레벨 적용 여부를 결정하세요."
+        "recommended_state": (
+            "Cloud Run MCP Server: functional_type=FUNCTIONAL_TYPE_MCP_SERVER (전용 SA 유지 가능)"
+            if is_mcp_server
+            else "Agent: functional_type=FUNCTIONAL_TYPE_AGENT + identity_type=IDENTITY_TYPE_AGENT_IDENTITY (--no-traffic로 안전 전환) · MCP Server: FUNCTIONAL_TYPE_MCP_SERVER"
         ),
-        "how_to_fix_title": "Agent Gateway + Model Armor Floor Settings 또는 선택적 ADK ModelArmorPlugin 검토",
+        "why_it_matters": (
+            "Cloud Run 에이전트에 `--functional-type=agent`와 `--identity-type=agent-identity`를 설정하면 에이전트별 고유 SPIFFE ID가 발급되고 "
+            "Agent Registry에 자동 등록됩니다. Cloud Run MCP 서버의 경우 `--functional-type=mcp-server`만 지정해도 Agent Registry에 자동 등록되며 전용 서비스 계정을 유지할 수 있습니다. "
+            "(※ `functional-type`은 최초 지정 후 변경 불가하며, 기존 에이전트에 적용할 때는 `--no-traffic`으로 새 리비전을 먼저 만든 뒤 SPIFFE Principal에 IAM 권한을 부여하고 트래픽을 전환하세요.)"
+            + r42_lazy_note
+        ),
+        "how_to_fix_title": "Agent Identity 활성화 및 Agent Registry 자동 등록 확인",
         "gcloud_cmd": (
-            f"# [선택 거버넌스] 조직/프로젝트 단위 Model Armor Floor Settings 또는 Agent Gateway 정책 확인\n"
-            f"gcloud model-armor floorsettings describe --project={project_id} --location=global\n"
-            f"# 로컬 코드 전체 점검 (13개 No-Regret 항목):\n"
+            f"# [Step 1] Agent Registry & App Hub API 활성화\n"
+            f"gcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project={project_id}\n\n"
+            f"# [Step 2] Agent Identity + Functional Type 적용 (※ MCP 서버는 --functional-type=mcp-server 만 지정 가능)\n"
+            f"gcloud beta run services update {service_name} \\\n"
+            f"  --region={region} \\\n"
+            f"  --project={project_id} \\\n"
+            f"  --functional-type={'mcp-server' if is_mcp_server else 'agent'} \\\n"
+            + ("" if is_mcp_server else "  --identity-type=agent-identity \\\n")
+            + f"  --no-traffic\n\n"
+            f"# [Step 3 · 읽기 전용 확인] Agent Registry 자동 등록 조회\n"
+            f"{r42_verify_list_cmd}"
+        ),
+        "terraform_snippet": (
+            'provider        = google-beta\n'
+            'functional_type = "FUNCTIONAL_TYPE_MCP_SERVER" # MCP 서버는 전용 SA 유지 가능'
+            if is_mcp_server
+            else (
+                'provider        = google-beta\n'
+                'functional_type = "FUNCTIONAL_TYPE_AGENT"\n'
+                'template {\n'
+                '  workload_identity_config {\n'
+                '    identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                '  }\n'
+                '}'
+            )
+        ),
+        "console_guide": f"Agent Registry 콘솔 또는 `{r42_verify_list_cmd}`에서 {service_name}가 자동 등록되었는지 확인하세요.",
+    })
+
+    # 9. [R4.3] Cloud Run Agent Gateway Staged Adoption Advisory & Model Armor Governance
+    has_guardrail_env = env_map.get("MODEL_ARMOR_ENABLED", "").lower() == "true" or "MODEL_ARMOR_TEMPLATE_ID" in env_map
+    if has_guardrail_env:
+        r43_status, r43_score = "GREEN", 100
+        r43_current = "Model Armor 관련 환경변수 감지됨 (MODEL_ARMOR_ENABLED / TEMPLATE_ID)"
+    else:
+        r43_status, r43_score = "REVIEW", None
+        r43_current = (
+            "Cloud Run은 검증된 GA 인프라 보안(Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor) 위에 "
+            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근 권장 (JSON만으로 앞단 프록시·Model Armor 판별 불가)"
+        )
+
+    checks.append({
+        "id": "R4.3",
+        "domain": "4. 보안, 신원 & 거버넌스",
+        "check_type": "CODE_VERIFY",
+        "verification_scope": "CODE_VERIFY",
+        "title": "Agent Gateway (Cloud Run 단계적 도입 가이드) & Model Armor 거버넌스",
+        "status": r43_status,
+        "score": r43_score,
+        "current_state": r43_current,
+        "recommended_state": (
+            "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
+            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다."
+        ),
+        "why_it_matters": (
+            "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
+            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다. "
+            "Cloud Run `describe` JSON은 앞단 SWP/IAP/Model Armor Floor Settings나 컨테이너 내부 콜백을 노출하지 않으므로, "
+            "조직의 AI 보안 거버넌스 성숙도에 맞춰 단계적으로 적용 여부를 확인하세요."
+        ),
+        "how_to_fix_title": "Model Armor Floor Settings 확인 및 Play 01 핵심 점검 (15개 항목)",
+        "gcloud_cmd": (
+            f"# [선택 거버넌스] 프로젝트 단위 Model Armor Floor Settings 정책 확인\n"
+            f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n"
+            f"# 로컬 코드 전체 점검 (15개 핵심 항목 · Cloud Run C4.4 단계적 도입 가이드 주석 포함):\n"
             f"uv run prod-ready scan <내_로컬_에이전트_폴더>"
         ),
         "terraform_snippet": (
-            '# 권장: Agent Gateway + Model Armor Floor Settings로 중앙 거버넌스 통제\n'
-            '# (또는 필요한 서비스에서만 ADK before_model_callback / ModelArmorPlugin 선택 장착)'
+            '# Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에\n'
+            '# Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.\n'
+            '# (Agent Gateway 자동 리소스 생성은 Agent Runtime 타겟에서 우선 제공)'
         ),
-        "console_guide": "이 항목은 점수에 반영되지 않는 거버넌스 참고(REVIEW) 항목입니다. 조직 보안 정책상 필요한 경우에만 Model Armor / Agent Gateway를 연동하세요.",
+        "console_guide": "이 항목은 점수에 감점되지 않는 거버넌스 가이드(REVIEW) 항목입니다. GA 인프라 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 위에 Self-Managed AGW를 단계적으로 도입하세요.",
     })
 
     # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT)
@@ -959,10 +1096,14 @@ def _evaluate_cloud_run_service(
             "ingress": ingress,
             "port": port_num,
             "execution_environment": exec_env,
+            "functional_type": functional_type,
+            "identity_type": identity_type,
+            "is_mcp_server": is_mcp_server,
+            "hardcoded_remote_urls": hardcoded_remote_urls,
         },
         "combined_runtime_fix_cmd": combined_gcloud,
         "stage1_skill_cmd": (
-            "# Play 01 (배포 전 로컬 PC): 13개 핵심 No-Regret 항목(루프 방지, Non-Root, OTel 프라이버시 등) 점검 및 패치\n"
+            "# Play 01 (배포 전 로컬 PC): 15개 핵심 항목(Agent Identity/Registry, 루프 방지, Non-Root, OTel 프라이버시 등) 점검 및 패치\n"
             "uv run prod-ready scan <내_로컬_에이전트_코드_폴더>"
         ),
         "checks": checks,
@@ -979,11 +1120,34 @@ def _evaluate_agent_runtime_engine(
     spec = eng.get("spec", {})
     dep_spec = spec.get("deploymentSpec", {})
     sa_email = spec.get("serviceAccount") or spec.get("effectiveIdentity", "")
+    identity_type = str(spec.get("identityType") or "").strip()
+    has_agent_identity = identity_type.upper() == "AGENT_IDENTITY"
     disp_name = eng.get("displayName") or engine_id
     psc_iface = dep_spec.get("pscInterfaceConfig", {})
+    agw_cfg = dep_spec.get("agentGatewayConfig", {})
+    agw_egress = (agw_cfg.get("agentToAnywhereConfig") or {}).get("agentGateway", "")
+    agw_ingress = (agw_cfg.get("clientToAgentConfig") or {}).get("agentGateway", "")
+    has_agent_gateway = bool(agw_egress or agw_ingress)
 
     env_list = dep_spec.get("env", [])
     env_map = {e.get("name", ""): str(e.get("value", "")) for e in env_list if "name" in e}
+
+    ar_remote_keys = ("MCP_SERVER_URL", "MCP_URL", "A2A_AGENT_URL", "A2A_SERVER_URL", "AGENT_CARD_URL")
+    ar_hardcoded_remote_urls = [
+        f"{k}={v}"
+        for k, v in env_map.items()
+        if (
+            k.upper() in ar_remote_keys
+            or k.upper().endswith(("_MCP_URL", "_MCP_SERVER_URL", "_A2A_URL", "_AGENT_CARD_URL"))
+        )
+        and v.strip().lower().startswith(("http://", "https://"))
+    ]
+    ar_r42_lazy_suffix = (
+        f" · 💡 원격 MCP/A2A 정적 URL 환경변수 감지({', '.join(ar_hardcoded_remote_urls[:2])}) — "
+        "ADK AgentRegistry(get_mcp_toolset / get_remote_a2a_agent) Lazy Discovery 전환 권장"
+        if ar_hardcoded_remote_urls
+        else ""
+    )
 
     otel_capture = env_map.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "")
     loc_val = env_map.get("GOOGLE_CLOUD_LOCATION", "")
@@ -1074,39 +1238,107 @@ def _evaluate_agent_runtime_engine(
         },
         {
             "id": "R4.1",
-            "domain": "4. 보안 & 가드레일",
+            "domain": "4. 보안, 신원 & 거버넌스",
             "check_type": "RUNTIME_VERIFIED",
             "verification_scope": "RUNTIME_VERIFIED",
-            "title": "전용 최소 권한 서비스 계정 (Custom Service Account)",
-            "status": "GREEN" if ("@gcp-sa-aiplatform-re" not in sa_email and sa_email) else "AMBER",
-            "score": 100 if ("@gcp-sa-aiplatform-re" not in sa_email and sa_email) else 50,
-            "current_state": f"현재 ID: {sa_email or '기본 Reasoning Engine 공유 SA'}",
-            "recommended_state": "에이전트별 전용 커스텀 서비스 계정 할당",
+            "title": "전용 최소 권한 서비스 계정 (Custom Service Account / Agent Identity)",
+            "status": "GREEN" if (has_agent_identity or ("@gcp-sa-aiplatform-re" not in sa_email and sa_email)) else "AMBER",
+            "score": 100 if (has_agent_identity or ("@gcp-sa-aiplatform-re" not in sa_email and sa_email)) else 50,
+            "current_state": (
+                f"Agent Identity (AGENT_IDENTITY) 활성화됨 ({sa_email or 'SPIFFE Principal'})"
+                if has_agent_identity
+                else f"현재 ID: {sa_email or '기본 Reasoning Engine 공유 SA'}"
+            ),
+            "recommended_state": "에이전트별 전용 커스텀 서비스 계정 또는 Agent Identity (AGENT_IDENTITY) 할당",
             "why_it_matters": "여러 에이전트가 기본 Reasoning Engine 서비스 계정을 공유하면 에이전트별 최소 권한 분리가 어렵습니다.",
-            "how_to_fix_title": "전용 커스텀 서비스 계정 지정",
+            "how_to_fix_title": "전용 커스텀 서비스 계정 또는 Agent Identity 지정",
             "gcloud_cmd": f"uvx google-agents-cli deploy --project={project_id} --region={region} --service-account=<CUSTOM_SA_EMAIL>",
-            "terraform_snippet": "service_account = google_service_account.app_sa.email",
-            "console_guide": "재배포 시 `--service-account` 플래그로 에이전트 전용 SA를 지정하세요.",
+            "terraform_snippet": 'identity_type = "AGENT_IDENTITY" # 또는 service_account = google_service_account.app_sa.email',
+            "console_guide": "재배포 시 `--agent-identity` 또는 `--service-account` 플래그로 에이전트별 ID를 분리하세요.",
         },
         {
             "id": "R4.2",
-            "domain": "4. 보안 & 가드레일",
-            "check_type": "CODE_VERIFY",
-            "verification_scope": "CODE_VERIFY",
-            "title": "AI 보안 거버넌스 (Agent Gateway · Model Armor) — 선택 거버넌스 확인",
-            "status": "GREEN" if has_guardrail else "REVIEW",
-            "score": 100 if has_guardrail else None,
+            "domain": "4. 보안, 신원 & 거버넌스",
+            "check_type": "RUNTIME_RECOMMENDED",
+            "verification_scope": "RUNTIME_VERIFIED",
+            "title": "Agent Identity (SPIFFE ID) & Agent Registry 자동 등록",
+            "status": "GREEN" if has_agent_identity else "AMBER",
+            "score": 100 if has_agent_identity else 50,
             "current_state": (
-                "Model Armor 관련 환경변수 감지됨"
-                if has_guardrail
-                else "런타임 JSON에서 Model Armor 환경변수 미감지 (※ Agent Gateway / Floor Settings 중앙 통제 여부는 JSON으로 판별 불가)"
+                (
+                    f"spec.identityType=AGENT_IDENTITY 확인됨 ({sa_email or 'SPIFFE ID 발급 및 Agent Registry 자동 등록'})"
+                    if has_agent_identity
+                    else f"spec.identityType={identity_type or 'SERVICE_ACCOUNT/미설정'} — 에이전트 전용 SPIFFE ID 미활성화"
+                )
+                + ar_r42_lazy_suffix
             ),
-            "recommended_state": "조직 AI 보안 거버넌스 요건에 따라 Agent Gateway + Model Armor Floor Settings 또는 선택적 ADK ModelArmorPlugin 검토",
-            "why_it_matters": "ReasoningEngine API JSON은 앞단 Agent Gateway 정책이나 코드 내부 가드레일을 노출하지 않습니다. 조직 거버넌스 정책상 필요한 경우에만 중앙 게이트웨이 또는 앱 플러그인으로 적용하세요.",
-            "how_to_fix_title": "Model Armor Floor Settings 확인 및 Play 01 핵심 점검",
-            "gcloud_cmd": f"gcloud model-armor floorsettings describe --project={project_id} --location=global\nuv run prod-ready scan <내_로컬_에이전트_폴더>",
-            "terraform_snippet": "# 권장: Agent Gateway + Model Armor Floor Settings 중앙 정책",
-            "console_guide": "점수에 반영되지 않는 거버넌스 참고(REVIEW) 항목입니다. 조직 정책에 따라 적용 여부를 결정하세요.",
+            "recommended_state": "spec.identityType = AGENT_IDENTITY + agentregistry.googleapis.com 활성화 (Agent Registry 자동 등록)",
+            "why_it_matters": (
+                "Agent Runtime에 `identity_type = \"AGENT_IDENTITY\"`를 활성화하면 에이전트별 고유 SPIFFE ID가 자동 프로비저닝되며 "
+                "Agent Registry에 등록되어 엔터프라이즈 거버넌스 및 mTLS 기반 ID 바인딩을 지원합니다. "
+                "(※ `AGENT_IDENTITY`와 `service_account`는 상호 배타적이므로 동시에 지정할 수 없습니다.)"
+            ),
+            "how_to_fix_title": "Agent Identity 활성화 및 Agent Registry 등록 확인",
+            "gcloud_cmd": (
+                f"# [Step 1] Agent Registry & App Hub API 활성화\n"
+                f"gcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project={project_id}\n\n"
+                f"# [Step 2] Agent Identity 활성화 재배포 (※ --service-account 와 동시 지정 불가)\n"
+                f"uvx google-agents-cli deploy --project={project_id} --region={region} --agent-identity\n\n"
+                f"# [Step 3 · 읽기 전용 확인] Agent Registry 등록 조회\n"
+                f"gcloud agent-registry agents list --location={region} --project={project_id}"
+            ),
+            "terraform_snippet": (
+                'provider = google-beta\n'
+                'spec {\n'
+                '  identity_type = "AGENT_IDENTITY"\n'
+                '}'
+            ),
+            "console_guide": f"Agent Registry 콘솔 또는 `gcloud agent-registry agents list --location={region} --project={project_id}`에서 등록 상태를 확인하세요.",
+        },
+        {
+            "id": "R4.3",
+            "domain": "4. 보안, 신원 & 거버넌스",
+            "check_type": "RUNTIME_RECOMMENDED",
+            "verification_scope": "RUNTIME_VERIFIED",
+            "title": "Agent Gateway (Egress/Ingress 중앙 정책 · UAP/IAP V2) & Model Armor",
+            "status": "GREEN" if has_agent_gateway else "AMBER",
+            "score": 100 if has_agent_gateway else 50,
+            "current_state": (
+                f"Agent Gateway 바인딩 확인됨 (egress={agw_egress or '미설정'}, ingress={agw_ingress or '미설정'})"
+                + (" · Model Armor env 감지됨" if has_guardrail else "")
+                if has_agent_gateway
+                else (
+                    "deploymentSpec.agentGatewayConfig 미연결 (직접 Egress/Ingress 모드 — "
+                    + ("Model Armor env 감지됨)" if has_guardrail else "중앙 Agent Gateway 미적용)")
+                )
+            ),
+            "recommended_state": (
+                "google_network_services_agent_gateway + UAP/IAP V2 (초기 iamEnforcementMode=DRY_RUN으로 HTTP 498 차단 방지) + "
+                "BYOC Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES 주입"
+            ),
+            "why_it_matters": (
+                "Agent Runtime의 `agentGatewayConfig`에 Agent Gateway를 연결하면 MCP·A2A·LLM 아웃바운드 호출에 대해 "
+                "중앙 정책(UAP/IAP V2)과 Model Armor Floor Settings 검사를 코드 변경 없이 일괄 강제할 수 있습니다. "
+                "(⚠️ 중요: 신규 Agent Gateway 연결 시 반드시 `iamEnforcementMode=DRY_RUN`으로 시작해 HTTP 498 차단을 방지하고, "
+                "로그 검증 후 `ENFORCED`로 승격하세요. 커스텀 컨테이너는 `Dockerfile`에 `AGENT_GATEWAY_ROOT_CERTIFICATES` 주입이 필요합니다.)"
+            ),
+            "how_to_fix_title": "Agent Gateway(DRY_RUN) 프로비저닝 및 Agent Runtime 연결",
+            "gcloud_cmd": (
+                f"# [Step 1] Play 01 C4.4 하드닝으로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items C4.4\n\n"
+                f"# [Step 2] Model Armor Floor Settings 정책 확인 (읽기 전용)\n"
+                f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n\n"
+                f"# [Step 3] Agent Gateway 연결 확인\n"
+                f"gcloud beta network-services agent-gateways list --location={region} --project={project_id}"
+            ),
+            "terraform_snippet": (
+                'agent_gateway_config {\n'
+                '  agent_to_anywhere_config {\n'
+                '    agent_gateway = google_network_services_agent_gateway.egress_gateway.id\n'
+                '  }\n'
+                '}'
+            ),
+            "console_guide": "Play 01(`--target agent_runtime --items C4.4`)으로 `production_ready.tf`의 Agent Gateway(`iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
         },
         {
             "id": "R5.1",
@@ -1193,6 +1425,9 @@ def _evaluate_agent_runtime_engine(
             "min_instances": min_inst if min_inst is not None else 1,
             "max_instances": max_inst if max_inst is not None else 10,
             "location": loc_val or "global",
+            "identity_type": identity_type,
+            "has_agent_gateway": has_agent_gateway,
+            "hardcoded_remote_urls": ar_hardcoded_remote_urls,
         },
         "combined_runtime_fix_cmd": (
             f"# ⚠️ 선택한 항목에 따라 UI에서 맞춤형 명령어가 동적으로 생성됩니다.\n"

@@ -151,6 +151,55 @@ def apply_patches(
     }
 
 
+def _build_user_decision_items(report: Any) -> list[dict[str, str]]:
+    """Builds the target-aware 'User-Owned Post-Setup Decisions' table for READINESS_REPORT (.md / .html)."""
+    is_cr = report.deployment_target == "cloud_run"
+    return [
+        {
+            "topic": "컴퓨트 사이징 & 스케일링",
+            "when": "스테이징 부하 테스트에서 P95 지연, OOM, 콜드스타트가 확인될 때",
+            "how": (
+                "`tests/load_test/` (Locust) 실행 후 `service.tf`의 `cpu` · `memory` · `concurrency` · `min_instance_count` 조정"
+                if is_cr
+                else "`tests/load_test/` 부하 테스트 후 `service.tf` `deployment_spec`의 `cpu` · `memory` · `min_instances` 조정"
+            ),
+        },
+        {
+            "topic": "인바운드 인증 & 엣지 보안",
+            "when": "사내 전용(IAP/Internal) 또는 외부 공개(GCLB + Cloud Armor WAF) 보안 심의가 필요할 때",
+            "how": (
+                "호출 주체에 맞춰 `ingress`, IAM Invoker(`roles/run.invoker`), IAP, 또는 앞단 GCLB + Cloud Armor WAF 직접 구성"
+                if is_cr
+                else "기본 IAM 인바운드 인증 유지 (외부 앞단 보호가 필요할 때만 `CLIENT_TO_AGENT` Agent Gateway 추가 검토)"
+            ),
+        },
+        {
+            "topic": "Agent Gateway 운영 전환",
+            "when": "중앙 아웃바운드 거버넌스 또는 도구 단위(MCP) 접근 제어를 본격 강제할 때",
+            "how": (
+                "검증된 GA 인프라 보안(Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor) 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 적용"
+                if is_cr
+                else "Cloud Logging에서 `DRY_RUN` 판정 로그 검증 및 필수 API·MCP Allowlist 후 `agent_gateway_enforcement_mode = \"ENFORCED\"` 승격"
+            ),
+        },
+        {
+            "topic": "AI 안전 거버넌스 (Model Armor)",
+            "when": "프롬프트 인젝션·PII 유출 차단 등 조직 공통 AI 안전 정책이 필요할 때",
+            "how": "프로젝트/폴더 단위 `Model Armor Floor Settings` 중앙 적용 또는 필요한 워크로드에만 ADK `ModelArmorPlugin` / `before_tool_callback` 선택 장착",
+        },
+        {
+            "topic": "MCP 서버 · A2A 멀티 에이전트 연동",
+            "when": "외부 MCP 도구 서버 또는 다른 A2A 서브 에이전트를 연결할 때",
+            "how": "Cloud Run MCP(`FUNCTIONAL_TYPE_MCP_SERVER`)·외부 MCP(`gcloud beta agent-registry services create`) 등록 후 ADK `AgentRegistry.get_mcp_toolset()` / `get_remote_a2a_agent()`로 동적 연동 (`references/agent-registry-mcp-a2a.md`)",
+        },
+        {
+            "topic": "상용 SLA (PT) & 자체 DB 옵션",
+            "when": "429 없는 고정 처리량 SLA 또는 규제상 자체 VPC DB(Cloud SQL / Redis)가 필수일 때",
+            "how": "핵심 워크로드는 Provisioned Throughput(GSU + Shared spillover) · Priority PayGo 검토 / 세션은 기본 Managed Sessions 유지(규제 시 Self-Hosted DB 전환)",
+        },
+    ]
+
+
 def generate_readiness_report(
     project_dir: str | Path,
     target_override: str = "auto",
@@ -214,12 +263,29 @@ def generate_readiness_report(
             f"| `{item.id}` | `{item.code_alias}` | {item.domain_name} | **{item.title}** | `{item.severity}` | {badge} | {item.evidence} |"
         )
 
+    decision_items = _build_user_decision_items(report)
     lines.extend(
         [
             "",
             "---",
             "",
-            "## 3. Verification Commands (`gcloud` / `terraform` / `grep`)",
+            "## 3. 🧭 사용자 선택 후 직접 설정 항목 (Post-Setup Decision Guide)",
+            "",
+            "> 기본 프로덕션 베이스라인은 스킬이 자동으로 점검·구성했습니다. 아래 항목은 워크로드 특성과 조직 보안 정책에 따라 **필요한 항목만 선택해 직접 설정**하세요.",
+            "",
+            "| 선택 | 영역 | 언제 선택하나요? (적용 기준) | 직접 설정 가이드 |",
+            "| :---: | :--- | :--- | :--- |",
+        ]
+    )
+    for row in decision_items:
+        lines.append(f"| ☐ | **{row['topic']}** | {row['when']} | {row['how']} |")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## 4. Verification Commands (`gcloud` / `terraform` / `grep`)",
             "",
         ]
     )
@@ -2238,6 +2304,19 @@ def generate_html_report(
             """
         )
 
+    decision_rows = []
+    for row in _build_user_decision_items(report):
+        decision_rows.append(
+            f"""
+            <tr>
+              <td style="text-align:center;font-size:16px;color:#1967D2;">☐</td>
+              <td style="font-weight:700;color:#0F172A;white-space:nowrap;">{html_lib.escape(row["topic"])}</td>
+              <td style="font-size:12.5px;color:#334155;">{html_lib.escape(row["when"])}</td>
+              <td style="font-size:12.5px;color:#334155;">{html_lib.escape(row["how"])}</td>
+            </tr>
+            """
+        )
+
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -2342,6 +2421,26 @@ def generate_html_report(
         </thead>
         <tbody>
           {"".join(item_rows)}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>3. 🧭 사용자 선택 후 직접 설정 항목 (Post-Setup Decision Guide)</h2>
+    <p style="margin:0 0 12px;font-size:13px;color:#475569;">
+      기본 프로덕션 베이스라인은 스킬이 자동으로 점검·구성했습니다. 아래 세부 항목은 워크로드와 조직 보안 정책에 따라 <strong>필요한 항목만 선택해 직접 설정</strong>하세요.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:56px;text-align:center;">선택</th>
+            <th style="width:210px;">영역</th>
+            <th style="width:320px;">언제 선택하나요? (적용 기준)</th>
+            <th>직접 설정 가이드</th>
+          </tr>
+        </thead>
+        <tbody>
+          {"".join(decision_rows)}
         </tbody>
       </table>
     </div>

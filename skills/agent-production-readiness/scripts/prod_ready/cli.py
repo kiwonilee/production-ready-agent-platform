@@ -80,7 +80,7 @@ def _print_report(report: ProjectScanReport) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="prod-ready",
-        description="7-Domain, 17-Item Production-Readiness Scanner, Patcher & Workbench (v2) for Google Cloud AI Agents",
+        description="7-Domain, 14-Item Production-Readiness Scanner, Patcher & Workbench (v2) for Google Cloud AI Agents",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -95,14 +95,14 @@ def main(argv: list[str] | None = None) -> int:
     p_diff = sub.add_parser("diff", help="Preview unified diffs for production hardening")
     p_diff.add_argument("project_dir", nargs="?", default=".", help="Path to local agent project")
     p_diff.add_argument("--target", choices=["auto", "cloud_run", "agent_runtime"], default="auto")
-    p_diff.add_argument("--items", default="ALL", help="Comma-separated item IDs (e.g. C1.2,C3.2 or ALL)")
+    p_diff.add_argument("--items", default="ALL", help="Comma-separated item IDs (e.g. C1.2,C4.2 or ALL)")
     p_diff.add_argument("--params", default=None, help="JSON object (or @file.json) of CustomParams overrides")
 
     # apply
     p_apply = sub.add_parser("apply", help="Apply production hardening patches in-place")
     p_apply.add_argument("project_dir", nargs="?", default=".", help="Path to local agent project")
     p_apply.add_argument("--target", choices=["auto", "cloud_run", "agent_runtime"], default="auto")
-    p_apply.add_argument("--items", default="ALL", help="Comma-separated item IDs (e.g. C1.2,C3.2 or ALL)")
+    p_apply.add_argument("--items", default="ALL", help="Comma-separated item IDs (e.g. C1.2,C4.2 or ALL)")
     p_apply.add_argument("--params", default=None, help="JSON object (or @file.json) of CustomParams overrides")
 
     # report
@@ -257,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"    └─ {s['outcome_title']}")
 
         print("\n" + "━" * 86)
-        print("✨ [STAGE 3 / 4] 7대 영역 · 17개 핵심 프로덕션 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
+        print("✨ [STAGE 3 / 4] 7대 영역 · 14개 핵심 프로덕션 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
         print("━" * 86)
         patch_res = apply_patches(proj, target_override=args.target, selected_items=["ALL"])
         for p in patch_res["patches"]:

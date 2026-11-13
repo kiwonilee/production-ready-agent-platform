@@ -1,4 +1,4 @@
-"""In-Place Patcher, Customizer, Report Generator & Zip Exporter (v2 — 17-Item, google-agents-cli v1.5.0 Compatible).
+"""In-Place Patcher, Customizer, Report Generator & Zip Exporter (v2 — 14-Item, google-agents-cli v1.5.0 Compatible).
 
 Key v2 Improvements:
 - Never upsizes Cloud Run / Agent Runtime CPU, Memory, Concurrency, or min_instances automatically.
@@ -79,10 +79,9 @@ def preview_patches(
     _prepare_apis_and_iam_and_storage_tf(root, project_name, target, item_ids, params, record)
     _prepare_service_tf(root, project_name, target, item_ids, params, record)
 
-    # 2. Drop-in Production Terraform Modules (production_ready.tf, alerts.tf, budget.tf)
+    # 2. Drop-in Production Terraform Modules (production_ready.tf for Agent Runtime PSC-I, alerts.tf)
     _prepare_production_ready_tf(root, project_name, target, item_ids, params, record)
     _prepare_alerts_tf(root, project_name, target, item_ids, params, record)
-    _prepare_budget_tf(root, project_name, item_ids, params, record)
 
     # 3. Application Code & Plugins (services.py, model_armor_plugin.py, cost_guard_plugin.py, agent.py, fast_api_app.py)
     _prepare_session_and_memory_services_py(root, project_name, target, item_ids, record)
@@ -92,7 +91,7 @@ def preview_patches(
     # 4. Dockerfile Non-Root Hardening
     _prepare_dockerfile(root, item_ids, record)
 
-    # 5. CI/CD Eval Gate & Cloud Run Canary Script
+    # 5. CI/CD Eval Gate
     _prepare_cicd_and_canary(root, project_name, target, item_ids, params, record)
 
     patches: list[FilePatch] = []
@@ -197,7 +196,7 @@ def generate_readiness_report(
             "",
             "---",
             "",
-            "## 2. 17-Item Detailed Compliance Matrix (`C1.1` – `C7.2`)",
+            "## 2. 14-Item Detailed Compliance Matrix (`C1.1` – `C7.1`)",
             "",
             "| ID | Alias | Domain | Title | Severity | Status | Evidence & Verification |",
             "| :--- | :--- | :--- | :--- | :---: | :---: | :--- |",
@@ -327,6 +326,12 @@ variable "vpc_network_name" {{
   description = "Target VPC network name for private egress (supports Shared VPC / custom VPC)"
   default     = "{params.vpc_network_name}"
 }}
+
+variable "vpc_subnet_name" {{
+  type        = string
+  description = "Target VPC subnet name for Cloud Run Direct VPC Egress"
+  default     = "{params.vpc_subnet_name}"
+}}
 '''
             applied.append("C3.1")
         record(rel, content, applied or ["C4.1"])
@@ -362,6 +367,12 @@ variable "vpc_network_name" {{
   type        = string
   description = "Target VPC network name for private egress (supports Shared VPC / custom VPC)"
   default     = "{params.vpc_network_name}"
+}}
+
+variable "vpc_subnet_name" {{
+  type        = string
+  description = "Target VPC subnet name for Cloud Run Direct VPC Egress"
+  default     = "{params.vpc_subnet_name}"
 }}
 '''
 
@@ -467,57 +478,25 @@ resource "google_project_iam_member" "app_sa_roles" {
 
     storage_rel = "deployment/terraform/storage.tf"
     storage_path = root / storage_rel
-    if storage_path.exists():
-        s_txt = storage_path.read_text(encoding="utf-8")
-        if "C2.3" in item_ids and ("versioning" not in s_txt or "soft_delete_policy" not in s_txt):
-            if "uniform_bucket_level_access = true" in s_txt and "versioning" not in s_txt:
-                s_txt = s_txt.replace(
-                    "uniform_bucket_level_access = true",
-                    """uniform_bucket_level_access = true
-
-  # [C2.3] Object Versioning & 7-Day Soft Delete for Durable Agent Artifacts
-  versioning {
-    enabled = true
-  }
-
-  soft_delete_policy {
-    retention_duration_seconds = 604800
-  }""",
-                )
-            record(storage_rel, s_txt, ["C2.3"])
-    else:
-        durability_block = (
-            """
-  # [C2.3] Object Versioning & 7-Day Soft Delete for Durable Agent Artifacts
-  versioning {
-    enabled = true
-  }
-
-  soft_delete_policy {
-    retention_duration_seconds = 604800
-  }
-"""
-            if "C2.3" in item_ids
-            else ""
-        )
+    if not storage_path.exists():
         record(
             storage_rel,
-            f'''provider "google" {{
+            '''provider "google" {
   project               = var.project_id
   region                = var.region
   user_project_override = true
-}}
+}
 
-resource "google_storage_bucket" "logs_data_bucket" {{
-  name                        = "${{var.project_id}}-${{var.project_name}}-logs"
+resource "google_storage_bucket" "logs_data_bucket" {
+  name                        = "${var.project_id}-${var.project_name}-logs"
   location                    = var.region
   project                     = var.project_id
   uniform_bucket_level_access = true
-{durability_block}
+
   depends_on = [resource.google_project_service.services]
-}}
+}
 ''',
-            ["C1.1", "C2.3"],
+            ["C1.1"],
         )
 
 
@@ -607,7 +586,7 @@ def _prepare_service_tf(
                 if txt != before:
                     applied.append("C6.2")
 
-            if "C7.2" in item_ids and "ignore_changes" not in txt:
+            if "C1.1" in item_ids and "ignore_changes" not in txt:
                 lifecycle_block = """
   lifecycle {
     ignore_changes = [
@@ -621,7 +600,7 @@ def _prepare_service_tf(
                     "  depends_on = [google_project_service.services]",
                     lifecycle_block + "\n  depends_on = [google_project_service.services]",
                 )
-                applied.append("C7.2")
+                applied.append("C1.1")
 
             record(rel, txt, applied or ["C1.1"])
         else:
@@ -703,7 +682,7 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
   depends_on = [google_project_service.services]
 }}
 ''',
-                ["C1.1", "C2.2", "C3.1", "C4.2", "C5.1", "C5.2", "C6.2", "C7.2"],
+                ["C1.1", "C2.2", "C3.1", "C4.2", "C5.1", "C5.2", "C6.2"],
             )
         return
 
@@ -775,14 +754,14 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
             if txt != before:
                 applied.append("C2.1")
 
-        # [C3.1] Direct VPC Egress
+        # [C3.1] Direct VPC Egress (binds existing VPC/subnet variables; no hardcoded CIDR subnet creation)
         if "C3.1" in item_ids and "vpc_access" not in txt:
             vpc_block = f"""    # [C3.1] Direct VPC Egress for Private Enterprise Tools & Internal APIs
     vpc_access {{
       egress = "{params.egress_mode}"
       network_interfaces {{
-        network    = data.google_compute_network.agent_vpc.name
-        subnetwork = google_compute_subnetwork.agent_direct_vpc_subnet.name
+        network    = var.vpc_network_name
+        subnetwork = var.vpc_subnet_name
       }}
     }}
 
@@ -796,27 +775,9 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
                 )
             applied.append("C3.1")
 
-        # [C3.2] Zero-Trust Ingress (External LB+WAF vs Internal IAP/VPC)
-        if "C3.2" in item_ids:
-            before = txt
-            if params.ingress_mode == "internal_iap":
-                replacement = (
-                    'ingress             = "INGRESS_TRAFFIC_INTERNAL_ONLY" '
-                    "# [C3.2] Internal-only ingress (or use `agents-cli deploy --iap` for employee SSO)"
-                )
-            else:
-                replacement = (
-                    'ingress              = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"\n'
-                    "  default_uri_disabled = true"
-                )
-            txt = re.sub(r'ingress\s*=\s*"INGRESS_TRAFFIC_ALL"', replacement, txt)
-            if txt != before:
-                applied.append("C3.2")
-
-        # [C4.1] Deletion Protection & Secret Pinning
+        # [C4.1] Secret Manager Version Pinning (never force deletion_protection=true)
         if "C4.1" in item_ids:
             before = txt
-            txt = txt.replace("deletion_protection = false", "deletion_protection = true")
             if 'version = "latest"' in txt:
                 if "google_secret_manager_secret_version.db_password" in txt:
                     txt = txt.replace(
@@ -889,21 +850,20 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
                     "GOOGLE_CLOUD_LOCATION",
                     f'"{params.model_location}"',
                 )
+            elif params.model_location:
+                txt = re.sub(
+                    r'(name\s*=\s*"GOOGLE_CLOUD_LOCATION"\s*\n\s*value\s*=\s*)"[^"]*"',
+                    rf'\1"{params.model_location}"',
+                    txt,
+                )
             if txt != before:
                 applied.append("C6.2")
 
         record(rel, txt, applied or ["C1.1"])
     else:
-        # Mode A Prototype -> Clean Cloud Run service.tf (strictly tailored to selected item_ids; NO forced Cloud SQL/Redis/sizing!)
-        if "C3.2" in item_ids:
-            if params.ingress_mode == "internal_iap":
-                ingress_lines = '  ingress              = "INGRESS_TRAFFIC_INTERNAL_ONLY"'
-            else:
-                ingress_lines = '  ingress              = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"\n  default_uri_disabled = true'
-        else:
-            ingress_lines = '  ingress              = "INGRESS_TRAFFIC_ALL"'
-
-        del_prot = "true" if "C4.1" in item_ids else "false"
+        # Mode A Prototype -> Clean Cloud Run service.tf (strictly tailored to selected item_ids; NO forced GCLB/WAF/deletion_protection/sizing!)
+        ingress_lines = '  ingress              = "INGRESS_TRAFFIC_ALL"'
+        del_prot = "false"
         boost_line = "\n      startup_cpu_boost = true" if "C1.2" in item_ids else ""
         probes_block = (
             """
@@ -967,8 +927,8 @@ resource "google_vertex_ai_reasoning_engine" "app" {{
     vpc_access {{
       egress = "{params.egress_mode}"
       network_interfaces {{
-        network    = data.google_compute_network.agent_vpc.name
-        subnetwork = google_compute_subnetwork.agent_direct_vpc_subnet.name
+        network    = var.vpc_network_name
+        subnetwork = var.vpc_subnet_name
       }}
     }}
 """
@@ -1026,12 +986,12 @@ resource "google_cloud_run_v2_service" "app" {{
   depends_on = [resource.google_project_service.services]
 }}
 ''',
-            ["C1.1", "C1.2", "C2.1", "C3.1", "C3.2", "C4.1", "C4.2", "C4.3", "C5.1", "C5.2", "C6.2", "C7.2"],
+            ["C1.1", "C1.2", "C2.1", "C3.1", "C4.1", "C4.2", "C4.3", "C5.1", "C5.2", "C6.2"],
         )
 
 
 # ---------------------------------------------------------------------------
-# 3. Drop-In Production Terraform Modules (production_ready.tf, alerts.tf, budget.tf)
+# 3. Drop-In Production Terraform Modules (production_ready.tf for Agent Runtime PSC-I, alerts.tf)
 # ---------------------------------------------------------------------------
 
 
@@ -1045,14 +1005,11 @@ def _prepare_production_ready_tf(
 ) -> None:
     rel = "deployment/terraform/production_ready.tf"
 
-    # Only generate when private networking (C3.1) or Cloud Run external WAF (C3.2) is requested
-    need_c31 = "C3.1" in item_ids
-    need_c32_waf = target == "cloud_run" and "C3.2" in item_ids and params.ingress_mode == "external_waf"
-    if not need_c31 and not need_c32_waf:
+    # Only needed when Agent Runtime private networking (C3.1 PSC Interface) is selected
+    if "C3.1" not in item_ids or target != "agent_runtime":
         return
 
-    if target == "agent_runtime":
-        content = f'''# deployment/terraform/production_ready.tf
+    content = f'''# deployment/terraform/production_ready.tf
 # Generated by Production-Readiness Workbench v2 — Agent Runtime (Private Egress via PSC Interface)
 
 resource "google_project_service" "compute_api" {{
@@ -1088,128 +1045,7 @@ resource "google_compute_network_attachment" "agent_psc_interface" {{
   depends_on            = [google_compute_subnetwork.agent_psc_subnet]
 }}
 '''
-        record(rel, content, ["C3.1"])
-        return
-
-    # Cloud Run Target
-    sections = [
-        '''# deployment/terraform/production_ready.tf
-# Generated by Production-Readiness Workbench v2 — Cloud Run Networking & Edge Protection
-# Note: Domain 2 uses Agent Platform Managed Sessions & Memory Bank by default (no Redis/Cloud SQL required).
-# For air-gapped VPC DB compliance, you may optionally self-host Cloud SQL HA + Memorystore Redis here.
-
-resource "google_project_service" "compute_api" {
-  project            = var.project_id
-  service            = "compute.googleapis.com"
-  disable_on_destroy = false
-}'''
-    ]
-    applied_tags: list[str] = []
-
-    if need_c31:
-        applied_tags.append("C3.1")
-        sections.append(
-            f'''# [C3.1] Dedicated Subnet with Private Google Access for Cloud Run Direct VPC Egress
-data "google_compute_network" "agent_vpc" {{
-  name    = var.vpc_network_name
-  project = var.project_id
-}}
-
-resource "google_compute_subnetwork" "agent_direct_vpc_subnet" {{
-  name                     = "${{var.project_name}}-direct-vpc"
-  project                  = var.project_id
-  region                   = var.region
-  network                  = data.google_compute_network.agent_vpc.id
-  ip_cidr_range            = "{params.subnet_cidr}"
-  private_ip_google_access = true
-  depends_on               = [google_project_service.compute_api]
-}}'''
-        )
-
-    if need_c32_waf:
-        applied_tags.append("C3.2")
-        sections.append(
-            f'''# [C3.2] Cloud Armor Edge WAF Policy + Serverless NEG Backend Service
-# Attach a URL Map, Managed SSL Certificate, and External HTTPS Forwarding Rule to expose publicly.
-resource "google_compute_security_policy" "agent_edge_waf" {{
-  name        = "${{var.project_name}}-waf-policy"
-  project     = var.project_id
-  description = "Cloud Armor WAF and Rate-Limiting policy for Enterprise AI Agent"
-
-  rule {{
-    action   = "throttle"
-    priority = "1000"
-    match {{
-      versioned_expr = "SRC_IPS_V1"
-      config {{
-        src_ip_ranges = ["*"]
-      }}
-    }}
-    rate_limit_options {{
-      conform_action = "allow"
-      exceed_action  = "deny(429)"
-      enforce_on_key = "IP"
-      rate_limit_threshold {{
-        count        = {params.waf_rate_limit_rpm}
-        interval_sec = 60
-      }}
-    }}
-    description = "Rate limit per client IP ({params.waf_rate_limit_rpm} req/min)"
-  }}
-
-  rule {{
-    action   = "deny(403)"
-    priority = "2000"
-    match {{
-      expr {{
-        expression = "evaluatePreconfiguredWaf('sqli-v33-stable') || evaluatePreconfiguredWaf('xss-v33-stable')"
-      }}
-    }}
-    description = "Block SQLi and XSS attacks at the edge"
-  }}
-
-  rule {{
-    action   = "allow"
-    priority = "2147483647"
-    match {{
-      versioned_expr = "SRC_IPS_V1"
-      config {{
-        src_ip_ranges = ["*"]
-      }}
-    }}
-    description = "Default allow rule"
-  }}
-
-  depends_on = [google_project_service.compute_api]
-}}
-
-resource "google_compute_region_network_endpoint_group" "agent_serverless_neg" {{
-  name                  = "${{var.project_name}}-serverless-neg"
-  project               = var.project_id
-  region                = var.region
-  network_endpoint_type = "SERVERLESS"
-
-  cloud_run {{
-    service = google_cloud_run_v2_service.app.name
-  }}
-
-  depends_on = [google_compute_security_policy.agent_edge_waf]
-}}
-
-resource "google_compute_backend_service" "agent_backend" {{
-  name                  = "${{var.project_name}}-backend"
-  project               = var.project_id
-  protocol              = "HTTPS"
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-  security_policy       = google_compute_security_policy.agent_edge_waf.id
-
-  backend {{
-    group = google_compute_region_network_endpoint_group.agent_serverless_neg.id
-  }}
-}}'''
-        )
-
-    record(rel, "\n\n".join(sections) + "\n", applied_tags)
+    record(rel, content, ["C3.1"])
 
 
 def _prepare_alerts_tf(
@@ -1429,80 +1265,6 @@ resource "google_monitoring_alert_policy" "guardrail_spike_alert" {{
 }}
 '''
     record(rel, content, ["C5.3"])
-
-
-def _prepare_budget_tf(
-    root: Path,
-    project_name: str,
-    item_ids: set[str],
-    params: CustomParams,
-    record: Any,
-) -> None:
-    if "C6.1" not in item_ids:
-        return
-    rel = "deployment/terraform/budget.tf"
-    content = f'''# deployment/terraform/budget.tf
-# [C6.1] Optional Cloud Billing Budget & Pub/Sub Alert (50% / 80% / 100%)
-# Enabled automatically when `var.billing_account_id` is provided.
-
-resource "google_project_service" "billing_budgets_api" {{
-  project            = var.project_id
-  service            = "billingbudgets.googleapis.com"
-  disable_on_destroy = false
-}}
-
-variable "billing_account_id" {{
-  type        = string
-  description = "Google Cloud Billing Account ID (optional; enables budget resource when set)"
-  default     = ""
-}}
-
-variable "monthly_budget_amount_usd" {{
-  type        = number
-  description = "Monthly spend cap in USD for the agent project"
-  default     = {params.monthly_budget_usd}
-}}
-
-resource "google_pubsub_topic" "budget_circuit_breaker" {{
-  project    = var.project_id
-  name       = "${{var.project_name}}-budget-alerts"
-  depends_on = [google_project_service.billing_budgets_api]
-}}
-
-resource "google_billing_budget" "agent_monthly_budget" {{
-  count           = var.billing_account_id != "" ? 1 : 0
-  billing_account = var.billing_account_id
-  display_name    = "${{var.project_name}}-monthly-spend-cap"
-
-  budget_filter {{
-    projects = ["projects/${{data.google_project.project.number}}"]
-  }}
-
-  amount {{
-    specified_amount {{
-      currency_code = "USD"
-      units         = tostring(var.monthly_budget_amount_usd)
-    }}
-  }}
-
-  threshold_rules {{
-    threshold_percent = 0.5
-  }}
-  threshold_rules {{
-    threshold_percent = 0.8
-  }}
-  threshold_rules {{
-    threshold_percent = 1.0
-  }}
-
-  all_updates_rule {{
-    pubsub_topic = google_pubsub_topic.budget_circuit_breaker.id
-  }}
-
-  depends_on = [google_project_service.billing_budgets_api]
-}}
-'''
-    record(rel, content, ["C6.1"])
 
 
 # ---------------------------------------------------------------------------
@@ -2319,65 +2081,6 @@ metrics:
                 ["C7.1"],
             )
 
-    # [C7.2] Cloud Run ONLY — Agent Runtime does not support `gcloud run` traffic splitting
-    if "C7.2" in item_ids and target == "cloud_run":
-        canary_rel = "scripts/canary_rollout.sh"
-        canary_content = f'''#!/usr/bin/env bash
-# [C7.2] Cloud Run Zero-Downtime Canary Traffic Rollout & Safe Previous-Revision Rollback
-set -euo pipefail
-
-SERVICE_NAME="${{1:-{project_name}}}"
-REGION="${{2:-us-east1}}"
-PROJECT_ID="${{3:-}}"
-CANDIDATE_REVISION="${{4:-}}"
-ACTION="${{5:-canary-10}}"
-PREVIOUS_REVISION="${{6:-}}"
-
-if [[ -z "$PROJECT_ID" ]]; then
-  echo "Usage: $0 <service_name> <region> <project_id> <candidate_revision> [canary-10|canary-50|promote-100|rollback] [previous_revision]"
-  exit 1
-fi
-
-case "$ACTION" in
-  canary-10)
-    gcloud run services update-traffic "$SERVICE_NAME" \\
-      --region="$REGION" --project="$PROJECT_ID" \\
-      --to-revisions="$CANDIDATE_REVISION=10"
-    ;;
-  canary-50)
-    gcloud run services update-traffic "$SERVICE_NAME" \\
-      --region="$REGION" --project="$PROJECT_ID" \\
-      --to-revisions="$CANDIDATE_REVISION=50"
-    ;;
-  promote-100)
-    gcloud run services update-traffic "$SERVICE_NAME" \\
-      --region="$REGION" --project="$PROJECT_ID" \\
-      --to-revisions="$CANDIDATE_REVISION=100"
-    ;;
-  rollback)
-    if [[ -z "$PREVIOUS_REVISION" ]]; then
-      PREVIOUS_REVISION="$(gcloud run revisions list \\
-        --service="$SERVICE_NAME" --region="$REGION" --project="$PROJECT_ID" \\
-        --sort-by="~metadata.creationTimestamp" --format="value(metadata.name)" \\
-        | grep -v "^${{CANDIDATE_REVISION}}$" | head -n 1)"
-    fi
-    if [[ -z "$PREVIOUS_REVISION" ]]; then
-      echo "ERROR: Could not determine a previous stable revision to roll back to." >&2
-      exit 1
-    fi
-    echo "Rolling back 100% traffic to previous stable revision: $PREVIOUS_REVISION"
-    gcloud run services update-traffic "$SERVICE_NAME" \\
-      --region="$REGION" --project="$PROJECT_ID" \\
-      --to-revisions="$PREVIOUS_REVISION=100"
-    ;;
-  *)
-    echo "Unknown action: $ACTION (expected canary-10|canary-50|promote-100|rollback)" >&2
-    exit 1
-    ;;
-esac
-'''
-        record(canary_rel, canary_content, ["C7.2"])
-
 
 # ---------------------------------------------------------------------------
 # 6. 4-Scenario Live Security & Failure Simulation
@@ -2401,7 +2104,7 @@ def run_security_simulation(
         return (True, all(item_map[iid].status == "GREEN" for iid in active))
 
     s1_app, s1_pass = _eval_group(["C4.2"])
-    s2_app, s2_pass = _eval_group(["C4.2", "C3.2"])
+    s2_app, s2_pass = _eval_group(["C4.2"])
     s3_app, s3_pass = _eval_group(["C6.1"])
     s4_app, s4_pass = _eval_group(["C2.1", "C2.2"])
 
@@ -2435,34 +2138,34 @@ def run_security_simulation(
         },
         {
             "id": "SIM-2",
-            "title": "도구(Tool) 악용 내부 메타데이터 SSRF · IDOR & 퍼블릭 노출 공격",
-            "related_items": ["C4.2", "C3.2"],
-            "payload": 'Tool Call: fetch_url(url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token")',
+            "title": "도구(Tool) 악용 내부 메타데이터 SSRF & 타 사용자 IDOR 공격",
+            "related_items": ["C4.2"],
+            "payload": 'Tool Call: fetch_url(url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token", user_id="admin")',
             "applicable": s2_app,
             "passed": s2_pass,
             "status": "SKIPPED" if not s2_app else ("BLOCKED" if s2_pass else "VULNERABLE"),
             "outcome_title": (
-                "⚪ [N/A 생략] 사전 워크로드 기준에서 C4.2 · C3.2 항목이 모두 제외되어 시뮬레이션 생략"
+                "⚪ [N/A 생략] 사전 워크로드 기준에서 C4.2 항목이 제외되어 시뮬레이션 생략"
                 if not s2_app
                 else (
-                    "🛡️ [즉시 차단] before_tool_callback SSRF/IDOR 차단 및 인바운드 접근 통제 적용"
+                    "🛡️ [즉시 차단] before_tool_callback이 메타데이터 SSRF 및 타 사용자 IDOR 시도를 즉시 차단"
                     if s2_pass
-                    else "🚨 [방어 실패] 도구 SSRF/IDOR 검증 부재 또는 인바운드 보호 미적용으로 IAM 토큰 탈취 위험"
+                    else "🚨 [방어 실패] 도구 SSRF/IDOR 검증 부재로 내부 메타데이터 토큰 및 타인 정보 탈취 위험"
                 )
             ),
             "detail": (
-                "사전 확인된 워크로드 범위에 C4.2, C3.2가 포함되지 않았습니다."
+                "사전 확인된 워크로드 범위에 C4.2가 포함되지 않았습니다."
                 if not s2_app
                 else (
-                    "적용 대상 항목(C4.2/C3.2) 기준 SSRF/호출자 신원 검증과 인바운드 접근 통제를 통과했습니다."
+                    "before_tool_callback에서 사설·메타데이터 IP(169.254.169.254) 접근과 세션 user_id 불일치를 코드 레벨에서 차단했습니다."
                     if s2_pass
-                    else "도구 인자에 대한 SSRF/IDOR 필터링이 없거나 인바운드 보호가 적용되지 않아 내부망 침투 경로로 악용될 수 있습니다."
+                    else "도구 인자에 대한 SSRF/IDOR 필터링이 없어 내부 메타데이터 탈취 및 권한 우회 경로로 악용될 수 있습니다."
                 )
             ),
         },
         {
             "id": "SIM-3",
-            "title": "에이전트 무한 도구 루프(Runaway Loop) & 월간 과금 폭탄 시뮬레이션",
+            "title": "에이전트 무한 도구 루프(Runaway Loop) & 출력 토큰 폭탄 시뮬레이션",
             "related_items": ["C6.1"],
             "payload": "Agent Loop: 15 consecutive LLM <-> Tool calls in a single user turn",
             "applicable": s3_app,
@@ -2472,18 +2175,18 @@ def run_security_simulation(
                 "⚪ [N/A 생략] 사전 워크로드 기준에서 C6.1 항목이 제외되어 시뮬레이션 생략"
                 if not s3_app
                 else (
-                    "🛡️ [서킷브레이커 작동] CostTokenGuardrailPlugin(턴별 리셋 + 출력 토큰 캡) & 월간 예산 알람 연동"
+                    "🛡️ [서킷브레이커 작동] CostTokenGuardrailPlugin(턴별 리셋 + max_output_tokens 캡) 작동"
                     if s3_pass
-                    else "🚨 [과금 폭주 발생] 턴당 호출 상한이 없어 15회 이상 무한 루프가 지속되며 월간 예산 알람(budget.tf)도 없음"
+                    else "🚨 [과금 폭주 발생] 턴당 호출 상한 및 출력 토큰 캡이 없어 15회 이상 무한 루프가 지속됨"
                 )
             ),
             "detail": (
                 "사전 확인된 워크로드 범위에 C6.1이 포함되지 않았습니다."
                 if not s3_app
                 else (
-                    "app/app_utils/cost_guard_plugin.py가 단일 턴 내 초과 LLM 호출을 차단(다음 턴은 정상 리셋)하고 budget.tf가 월간 예산을 감시합니다."
+                    "app/app_utils/cost_guard_plugin.py가 단일 턴(invocation_id) 내 초과 LLM 호출과 출력 토큰을 안전하게 차단합니다."
                     if s3_pass
-                    else "에이전트 추론 루프 제한 플러그인과 Cloud Billing 예산 알람이 없어 비정상 트래픽 시 과금 폭탄이 발생할 수 있습니다."
+                    else "에이전트 추론 루프 제한 플러그인이 없어 비정상 도구 루프 발생 시 토큰 과금 폭탄이 발생할 수 있습니다."
                 )
             ),
         },
@@ -2793,7 +2496,7 @@ def generate_html_report(
       {"".join(sim_rows)}
     </div>
 
-    <h2>3. 17개 상세 프로덕션 체크리스트 심의 매트릭스 (C1.1 ~ C7.2)</h2>
+    <h2>3. 14개 상세 프로덕션 체크리스트 심의 매트릭스 (C1.1 ~ C7.1)</h2>
     <div class="table-wrap">
       <table>
         <thead>

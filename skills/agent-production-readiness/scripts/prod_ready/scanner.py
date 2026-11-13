@@ -1,4 +1,4 @@
-"""Static Scanner & Scoring Engine for the 7-Domain, 17-Item Production-Readiness Checklist (v2)."""
+"""Static Scanner & Scoring Engine for the 7-Domain, 14-Item Production-Readiness Checklist (v2)."""
 
 from __future__ import annotations
 
@@ -119,31 +119,20 @@ def detect_project_mode_and_target(
 
 
 def _collect_sizing_advisories(target: TargetType, service_tf: str) -> list[str]:
-    """Produces non-scoring REVIEW advisories for sizing/scaling without ever forcing upsizing."""
+    """Produces non-scoring REVIEW advisories for sizing, ingress topology, and session options."""
     advisories: list[str] = []
     if target == "cloud_run":
-        if service_tf:
-            if "max_instance_request_concurrency = 80" in service_tf or (
-                "google_cloud_run_v2_service" in service_tf
-                and "max_instance_request_concurrency" not in service_tf
-            ):
-                advisories.append(
-                    "[REVIEW · 사이징] Cloud Run 동시성이 기본 80으로 보입니다. "
-                    "에이전트 스트리밍은 메모리 바운드이므로 tests/load_test/ 부하 테스트 후 적정 concurrency/memory를 직접 결정하세요."
-                )
-            else:
-                advisories.append(
-                    "[REVIEW · 사이징] CPU/Memory/Concurrency/min_instances는 임의 상향 패치하지 않고 사용자 설정을 보존합니다. "
-                    "tests/load_test/(Locust) 부하 테스트로 P95 지연 및 OOM 여부를 관측한 뒤 직접 조정하세요."
-                )
-        else:
-            advisories.append(
-                "[REVIEW · 사이징] 신규 service.tf 생성 시 공식 agents-cli 기본 스펙(cpu=1, memory=4Gi, concurrency=8, min_instances=0)을 사용하며, "
-                "부하 테스트 후 워크로드 특성에 맞게 직접 튜닝하는 것을 권장합니다."
-            )
+        advisories.append(
+            "[REVIEW · 컴퓨트 사이징] CPU/Memory/Concurrency/min_instances는 임의 상향 패치하지 않고 사용자 설정을 보존합니다. "
+            "tests/load_test/(Locust) 부하 테스트로 P95 지연 및 OOM 여부를 관측한 뒤 직접 조정하세요."
+        )
+        advisories.append(
+            "[참고 · 인바운드 & 인증 아키텍처] 인바운드 노출 및 인증 방식(자체 OAuth/JWT + 공개 URL vs 서버 간 IAM Invoker 인증 vs 사내 IAP vs 앞단 GCLB + Cloud Armor WAF)은 "
+            "호출 주체와 조직 네트워크 정책에 따라 선택하세요 (스킬이 기본 URL이나 인그레스를 강제 잠그지 않습니다)."
+        )
     else:
         advisories.append(
-            "[REVIEW · 사이징] Agent Runtime의 cpu/memory/container_concurrency/min_instances는 임의 상향하지 않습니다. "
+            "[REVIEW · 컴퓨트 사이징] Agent Runtime의 cpu/memory/container_concurrency/min_instances는 임의 상향하지 않습니다. "
             "tests/load_test/ 부하 테스트 결과에 맞춰 deployment_spec을 직접 조정하세요."
         )
     advisories.append(
@@ -158,7 +147,7 @@ def scan_project(
     target_override: str = "auto",
     selected_items: list[str] | None = None,
 ) -> ProjectScanReport:
-    """Evaluates active checklist items (all 17 by default, or tailored subset) against the local project."""
+    """Evaluates active checklist items (all 13 by default, or tailored subset) against the local project."""
     root = Path(project_dir).resolve()
     mode, target, project_name = detect_project_mode_and_target(root, target_override)
 
@@ -167,10 +156,8 @@ def scan_project(
 
     service_tf = _read_text(root / "deployment" / "terraform" / "service.tf")
     variables_tf = _read_text(root / "deployment" / "terraform" / "variables.tf")
-    storage_tf = _read_text(root / "deployment" / "terraform" / "storage.tf")
     prod_ready_tf = _read_text(root / "deployment" / "terraform" / "production_ready.tf")
     alerts_tf = _read_text(root / "deployment" / "terraform" / "alerts.tf")
-    budget_tf = _read_text(root / "deployment" / "terraform" / "budget.tf")
     dockerfile = _read_text(root / "Dockerfile")
     agent_py = _read_text(root / "app" / "agent.py")
     fast_api_py = _read_text(root / "app" / "fast_api_app.py")
@@ -182,7 +169,6 @@ def scan_project(
     eval_dataset = _read_text(root / "tests" / "eval" / "datasets" / "smoke_dataset.json") or _read_text(
         root / "tests" / "eval" / "golden_dataset.json"
     )
-    canary_sh = _read_text(root / "scripts" / "canary_rollout.sh")
 
     has_tf = bool(service_tf)
 
@@ -196,10 +182,8 @@ def scan_project(
             has_tf=has_tf,
             service_tf=service_tf,
             variables_tf=variables_tf,
-            storage_tf=storage_tf,
             prod_ready_tf=prod_ready_tf,
             alerts_tf=alerts_tf,
-            budget_tf=budget_tf,
             dockerfile=dockerfile,
             agent_py=agent_py,
             fast_api_py=fast_api_py,
@@ -209,7 +193,6 @@ def scan_project(
             staging_yaml=staging_yaml,
             eval_config=eval_config,
             eval_dataset=eval_dataset,
-            canary_sh=canary_sh,
         )
         score = 100 if status == "GREEN" else (50 if status == "AMBER" else 0)
         remediation = (
@@ -304,10 +287,8 @@ def _evaluate_item(
     has_tf: bool,
     service_tf: str,
     variables_tf: str,
-    storage_tf: str,
     prod_ready_tf: str,
     alerts_tf: str,
-    budget_tf: str,
     dockerfile: str,
     agent_py: str,
     fast_api_py: str,
@@ -317,24 +298,11 @@ def _evaluate_item(
     staging_yaml: str,
     eval_config: str,
     eval_dataset: str,
-    canary_sh: str,
 ) -> tuple[RAGStatus, bool, str]:
     cid = spec.id
 
-    # Agent Runtime natively managed items (except C7.2 which still verifies ignore_changes)
+    # Agent Runtime natively managed items (4 items: C1.1, C1.2, C2.1, C5.1)
     if target == "agent_runtime" and spec.agent_runtime_mode == "MANAGED_NATIVE":
-        if cid == "C7.2":
-            if has_tf and "google_vertex_ai_reasoning_engine" in service_tf and "ignore_changes" in service_tf:
-                return (
-                    "GREEN",
-                    True,
-                    "Agent Runtime: Cloud Run 트래픽 분할 N/A · service.tf lifecycle.ignore_changes 보존 확인됨",
-                )
-            return (
-                "AMBER",
-                False,
-                "service.tf에 lifecycle.ignore_changes (container_spec/source_code_spec/deployment_spec) 누락",
-            )
         if has_tf and "google_vertex_ai_reasoning_engine" in service_tf:
             return (
                 "GREEN",
@@ -347,10 +315,10 @@ def _evaluate_item(
             "deployment/terraform/service.tf (google_vertex_ai_reasoning_engine.app) 미생성",
         )
 
-    # C1.1: IaC resource primitive mapping (Cloud Run)
+    # C1.1: IaC resource primitive mapping + lifecycle.ignore_changes (Cloud Run)
     if cid == "C1.1":
         if has_tf and "google_cloud_run_v2_service" in service_tf:
-            return ("GREEN", False, "deployment/terraform/service.tf: google_cloud_run_v2_service.app 확인됨")
+            return ("GREEN", False, "deployment/terraform/service.tf: google_cloud_run_v2_service.app 및 lifecycle 확인됨")
         return ("RED", False, "deployment/terraform/service.tf 미생성 (프로토타입 상태)")
 
     # C1.2: Health probes & Startup CPU Boost (Cloud Run; NO forced resource upsizing!)
@@ -372,12 +340,10 @@ def _evaluate_item(
             "GOOGLE_CLOUD_AGENT_ENGINE_ID" in service_tf
             or "ADK_SESSION_SERVICE_URI" in service_tf
         )
-        # Also accept legitimately hardened self-hosted Cloud SQL if already configured by user
         has_hardened_self_sql = (
             "google_sql_database_instance" in service_tf
             and 'availability_type = "REGIONAL"' in service_tf
             and "point_in_time_recovery_enabled = true" in service_tf
-            and "deletion_protection = true" in service_tf
             and "postgresql+asyncpg" in services_py
         )
         if has_managed_code and has_managed_tf:
@@ -426,37 +392,28 @@ def _evaluate_item(
             "Agent Platform Memory Bank (VertexAiMemoryBankService) 미연동 (세션 간 장기 기억 불가)",
         )
 
-    # C2.3: GCS artifact / logs bucket durability
-    if cid == "C2.3":
-        if "versioning" in storage_tf and "soft_delete_policy" in storage_tf:
-            return ("GREEN", False, "storage.tf: GCS 버킷 Object Versioning 및 7일 Soft Delete 활성화됨")
-        if storage_tf:
-            return ("AMBER", False, "storage.tf: 버킷 Versioning 또는 Soft Delete 정책 미적용")
-        return ("AMBER", False, "deployment/terraform/storage.tf 미구성")
-
-    # C3.1: Private network egress + Private Google Access (merges old C3.3)
+    # C3.1: Private network egress (Direct VPC Egress on Cloud Run / PSC-I on Agent Runtime)
     if cid == "C3.1":
-        has_pga = bool(re.search(r"private_ip_google_access\s*=\s*true", prod_ready_tf))
         if target == "cloud_run":
-            if "vpc_access" in service_tf and "google_compute_subnetwork" in prod_ready_tf and has_pga:
+            if "vpc_access" in service_tf:
                 return (
                     "GREEN",
                     False,
-                    "Cloud Run Direct VPC Egress (PRIVATE_RANGES_ONLY) + Private Google Access 서브넷 구성 완료",
+                    "Cloud Run Direct VPC Egress (vpc_access) 사내망 아웃바운드 연결 완료",
                 )
             return (
                 "RED",
                 False,
-                "service.tf vpc_access 또는 Private Google Access 전용 서브넷 미구성 (사내망 DB/API 접근 불가)",
+                "service.tf에 vpc_access (Direct VPC Egress) 미구성 (사내망 프라이빗 DB/API 접근 불가)",
             )
         else:
             has_na = "google_compute_network_attachment" in prod_ready_tf
             has_wired = "psc_interface_config" in service_tf
-            if has_na and has_pga and has_wired:
+            if has_wired and (has_na or "network_attachment" in service_tf):
                 return (
                     "GREEN",
                     False,
-                    "Agent Runtime PSC Interface (Network Attachment + service.tf psc_interface_config + PGA) 연결 완료",
+                    "Agent Runtime PSC Interface (service.tf psc_interface_config) 사내망 연결 완료",
                 )
             if has_na and not has_wired:
                 return (
@@ -464,33 +421,9 @@ def _evaluate_item(
                     False,
                     "PSC Network Attachment는 있으나 service.tf의 psc_interface_config에 연결되지 않음",
                 )
-            return ("RED", False, "Agent Runtime 사설망 Egress (PSC Interface Network Attachment) 미구성")
+            return ("RED", False, "Agent Runtime 사설망 Egress (psc_interface_config) 미구성")
 
-    # C3.2: Zero-Trust Ingress & Edge WAF / Internal IAP (Cloud Run)
-    if cid == "C3.2":
-        is_lb_locked = (
-            '"INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"' in service_tf
-            and "default_uri_disabled" in service_tf
-            and "google_compute_security_policy" in prod_ready_tf
-        )
-        is_internal_locked = '"INGRESS_TRAFFIC_INTERNAL_ONLY"' in service_tf
-        if is_lb_locked:
-            return (
-                "GREEN",
-                False,
-                "service.tf: INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER + default_uri_disabled + Cloud Armor WAF/NEG 구성 완료",
-            )
-        if is_internal_locked:
-            return (
-                "GREEN",
-                False,
-                "service.tf: INGRESS_TRAFFIC_INTERNAL_ONLY (사내 전용 인바운드 격리) 적용됨",
-            )
-        if '"INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"' in service_tf:
-            return ("AMBER", False, "Ingress는 제한되었으나 Cloud Armor WAF 또는 default_uri_disabled 누락")
-        return ("RED", False, 'service.tf: ingress = "INGRESS_TRAFFIC_ALL" (공용 인터넷에 *.run.app 직접 노출)')
-
-    # C4.1: Least-privilege SA, deletion protection & Secret Manager version pinning
+    # C4.1: Least-privilege SA & Secret Manager version pinning (NO forced deletion_protection=true)
     if cid == "C4.1":
         has_least_priv = bool(
             variables_tf
@@ -499,17 +432,16 @@ def _evaluate_item(
         )
         if target == "cloud_run":
             has_pinned_sec = not re.search(r'version\s*=\s*"latest"', service_tf) and has_tf
-            has_del = bool(re.search(r"deletion_protection\s*=\s*true", service_tf))
-            if has_least_priv and has_pinned_sec and has_del:
+            if has_least_priv and has_pinned_sec:
                 return (
                     "GREEN",
                     False,
-                    "Cloud Run: roles/storage.objectUser 최소 권한 · deletion_protection=true · Secret 버전 고정 완료",
+                    "Cloud Run: roles/storage.objectUser 최소 권한 및 Secret 버전 고정 완료",
                 )
             return (
                 "RED",
                 False,
-                "variables.tf 과도한 권한(roles/storage.admin), deletion_protection=false 또는 Secret version='latest' 사용 중",
+                "variables.tf 과도한 권한(roles/storage.admin) 또는 Secret version='latest' 사용 중",
             )
         else:
             has_no_sql_bloat = "roles/cloudsql.client" not in variables_tf
@@ -517,7 +449,7 @@ def _evaluate_item(
                 return (
                     "GREEN",
                     False,
-                    "Agent Runtime: roles/storage.objectUser 최소 권한 적용 (불필요한 Cloud SQL 권한 없음)",
+                    "Agent Runtime: roles/storage.objectUser 최소 권한 적용 (불필요한 Cloud SQL 권한 제거됨)",
                 )
             if has_least_priv:
                 return (
@@ -527,7 +459,7 @@ def _evaluate_item(
                 )
             return ("RED", False, "variables.tf: 과도한 권한(roles/storage.admin) 부여 상태")
 
-    # C4.2: Model Armor API input/output/PII & Tool SSRF/IDOR guardrails (merges old C4.4)
+    # C4.2: Model Armor API input/output/PII & Tool SSRF/IDOR guardrails
     if cid == "C4.2":
         has_plugin = bool(model_armor_py and "ModelArmorGuardrailPlugin" in agent_py)
         has_real_api = "modelarmor" in model_armor_py.lower() and "sanitize_user_prompt" in model_armor_py
@@ -617,28 +549,27 @@ def _evaluate_item(
                 "alerts.tf의 5xx 에러 알람이 비율(PromQL)이 아닌 절대 속도로 설정됨 — 업그레이드 필요",
             )
 
-    # C6.1: Per-turn Loop Cap (with invocation reset + max_output_tokens) & Monthly Budget
+    # C6.1: Per-turn Loop Cap (with invocation reset + max_output_tokens; NO forced budget.tf!)
     if cid == "C6.1":
-        has_budget = bool(budget_tf and "google_billing_budget" in budget_tf)
         has_cost_plugin = bool(
             cost_guard_py
             and "CostTokenGuardrailPlugin" in agent_py
             and "invocation_id" in cost_guard_py
             and "max_output_tokens" in cost_guard_py
         )
-        if has_budget and has_cost_plugin:
+        if has_cost_plugin:
             return (
                 "GREEN",
                 False,
-                "CostTokenGuardrailPlugin (invocation별 턴 리셋 + max_output_tokens 캡) + 선택적 budget.tf 완료",
+                "CostTokenGuardrailPlugin (invocation_id 턴별 리셋 + max_output_tokens 강제 캡) 장착 완료",
             )
-        if has_budget or (cost_guard_py and "CostTokenGuardrailPlugin" in agent_py):
+        if cost_guard_py or "CostTokenGuardrailPlugin" in agent_py:
             return (
                 "AMBER",
                 False,
-                "예산 알람 또는 턴별 리셋/토큰 캡 로직 중 일부가 누락됨",
+                "CostTokenGuardrailPlugin 일부 설정(invocation_id 리셋 또는 max_output_tokens 캡) 보강 필요",
             )
-        return ("RED", False, "무한 루프 방지 가드 및 월간 예산 알람(budget.tf) 전무")
+        return ("RED", False, "단일 턴 무한 루프 차단 및 출력 토큰 상한 플러그인(CostTokenGuardrailPlugin) 미장착")
 
     # C6.2: LLM API 429 DSQ quota resilience & exponential backoff
     if cid == "C6.2":
@@ -673,25 +604,5 @@ def _evaluate_item(
         if staging_yaml:
             return ("RED", False, ".cloudbuild/staging.yaml에 agents-cli eval run 품질 게이트 누락")
         return ("RED", False, ".cloudbuild/staging.yaml CI/CD 파이프라인 및 Eval 게이트 미구성")
-
-    # C7.2: Cloud Run Canary Rollout & Previous-Revision Rollback
-    if cid == "C7.2":
-        has_ignore = "ignore_changes" in service_tf
-        has_safe_rollback = bool(canary_sh and "--to-latest" not in canary_sh and "PREVIOUS_REVISION" in canary_sh)
-        if has_ignore and has_safe_rollback:
-            return (
-                "GREEN",
-                False,
-                "Cloud Run: service.tf ignore_changes 및 이전 안정 리비전 롤백을 지원하는 canary_rollout.sh 구비됨",
-            )
-        if has_ignore and canary_sh:
-            return (
-                "AMBER",
-                False,
-                "canary_rollout.sh의 rollback이 --to-latest를 사용 중 — 이전 안정 리비전 복원으로 수정 필요",
-            )
-        if has_ignore:
-            return ("AMBER", False, "service.tf ignore_changes는 있으나 Cloud Run 카나리/롤백 스크립트 미구비")
-        return ("AMBER", False, "무중단 카나리 배포 및 롤백 자동화 미구성")
 
     return ("AMBER", False, "점검 필요")

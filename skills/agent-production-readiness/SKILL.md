@@ -1,7 +1,7 @@
 ---
 name: agent-production-readiness
 description: >-
-  Audits, scores, and hardens local Google Cloud AI Agent projects (ADK prototypes or
+  Audits and hardens local Google Cloud AI Agent projects (ADK prototypes or
   google-agents-cli projects) across a 7-Domain, 15-Item "True No-Regret" + GEAP Governance
   Production-Readiness Checklist (C1.1–C7.1, v2.1) for Cloud Run and Agent Runtime.
   Applies Agent Identity (SPIFFE ID) & Agent Registry auto-registration (`C4.2`) to BOTH targets,
@@ -10,7 +10,7 @@ description: >-
   Preserves user compute sizing, Fail-Fast retry defaults (never forces attempts=5), Thinking-model
   token headroom (max_output_tokens=0 opt-in), and ingress topology (never locks out public
   URLs or injects unsolicited GCLB/WAF/Model Armor/Billing-Budget/deletion_protection mutations;
-  emits non-scoring advisories for Model Armor Floor Settings and Provisioned Throughput SLA instead).
+  emits architecture & governance advisories for Model Armor Floor Settings and Provisioned Throughput SLA instead).
   Wires Agent Platform Managed Sessions & Memory Bank by default,
   generates unified diffs, applies in-place Terraform and ADK plugin patches, and exports
   READINESS_REPORT.md/.html (including a Post-Setup Decision Guide) for security sign-off. Use when asked to check production readiness, harden
@@ -31,7 +31,7 @@ metadata:
 This skill transforms a local AI agent prototype (`adk create` / `Mode A`) or an existing `google-agents-cli` (`agents-cli`) project (`Mode B`) into a **100% production-ready enterprise architecture** across **15 core "True No-Regret" + GEAP Governance checkpoints (`C1.1`–`C7.1`)** with strict runtime separation between **Cloud Run (`cloud_run`)** and **Agent Runtime (`agent_runtime`)**.
 
 ### Key v2.1 Design Principles
-1. **Zero Over-Reaching Mutations**: Never blindly upsizes `cpu`/`memory`/`min_instances`, never forces GCLB/Cloud Armor WAF or locks out `*.run.app` (`default_uri_disabled`), never injects unrequested Model Armor/tool SSRF plugins into individual agents, never creates org-level Billing Account budgets (`budget.tf`), never forces `deletion_protection = true`, and never bloats log buckets with versioning. Sizing, ingress auth, Model Armor Floor Settings, and production SLA (**Provisioned Throughput GSU / Priority PayGo**) are surfaced as non-scoring **Advisories**.
+1. **Zero Over-Reaching Mutations**: Never blindly upsizes `cpu`/`memory`/`min_instances`, never forces GCLB/Cloud Armor WAF or locks out `*.run.app` (`default_uri_disabled`), never injects unrequested Model Armor/tool SSRF plugins into individual agents, never creates org-level Billing Account budgets (`budget.tf`), never forces `deletion_protection = true`, and never bloats log buckets with versioning. Sizing, ingress auth, Model Armor Floor Settings, and production SLA (**Provisioned Throughput GSU / Priority PayGo**) are surfaced as architecture & governance **Advisories**.
 2. **GEAP Governance Split (`C4.2` & `C4.4`)**:
    - **`C4.2` Agent Identity (SPIFFE ID) & Agent Registry**: Active (`TIER_1_AUTO`) on **BOTH** `cloud_run` (`functional_type = "FUNCTIONAL_TYPE_AGENT"`, `identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"`) and `agent_runtime` (`spec.identity_type = "AGENT_IDENTITY"`), enabling `agentregistry.googleapis.com` & `apphub.googleapis.com` and cleanly resolving mutual exclusivity with `service_account`. **Context-Aware MCP/A2A Support**: Automatically detects Cloud Run **MCP Servers** (`FastMCP` / `mcp.server` → injects `FUNCTIONAL_TYPE_MCP_SERVER` while preserving dedicated least-privilege SA) and flags hardcoded remote MCP/A2A URLs (`MCP_SERVER_URL`, `StreamableHTTPConnectionParams`, `RemoteA2aAgent`) as `AMBER` with an `AgentRegistry` Lazy Discovery refactoring guide — while producing **zero noise** on standalone single-agent projects.
    - **`C4.4` Agent Gateway**: Active (`TIER_1_AUTO`) **ONLY on `agent_runtime`** (`google_network_services_agent_gateway` + UAP V2 `AuthzExtension`/`AuthzPolicy` defaulting to `iamEnforcementMode = "DRY_RUN"` to prevent HTTP 498 outages + `agent_gateway_config` + `Dockerfile` `AGENT_GATEWAY_ROOT_CERTIFICATES`). On **`cloud_run`**, injects **only** a non-blocking staged-adoption comment (`TIER_2_TEMPLATE`) into `service.tf` *(Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다)* without generating Gateway infrastructure.
@@ -48,7 +48,7 @@ All operations run **100% locally** inside the user's workspace using the self-c
 Load these files from `references/` or `assets/` (relative to this `SKILL.md` directory) only when deeper detail is needed:
 
 - **`references/intake-questionnaire.md`** — **READ FIRST before running `scan`**: Complete 15-item (`C1.1`–`C7.1`) pre-scan confirmation questions, Skip/N/A rules, Quick Presets, and `--params` JSON keys.
-- **`references/checklist-rubric.md`** — Full 7-Domain (`D1`–`D7`), 15-Item (`C1.1`–`C7.1`) scoring formula, severity definitions, and `Cloud Run` vs. `Agent Runtime` comparison matrix.
+- **`references/checklist-rubric.md`** — Full 7-Domain (`D1`–`D7`), 15-Item (`C1.1`–`C7.1`) compliance gate criteria, severity definitions, and `Cloud Run` vs. `Agent Runtime` comparison matrix.
 - **`references/cloud-run-hardening.md`** — `agents-cli` v1.5.0 Cloud Run resource compatibility (`google_cloud_run_v2_service.app`), Agent Identity & Agent Registry (`C4.2`), staged AGW advisory (`C4.4`), Managed Sessions & Memory Bank wiring, Direct VPC Egress, and SRE alerts.
 - **`references/agent-runtime-hardening.md`** — `google_vertex_ai_reasoning_engine.app` hardening, 4 `MANAGED_NATIVE` platform items vs. 11 active patches, Agent Identity (`C4.2`), Agent Gateway UAP V2 `DRY_RUN` (`C4.4`), PSC Interface (`google_compute_network_attachment`) wiring, and `ReasoningEngine` monitoring metrics.
 - **`references/agent-registry-mcp-a2a.md`** — **Conditional (Load ONLY when MCP Server or hardcoded MCP/A2A URLs are detected or requested)**: Cloud Run MCP Server (`FUNCTIONAL_TYPE_MCP_SERVER`), external MCP `toolspec.json` (`google_agent_registry_service`), A2A `AgentCard`, ADK `AgentRegistry` Lazy Discovery (`get_mcp_toolset()`, `get_remote_a2a_agent()`), and Agent Gateway MCP Tool-Level CEL (`iap.googleapis.com/mcp.toolName`, `mcp.tool.isReadOnly`).
@@ -58,11 +58,17 @@ Load these files from `references/` or `assets/` (relative to this `SKILL.md` di
 
 ---
 
+## Production-Readiness 4-Stage Flow
+
+```text
+1. Scanning (정적 진단) ──▶ 2. Hardening (조치 · 재검사) ──▶ 3. Deploy (배포) ──▶ 4. Runtime Audit (라이브 점검)
+```
+
 ## Step-by-Step Agent Workflow
 
 Let `<SKILL_DIR>` be the directory containing this `SKILL.md` file. Always execute `<SKILL_DIR>/scripts/prod_ready.py` with `python3` (requires **zero external packages** — pure Python stdlib).
 
-### Step 1: Pre-Scan Workload Selection (MANDATORY BEFORE `scan`)
+### Step 1: Pre-Scan Workload Selection (Scanning Sub-Work · MANDATORY BEFORE `scan`)
 
 > **HARD RULES**:
 > 1. Do **NOT** run `prod_ready.py scan` before confirming the user's workload profile — **unless** the user already specified a preset/profile or explicitly asked for `"전체 항목(ALL) / 기본값"`.
@@ -70,7 +76,7 @@ Let `<SKILL_DIR>` be the directory containing this `SKILL.md` file. Always execu
 
 Silently inspect the target runtime (`cloud_run` vs `agent_runtime`) from the prompt/workspace first, then ask using **whichever mode fits your CLI**:
 
-#### Mode A — Interactive Multiple-Choice Tool (`ask_question` / `ask_user`, Preferred in `agy`)
+#### Mode A — Interactive Multiple-Choice Tool (`ask_question` / `ask_user`, Preferred in Antigravity CLI)
 1. First ask **1 single question** with these **4 clean options**:
    - `풀 프로덕션 (사내 DB/VPC 연동 포함) — 전체 15개 핵심 하드닝 (권장)`
    - `표준 프로덕션 (외부/Public API 기반) — 사내 VPC 제외 14개 하드닝`
@@ -117,7 +123,7 @@ Execute `scan` using the user-confirmed `--target` and `--items` scope so N/A it
 python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <target_project_dir> --target <target> --items <confirmed_items>
 ```
 
-- Present the **Weighted Readiness Score (`0`–`100.0`)**, the **Gate Verdict**, `RED` / `AMBER` blockers, **Non-Scoring Advisories** (compute sizing load-test guidance + ingress/auth topology + Managed Session note + **AI Security Governance / Model Armor Floor Settings** + **Production SLA via Provisioned Throughput GSU / Priority PayGo**), and **Skipped (N/A) items** in a Markdown table.
+- Present the **Gate Verdict**, **Item Compliance Summary (`🟢 Passed / Total`, `🟡 Amber`, `🔴 Red` counts)**, `RED` / `AMBER` blockers, **Architecture & Governance Advisories** (compute sizing load-test guidance + ingress/auth topology + Managed Session note + **AI Security Governance / Model Armor Floor Settings** + **Production SLA via Provisioned Throughput GSU / Priority PayGo**), and **Skipped (N/A) items** in a Markdown table.
 - Note clearly how `cloud_run` vs `agent_runtime` differ: on `agent_runtime`, 4 items (`C1.1`, `C1.2`, `C2.1`, `C5.1`) are automatically credited as `🟢 MANAGED_NATIVE`, and `C4.4` deploys Agent Gateway (`DRY_RUN` default); on `cloud_run`, `C4.4` adds only a staged-adoption architecture comment in `service.tf`.
 - **Conditional MCP / A2A Follow-Up**: If `scan` detects a Cloud Run MCP Server (`FUNCTIONAL_TYPE_MCP_SERVER`) or flags hardcoded MCP/A2A URLs in `C4.2` (`AMBER`), load `references/agent-registry-mcp-a2a.md` and present the `AgentRegistry.get_mcp_toolset()` / `get_remote_a2a_agent()` migration diff alongside the Terraform patches. Otherwise skip it completely.
 
@@ -139,7 +145,7 @@ Once confirmed, execute `apply` with the exact same `--items`:
 python3 "<SKILL_DIR>/scripts/prod_ready.py" apply <target_project_dir> --target <target> --items <confirmed_items>
 ```
 
-Then refresh `uv.lock` (if `pyproject.toml` exists), re-run tailored `scan` to confirm `100.0 / 100.0` (`🟢 Production Ready`), and generate the Enterprise Security Review reports (`READINESS_REPORT.md` and `READINESS_REPORT.html`):
+Then refresh `uv.lock` (if `pyproject.toml` exists), re-run tailored `scan` to confirm all active items pass (`🟢 Production Ready`, 0 RED / 0 AMBER), and generate the Enterprise Security Review reports (`READINESS_REPORT.md` and `READINESS_REPORT.html`):
 
 ```bash
 uv lock

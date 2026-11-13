@@ -1,4 +1,4 @@
-"""Static Scanner & Scoring Engine for the 7-Domain, 15-Item Production-Readiness Checklist (v2.1)."""
+"""Static Scanner & Compliance Gate Engine for the 7-Domain, 15-Item Production-Readiness Checklist (v2.1)."""
 
 from __future__ import annotations
 
@@ -25,11 +25,9 @@ class ItemScanResult:
     code_alias: str
     domain_id: str
     domain_name: str
-    domain_weight: int
     title: str
     severity: str
     status: RAGStatus
-    score: int
     managed_by_platform: bool
     evidence: str
     remediation: str
@@ -46,8 +44,7 @@ class ItemScanResult:
 class DomainSummary:
     domain_id: str
     domain_name: str
-    weight: int
-    score: float
+    total_count: int
     green_count: int
     amber_count: int
     red_count: int
@@ -59,8 +56,8 @@ class ProjectScanReport:
     project_name: str
     project_mode: ProjectMode
     deployment_target: TargetType
-    weighted_score: float
     verdict: str
+    total_count: int
     green_count: int
     amber_count: int
     red_count: int
@@ -241,7 +238,7 @@ def _collect_sizing_advisories(
     service_tf: str,
     mcp_a2a: McpA2aProfile | None = None,
 ) -> list[str]:
-    """Produces non-scoring REVIEW advisories for sizing, ingress topology, and session options."""
+    """Produces Architecture & Governance REVIEW advisories for sizing, ingress topology, and session options."""
     advisories: list[str] = []
     if target == "cloud_run":
         advisories.append(
@@ -360,7 +357,6 @@ def scan_project(
             eval_dataset=eval_dataset,
             mcp_a2a=mcp_a2a,
         )
-        score = 100 if status == "GREEN" else (50 if status == "AMBER" else 0)
         remediation = (
             spec.agent_runtime_desc if target == "agent_runtime" else spec.cloud_run_desc
         )
@@ -370,11 +366,9 @@ def scan_project(
                 code_alias=spec.code_alias,
                 domain_id=spec.domain_id,
                 domain_name=spec.domain_name,
-                domain_weight=spec.domain_weight,
                 title=spec.title,
                 severity=spec.severity,
                 status=status,
-                score=score,
                 managed_by_platform=managed,
                 evidence=evidence,
                 remediation=remediation,
@@ -388,42 +382,34 @@ def scan_project(
             )
         )
 
-    # Compute Domain Summaries & Weighted Overall Score
+    # Compute Domain Compliance Summaries & Overall Gate Verdict
     domain_map: dict[str, list[ItemScanResult]] = {}
     for r in results:
         domain_map.setdefault(r.domain_id, []).append(r)
 
     domain_summaries: list[DomainSummary] = []
-    weighted_sum = 0.0
-    total_weight = 0
-
     for d_id, d_items in domain_map.items():
-        d_weight = d_items[0].domain_weight
         d_name = d_items[0].domain_name
-        avg_score = sum(i.score for i in d_items) / len(d_items)
         domain_summaries.append(
             DomainSummary(
                 domain_id=d_id,
                 domain_name=d_name,
-                weight=d_weight,
-                score=round(avg_score, 1),
+                total_count=len(d_items),
                 green_count=sum(1 for i in d_items if i.status == "GREEN"),
                 amber_count=sum(1 for i in d_items if i.status == "AMBER"),
                 red_count=sum(1 for i in d_items if i.status == "RED"),
             )
         )
-        weighted_sum += avg_score * d_weight
-        total_weight += d_weight
 
-    overall_score = round(weighted_sum / total_weight, 1) if total_weight else 0.0
+    total_count = len(results)
     green_count = sum(1 for r in results if r.status == "GREEN")
     amber_count = sum(1 for r in results if r.status == "AMBER")
     red_count = sum(1 for r in results if r.status == "RED")
     managed_count = sum(1 for r in results if r.managed_by_platform)
 
-    if overall_score >= 90.0 and red_count == 0:
+    if total_count > 0 and red_count == 0 and amber_count == 0:
         verdict = "🟢 Production Ready"
-    elif overall_score >= 70.0 and red_count == 0:
+    elif total_count > 0 and red_count == 0:
         verdict = "🟡 Ready with Follow-ups"
     else:
         verdict = "🔴 Not Production Ready"
@@ -433,8 +419,8 @@ def scan_project(
         project_name=project_name,
         project_mode=mode,
         deployment_target=target,
-        weighted_score=overall_score,
         verdict=verdict,
+        total_count=total_count,
         green_count=green_count,
         amber_count=amber_count,
         red_count=red_count,

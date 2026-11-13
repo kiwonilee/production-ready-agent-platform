@@ -1,18 +1,22 @@
 # 7-Domain, 15-Item Production-Readiness Rubric (`checklist-rubric.md`, v2.1)
 
-## 1. Domain Weights & Scoring Formula
+## 1. 7-Domain Compliance Gate & Evaluation Criteria
 
-Each active item scores `100` (`GREEN`), `50` (`AMBER`), or `0` (`RED`). Items skipped (`N/A`) for a given workload profile are excluded from the denominator.
+Each active item is evaluated directly as **`🟢 GREEN` (충족)**, **`🟡 AMBER` (보완 권장)**, or **`🔴 RED` (미충족 / 차단)** without arbitrary numeric weights. Items skipped (`N/A`) for a given workload profile are excluded from evaluation.
 
-| Domain | Name | Weight | Core Items |
-| :---: | :--- | :---: | :--- |
-| **D1** | 런타임 & 프로브 (Runtime & Probes) | `1x` | `C1.1`, `C1.2` |
-| **D2** | 세션 & 장기 기억 (Session & Memory) | `2x` | `C2.1`, `C2.2` |
-| **D3** | 사내망 네트워크 (Private Networking) | `2x` | `C3.1` |
-| **D4** | 보안, 신원 & 거버넌스 (Security, Identity & Governance) | `2x` | `C4.1`, `C4.2`, `C4.3`, `C4.4` |
-| **D5** | 관측성, 프라이버시 & SRE 알람 (Observability & Alerts) | `2x` | `C5.1`, `C5.2`, `C5.3` |
-| **D6** | 비용 통제 & 쿼터 회복력 (FinOps & Resilience) | `1x` | `C6.1`, `C6.2` |
-| **D7** | Day-2 품질 평가 & CI/CD (Eval & CI/CD) | `1x` | `C7.1` |
+- **🟢 Production Ready**: Active items `🔴 RED = 0` and `🟡 AMBER = 0` (all active items `🟢 GREEN`)
+- **🟡 Ready with Follow-ups**: `🔴 RED = 0` and `🟡 AMBER > 0`
+- **🔴 Not Production Ready**: `🔴 RED > 0`
+
+| Domain | Name | Core Items |
+| :---: | :--- | :--- |
+| **D1** | 런타임 & 프로브 (Runtime & Probes) | `C1.1`, `C1.2` |
+| **D2** | 세션 & 장기 기억 (Session & Memory) | `C2.1`, `C2.2` |
+| **D3** | 사내망 네트워크 (Private Networking) | `C3.1` |
+| **D4** | 보안, 신원 & 거버넌스 (Security, Identity & Governance) | `C4.1`, `C4.2`, `C4.3`, `C4.4` |
+| **D5** | 관측성, 프라이버시 & SRE 알람 (Observability & Alerts) | `C5.1`, `C5.2`, `C5.3` |
+| **D6** | 비용 통제 & 쿼터 회복력 (FinOps & Resilience) | `C6.1`, `C6.2` |
+| **D7** | Day-2 품질 평가 & CI/CD (Eval & CI/CD) | `C7.1` |
 
 ---
 
@@ -38,8 +42,8 @@ Each active item scores `100` (`GREEN`), `50` (`AMBER`), or `0` (`RED`). Items s
 
 ---
 
-## 3. Non-Scoring Governance & Architecture Advisories
-The scanner intentionally keeps optional/org-policy decisions out of the 15-item score and surfaces them as **Advisories**:
+## 3. Architecture & Governance Advisories
+The scanner intentionally keeps optional/org-policy decisions out of the 15-item compliance gate and surfaces them as **Advisories**:
 - **Compute Sizing**: Preserve existing CPU/Memory/Concurrency/`min_instances`; size empirically via `tests/load_test/` (Locust).
 - **Inbound Auth & Edge Topology**: Choose public URL + app OAuth/JWT vs IAM Invoker vs IAP vs GCLB + Cloud Armor WAF per security policy.
 - **Model Armor & Cloud Run Staged Governance**: Enforce Model Armor Floor Settings centrally (or optional ADK `ModelArmorPlugin`), and on Cloud Run adopt Agent Identity / Registry / Self-Managed AGW incrementally on top of GA infra security (Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor).

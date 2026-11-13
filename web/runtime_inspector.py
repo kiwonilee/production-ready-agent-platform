@@ -510,10 +510,10 @@ def _evaluate_cloud_run_service(
 
     # 1. [R1.1] Scaling & Cold Start / CPU Allocation (Workload / SLA Trade-off)
     if min_scale >= 1 and cpu_boost and not cpu_throttling:
-        r11_status, r11_score = "GREEN", 100
+        r11_status = "GREEN"
         r11_current = f"minScale={min_scale}, maxScale={max_scale}, startup-cpu-boost=true, cpu-throttling=false (항시 Warm)"
     else:
-        r11_status, r11_score = "REVIEW", None
+        r11_status = "REVIEW"
         r11_current = (
             f"minScale={min_scale}, maxScale={max_scale}, "
             f"startup-cpu-boost={str(cpu_boost).lower()}, cpu-throttling={str(cpu_throttling).lower()}"
@@ -526,7 +526,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "WORKLOAD_TUNING",
         "title": "스케일링 · 콜드스타트 · CPU 할당 정책 (SLA vs 비용 트레이드오프)",
         "status": r11_status,
-        "score": r11_score,
         "current_state": r11_current,
         "recommended_state": "트래픽 패턴·지연 SLA에 따라 결정 (간헐 트래픽: min=0 + cpu-boost / 상시 SLA·비동기 후처리: min>=1 + no-cpu-throttling)",
         "why_it_matters": (
@@ -553,7 +552,7 @@ def _evaluate_cloud_run_service(
 
     # 2. [R1.2] Memory / CPU / Concurrency Sizing (Must be determined by load testing!)
     is_default_sizing = (abs(cpu_cores - 1.0) < 0.01 and mem_mib == 512 and concurrency == 80)
-    r12_status, r12_score = "REVIEW", None
+    r12_status = "REVIEW"
     if is_default_sizing:
         r12_current = f"CPU={cpu_str}, Memory={mem_str}, Concurrency={concurrency}, Timeout={timeout_sec}s (Cloud Run 기본값 그대로 사용 중)"
     else:
@@ -566,7 +565,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "WORKLOAD_TUNING",
         "title": "CPU · 메모리 · 동시성(Concurrency) 사이징 (성능 테스트 기반 산정 필요)",
         "status": r12_status,
-        "score": r12_score,
         "current_state": r12_current,
         "recommended_state": "에이전트별 부하 테스트(실제 메모리 사용량·P95 지연·동시 요청 수) 측정 후 직접 결정 (임의 고정값 권장 불가)",
         "why_it_matters": (
@@ -594,11 +592,11 @@ def _evaluate_cloud_run_service(
 
     # 3. [R1.3] Health Probes & Execution Environment
     if has_http_liveness:
-        r13_status, r13_score = "GREEN", 100
+        r13_status = "GREEN"
         liveness_path = liveness_probe.get("httpGet", {}).get("path", "/")
         r13_current = f"HTTP Liveness Probe 설정됨 ({liveness_path}:{port_num}), 실행 환경: {exec_env}"
     else:
-        r13_status, r13_score = "REVIEW", None
+        r13_status = "REVIEW"
         probe_desc = "HTTP Startup Probe" if has_http_startup else f"TCP Startup Probe (port {port_num})"
         r13_current = f"{probe_desc}만 사용 중 (HTTP Liveness Probe 미설정, 실행 환경: {exec_env})"
 
@@ -609,7 +607,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "WORKLOAD_TUNING",
         "title": "HTTP Liveness 헬스 프로브 & 실행 환경(Gen2) 확인",
         "status": r13_status,
-        "score": r13_score,
         "current_state": r13_current,
         "recommended_state": "경량 HTTP 헬스 엔드포인트(/health 또는 /list-apps)가 있는 경우 HTTP Liveness Probe 추가 검토",
         "why_it_matters": (
@@ -647,16 +644,16 @@ def _evaluate_cloud_run_service(
     has_redis = bool(env_map.get("REDIS_HOST"))
 
     if has_vertex_session:
-        r21_status, r21_score = "GREEN", 100
+        r21_status = "GREEN"
         r21_current = f"Agent Platform Managed Session Service / Memory Bank 연동 감지됨 ({session_uri or agent_engine_ref})"
     elif has_db and has_redis:
-        r21_status, r21_score = "GREEN", 100
+        r21_status = "GREEN"
         r21_current = f"Self-Hosted Cloud SQL ({cloudsql_instances or env_map.get('INSTANCE_CONNECTION_NAME') or session_uri}) + Redis ({env_map.get('REDIS_HOST')}) 연동됨"
     elif has_db:
-        r21_status, r21_score = "GREEN", 100
+        r21_status = "GREEN"
         r21_current = f"Self-Hosted 외부 세션 DB 연동 감지됨 ({cloudsql_instances or env_map.get('INSTANCE_CONNECTION_NAME') or session_uri})"
     else:
-        r21_status, r21_score = "REVIEW", None
+        r21_status = "REVIEW"
         r21_current = (
             "Cloud Run JSON에서 Managed Session(AGENT_ENGINE_SESSION_ID / ADK_SESSION_SERVICE_URI) 미감지 "
             "(※ 단, 코드 내부 연동 또는 Stateless 단일턴 여부는 JSON만으로 판별 불가)"
@@ -669,7 +666,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "ARCH_DECISION",
         "title": "멀티턴 대화 영속성 (기본: Agent Platform Managed Sessions & Memory Bank)",
         "status": r21_status,
-        "score": r21_score,
         "current_state": r21_current,
         "recommended_state": (
             "멀티턴 운영 기본 권장: Agent Platform Managed Session Service & Memory Bank (`AGENT_ENGINE_SESSION_ID` 연동 — Cloud Run OTel 리소스 감지 보존) / "
@@ -699,10 +695,10 @@ def _evaluate_cloud_run_service(
 
     # 5. [R3.1] Inbound Ingress Exposure & Auth Check (Public vs Internal depends on intent!)
     if ingress in ("internal", "internal-and-cloud-load-balancing"):
-        r31_status, r31_score = "GREEN", 100
+        r31_status = "GREEN"
         r31_current = f"ingress = {ingress} (내부 VPC 또는 Cloud Load Balancing 경유 트래픽만 허용)"
     else:
-        r31_status, r31_score = "REVIEW", None
+        r31_status = "REVIEW"
         r31_current = (
             f"ingress = {ingress} (퍼블릭 .run.app 엔드포인트 열림 — "
             "※ 퍼블릭/외부 A2A 에이전트라면 정상 의도이며, IAM 무인증(allUsers) 여부는 별도 get-iam-policy로 확인 필요)"
@@ -715,7 +711,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "ARCH_DECISION",
         "title": "인바운드 노출 범위(Public vs Internal) 및 IAM 인증 정책 확인",
         "status": r31_status,
-        "score": r31_score,
         "current_state": r31_current,
         "recommended_state": "퍼블릭/외부 A2A 서비스: ingress=all + IAM 인증(또는 앱 인증) 검증 / 사내 전용·WAF 경유: internal 또는 internal-and-cloud-load-balancing",
         "why_it_matters": (
@@ -740,10 +735,10 @@ def _evaluate_cloud_run_service(
     # 6. [R3.2] Outbound VPC Egress (Only needed if calling private VPC resources!)
     public_url_envs = [f"{k}={v}" for k, v in env_map.items() if "URL" in k.upper() and v.startswith("https://")]
     if vpc_access:
-        r32_status, r32_score = "GREEN", 100
+        r32_status = "GREEN"
         r32_current = f"Direct VPC / 커넥터 연결됨 ({vpc_egress or 'private-ranges-only'})"
     else:
-        r32_status, r32_score = "REVIEW", None
+        r32_status = "REVIEW"
         hint = f" (감지된 아웃바운드 URL: {', '.join(public_url_envs[:2])})" if public_url_envs else ""
         r32_current = f"Direct VPC Egress 미연결 — 퍼블릭 API/Gemini/퍼블릭 MCP만 호출한다면 불필요{hint}"
 
@@ -754,7 +749,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "ARCH_DECISION",
         "title": "아웃바운드 Direct VPC Egress 필요 여부 확인 (사설 IP 리소스 호출 시에만 필요)",
         "status": r32_status,
-        "score": r32_score,
         "current_state": r32_current,
         "recommended_state": "퍼블릭 API·Gemini·퍼블릭 Cloud Run만 호출: 미연결 유지 권장 / 사설 VPC DB·내부 API 호출: Direct VPC Egress 연결",
         "why_it_matters": (
@@ -785,13 +779,13 @@ def _evaluate_cloud_run_service(
     # 7. [R4.1] Dedicated Least-Privilege Service Account (Objectively verifiable from JSON!)
     is_default_compute_sa = "-compute@developer.gserviceaccount.com" in sa_email or not sa_email
     if has_agent_identity:
-        r41_status, r41_score = "GREEN", 100
+        r41_status = "GREEN"
         r41_current = f"Agent Identity (SPIFFE ID) 활성화됨 ({identity_type}) — 기본 Compute Engine SA 미사용"
     elif not is_default_compute_sa:
-        r41_status, r41_score = "GREEN", 100
+        r41_status = "GREEN"
         r41_current = f"전용 서비스 계정 사용 중 ({sa_email})"
     else:
-        r41_status, r41_score = "RED", 0
+        r41_status = "RED"
         r41_current = f"기본 Compute Engine 서비스 계정 사용 중 ({sa_email or 'default'}) — 과다 권한 위험 (JSON에서 직접 확인됨)"
 
     checks.append({
@@ -801,7 +795,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "RUNTIME_VERIFIED",
         "title": "전용 최소 권한 서비스 계정 (Dedicated IAM Service Account)",
         "status": r41_status,
-        "score": r41_score,
         "current_state": r41_current,
         "recommended_state": "에이전트 전용 서비스 계정 또는 Agent Identity (SPIFFE ID) 사용 + 필요한 최소 IAM Role만 부여",
         "why_it_matters": (
@@ -823,22 +816,22 @@ def _evaluate_cloud_run_service(
 
     # 8. [R4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Agent & MCP Server aware)
     if is_mcp_server:
-        r42_status, r42_score = "GREEN", 100
+        r42_status = "GREEN"
         r42_current = (
             f"Cloud Run MCP Server 감지: functional-type={functional_type} "
             "(Agent Registry 자동 등록 구성됨 · MCP 서버는 전용 서비스 계정 유지 가능)"
         )
     elif has_functional_agent and has_agent_identity:
-        r42_status, r42_score = "GREEN", 100
+        r42_status = "GREEN"
         r42_current = f"functional-type={functional_type}, identity-type={identity_type} (SPIFFE Agent Identity & Agent Registry 자동 등록 구성됨)"
     elif has_functional_agent or has_agent_identity:
-        r42_status, r42_score = "AMBER", 50
+        r42_status = "AMBER"
         r42_current = (
             f"일부만 설정됨 (functional-type={functional_type or '미설정'}, identity-type={identity_type or '미설정'}) — "
             "에이전트 서비스는 두 항목을 함께 설정해야 SPIFFE ID 발급과 Agent Registry 자동 등록이 완성됩니다."
         )
     else:
-        r42_status, r42_score = "AMBER", 50
+        r42_status = "AMBER"
         r42_current = "functional-type=agent(또는 mcp-server) 및 identity-type=agent-identity 미설정 (전통적 서비스 계정 모드 · Agent Registry 자동 등록 안 됨)"
 
     r42_lazy_note = ""
@@ -867,7 +860,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "RUNTIME_VERIFIED",
         "title": "Agent Identity (SPIFFE ID) & Agent Registry 자동 등록",
         "status": r42_status,
-        "score": r42_score,
         "current_state": r42_current,
         "recommended_state": (
             "Cloud Run MCP Server: functional_type=FUNCTIONAL_TYPE_MCP_SERVER (전용 SA 유지 가능)"
@@ -914,10 +906,10 @@ def _evaluate_cloud_run_service(
     # 9. [R4.3] Cloud Run Agent Gateway Staged Adoption Advisory & Model Armor Governance
     has_guardrail_env = env_map.get("MODEL_ARMOR_ENABLED", "").lower() == "true" or "MODEL_ARMOR_TEMPLATE_ID" in env_map
     if has_guardrail_env:
-        r43_status, r43_score = "GREEN", 100
+        r43_status = "GREEN"
         r43_current = "Model Armor 관련 환경변수 감지됨 (MODEL_ARMOR_ENABLED / TEMPLATE_ID)"
     else:
-        r43_status, r43_score = "REVIEW", None
+        r43_status = "REVIEW"
         r43_current = (
             "Cloud Run은 검증된 GA 인프라 보안(Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor) 위에 "
             "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근 권장 (JSON만으로 앞단 프록시·Model Armor 판별 불가)"
@@ -930,7 +922,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "CODE_VERIFY",
         "title": "Agent Gateway (Cloud Run 단계적 도입 가이드) & Model Armor 거버넌스",
         "status": r43_status,
-        "score": r43_score,
         "current_state": r43_current,
         "recommended_state": (
             "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
@@ -942,7 +933,7 @@ def _evaluate_cloud_run_service(
             "Cloud Run `describe` JSON은 앞단 SWP/IAP/Model Armor Floor Settings나 컨테이너 내부 콜백을 노출하지 않으므로, "
             "조직의 AI 보안 거버넌스 성숙도에 맞춰 단계적으로 적용 여부를 확인하세요."
         ),
-        "how_to_fix_title": "Model Armor Floor Settings 확인 및 Play 01 핵심 점검 (15개 항목)",
+        "how_to_fix_title": "Model Armor Floor Settings 확인 및 로컬 핵심 점검 (15개 항목)",
         "gcloud_cmd": (
             f"# [선택 거버넌스] 프로젝트 단위 Model Armor Floor Settings 정책 확인\n"
             f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n"
@@ -954,20 +945,20 @@ def _evaluate_cloud_run_service(
             '# Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.\n'
             '# (Agent Gateway 자동 리소스 생성은 Agent Runtime 타겟에서 우선 제공)'
         ),
-        "console_guide": "이 항목은 점수에 감점되지 않는 거버넌스 가이드(REVIEW) 항목입니다. GA 인프라 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 위에 Self-Managed AGW를 단계적으로 도입하세요.",
+        "console_guide": "이 항목은 배포를 차단하지 않는 아키텍처 거버넌스 참고(REVIEW) 항목입니다. GA 인프라 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 위에 Self-Managed AGW를 단계적으로 도입하세요.",
     })
 
     # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT)
     otel_val = env_map.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "")
     otel_semconv = "OTEL_SEMCONV_STABILITY_OPT_IN" in env_map
     if otel_val == "NO_CONTENT":
-        r51_status, r51_score = "GREEN", 100
+        r51_status = "GREEN"
         r51_current = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 설정됨 (프롬프트 평문 기록 차단)"
     elif otel_val:
-        r51_status, r51_score = "AMBER", 50
+        r51_status = "AMBER"
         r51_current = f"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT={otel_val} (프로덕션 PII 취급 시 NO_CONTENT 변경 권고)"
     else:
-        r51_status, r51_score = "AMBER", 50
+        r51_status = "AMBER"
         r51_current = (
             "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT 미설정 "
             "(OTel GenAI 트레이싱 활성화 시 프롬프트 원문이 기록될 수 있어 NO_CONTENT 명시 권고)"
@@ -980,7 +971,6 @@ def _evaluate_cloud_run_service(
         "verification_scope": "RUNTIME_VERIFIED",
         "title": "OpenTelemetry 트레이스 프롬프트(PII) 평문 기록 방지 (NO_CONTENT)",
         "status": r51_status,
-        "score": r51_score,
         "current_state": r51_current,
         "recommended_state": "프로덕션 OTel 트레이싱 사용 시 OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 권장",
         "why_it_matters": (
@@ -1005,13 +995,13 @@ def _evaluate_cloud_run_service(
     loc_val = env_map.get("GOOGLE_CLOUD_LOCATION", "")
     is_global_loc = loc_val.lower() == "global"
     if is_global_loc:
-        r61_status, r61_score = "GREEN", 100
+        r61_status = "GREEN"
         r61_current = "GOOGLE_CLOUD_LOCATION=global 설정 확인됨 (Global Dynamic Shared Quota 활용)"
     elif loc_val:
-        r61_status, r61_score = "REVIEW", None
+        r61_status = "REVIEW"
         r61_current = f"GOOGLE_CLOUD_LOCATION={loc_val} (단일 리전 고정 — 데이터 레지던시 규제 때문이라면 정상, 쿼터 분산이 우선이면 global 검토)"
     else:
-        r61_status, r61_score = "AMBER", 50
+        r61_status = "AMBER"
         r61_current = "GOOGLE_CLOUD_LOCATION 환경변수 미감지 (코드 기본값 확인 또는 global 엔드포인트 지정 권장)"
 
     checks.append({
@@ -1021,13 +1011,12 @@ def _evaluate_cloud_run_service(
         "verification_scope": "RUNTIME_VERIFIED" if (is_global_loc or not loc_val) else "ARCH_DECISION",
         "title": "Gemini 엔드포인트 위치 (Global DSQ vs 데이터 레지던시)",
         "status": r61_status,
-        "score": r61_score,
         "current_state": r61_current,
-        "recommended_state": "데이터 레지던시 제약이 없다면 GOOGLE_CLOUD_LOCATION=global (429 쿼터 분산) + 코드 내 루프 상한 확인(Play 01)",
+        "recommended_state": "데이터 레지던시 제약이 없다면 GOOGLE_CLOUD_LOCATION=global (429 쿼터 분산) + 로컬 코드 내 루프 상한 확인",
         "why_it_matters": (
             "`GOOGLE_CLOUD_LOCATION=global`을 사용하면 Google Cloud의 Global Dynamic Shared Quota(DSQ)를 통해 429 오류를 줄일 수 있습니다. "
             "단, 특정 국가/리전 데이터 레지던시(예: `asia-northeast3`, `europe-west4`) 준수가 필수인 규제 환경에서는 의도적으로 리전을 고정해야 합니다. "
-            "(※ 에이전트 무한 도구 루프 방지 및 토큰 상한 로직은 `describe` JSON에서 보이지 않으므로 Play 01 소스 코드에서 확인하세요.)"
+            "(※ 에이전트 무한 도구 루프 방지 및 토큰 상한 로직은 `describe` JSON에서 보이지 않으므로 로컬 소스 코드(Agent Skill)에서 확인하세요.)"
         ),
         "how_to_fix_title": "Global 엔드포인트 지정 (데이터 레지던시 제약이 없는 경우)",
         "gcloud_cmd": (
@@ -1045,12 +1034,6 @@ def _evaluate_cloud_run_service(
     amber_cnt = sum(1 for c in checks if c["status"] == "AMBER")
     red_cnt = sum(1 for c in checks if c["status"] == "RED")
     review_cnt = sum(1 for c in checks if c["status"] == "REVIEW")
-
-    total_score = (
-        round(sum(c["score"] for c in verified_checks if c["score"] is not None) / len(verified_checks), 1)
-        if verified_checks
-        else 100.0
-    )
 
     if red_cnt > 0:
         verdict = f"🔴 객관적 위험 {red_cnt}건 발견 (우선 조치 권장)"
@@ -1078,8 +1061,8 @@ def _evaluate_cloud_run_service(
         "created_by": created_by,
         "service_account": sa_email,
         "inspected_at": now_str,
-        "total_score": total_score,
         "verdict": verdict,
+        "total_count": len(checks),
         "green_count": green_cnt,
         "amber_count": amber_cnt,
         "red_count": red_cnt,
@@ -1104,7 +1087,7 @@ def _evaluate_cloud_run_service(
         },
         "combined_runtime_fix_cmd": combined_gcloud,
         "stage1_skill_cmd": (
-            "# Play 01 (배포 전 로컬 PC): 15개 핵심 항목(Agent Identity/Registry, 루프 방지, Non-Root, OTel 프라이버시 등) 점검 및 패치\n"
+            "# 배포 전 로컬 PC (Agent Skill): 15개 핵심 항목(Agent Identity/Registry, 루프 방지, Non-Root, OTel 프라이버시 등) 점검 및 패치\n"
             "uv run prod-ready scan <내_로컬_에이전트_코드_폴더>"
         ),
         "checks": checks,
@@ -1165,7 +1148,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "Agent Runtime 관리형 스케일링 & 헬스체크 (플랫폼 자동 제공)",
             "status": "GREEN",
-            "score": 100,
             "current_state": (
                 f"Agent Runtime 관리형 컨테이너 ({spec.get('agentFramework', 'google-adk')})"
                 + (f" · minInstances={min_inst}, maxInstances={max_inst}" if (min_inst is not None or max_inst is not None) else "")
@@ -1184,7 +1166,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "Managed Session Service & Memory Bank 영속 세션",
             "status": "GREEN",
-            "score": 100,
             "current_state": f"ADK_SESSION_SERVICE_URI={env_map.get('ADK_SESSION_SERVICE_URI', 'agentengine://')}, Agent Runtime 내장 세션/메모리 지원",
             "recommended_state": "agentengine:// 관리형 세션 및 Memory Bank 서비스",
             "why_it_matters": "Agent Runtime은 별도의 Cloud SQL이나 Redis 구축 없이 플랫폼 내장 Session Service와 Memory Bank를 기본 제공합니다.",
@@ -1200,7 +1181,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "제로 트러스트 IAM 인바운드 인증 (퍼블릭 무인증 URL 미노출)",
             "status": "GREEN",
-            "score": 100,
             "current_state": "Agent Platform IAM 인증 엔드포인트로만 호출 가능 (퍼블릭 무인증 노출 없음)",
             "recommended_state": "Agent Platform IAM Policy 강제 인증",
             "why_it_matters": "Agent Runtime은 공용 무인증 웹 URL을 노출하지 않고 IAM 권한이 있는 호출자만 허용합니다.",
@@ -1216,7 +1196,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "ARCH_DECISION",
             "title": "Private Service Connect Interface (PSC-I) 필요 여부 확인 (사설 VPC 접근 시에만 필요)",
             "status": "GREEN" if psc_iface else "REVIEW",
-            "score": 100 if psc_iface else None,
             "current_state": (
                 f"PSC Interface 연결됨: {psc_iface.get('networkAttachment')}"
                 if psc_iface
@@ -1244,7 +1223,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "전용 최소 권한 서비스 계정 (Custom Service Account / Agent Identity)",
             "status": "GREEN" if (has_agent_identity or ("@gcp-sa-aiplatform-re" not in sa_email and sa_email)) else "AMBER",
-            "score": 100 if (has_agent_identity or ("@gcp-sa-aiplatform-re" not in sa_email and sa_email)) else 50,
             "current_state": (
                 f"Agent Identity (AGENT_IDENTITY) 활성화됨 ({sa_email or 'SPIFFE Principal'})"
                 if has_agent_identity
@@ -1264,7 +1242,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "Agent Identity (SPIFFE ID) & Agent Registry 자동 등록",
             "status": "GREEN" if has_agent_identity else "AMBER",
-            "score": 100 if has_agent_identity else 50,
             "current_state": (
                 (
                     f"spec.identityType=AGENT_IDENTITY 확인됨 ({sa_email or 'SPIFFE ID 발급 및 Agent Registry 자동 등록'})"
@@ -1303,7 +1280,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "Agent Gateway (Egress/Ingress 중앙 정책 · UAP/IAP V2) & Model Armor",
             "status": "GREEN" if has_agent_gateway else "AMBER",
-            "score": 100 if has_agent_gateway else 50,
             "current_state": (
                 f"Agent Gateway 바인딩 확인됨 (egress={agw_egress or '미설정'}, ingress={agw_ingress or '미설정'})"
                 + (" · Model Armor env 감지됨" if has_guardrail else "")
@@ -1325,7 +1301,7 @@ def _evaluate_agent_runtime_engine(
             ),
             "how_to_fix_title": "Agent Gateway(DRY_RUN) 프로비저닝 및 Agent Runtime 연결",
             "gcloud_cmd": (
-                f"# [Step 1] Play 01 C4.4 하드닝으로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
+                f"# [Step 1] 로컬 C4.4 하드닝으로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
                 f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items C4.4\n\n"
                 f"# [Step 2] Model Armor Floor Settings 정책 확인 (읽기 전용)\n"
                 f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n\n"
@@ -1339,7 +1315,7 @@ def _evaluate_agent_runtime_engine(
                 '  }\n'
                 '}'
             ),
-            "console_guide": "Play 01(`--target agent_runtime --items C4.4`)으로 `production_ready.tf`의 Agent Gateway(`iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
+            "console_guide": "Agent Skill(`--target agent_runtime --items C4.4`)으로 `production_ready.tf`의 Agent Gateway(`iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
         },
         {
             "id": "R5.1",
@@ -1348,7 +1324,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "OpenTelemetry 트레이스 프롬프트(PII) 평문 기록 방지 (NO_CONTENT)",
             "status": "GREEN" if otel_capture == "NO_CONTENT" else "AMBER",
-            "score": 100 if otel_capture == "NO_CONTENT" else 50,
             "current_state": f"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = {otel_capture or '미설정'} (프로덕션 PII 취급 시 NO_CONTENT 권고)",
             "recommended_state": "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = NO_CONTENT",
             "why_it_matters": f"현재 `{otel_capture or '미설정'}` 상태입니다. 프로덕션에서 고객 개인정보가 포함된 프롬프트 원문이 트레이스에 기록되지 않도록 `NO_CONTENT` 설정을 권장합니다.",
@@ -1364,7 +1339,6 @@ def _evaluate_agent_runtime_engine(
             "verification_scope": "RUNTIME_VERIFIED" if (is_global_loc or not loc_val) else "ARCH_DECISION",
             "title": "Gemini 엔드포인트 위치 (Global DSQ vs 데이터 레지던시)",
             "status": "GREEN" if is_global_loc else ("REVIEW" if loc_val else "AMBER"),
-            "score": 100 if is_global_loc else (None if loc_val else 50),
             "current_state": (
                 "GOOGLE_CLOUD_LOCATION=global 설정 확인됨 (Global Dynamic Shared Quota 활용)"
                 if is_global_loc
@@ -1374,12 +1348,12 @@ def _evaluate_agent_runtime_engine(
                     else "GOOGLE_CLOUD_LOCATION 환경변수 미감지 (코드 기본값 확인 또는 global 지정 권장)"
                 )
             ),
-            "recommended_state": "데이터 레지던시 제약이 없다면 GOOGLE_CLOUD_LOCATION=global + 코드 내 호출 상한 확인(Play 01)",
-            "why_it_matters": "데이터 레지던시 요건이 없다면 Global DSQ(`global`)로 429 쿼터 오류를 완화할 수 있습니다. 무한 루프 방지 로직은 Play 01 소스 코드에서 확인하세요.",
+            "recommended_state": "데이터 레지던시 제약이 없다면 GOOGLE_CLOUD_LOCATION=global + 로컬 코드 내 호출 상한 확인",
+            "why_it_matters": "데이터 레지던시 요건이 없다면 Global DSQ(`global`)로 429 쿼터 오류를 완화할 수 있습니다. 무한 루프 방지 로직은 로컬 소스 코드(Agent Skill)에서 확인하세요.",
             "how_to_fix_title": "Global 엔드포인트 지정 및 코드 내 비용 가드 점검",
             "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --items C6.1,C6.2",
             "terraform_snippet": 'env {\n  name  = "GOOGLE_CLOUD_LOCATION"\n  value = "global"\n}',
-            "console_guide": "데이터 레지던시·쿼터 정책에 맞춰 `GOOGLE_CLOUD_LOCATION`을 설정하고, 로컬 코드(Play 01)에서 루프 상한 가드를 확인하세요.",
+            "console_guide": "데이터 레지던시·쿼터 정책에 맞춰 `GOOGLE_CLOUD_LOCATION`을 설정하고, 로컬 소스 코드에서 루프 상한 가드를 확인하세요.",
         },
     ]
 
@@ -1388,12 +1362,6 @@ def _evaluate_agent_runtime_engine(
     amber_cnt = sum(1 for c in checks if c["status"] == "AMBER")
     red_cnt = sum(1 for c in checks if c["status"] == "RED")
     review_cnt = sum(1 for c in checks if c["status"] == "REVIEW")
-
-    total_score = (
-        round(sum(c["score"] for c in verified_checks if c["score"] is not None) / len(verified_checks), 1)
-        if verified_checks
-        else 100.0
-    )
 
     if red_cnt > 0:
         verdict = f"🔴 객관적 위험 {red_cnt}건 발견 (우선 조치 권장)"
@@ -1415,8 +1383,8 @@ def _evaluate_agent_runtime_engine(
         "created_by": spec.get("agentFramework", "agent-platform"),
         "service_account": sa_email,
         "inspected_at": now_str,
-        "total_score": total_score,
         "verdict": verdict,
+        "total_count": len(checks),
         "green_count": green_cnt,
         "amber_count": amber_cnt,
         "red_count": red_cnt,

@@ -86,7 +86,6 @@ class ChecklistItemSpec:
     code_alias: str
     domain_id: str
     domain_name: str
-    domain_weight: int
     title: str
     severity: Literal["Critical", "Standard"]
     before_summary: str
@@ -103,13 +102,12 @@ class ChecklistItemSpec:
 
 
 CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
-    # Domain 1: 런타임 & 프로브 (Weight 1x)
+    # Domain 1: 런타임 & 프로브
     ChecklistItemSpec(
         id="C1.1",
         code_alias="REL-01",
         domain_id="D1",
         domain_name="1. 런타임 & 프로브",
-        domain_weight=1,
         title="인프라 코드(IaC) 기반 런타임 선언 & 드리프트 방지 (service.tf)",
         severity="Critical",
         before_summary="Terraform IaC 미생성 또는 콘솔 수동 배포 상태",
@@ -136,7 +134,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="REL-02",
         domain_id="D1",
         domain_name="1. 런타임 & 프로브",
-        domain_weight=1,
         title="콜드스타트 장애 방지용 헬스체크 프로브 & Startup CPU Boost",
         severity="Standard",
         before_summary="Cloud Run 컨테이너 startup_probe / liveness_probe 및 startup_cpu_boost 미구성",
@@ -150,13 +147,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         gke_desc="Pod startupProbe, readinessProbe, livenessProbe 구성",
         target_files=["deployment/terraform/service.tf", "app/fast_api_app.py"],
     ),
-    # Domain 2: 세션 & 장기 기억 (Weight 2x) — Agent Platform Managed 기본
+    # Domain 2: 세션 & 장기 기억 — Agent Platform Managed 기본
     ChecklistItemSpec(
         id="C2.1",
         code_alias="MEM-01",
         domain_id="D2",
         domain_name="2. 세션 & 메모리",
-        domain_weight=2,
         title="영속 멀티턴 세션 스토어 (Agent Platform Managed Sessions)",
         severity="Critical",
         before_summary="InMemorySessionService 사용 (인스턴스 재시작·스케일아웃 시 대화 맥락 즉시 증발)",
@@ -182,7 +178,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="MEM-02",
         domain_id="D2",
         domain_name="2. 세션 & 메모리",
-        domain_weight=2,
         title="크로스-세션 장기 기억 Memory Bank (Cross-Session Memory)",
         severity="Critical",
         before_summary="세션 종료 시 사용자 선호/맥락이 소실되며 MemoryService(Memory Bank) 미연동",
@@ -196,13 +191,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         gke_desc="동일한 VertexAiMemoryBankService 연동",
         target_files=["app/app_utils/services.py", "app/fast_api_app.py", "app/agent.py"],
     ),
-    # Domain 3: 사내망 네트워크 (Weight 2x)
+    # Domain 3: 사내망 네트워크
     ChecklistItemSpec(
         id="C3.1",
         code_alias="NET-01",
         domain_id="D3",
         domain_name="3. 사내망 네트워크",
-        domain_weight=2,
         title="사내 VPC 프라이빗 아웃바운드 연결 (Direct VPC Egress / PSC-I)",
         severity="Critical",
         before_summary="사내 Private IP DB·내부 API 접근용 Direct VPC Egress 또는 PSC Interface 미구성",
@@ -226,13 +220,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
             ),
         ],
     ),
-    # Domain 4: 보안, 신원 & 거버넌스 (Weight 2x)
+    # Domain 4: 보안, 신원 & 거버넌스
     ChecklistItemSpec(
         id="C4.1",
         code_alias="SEC-01",
         domain_id="D4",
         domain_name="4. 보안, 신원 & 거버넌스",
-        domain_weight=2,
         title="최소 권한 전용 서비스 계정(SA) & Secret 버전 고정",
         severity="Critical",
         before_summary="variables.tf에 과도한 roles/storage.admin 또는 미사용 roles/cloudsql.client 부여, Secret version='latest'",
@@ -251,7 +244,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="GOV-01",
         domain_id="D4",
         domain_name="4. 보안, 신원 & 거버넌스",
-        domain_weight=2,
         title="Agent Identity (SPIFFE ID) & Agent Registry 자동 등록",
         severity="Critical",
         before_summary="공유 Service Account만 사용 중이며 Agent Identity(SPIFFE) 및 Agent Registry 자동 등록 미구성",
@@ -270,7 +262,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="SEC-02",
         domain_id="D4",
         domain_name="4. 보안, 신원 & 거버넌스",
-        domain_weight=2,
         title="컨테이너 Non-Root(비특권) 실행 & Gen2 샌드박스",
         severity="Critical",
         before_summary="Dockerfile이 root(UID 0) 계정으로 실행 (컨테이너 탈취 시 루트 권한 노출)",
@@ -289,7 +280,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="GOV-02",
         domain_id="D4",
         domain_name="4. 보안, 신원 & 거버넌스",
-        domain_weight=2,
         title="Agent Gateway 중앙 정책 게이트웨이 (Agent Runtime 우선 적용 / Cloud Run은 단계적 도입 가이드)",
         severity="Standard",
         before_summary="Agent Runtime: 아웃바운드 Agent Gateway(UAP V2 DRY_RUN) & BYOC CA 신뢰 미구성 | Cloud Run: 단계적 거버넌스 도입 아키텍처 주석 미기재",
@@ -311,13 +301,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
             )
         ],
     ),
-    # Domain 5: 관측성 & 알람 (Weight 2x)
+    # Domain 5: 관측성 & 알람
     ChecklistItemSpec(
         id="C5.1",
         code_alias="OBS-01",
         domain_id="D5",
         domain_name="5. 관측성 & 알람",
-        domain_weight=2,
         title="OpenTelemetry GenAI 분산 트레이싱 (Cloud Trace)",
         severity="Critical",
         before_summary="OTel GenAI 시맨틱 컨벤션 환경변수 또는 Cloud Trace 익스포터 미설정",
@@ -336,7 +325,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="OBS-02",
         domain_id="D5",
         domain_name="5. 관측성 & 알람",
-        domain_weight=2,
         title="트레이스 스팬 PII 평문 기록 차단 (NO_CONTENT)",
         severity="Critical",
         before_summary="Cloud Trace 스팬에 사용자 프롬프트·PII 원문 노출 위험 (ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS 미비)",
@@ -355,7 +343,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="OBS-03",
         domain_id="D5",
         domain_name="5. 관측성 & 알람",
-        domain_weight=2,
         title="타겟별 SRE 골든 시그널 운영 알람 (alerts.tf)",
         severity="Critical",
         before_summary="Cloud Monitoring 알럿 정책(alerts.tf) 전무 (지연 급증·5xx 에러율 상승 미감지)",
@@ -372,13 +359,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
             CustomFieldSpec("latency_p95_ms", "P95 지연 알람 임계치 (ms, 멀티스텝 에이전트 기본 15000)", "15000"),
         ],
     ),
-    # Domain 6: 비용 & 회복력 (Weight 1x) — 순수 루프 방어 & Google Cloud 공식 429 회복력 BP
+    # Domain 6: 비용 & 회복력 — 순수 루프 방어 & Google Cloud 공식 429 회복력 BP
     ChecklistItemSpec(
         id="C6.1",
         code_alias="FIN-01",
         domain_id="D6",
         domain_name="6. 비용 & 회복력",
-        domain_weight=1,
         title="무한 도구 루프 차단(턴별 리셋) & 선택적 출력 토큰 상한 (FinOps)",
         severity="Critical",
         before_summary="단일 턴당 LLM 호출 횟수 상한 미구성 (도구 오류 시 무한 루프 과금 폭주 위험)",
@@ -401,7 +387,6 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         code_alias="REL-03",
         domain_id="D6",
         domain_name="6. 비용 & 회복력",
-        domain_weight=1,
         title="Gemini API 429(DSQ) 방어: Global 엔드포인트 & 지수 백오프 재시도",
         severity="Standard",
         before_summary="HttpRetryOptions 미설정 또는 GOOGLE_CLOUD_LOCATION 미지정 (일시적 429/5xx 대응 부재)",
@@ -422,13 +407,12 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
             ),
         ],
     ),
-    # Domain 7: Day-2 Evaluation & CI/CD (Weight 1x)
+    # Domain 7: Day-2 Evaluation & CI/CD
     ChecklistItemSpec(
         id="C7.1",
         code_alias="OPS-01",
         domain_id="D7",
         domain_name="7. Day-2 Eval & CI/CD",
-        domain_weight=1,
         title="에이전트 자동 품질 평가 (agents-cli eval run) · CI/CD 연동",
         severity="Critical",
         before_summary="에이전트 평가 설정(tests/eval/eval_config.yaml, 데이터셋) 누락 또는 기존 CI/CD(.cloudbuild/staging.yaml)에 agents-cli eval run 게이트 미구성",
@@ -458,7 +442,7 @@ ITEM_BY_ALIAS: dict[str, ChecklistItemSpec] = {item.code_alias: item for item in
 LEGACY_ID_MAP: dict[str, str] = {
     "C1.3": "C1.2",  # Health probes moved into C1.2
     "C2.3": "C2.1",  # GCS bucket versioning removed; maps to D2 session store
-    "C3.2": "C3.1",  # Ingress WAF/IAP moved to non-scoring advisory; maps to D3 networking
+    "C3.2": "C3.1",  # Ingress WAF/IAP moved to architecture advisory; maps to D3 networking
     "C3.3": "C3.1",  # Private Google Access merged into C3.1
     "C7.2": "C1.1",  # lifecycle.ignore_changes consolidated into C1.1
     "REL-00": "C1.1",

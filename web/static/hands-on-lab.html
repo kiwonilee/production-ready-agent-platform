@@ -779,6 +779,102 @@
       gap: 20px;
       min-width: 0;
     }
+
+    /* 4-Stage Production-Readiness Pipeline Bar */
+    .stage-pipeline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1.5px solid rgba(66, 133, 244, 0.14);
+      overflow-x: auto;
+    }
+    .stage-node {
+      flex: 1 1 0;
+      min-width: 128px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 11px;
+      border-radius: 10px;
+      border: 1.5px solid transparent;
+      background: var(--surface-muted);
+      color: var(--ink-muted);
+      font-family: var(--font-sans);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .stage-node:hover {
+      background: #EEF4FD;
+      color: var(--ink);
+    }
+    .stage-node.active {
+      background: #E8F0FE;
+      border-color: rgba(66, 133, 244, 0.55);
+      color: #1967D2;
+      box-shadow: 0 2px 8px rgba(66, 133, 244, 0.14);
+    }
+    .stage-node.done:not(.active) {
+      background: #F1F8F3;
+      border-color: rgba(52, 168, 83, 0.28);
+      color: #137333;
+    }
+    .stage-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--ink-muted);
+      flex-shrink: 0;
+    }
+    .stage-node.active .stage-num {
+      background: #4285F4;
+      color: #fff;
+    }
+    .stage-node.done:not(.active) .stage-num {
+      background: #34A853;
+      color: #fff;
+    }
+    .stage-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      line-height: 1.22;
+    }
+    .stage-name {
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .stage-sub {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.82;
+      white-space: nowrap;
+    }
+    .stage-arrow {
+      color: #94A3B8;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    @media (max-width: 1080px) {
+      .stage-pipeline { flex-wrap: wrap; }
+      .stage-arrow { display: none; }
+      .stage-node { min-width: 140px; }
+    }
     .lab-step { display: block; }
     .lab-step.hidden-step { display: none; }
 
@@ -829,7 +925,7 @@
     .callout-amber { background: rgba(254, 247, 224, 0.78); border-color: rgba(251, 188, 4, 0.32); border-left-color: #FBBC04; color: #9A5300; }
     .callout p { margin: 4px 0 0; color: inherit; font-size: 13.8px; }
 
-    /* Terminal Code Blocks & agy Prompt Block */
+    /* Terminal Code Blocks & Antigravity CLI Prompt Block */
     .code-wrap {
       border-radius: 13px;
       overflow: hidden;
@@ -1261,16 +1357,6 @@
       align-items: center;
       gap: 8px;
     }
-    .cp-domain-weight {
-      font-family: var(--font-mono);
-      font-size: 11.5px;
-      font-weight: 600;
-      color: var(--ink-muted);
-      background: #fff;
-      border: 1px solid rgba(66, 133, 244, 0.22);
-      padding: 2px 9px;
-      border-radius: 999px;
-    }
 
     .cp-id-col { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
     .cp-sev {
@@ -1528,11 +1614,55 @@
     <!-- Right Main Codelab Area -->
     <main class="main-col">
 
+      <!-- 4-Stage Production-Readiness Pipeline Indicator -->
+      <nav class="stage-pipeline" id="stagePipelineBar" aria-label="Production-Readiness 4단계 흐름">
+        <button type="button" class="stage-node" data-stage="setup" onclick="goToStep(0)">
+          <span class="stage-num">0</span>
+          <span class="stage-text">
+            <span class="stage-name">Setup</span>
+            <span class="stage-sub">준비 · 대상 설정</span>
+          </span>
+        </button>
+        <span class="stage-arrow" aria-hidden="true">→</span>
+        <button type="button" class="stage-node" data-stage="scanning" onclick="goToStep(5)">
+          <span class="stage-num">1</span>
+          <span class="stage-text">
+            <span class="stage-name">Scanning</span>
+            <span class="stage-sub">정적 진단</span>
+          </span>
+        </button>
+        <span class="stage-arrow" aria-hidden="true">→</span>
+        <button type="button" class="stage-node" data-stage="hardening" onclick="goToStep(6)">
+          <span class="stage-num">2</span>
+          <span class="stage-text">
+            <span class="stage-name">Hardening</span>
+            <span class="stage-sub">조치 · 재검사</span>
+          </span>
+        </button>
+        <span class="stage-arrow" aria-hidden="true">→</span>
+        <button type="button" class="stage-node" data-stage="deploy" onclick="goToStep(7)">
+          <span class="stage-num">3</span>
+          <span class="stage-text">
+            <span class="stage-name">Deploy</span>
+            <span class="stage-sub" id="pipelineDeploySub">Cloud Run 배포</span>
+          </span>
+        </button>
+        <span class="stage-arrow" aria-hidden="true">→</span>
+        <button type="button" class="stage-node" data-stage="runtime_audit" onclick="goToStep(8)">
+          <span class="stage-num">4</span>
+          <span class="stage-text">
+            <span class="stage-name">Runtime Audit</span>
+            <span class="stage-sub">라이브 점검</span>
+          </span>
+        </button>
+      </nav>
+
       <!-- ==================== STEP 0 ==================== -->
       <section class="card card-pad-lg lab-step" data-step="0" id="step-0">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 0 / 10</span>
+            <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-gray mono">약 5분</span>
             <h2>실습 환경 준비 및 GCP 프로젝트 설정</h2>
           </div>
@@ -1540,8 +1670,8 @@
         </div>
 
         <p>
-          먼저 공통 실습 환경(<code>python3</code>, <code>uv</code>, <code>gcloud</code>, <code>agy</code>)을 확인하고 GCP 프로젝트를 설정합니다.
-          <strong>에이전트 비즈니스 코드는 배포 환경과 무관하게 동일</strong>하므로, Step 1~2에서 표준 ADK 에이전트와 Agent Skill을 먼저 준비한 뒤 <strong>Step 3에서 배포 환경(<code>Agent Runtime</code> vs <code>Cloud Run</code>)을 선택</strong>합니다.
+          먼저 공통 실습 환경(<code>python3</code>, <code>uv</code>, <code>gcloud</code>, <code>agents-cli</code>, <strong>Antigravity CLI</strong>)을 확인하고 GCP 프로젝트를 설정합니다.
+          <strong>에이전트 비즈니스 코드는 배포 환경과 무관하게 동일</strong>하므로, Step 1~2에서 표준 ADK 에이전트와 Agent Skill을 먼저 준비한 뒤 <strong>Step 3~4에서 배포 환경(<code>Agent Runtime</code> vs <code>Cloud Run</code>)을 선택·설정</strong>합니다.
         </p>
 
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0 8px;">
@@ -1595,7 +1725,7 @@ agy --version"></pre>
             <li><strong><code>python3</code> · <code>gcloud</code></strong> — Python 실행 및 Google Cloud 배포용 CLI로, <strong>Cloud Shell에 기본 설치</strong>되어 있습니다.</li>
             <li><strong><code>uv</code></strong> — Python 가상환경·패키지 설치 및 <code>agents-cli</code> 도구 설치를 빠르게 처리하는 패키지 매니저입니다.</li>
             <li><strong><code>agents-cli</code> (<code>google-agents-cli</code>)</strong> — ADK 에이전트 생성(<code>scaffold</code>), 로컬 실행(<code>run</code>), 배포(<code>deploy</code>)를 담당하는 Google 공식 CLI입니다. 위 명령어로 자동 설치됩니다.</li>
-            <li><strong><code>agy</code></strong> — 대화형 AI 코딩 CLI(Antigravity)입니다.</li>
+            <li><strong>Antigravity CLI (명령어: <code>agy</code>)</strong> — 대화형 AI 코딩 CLI로, Agent Skill을 실행해 스캔·하드닝을 수행할 때 사용합니다.</li>
           </ul>
         </div>
 
@@ -1630,6 +1760,7 @@ gcloud services enable \
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 1 / 10</span>
+            <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-gray mono">약 6분</span>
             <h2>심플한 AI Agent 만들기 (<code>agents-cli</code> 표준 프로토타입)</h2>
           </div>
@@ -1689,32 +1820,32 @@ Local server stopped.</div>
         <div class="callout callout-blue">
           <div class="callout-title">💡 왜 <code>agents-cli</code> Prototype First로 시작하나요?</div>
           <p style="margin-top:4px;">
-            실습은 Google Cloud 권장 표준인 <code>agents-cli</code> 단일 경로로 진행합니다. 먼저 에이전트 로직과 평가 구조에만 집중해 개발한 뒤, 배포 시점(<strong>Step 3~4</strong>)에 런타임을 선택하고 <code>agents-cli scaffold enhance</code> 한 줄로 원하는 인프라만 붙일 수 있습니다.
+            실습은 Google Cloud 권장 표준인 <code>agents-cli</code> 단일 경로로 진행합니다. 먼저 에이전트 로직과 평가 구조에만 집중해 개발한 뒤, 배포 시점(<strong>Step 3~4</strong>)에 런타임을 선택하고 <code>agents-cli scaffold enhance</code> 한 줄로 원하는 배포 대상 설정만 반영할 수 있습니다.
             <span style="color:var(--ink-faint);">(참고: <code>agent-production-readiness</code> 스킬 자체는 <code>agents-cli</code> 없이 직접 작성한 순수 <code>app/agent.py</code> 프로젝트에서도 동일하게 동작합니다.)</span>
           </p>
         </div>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(0)">← 이전 (Step 0)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(1)">Step 1 완료하고 Step 2(Play 01)로 이동 →</button>
+          <button class="btn btn-primary" onclick="completeAndNext(1)">Step 1 완료하고 Step 2(Skill 설치)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 2 (PLAY 01: Skill 설치 & agy 실행) ==================== -->
+      <!-- ==================== STEP 2 (Skill 설치 및 실행 확인) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="2" id="step-2">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 2 / 10</span>
-            <span class="pill pill-blue mono">PLAY 01</span>
+            <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-gray mono">약 3분</span>
-            <h2>Agent Skill 설치 및 <code>agy</code> 실행 · 확인</h2>
+            <h2>Agent Skill 설치 및 실행 확인</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(2)">✓ 완료 표시</button>
         </div>
 
         <p>
-          <strong>Play 01</strong>에서는 Cloud Shell에 <code>agent-production-readiness</code> 스킬을 설치하고,
-          <strong>Antigravity CLI (<code>agy</code>)</strong>를 실행해 스킬이 정상 로드되었는지 확인합니다.
+          Cloud Shell에 <code>agent-production-readiness</code> 스킬을 설치하고,
+          <strong>Antigravity CLI</strong>(터미널 명령어: <code>agy</code>)를 실행해 스킬이 정상 로드되었는지 확인합니다.
         </p>
 
         <h3>2-1. <code>agent-production-readiness</code> Agent Skill 설치</h3>
@@ -1728,11 +1859,11 @@ curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive
 ls -la ~/.gemini/skills/agent-production-readiness/SKILL.md</pre>
         </div>
 
-        <h3>2-2. Antigravity CLI (<code>agy</code>) 실행 · 로그인 및 <code>/skills</code> 확인</h3>
-        <p><strong>① 터미널에서 에이전트 프로젝트 루트로 이동해 <code>agy</code>를 실행합니다:</strong></p>
+        <h3>2-2. Antigravity CLI 실행 · 로그인 및 <code>/skills</code> 확인</h3>
+        <p><strong>① 터미널에서 에이전트 프로젝트 루트로 이동해 Antigravity CLI(<code>agy</code>)를 실행합니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · 에이전트 프로젝트 루트에서 agy 실행</span>
+            <span class="code-label">bash · 에이전트 프로젝트 루트에서 Antigravity CLI 실행</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
@@ -1740,25 +1871,27 @@ agy"></pre>
         </div>
 
         <div class="callout callout-blue" style="margin-top:10px;">
-          <div class="callout-title">🔐 <code>agy</code> 최초 실행 시 로그인·인증 선택 순서</div>
-          <p style="margin-top:4px;">처음 <code>agy</code>를 실행하면 인증 선택 메뉴가 순서대로 나타납니다. 아래 순서대로 선택하세요:</p>
+          <div class="callout-title">🔐 Antigravity CLI 최초 실행 시 로그인·인증 선택 순서</div>
+          <p style="margin-top:4px;">처음 Antigravity CLI를 실행하면 인증 선택 메뉴가 순서대로 나타납니다. 아래 순서대로 선택하세요:</p>
           <ol style="margin:6px 0 0 18px;">
             <li><strong><code>2. Use a Google Cloud project</code></strong></li>
             <li><strong><code>1. Continue with Google Cloud</code></strong></li>
             <li><strong><code>2. Pay As You Go – Pay only for the tokens you use, billed through Gemini platform.</code></strong></li>
             <li><strong><code>프로젝트 ID 입력</code></strong></li>
+            <li><strong><code>global</code></strong></li>
+            <li><strong><code>Next, Done, Yes</code></strong></li>
           </ol>
         </div>
 
-        <p><strong>② <code>agy &gt;</code> 대화창에서 <code>/skills</code>를 입력해 스킬이 정상 설치되었는지 확인합니다:</strong></p>
+        <p><strong>② Antigravity CLI 대화창에서 <code>/skills</code>를 입력해 스킬이 정상 설치되었는지 확인합니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">agy &gt; command · 설치된 스킬 목록 확인</span>
+            <span class="code-label">Antigravity CLI &gt; command · 설치된 스킬 목록 확인</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="/skills"></pre>
           <div class="code-output">Shared skills · From ~/.gemini/skills
-  agent-production-readiness: Audits, scores, and hardens local Google Cloud AI Agent projects...</div>
+  agent-production-readiness: Audits and hardens local Google Cloud AI Agent projects...</div>
         </div>
 
         <div class="callout callout-green">
@@ -1792,7 +1925,7 @@ agy"></pre>
                 <span>DUAL-TRACK ARCHITECTURE LAB</span>
               </div>
               <h1>프로덕션 AI 에이전트, 어떤 런타임으로 배포할까요?</h1>
-              <p>Agent Runtime과 Cloud Run의 특징과 선택 기준을 비교하고, 원하는 카드를 클릭해 다음 단계(인프라 추가)로 진행하세요.</p>
+              <p>Agent Runtime과 Cloud Run의 특징과 선택 기준을 비교하고, 원하는 카드를 클릭해 다음 단계(배포 대상 설정)로 진행하세요.</p>
             </div>
           </section>
 
@@ -1812,32 +1945,32 @@ agy"></pre>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(2)">← 이전 (Step 2)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(3)">선택 완료 · <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 기준 Step 4(인프라 추가)로 이동 →</button>
+          <button class="btn btn-primary" onclick="completeAndNext(3)">선택 완료 · <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 기준 Step 4(배포 대상 설정)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 4 (INFRA ENHANCE: scaffold enhance + Agent Runtime APIs) ==================== -->
+      <!-- ==================== STEP 4 (TARGET CONFIG: scaffold enhance + Agent Runtime APIs) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 4 / 10</span>
-            <span class="pill pill-blue mono">INFRA ENHANCE</span>
+            <span class="pill pill-blue mono">TARGET CONFIG</span>
             <span class="pill pill-gray mono">약 3분</span>
-            <h2><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 배포 인프라 추가 (<code>agents-cli scaffold enhance</code>)</h2>
+            <h2><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 배포 대상 설정 (<code>agents-cli scaffold enhance</code>)</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
         </div>
 
         <p>
-          Step 3에서 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 타겟의 표준 Terraform 인프라만 현재 ADK 프로젝트에 덧붙입니다.
+          Step 3에서 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong>을 배포 대상으로 반영하도록 현재 ADK 프로젝트의 로컬 배포 설정(Terraform 템플릿 포함)을 업데이트합니다. (아직 GCP에 실제 리소스를 생성하지 않습니다.)
           실행 시 <code>Skipping (your code): app/agent.py</code>로 <strong>Step 1에서 만든 에이전트 코드는 단 한 줄도 변경되지 않습니다.</strong>
           <span class="track-only" data-track="agent_runtime">(<code>agent_runtime</code> 타겟은 4개 <code>MANAGED_NATIVE</code> 항목이 기본 인식됩니다.)</span>
         </p>
 
-        <h3>4-1. 선택한 런타임(<span data-auto-tpl="1">{{TARGET_LABEL}}</span>) 인프라 스캐폴딩 추가 (<code>agents-cli scaffold enhance</code>)</h3>
+        <h3>4-1. 배포 대상을 <span data-auto-tpl="1">{{TARGET_LABEL}}</span>으로 설정 (<code>agents-cli scaffold enhance</code>)</h3>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">bash · agents-cli scaffold enhance ({{TARGET_KEY}}) — 코드 변경 없이 인프라만 추가</span>
+            <span class="code-label" data-auto-tpl="1">bash · agents-cli scaffold enhance ({{TARGET_KEY}}) — 코드 변경 없이 배포 대상 설정 반영</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
@@ -1874,42 +2007,42 @@ uv sync"></pre>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(3)">← 이전 (Step 3 · 배포 환경 변경)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5(Play 02)로 이동 →</button>
+          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5(Scanning)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 5 (PLAY 02: agy 사전 진단 Before) ==================== -->
+      <!-- ==================== STEP 5 (1. Scanning: 정적 진단) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="5" id="step-5">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 5 / 10</span>
-            <span class="pill pill-blue mono">PLAY 02</span>
+            <span class="pill pill-blue mono">1. SCANNING</span>
             <span class="pill pill-gray mono">약 6분</span>
-            <h2><code>agy</code>로 사전 진단 (Before Scan)</h2>
+            <h2>Scanning · 정적 진단</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(5)">✓ 완료 표시</button>
         </div>
 
         <p>
-          <strong>Play 02</strong>에서는 열어 둔 <strong>Antigravity CLI (<code>agy</code>) 대화창에 자연어로 지시</strong>하여
-          운영 환경 프로필을 선택한 뒤 <code>scan</code>(6대 도메인 · 14개 핵심 프로덕션 항목 정적 점검)을 실행해 패치 전(Before) 점수와 취약점을 파악합니다.
+          열어 둔 <strong>Antigravity CLI 대화창에 자연어로 지시</strong>하여
+          운영 환경 프로필을 선택한 뒤 <code>scan</code>(6대 도메인 · 14개 핵심 프로덕션 항목 정적 점검)을 실행해 취약점을 파악합니다.
         </p>
 
-        <h3>5-1. Antigravity CLI (<code>agy</code>)로 Before 진단 실행</h3>
-        <p><strong>① 열려 있는 <code>agy &gt;</code> 대화창에 아래 프롬프트를 그대로 붙여넣으세요:</strong></p>
+        <h3>5-1. 정적 진단(Scanning) 실행</h3>
+        <p><strong>① 열려 있는 Antigravity CLI 대화창에 아래 프롬프트를 그대로 붙여넣으세요:</strong></p>
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 기준 scan 요청</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 기준 scan 요청</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
-          <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 scan 해줘 (CI/CD 미구축 실습이므로 C7.1은 제외).
-조치사항에 대해 아직 수정하지 말고, 현재 종합 점수와 주요 RED/AMBER 블로커, Non-Scoring Advisory를 표로 요약해줘."></pre>
+          <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 scan 해줘.
+조치사항에 대해 아직 수정하지 말고, 항목별 충족 현황(🟢 통과 / 🟡 보완 / 🔴 미충족)과 주요 RED/AMBER 블로커, 참고 권고(Advisory)를 표로 요약해줘."></pre>
         </div>
 
         <p><strong>② 진단 실행 전 나타나는 운영 환경 선택 메뉴(Pre-Scan Gate)에서 화살표(<code>↑↓</code>) + <code>Enter</code>로 환경을 고릅니다:</strong></p>
         <div class="code-wrap track-only" data-track="cloud_run">
           <div class="code-head">
-            <span class="code-label">agy &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
+            <span class="code-label">Antigravity CLI &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
           </div>
           <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 14개 핵심 하드닝 (C4.4는 단계적 도입 가이드 주석)
   2. 표준 프로덕션 (외부/Public API 기반) — 사내 VPC(C3.1) 제외 13개 하드닝
@@ -1918,7 +2051,7 @@ uv sync"></pre>
         </div>
         <div class="code-wrap track-only" data-track="agent_runtime">
           <div class="code-head">
-            <span class="code-label">agy &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
+            <span class="code-label">Antigravity CLI &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
           </div>
           <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 풀 프로덕션 (사내 DB/VPC 연동 포함) — 14개 (플랫폼 자동 4개 + 직접 하드닝 10개)
   2. 표준 프로덕션 (외부/Public API 기반) — PSC-I 제외 13개 (플랫폼 자동 4개 + 직접 하드닝 9개)
@@ -2036,7 +2169,6 @@ uv sync"></pre>
                 <td colspan="5">
                   <div class="cp-domain-head">
                     <span class="cp-domain-name">1️⃣ 런타임 &amp; 헬스체크 (Runtime &amp; Probes · 2개 항목 · 사이징 자동 상향 없음)</span>
-                    <span class="cp-domain-weight">도메인 가중치 1x</span>
                   </div>
                 </td>
               </tr>
@@ -2105,7 +2237,6 @@ uv sync"></pre>
                 <td colspan="5">
                   <div class="cp-domain-head">
                     <span class="cp-domain-name">2️⃣ 세션 &amp; 장기 기억 영속성 (Managed-First · 2개 항목 · Self-Hosted는 참고 옵션)</span>
-                    <span class="cp-domain-weight">도메인 가중치 2x</span>
                   </div>
                 </td>
               </tr>
@@ -2165,7 +2296,6 @@ uv sync"></pre>
                 <td colspan="5">
                   <div class="cp-domain-head">
                     <span class="cp-domain-name">3️⃣ 사내망 프라이빗 아웃바운드 (Private VPC Egress · 1개 항목 · 인바운드/인증은 Advisory)</span>
-                    <span class="cp-domain-weight">도메인 가중치 2x</span>
                   </div>
                 </td>
               </tr>
@@ -2205,7 +2335,6 @@ uv sync"></pre>
                 <td colspan="5">
                   <div class="cp-domain-head">
                     <span class="cp-domain-name">4️⃣ 보안, 신원 &amp; 거버넌스 (Security, Identity &amp; Governance · 4개 항목)</span>
-                    <span class="cp-domain-weight">도메인 가중치 2x</span>
                   </div>
                 </td>
               </tr>
@@ -2322,7 +2451,6 @@ uv sync"></pre>
                 <td colspan="5">
                   <div class="cp-domain-head">
                     <span class="cp-domain-name">5️⃣ 관측성, 프라이버시 &amp; SRE 골든 시그널 알람 (Observability &amp; Alerts · 3개 항목)</span>
-                    <span class="cp-domain-weight">도메인 가중치 2x</span>
                   </div>
                 </td>
               </tr>
@@ -2405,7 +2533,6 @@ uv sync"></pre>
                 <td colspan="5">
                   <div class="cp-domain-head">
                     <span class="cp-domain-name">6️⃣ FinOps 비용 통제 &amp; 쿼터 회복력 (FinOps &amp; Resilience · 2개 항목)</span>
-                    <span class="cp-domain-weight">도메인 가중치 1x</span>
                   </div>
                 </td>
               </tr>
@@ -2456,54 +2583,55 @@ uv sync"></pre>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(Play 03)로 이동 →</button>
+          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(Hardening)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 6 (PLAY 03: 14개 핵심 항목 자동 하드닝) ==================== -->
+      <!-- ==================== STEP 6 (2. Hardening: 조치 및 재검사) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="6" id="step-6">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 6 / 10</span>
-            <span class="pill pill-blue mono">PLAY 03</span>
+            <span class="pill pill-amber mono">2. HARDENING</span>
             <span class="pill pill-gray mono">약 7분</span>
-            <h2><code>agy</code>로 14개 핵심 프로덕션 항목 자동 하드닝</h2>
+            <h2>Hardening · 조치 및 재검사</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(6)">✓ 완료 표시</button>
         </div>
 
         <p>
-          <strong>Play 03</strong>에서는 열려 있는 <code>agy</code> 대화창에서 그대로 이어서 <strong>Diff 검토 → 프로덕션 항목 일괄 패치 → <code>uv lock</code> → 재검증(<code>100.0점</code>) → 보안 리포트(<code>READINESS_REPORT.md / .html</code>) 생성</strong>까지 한 번에 진행합니다.
+          열려 있는 <strong>Antigravity CLI</strong> 대화창에서 그대로 이어서 <strong>Diff 검토 → 14개 핵심 프로덕션 항목 일괄 패치 → <code>uv lock</code> → 재검사(<code>전체 항목 충족</code>) → 보안 리포트(<code>READINESS_REPORT.md / .html</code>) 생성</strong>까지 한 번에 진행합니다.
           생성된 리포트에는 <strong>Google Cloud 공식 Best Practice 14개 검증 결과</strong>와 함께, 조직 정책에 따라 사용자가 선택 후 직접 설정할 항목(<strong>Post-Setup Decision Guide</strong>) 체크리스트가 함께 정리됩니다.
         </p>
 
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 자동 하드닝 패치 &amp; 재검증 요청</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 자동 하드닝 패치 &amp; 재검사 요청</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
           <pre class="code-pre" data-tpl="방금 진단한 {{TARGET_LABEL}} 운영 프로필 기준으로 수정될 파일별 주요 변경점(diff)을 요약해 주고, 프로덕션 하드닝 패치를 적용(apply)해줘.
 패치 완료 후에는 순서대로:
 1) `uv lock` 으로 의존성 lockfile 을 갱신하고,
-2) 동일한 프로필 기준으로 scan 을 다시 실행해 100.0점 (🟢 Production Ready) 통과를 검증한 뒤,
+2) 동일한 프로필 기준으로 scan 을 다시 실행해 모든 항목 충족 (🟢 Production Ready · 🔴 0 · 🟡 0)을 검증한 뒤,
 3) 보안·인프라 심의 제출용 READINESS_REPORT.md 와 READINESS_REPORT.html 을 생성해줘."></pre>
-          <div class="code-output">✅ Readiness Score: 100.0 / 100.0 (🟢 Production Ready)
+          <div class="code-output">✅ Compliance: 14 / 14 Passed (🟢 Production Ready · 🔴 0 · 🟡 0)
 📄 Exported: READINESS_REPORT.md &amp; READINESS_REPORT.html</div>
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7(배포)로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5 · Scanning)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7(Deploy)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 7 ==================== -->
+      <!-- ==================== STEP 7 (3. Deploy: 클라우드 배포) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="7" id="step-7">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 7 / 10</span>
+            <span class="pill pill-purple mono">3. DEPLOY</span>
             <span class="pill pill-gray mono" id="step5TimePill">약 8분</span>
-            <h2 data-auto-tpl="1">{{TARGET_LABEL}}에 하드닝된 에이전트 배포하기</h2>
+            <h2 data-auto-tpl="1">Deploy · {{TARGET_LABEL}} 배포</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(7)">✓ 완료 표시</button>
         </div>
@@ -2609,25 +2737,25 @@ agents-cli run --url &quot;https://{{REGION}}-aiplatform.googleapis.com/reasonin
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료하고 Step 8(Play 04)로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6 · Hardening)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료하고 Step 8(Runtime Audit)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 8 (PLAY 04: Web JSON 위자드 진단) ==================== -->
+      <!-- ==================== STEP 8 (4. Runtime Audit: 라이브 점검) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="8" id="step-8">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 8 / 10</span>
-            <span class="pill pill-green mono">PLAY 04</span>
+            <span class="pill pill-green mono">4. RUNTIME AUDIT</span>
             <span class="pill pill-gray mono">약 6분</span>
-            <h2>Web Workbench에서 런타임 JSON 진단 위자드 실행</h2>
+            <h2>Runtime Audit · 라이브 런타임 JSON 점검</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(8)">✓ 완료 표시</button>
         </div>
 
         <p>
-          이제 <strong>Play 04 (Zero-IAM Web Workbench)</strong>에서 실제 배포된 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 설정 JSON을
+          이제 <strong>Zero-IAM Web Workbench</strong>에서 실제 배포된 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 설정 JSON을
           <strong>Step-by-Step 위자드</strong>로 점검합니다.
         </p>
 
@@ -2717,14 +2845,14 @@ agents-cli run --url &quot;https://{{REGION}}-aiplatform.googleapis.com/reasonin
         </div>
       </section>
 
-      <!-- ==================== STEP 9 ==================== -->
+      <!-- ==================== STEP 9 (4. Runtime Audit: 보완 및 최종 재검증) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="9" id="step-9">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 9 / 10</span>
-            <span class="pill pill-green mono">PLAY 04</span>
+            <span class="pill pill-green mono">4. RUNTIME AUDIT</span>
             <span class="pill pill-gray mono">약 5분</span>
-            <h2>최종 진단 리포트 생성 · 맞춤형 명령어 반영 · 재검증</h2>
+            <h2>Runtime Audit · 보완 명령어 반영 및 최종 재검증</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(9)">✓ 완료 표시</button>
         </div>
@@ -2779,13 +2907,14 @@ agents-cli deploy --status"></pre>
         </div>
       </section>
 
-      <!-- ==================== STEP 10 ==================== -->
+      <!-- ==================== STEP 10 (Clean-Up) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="10" id="step-10">
         <div class="step-header">
           <div class="step-header-left">
             <span class="pill pill-navy mono">STEP 10 / 10</span>
+            <span class="pill pill-gray mono">CLEAN-UP</span>
             <span class="pill pill-gray mono">약 3분</span>
-            <h2>실습 리소스 정리 (Clean-Up) &amp; 트러블슈팅 FAQ</h2>
+            <h2>Clean-Up · 실습 리소스 정리 &amp; 트러블슈팅 FAQ</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(10)">✓ 완료 표시</button>
         </div>
@@ -2819,16 +2948,16 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
         <h3>10-2. 자주 묻는 질문 &amp; 트러블슈팅 FAQ</h3>
 
         <details class="faq">
-          <summary>Q1. <code>agy</code>에서 <code>agent-production-readiness</code> 스킬을 찾지 못한다고 나와요.</summary>
+          <summary>Q1. Antigravity CLI에서 <code>agent-production-readiness</code> 스킬을 찾지 못한다고 나와요.</summary>
           <div class="faq-body">
             <p><code>~/.gemini/skills/agent-production-readiness/SKILL.md</code> (또는 Global <code>~/.gemini/antigravity-cli/skills/</code>, 워크스페이스 로컬 <code>.agents/skills/</code>) 경로가 올바른지 확인하세요.</p>
           </div>
         </details>
 
         <details class="faq">
-          <summary>Q2. <code>agy</code> 세션이 끊겼거나 Agent Runtime 배포가 타임아웃되었어요.</summary>
+          <summary>Q2. Antigravity CLI 세션이 끊겼거나 Agent Runtime 배포가 타임아웃되었어요.</summary>
           <div class="faq-body">
-            <p><code>agy</code>는 같은 폴더에서 <code>agy -c</code>로 직전 대화를 그대로 복구할 수 있습니다. Agent Runtime 배포는 서버 측에서 계속 진행되므로 <code>agents-cli deploy --status</code>로 완료를 확인하세요.</p>
+            <p>Antigravity CLI는 같은 폴더에서 <code>agy -c</code> 명령으로 직전 대화를 그대로 복구할 수 있습니다. Agent Runtime 배포는 서버 측에서 계속 진행되므로 <code>agents-cli deploy --status</code>로 완료를 확인하세요.</p>
           </div>
         </details>
 
@@ -2860,17 +2989,17 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
 
   <script>
     const STEPS_META = [
-      { id: 0, code: "0", title: "실습 환경 준비 & 공통 API", time: "5분", group: "common" },
-      { id: 1, code: "1", title: "표준 ADK Agent 프로토타입", time: "6분", group: "common" },
-      { id: 2, code: "2", title: "Play 01 · Skill 설치 & agy 실행", time: "3분", group: "common" },
-      { id: 3, code: "3", title: "배포 환경 선택", time: "2분", group: "decision" },
-      { id: 4, code: "4", title: "배포 인프라 추가 (enhance)", time: "3분", group: "runtime" },
-      { id: 5, code: "5", title: "Play 02 · agy 사전 진단 (Before)", time: "6분", group: "runtime" },
-      { id: 6, code: "6", title: "Play 03 · 14개 항목 자동 하드닝", time: "7분", group: "runtime" },
-      { id: 7, code: "7", title: "Google Cloud 배포", time: "8분", group: "runtime" },
-      { id: 8, code: "8", title: "Play 04 · Web JSON 위자드 진단", time: "6분", group: "runtime" },
-      { id: 9, code: "9", title: "최종 리포트 & 명령어 재검증", time: "5분", group: "runtime" },
-      { id: 10, code: "10", title: "리소스 정리 & FAQ", time: "3분", group: "runtime" },
+      { id: 0, code: "0", title: "실습 환경 준비 & 공통 API", time: "5분", group: "setup" },
+      { id: 1, code: "1", title: "표준 ADK Agent 프로토타입", time: "6분", group: "setup" },
+      { id: 2, code: "2", title: "Agent Skill 설치 및 실행 확인", time: "3분", group: "setup" },
+      { id: 3, code: "3", title: "배포 환경 선택", time: "2분", group: "setup" },
+      { id: 4, code: "4", title: "배포 대상 설정", time: "3분", group: "setup" },
+      { id: 5, code: "5", title: "Scanning · 정적 진단", time: "6분", group: "readiness" },
+      { id: 6, code: "6", title: "Hardening · 조치 및 재검사", time: "7분", group: "readiness" },
+      { id: 7, code: "7", title: "Deploy · 클라우드 배포", time: "8분", group: "readiness" },
+      { id: 8, code: "8", title: "Runtime Audit · 라이브 점검", time: "6분", group: "readiness" },
+      { id: 9, code: "9", title: "Runtime Audit · 보완 및 재검증", time: "5분", group: "readiness" },
+      { id: 10, code: "10", title: "Clean-Up · 리소스 정리 & FAQ", time: "3분", group: "cleanup" },
     ];
 
     const TRACKS = {
@@ -2893,13 +3022,9 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
           "<strong>장기적인 대화(Long-lived)와 문맥 유지(Memory)가 필수적일 때</strong> — 사용자와 며칠~몇 주에 걸쳐 대화하며 이전 맥락을 기억해야 하는 챗봇에 적합합니다.",
           "<strong>세션 DB · 인프라 운영(DevOps)을 최소화하고 싶을 때</strong> — 백엔드 데이터베이스를 팀에서 직접 구축·운영하지 않으려는 경우 가장 좋은 선택입니다."
         ],
-        beforeScore: "초기 점수: 2.3 / 100 (Mode B: 31.8)",
         deployTitle: "3. Agent Runtime 배포",
         deployCmd: "agents-cli deploy --no-wait",
-        wizardSub: "JSON 붙여넣기 → 9개 위자드",
-        kpiPlay01: "4 기본 + 10 패치",
-        kpiPlay01Sub: "4개 MANAGED_NATIVE 자동 가점",
-        kpiPlay02: "9개 위자드"
+        wizardSub: "JSON 붙여넣기 → 9개 위자드"
       },
       cloud_run: {
         key: "cloud_run",
@@ -2920,13 +3045,9 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
           "<strong>비용 절감과 예측 가능성이 가장 중요할 때</strong> — 트래픽 패턴이 불규칙해서 유휴 시 인스턴스를 0으로 내리는(Scale-to-zero) 구조가 유리할 때 적합합니다.",
           "<strong>커스텀 컨테이너 · 경량 Stateless 환경</strong> — 사용자 지정 컨테이너 구성이 필요하거나 일회성 질의응답(Stateless) 위주의 가벼운 에이전트에 적합합니다."
         ],
-        beforeScore: "초기 점수: 6.8 / 100 (Mode B: 22.7)",
         deployTitle: "3. Cloud Run 배포",
         deployCmd: "gcloud run deploy / Terraform",
-        wizardSub: "JSON 붙여넣기 → 11개 위자드",
-        kpiPlay01: "14개 패치",
-        kpiPlay01Sub: "6대 영역 직접 코드·IaC 하드닝",
-        kpiPlay02: "11개 위자드"
+        wizardSub: "JSON 붙여넣기 → 11개 위자드"
       }
     };
 
@@ -3168,9 +3289,9 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
       document.getElementById("sidebarProgressFill").style.width = `${Math.max(4, pct)}%`;
 
       const groupLabels = {
-        common: "1. 공통 · ADK 개발",
-        decision: "2. 배포 환경 선택",
-        runtime: `3. ${tr.shortLabel} 하드닝 & 배포`,
+        setup: "1. Setup · 환경 준비 & 대상 설정",
+        readiness: `2. Production-Readiness 4단계 (${tr.shortLabel})`,
+        cleanup: "3. Clean-Up",
       };
       let lastGroup = null;
       ul.innerHTML = STEPS_META.map(s => {
@@ -3178,8 +3299,8 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
         const isActive = state.activeStep === s.id;
         const cls = ["step-nav-btn", isActive ? "active" : "", isDone ? "done" : ""].filter(Boolean).join(" ");
         const title = s.id === 4
-          ? `${tr.shortLabel} 인프라 추가`
-          : (s.id === 7 ? `${tr.shortLabel} 배포` : s.title);
+          ? `${tr.shortLabel} 배포 대상 설정`
+          : (s.id === 7 ? `Deploy · ${tr.shortLabel} 배포` : s.title);
         let headerHtml = "";
         if (s.group !== lastGroup) {
           lastGroup = s.group;
@@ -3222,7 +3343,34 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
         badgeEl.textContent = (state.activeStep <= 2 && !state.trackChosen) ? "ADK 공통" : TRACKS[state.track].shortLabel;
       }
 
+      renderStagePipeline();
       renderSidebarNav();
+    }
+
+    function renderStagePipeline() {
+      const tr = TRACKS[state.track];
+      const deploySub = document.getElementById("pipelineDeploySub");
+      if (deploySub) deploySub.textContent = `${tr.shortLabel} 배포`;
+
+      const stageStepMap = {
+        setup: [0, 1, 2, 3, 4],
+        scanning: [5],
+        hardening: [6],
+        deploy: [7],
+        runtime_audit: [8, 9],
+      };
+      const defaultNum = { setup: "0", scanning: "1", hardening: "2", deploy: "3", runtime_audit: "4" };
+
+      document.querySelectorAll("#stagePipelineBar .stage-node").forEach(btn => {
+        const key = btn.getAttribute("data-stage");
+        const steps = stageStepMap[key] || [];
+        const isActive = steps.includes(state.activeStep);
+        const isDone = steps.length > 0 && steps.every(id => Boolean(state.doneSteps[id]));
+        btn.classList.toggle("active", isActive);
+        btn.classList.toggle("done", isDone);
+        const numEl = btn.querySelector(".stage-num");
+        if (numEl) numEl.textContent = (isDone && !isActive) ? "✓" : (defaultNum[key] || "");
+      });
     }
 
     function setViewMode(mode) {

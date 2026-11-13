@@ -44,10 +44,9 @@ def _print_report(report: ProjectScanReport) -> None:
     print(f"  Project Directory : {report.project_dir}")
     print(f"  Detected Mode     : {report.project_mode}")
     print(f"  Deployment Target : {report.deployment_target}")
-    print(f"  Weighted Score    : {report.weighted_score} / 100.0")
     print(f"  Readiness Verdict : {report.verdict}")
     print(
-        f"  Item Breakdown    : 🟢 {report.green_count} Green "
+        f"  Compliance Status : 🟢 {report.green_count} / {report.total_count} Passed "
         f"(Managed-Auto: {report.managed_native_count}) | "
         f"🟡 {report.amber_count} Amber | 🔴 {report.red_count} Red"
     )
@@ -55,8 +54,9 @@ def _print_report(report: ProjectScanReport) -> None:
         print(f"  Skipped (N/A)     : {', '.join(report.skipped_item_ids)}")
     print("-" * 84)
     for d in report.domains:
+        d_icon = "🟢" if d.red_count == 0 and d.amber_count == 0 else ("🟡" if d.red_count == 0 else "🔴")
         print(
-            f"  {d.domain_name:<22} (Weight {d.weight}x) : {d.score:>5.1f}%  "
+            f"  {d_icon} {d.domain_name:<22} : {d.green_count:>2}/{d.total_count:<2} Passed  "
             f"[🟢 {d.green_count}  🟡 {d.amber_count}  🔴 {d.red_count}]"
         )
     print("-" * 84)
@@ -70,7 +70,7 @@ def _print_report(report: ProjectScanReport) -> None:
         print(f"           └─ {item.evidence}")
     if report.advisories:
         print("-" * 84)
-        print("  📋 Non-Scoring Advisories (사용자 직접 확인 / 부하 테스트 후 조정):")
+        print("  📋 Architecture & Governance Advisories (사용자 직접 확인 / 부하 테스트 후 조정):")
         for adv in report.advisories:
             print(f"     • {adv}")
     print("=" * 84)
@@ -169,7 +169,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(
             f"✅ Applied {res['applied_file_count']} file patches! "
-            f"Readiness Score: {res['before']['weighted_score']} -> {res['after']['weighted_score']} "
+            f"Compliance: 🟢 {res['before']['green_count']}/{res['before']['total_count']} -> "
+            f"{res['after']['green_count']}/{res['after']['total_count']} "
             f"({res['after']['verdict']})"
         )
         return 0
@@ -209,7 +210,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "reset":
         res = reset_project_to_baseline(Path(args.project_dir), target_override=args.target)
         rep = res["report"]
-        print(f"🔄 Reset {res['project_dir']} to baseline -> Score: {rep['weighted_score']} / 100.0 ({rep['verdict']})")
+        print(
+            f"🔄 Reset {res['project_dir']} to baseline -> "
+            f"🟢 {rep['green_count']}/{rep['total_count']} Passed | "
+            f"🟡 {rep['amber_count']} Amber | 🔴 {rep['red_count']} Red ({rep['verdict']})"
+        )
         return 0
 
     if args.command == "demo":
@@ -222,8 +227,11 @@ def main(argv: list[str] | None = None) -> int:
         print("━" * 86)
         print(f"  • 대상 프로젝트 : {proj}")
         print(f"  • 배포 타겟     : {before_rep.deployment_target}")
-        print(f"  • 준비도 점수   : {before_rep.weighted_score} / 100.0  -->  {before_rep.verdict}")
-        print(f"  • 항목 요약     : 🟢 {before_rep.green_count} 통과 | 🟡 {before_rep.amber_count} 미흡 | 🔴 {before_rep.red_count} 취약")
+        print(f"  • 게이트 판정   : {before_rep.verdict}")
+        print(
+            f"  • 항목 충족     : 🟢 {before_rep.green_count}/{before_rep.total_count} 충족 "
+            f"| 🟡 {before_rep.amber_count} 보완 | 🔴 {before_rep.red_count} 미충족"
+        )
 
         print("\n" + "━" * 86)
         print("✨ [STAGE 2 / 3] 7대 영역 · 15개 핵심 프로덕션 & 거버넌스 하드닝 패치 원클릭 적용 (`prod-ready apply`)")
@@ -232,23 +240,30 @@ def main(argv: list[str] | None = None) -> int:
         for p in patch_res["patches"]:
             mode_tag = "NEW  " if p["is_new"] else "PATCH"
             print(f"  ✅ [{mode_tag}] {p['relative_path']:<42} (항목: {', '.join(p['applied_items'])})")
-        after_score = patch_res["after"]["weighted_score"]
+        after_green = patch_res["after"]["green_count"]
+        after_total = patch_res["after"]["total_count"]
         after_verdict = patch_res["after"]["verdict"]
-        print(f"\n  🎯 점수 변화: {before_rep.weighted_score} / 100.0  ===>  {after_score} / 100.0 ({after_verdict})")
+        print(
+            f"\n  🎯 충족 변화: 🟢 {before_rep.green_count}/{before_rep.total_count}  ===>  "
+            f"🟢 {after_green}/{after_total} ({after_verdict})"
+        )
 
         print("\n" + "━" * 86)
-        print("🛡️  [STAGE 3 / 3] 패치 후(AFTER) 최종 재검증(`scan`) & 시각적 심의 성적표 발급(`report`)")
+        print("🛡️  [STAGE 3 / 3] 패치 후(AFTER) 최종 재검증(`scan`) & 시각적 심의 리포트 발급(`report`)")
         print("━" * 86)
         after_rep = scan_project(proj, target_override=args.target)
-        print(f"  • 최종 점수     : {after_rep.weighted_score} / 100.0  -->  {after_rep.verdict}")
-        print(f"  • 항목 요약     : 🟢 {after_rep.green_count} 통과 | 🟡 {after_rep.amber_count} 미흡 | 🔴 {after_rep.red_count} 취약")
+        print(f"  • 최종 판정     : {after_rep.verdict}")
+        print(
+            f"  • 항목 충족     : 🟢 {after_rep.green_count}/{after_rep.total_count} 충족 "
+            f"| 🟡 {after_rep.amber_count} 보완 | 🔴 {after_rep.red_count} 미충족"
+        )
 
         md_out = proj / "READINESS_REPORT.md"
         html_out = proj / "READINESS_REPORT.html"
         md_out.write_text(generate_readiness_report(proj, target_override=args.target), encoding="utf-8")
         html_out.write_text(generate_html_report(proj, target_override=args.target), encoding="utf-8")
         print("\n  📦 생성된 결과물 (브라우저 또는 에디터로 즉시 확인 가능):")
-        print(f"     1. 시각적 HTML 심의 성적표 : {html_out}")
+        print(f"     1. 시각적 HTML 심의 리포트 : {html_out}")
         print(f"     2. 마크다운 심의 리포트    : {md_out}")
         print("     3. 웹 워크벤치 UI 실행     : uv run prod-ready ui " + str(args.project_dir) + " --port 8090")
         print("━" * 86 + "\n")

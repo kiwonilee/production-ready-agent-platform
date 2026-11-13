@@ -48,11 +48,11 @@ flowchart LR
 
 ## 2. Three Workload Profiles Handled by `agent-production-readiness`
 
-| Workload Profile | Auto-Detection Signal | `C4.2` Patching Behavior | `C4.2` Scoring & Advisory |
+| Workload Profile | Auto-Detection Signal | `C4.2` Patching Behavior | `C4.2` Status & Advisory |
 | :--- | :--- | :--- | :--- |
-| **1. Standalone Single Agent** | `google.adk` / `Agent(` and **no** remote MCP/A2A URLs | Cloud Run: `FUNCTIONAL_TYPE_AGENT` + `IDENTITY_TYPE_AGENT_IDENTITY`<br>Agent Runtime: `identity_type = "AGENT_IDENTITY"` | `GREEN` (`100.0`) after patch — **zero MCP/A2A noise** |
-| **2. Cloud Run MCP Server** | `FastMCP(` / `from mcp.server` / `FUNCTIONAL_TYPE_MCP_SERVER` (no ADK `Agent`) | Cloud Run: injects `provider = google-beta` + **`functional_type = "FUNCTIONAL_TYPE_MCP_SERVER"`** and **preserves dedicated `service_account`** (Agent Identity is NOT required for MCP servers) | `GREEN` (`100.0`) + MCP Server verification advisory (`gcloud beta agent-registry mcp-servers list`) |
-| **3. MCP / A2A Client Agent** | Hardcoded `MCP_SERVER_URL`, `StreamableHTTPConnectionParams(url="http...")`, `SseConnectionParams(url="http...")`, `RemoteA2aAgent(agent_card="http...")` **without** `AgentRegistry` | Applies `C4.2` SPIFFE identity & `agentregistry.googleapis.com` in Terraform; **never blindly rewrites** user business logic in `agent.py` | Flags **`AMBER`** in `C4.2` + conditional advisory with exact `AgentRegistry` Lazy Discovery refactoring recipe below; becomes **`GREEN` (`100.0`)** once migrated to `AgentRegistry` |
+| **1. Standalone Single Agent** | `google.adk` / `Agent(` and **no** remote MCP/A2A URLs | Cloud Run: `FUNCTIONAL_TYPE_AGENT` + `IDENTITY_TYPE_AGENT_IDENTITY`<br>Agent Runtime: `identity_type = "AGENT_IDENTITY"` | `🟢 GREEN` after patch — **zero MCP/A2A noise** |
+| **2. Cloud Run MCP Server** | `FastMCP(` / `from mcp.server` / `FUNCTIONAL_TYPE_MCP_SERVER` (no ADK `Agent`) | Cloud Run: injects `provider = google-beta` + **`functional_type = "FUNCTIONAL_TYPE_MCP_SERVER"`** and **preserves dedicated `service_account`** (Agent Identity is NOT required for MCP servers) | `🟢 GREEN` + MCP Server verification advisory (`gcloud beta agent-registry mcp-servers list`) |
+| **3. MCP / A2A Client Agent** | Hardcoded `MCP_SERVER_URL`, `StreamableHTTPConnectionParams(url="http...")`, `SseConnectionParams(url="http...")`, `RemoteA2aAgent(agent_card="http...")` **without** `AgentRegistry` | Applies `C4.2` SPIFFE identity & `agentregistry.googleapis.com` in Terraform; **never blindly rewrites** user business logic in `agent.py` | Flags **`🟡 AMBER`** in `C4.2` + conditional advisory with exact `AgentRegistry` Lazy Discovery refactoring recipe below; becomes **`🟢 GREEN`** once migrated to `AgentRegistry` |
 
 ---
 
@@ -178,7 +178,7 @@ billing_sub_agent = RemoteA2aAgent(
 )
 ```
 
-### After (Recommended — Scores `GREEN` `100.0` in `C4.2`)
+### After (Recommended — Passes `🟢 GREEN` in `C4.2`)
 
 ```python
 import os

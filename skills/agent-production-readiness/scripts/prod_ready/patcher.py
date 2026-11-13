@@ -222,9 +222,8 @@ def generate_readiness_report(
         f"- **Project Directory**: `{report.project_dir}`",
         f"- **Detected Scaffolding Mode**: `{report.project_mode}`",
         f"- **Deployment Runtime Target**: `{report.deployment_target}`",
-        f"- **Weighted Readiness Score**: **{report.weighted_score} / 100.0**",
         f"- **Overall Gate Verdict**: **{report.verdict}**",
-        f"- **Item Breakdown**: 🟢 {report.green_count} Green (Managed-Auto: {report.managed_native_count}) | 🟡 {report.amber_count} Amber | 🔴 {report.red_count} Red",
+        f"- **Compliance Summary**: **🟢 {report.green_count} / {report.total_count} Passed** (Managed-Auto: {report.managed_native_count}) | 🟡 {report.amber_count} Amber | 🔴 {report.red_count} Red",
         *(
             [f"- **Skipped Items (N/A by Workload Profile)**: `{', '.join(report.skipped_item_ids)}`"]
             if report.skipped_item_ids
@@ -234,18 +233,23 @@ def generate_readiness_report(
         "",
         "---",
         "",
-        "## 1. Domain Weighted Score Summary",
+        "## 1. Domain Compliance Summary",
         "",
-        "| Domain | Weight | Score (%) | 🟢 Green | 🟡 Amber | 🔴 Red |",
+        "| Domain | Status | Passed / Total | 🟢 Green | 🟡 Amber | 🔴 Red |",
         "| :--- | :---: | :---: | :---: | :---: | :---: |",
     ]
     for d in report.domains:
+        d_badge = (
+            "🟢 PASS"
+            if d.red_count == 0 and d.amber_count == 0
+            else ("🟡 WARN" if d.red_count == 0 else "🔴 FAIL")
+        )
         lines.append(
-            f"| **{d.domain_id}. {d.domain_name}** | `{d.weight}x` | **{d.score}%** | {d.green_count} | {d.amber_count} | {d.red_count} |"
+            f"| **{d.domain_id}. {d.domain_name}** | {d_badge} | **{d.green_count} / {d.total_count}** | {d.green_count} | {d.amber_count} | {d.red_count} |"
         )
 
     if report.advisories:
-        lines.extend(["", "### 🔵 Workload Sizing & Architecture Advisories (Non-Blocking REVIEW)", ""])
+        lines.extend(["", "### 🔵 Workload Sizing & Architecture Advisories (REVIEW)", ""])
         for adv in report.advisories:
             lines.append(f"- {adv}")
 
@@ -254,7 +258,7 @@ def generate_readiness_report(
             "",
             "---",
             "",
-            "## 2. 15-Item Detailed Compliance Matrix (`C1.1` – `C7.1`)",
+            f"## 2. Detailed Compliance Matrix ({report.total_count} Active Items · `C1.1` – `C7.1`)",
             "",
             "| ID | Alias | Domain | Title | Severity | Status | Evidence & Verification |",
             "| :--- | :--- | :--- | :--- | :---: | :---: | :--- |",
@@ -2428,26 +2432,28 @@ def generate_html_report(
     report = scan_project(root, target_override=target_override, selected_items=selected_items)
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    if report.weighted_score >= 90 and report.red_count == 0:
-        score_color, score_bg, score_bd = "#137333", "#E6F4EA", "rgba(52,168,83,0.32)"
-    elif report.weighted_score >= 70:
-        score_color, score_bg, score_bd = "#B06000", "#FEF7E0", "rgba(251,188,4,0.40)"
+    if report.total_count > 0 and report.red_count == 0 and report.amber_count == 0:
+        status_color, status_bg, status_bd = "#137333", "#E6F4EA", "rgba(52,168,83,0.32)"
+    elif report.total_count > 0 and report.red_count == 0:
+        status_color, status_bg, status_bd = "#B06000", "#FEF7E0", "rgba(251,188,4,0.40)"
     else:
-        score_color, score_bg, score_bd = "#C5221F", "#FCE8E6", "rgba(234,67,53,0.32)"
+        status_color, status_bg, status_bd = "#C5221F", "#FCE8E6", "rgba(234,67,53,0.32)"
 
     domain_cards = []
     for d in report.domains:
-        bar_col = "#34A853" if d.score >= 90 else ("#FBBC04" if d.score >= 60 else "#EA4335")
-        txt_col = "#137333" if d.score >= 90 else ("#B06000" if d.score >= 60 else "#C5221F")
+        pass_pct = round(d.green_count / d.total_count * 100) if d.total_count else 0
+        all_pass = d.red_count == 0 and d.amber_count == 0
+        bar_col = "#34A853" if all_pass else ("#FBBC04" if d.red_count == 0 else "#EA4335")
+        txt_col = "#137333" if all_pass else ("#B06000" if d.red_count == 0 else "#C5221F")
         domain_cards.append(
             f"""
             <div class="card" style="border-top:4px solid {bar_col};">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
-                <span style="font-weight:700;font-size:13.5px;color:#0F172A;">{html_lib.escape(d.domain_id)}. {html_lib.escape(d.domain_name)} <span style="color:#64748B;font-weight:500;">({d.weight}x)</span></span>
-                <span style="font-family:'Google Sans Mono',monospace;font-weight:700;color:{txt_col};">{d.score}%</span>
+                <span style="font-weight:700;font-size:13.5px;color:#0F172A;">{html_lib.escape(d.domain_id)}. {html_lib.escape(d.domain_name)}</span>
+                <span style="font-family:'Google Sans Mono',monospace;font-weight:700;color:{txt_col};">{d.green_count} / {d.total_count} 충족</span>
               </div>
               <div style="width:100%;height:8px;background:#E8EEF5;border-radius:999px;overflow:hidden;">
-                <div style="width:{d.score}%;height:100%;background:{bar_col};border-radius:999px;"></div>
+                <div style="width:{pass_pct}%;height:100%;background:{bar_col};border-radius:999px;"></div>
               </div>
               <div style="margin-top:8px;font-size:12px;color:#475569;font-weight:600;">
                 🟢 {d.green_count} Green &nbsp;|&nbsp; 🟡 {d.amber_count} Amber &nbsp;|&nbsp; 🔴 {d.red_count} Red
@@ -2461,7 +2467,7 @@ def generate_html_report(
         adv_items = "".join(f"<li style='margin:4px 0;'>{html_lib.escape(a)}</li>" for a in report.advisories)
         advisory_html = f"""
         <div class="card" style="margin-top:16px;border-left:4px solid #4285F4;background:#F8FBFF;">
-          <strong style="font-size:13.5px;color:#1967D2;">🔵 Sizing & Architecture Advisories (Non-Blocking REVIEW)</strong>
+          <strong style="font-size:13.5px;color:#1967D2;">🔵 Sizing & Architecture Advisories (REVIEW · 아키텍처 참고 권고)</strong>
           <ul style="margin:8px 0 0 18px;padding:0;font-size:12.5px;color:#334155;">{adv_items}</ul>
         </div>
         """
@@ -2556,7 +2562,7 @@ def generate_html_report(
       font-size: 11.5px; font-weight: 700; color: #1967D2; background: #E8F0FE;
       padding: 4px 11px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em;
     }}
-    .score-box {{ text-align: right; background: {score_bg}; border: 1.5px solid {score_bd}; padding: 16px 24px; border-radius: 16px; }}
+    .status-box {{ text-align: right; background: {status_bg}; border: 1.5px solid {status_bd}; padding: 16px 24px; border-radius: 16px; }}
     .grid-domains {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 16px; }}
     .card {{ background: #FFFFFF; border: 1.5px solid rgba(66, 133, 244, 0.14); border-radius: 16px; padding: 18px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045); }}
     h2 {{ font-size: 16.5px; font-weight: 700; letter-spacing: -0.015em; color: #0F172A; margin: 32px 0 12px 0; border-bottom: 1.5px solid rgba(66, 133, 244, 0.14); padding-bottom: 8px; }}
@@ -2582,20 +2588,21 @@ def generate_html_report(
           Generated: {now_str}
         </div>
       </div>
-      <div class="score-box">
-        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">Weighted Readiness Score</div>
-        <div style="font-size:32px;font-weight:800;color:{score_color};font-family:'Google Sans Mono',monospace;">{report.weighted_score} / 100.0</div>
-        <div style="font-size:13px;font-weight:700;color:{score_color};margin-top:2px;">{html_lib.escape(report.verdict)}</div>
+      <div class="status-box">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">Production-Readiness Gate</div>
+        <div style="font-size:30px;font-weight:800;color:{status_color};font-family:'Google Sans Mono',monospace;">{report.green_count} / {report.total_count} 충족</div>
+        <div style="font-size:13px;font-weight:700;color:{status_color};margin-top:2px;">{html_lib.escape(report.verdict)}</div>
+        <div style="font-size:11.5px;font-weight:600;color:#475569;margin-top:4px;">🟢 {report.green_count} &nbsp;·&nbsp; 🟡 {report.amber_count} &nbsp;·&nbsp; 🔴 {report.red_count}</div>
       </div>
     </div>
 
-    <h2>1. 7대 엔터프라이즈 도메인별 가중치 점수 (Domain Breakdown)</h2>
+    <h2>1. 7대 엔터프라이즈 도메인별 충족 현황 (Domain Compliance)</h2>
     <div class="grid-domains">
       {"".join(domain_cards)}
     </div>
     {advisory_html}
 
-    <h2>2. 15개 상세 프로덕션 · 거버넌스 체크리스트 심의 매트릭스 (C1.1 ~ C7.1)</h2>
+    <h2>2. 상세 프로덕션 · 거버넌스 체크리스트 심의 매트릭스 ({report.total_count}개 항목 · C1.1 ~ C7.1)</h2>
     <div class="table-wrap">
       <table>
         <thead>

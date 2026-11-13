@@ -5,8 +5,8 @@
   "description": "7-Domain, 15-Item (C1.1-C7.1) Production-Readiness Scanner, In-Place Patcher & Localhost Workbench for Google Cloud AI Agents (Cloud Run & Agent Runtime, with Agent Identity/Registry on both and Agent Gateway DRY_RUN on Agent Runtime; 100% compatible with google-agents-cli v1.5.0).",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [
-    "현재 로컬 에이전트 프로젝트의 프로덕션 준비도(15개 핵심 체크리스트)를 스캔하고 점수를 알려줘",
-    "이 에이전트를 Cloud Run 프로덕션 배포 수준(100점)으로 강화하기 위한 Diff를 보여주고 패치를 적용해줘",
+    "현재 로컬 에이전트 프로젝트의 프로덕션 준비도(15개 핵심 체크리스트)를 스캔하고 항목별 충족 현황을 요약해줘",
+    "이 에이전트를 Cloud Run 프로덕션 기준(전체 항목 충족)으로 강화하기 위한 Diff를 보여주고 패치를 적용해줘",
     "Agent Runtime(Agent Platform Agent Engine) 타깃으로 프로덕션 준비도를 점검하고 보안성 심의 리포트(READINESS_REPORT.md)를 생성해줘",
     "로컬호스트에서 인터랙티브 Production-Readiness Workbench 웹 UI를 실행해줘"
   ],

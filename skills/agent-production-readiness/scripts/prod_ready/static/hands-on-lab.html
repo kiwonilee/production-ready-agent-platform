@@ -2694,21 +2694,42 @@ gcloud run deploy {{AGENT_NAME}} \
   --cpu=1 \
   --memory=1Gi \
   --concurrency=40 \
-  --allow-unauthenticated \
+  --no-allow-unauthenticated \
   --quiet"></pre>
             </div>
           </div>
 
-          <h3>5-3. 라이브 엔드포인트 스모크 테스트</h3>
+          <h3>5-3. 라이브 엔드포인트 스모크 테스트 (IAM 인증 토큰 포함)</h3>
+          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
+            엔터프라이즈 Cloud Run 및 Qwiklabs 환경(<code>iam.allowedPolicyMemberDomains</code> 조직 정책)은 익명 호출(<code>allUsers</code>)을 차단하므로, 반드시 <strong>IAM Identity Token(<code>Authorization: Bearer ...</code>)</strong> 헤더를 포함해 호출합니다.
+          </p>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · Cloud Run URL 조회 및 /list-apps 확인</span>
+              <span class="code-label">bash · IAM Identity Token으로 Cloud Run /list-apps 확인</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
 echo &quot;Deployed URL: ${SERVICE_URL}&quot;
-curl -sS &quot;${SERVICE_URL}/list-apps&quot; ; echo"></pre>
+curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-identity-token)&quot; &quot;${SERVICE_URL}/list-apps&quot; ; echo"></pre>
             <div class="code-output">["app"]</div>
+          </div>
+
+          <div class="callout callout-amber" style="margin-top:10px;">
+            <div class="callout-title">🔒 참고: <code>terraform apply</code>(<code>C3.2</code> 인바운드 격리) 적용 후에도 <code>403 Forbidden</code>이 뜨는 경우</div>
+            <p style="margin-top:4px;">
+              <code>C3.2</code> 하드닝은 기본 <code>*.a.run.app</code> URL의 외부 인터넷 직접 노출을 원천 차단(<code>ingress = INTERNAL_LOAD_BALANCER</code> / <code>INTERNAL_ONLY</code> 및 <code>default_uri_disabled = true</code>)합니다.
+              따라서 VPC 외부에 있는 <strong>Cloud Shell에서 <code>*.a.run.app</code>을 직접 호출하면 <code>403 Forbidden</code>으로 차단되는 것이 정상 보안 동작</strong>입니다.<br>
+              만약 Cloud Shell에서 직접 <code>/list-apps</code> 응답(<code>["app"]</code>)을 확인하고 싶다면, 아래 명령으로 인그레스를 일시 허용해 테스트한 뒤 다시 잠글 수 있습니다:
+            </p>
+            <div class="code-wrap" style="margin-top:8px;">
+              <div class="code-head">
+                <span class="code-label">bash · (선택) Cloud Shell 직접 호출 테스트를 위한 Ingress 일시 허용 &amp; 확인</span>
+                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre" data-tpl="gcloud run services update {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --ingress=all --no-default-url-disabled --quiet
+SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
+curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-identity-token)&quot; &quot;${SERVICE_URL}/list-apps&quot; ; echo"></pre>
+            </div>
           </div>
         </div>
 

@@ -2552,10 +2552,9 @@ Simulator: 0 / 4 Scenarios Protected (Model Armor / Memory Bank / Cost Guard / P
         </div>
 
         <p>
-          <strong>Play 03</strong>에서는 열려 있는 <code>agy</code> 대화창에서 그대로 이어서 <strong>Diff 검토 → 프로덕션 항목 일괄 패치 → <code>uv lock</code> → 재검증(<code>4/4 Protected</code>) → 보안 리포트 생성</strong>까지 한 번에 진행합니다.
+          <strong>Play 03</strong>에서는 열려 있는 <code>agy</code> 대화창에서 그대로 이어서 <strong>Diff 검토 → 프로덕션 항목 일괄 패치 → <code>uv lock</code> → 재검증(<code>4/4 Protected</code>) → 보안 리포트(<code>READINESS_REPORT.md / .html</code>) 생성</strong>까지 한 번에 진행합니다.
         </p>
 
-        <h3>4-1. 자동 하드닝 패치 &amp; 재검증 실행</h3>
         <div class="tab-bar" data-tabgroup="step4harden">
           <button class="tab-btn active" onclick="switchTab('step4harden', 'agy', this)">방법 A · Antigravity CLI (agy) 대화형 자동 패치 (권장)</button>
           <button class="tab-btn" onclick="switchTab('step4harden', 'cli', this)">방법 B · 스크립트 직접 실행 (CI/Headless)</button>
@@ -2595,126 +2594,6 @@ python3 &quot;$SKILL_BIN&quot; simulate . --target {{TARGET_KEY}} --items ALL
 python3 &quot;$SKILL_BIN&quot; report . --target {{TARGET_KEY}} --items ALL -o READINESS_REPORT.md"></pre>
             <div class="code-output">✅ Readiness Score: 100.0 / 100.0 (🟢 Production Ready) · Summary: 4 / 4 Scenarios Protected
 📄 Exported: READINESS_REPORT.md &amp; READINESS_REPORT.html</div>
-          </div>
-        </div>
-
-        <h3>4-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 트랙에서 생성·패치되는 핵심 산출물 (17개 전체 매핑)</h3>
-        <div class="track-only" data-track="cloud_run">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th style="width:290px;">생성 · 패치된 파일</th><th style="width:120px;">적용 체크포인트</th><th>무엇이 어떻게 변경되었는가 (Before → After 패치 내역)</th></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>app/agent.py</code></td>
-                  <td><span class="pill pill-green mono">C2.2 · C4.2 · C5.2 · C6.1 · C6.2</span></td>
-                  <td><code>HttpRetryOptions(attempts=5)</code> 지수 백오프 상향, <code>after_agent_callback=auto_save_session_to_memory</code> 장착, <code>App(plugins=[ModelArmorGuardrailPlugin(), CostTokenGuardrailPlugin()])</code> 등록, <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code> 설정</td>
-                </tr>
-                <tr>
-                  <td><code>app/app_utils/services.py</code></td>
-                  <td><span class="pill pill-green mono">C2.1 · C2.2</span></td>
-                  <td>휘발성 <code>InMemorySessionService</code> 대신 <strong>Agent Platform Managed Sessions</strong>(<code>GOOGLE_CLOUD_AGENT_ENGINE_ID</code>) 및 <strong>Memory Bank</strong>(<code>shared://memory</code>) 빌더 + 장기 기억 자동 저장 콜백 생성</td>
-                </tr>
-                <tr>
-                  <td><code>app/app_utils/model_armor_plugin.py</code></td>
-                  <td><span class="pill pill-green mono">C4.2</span></td>
-                  <td>실제 <code>google.cloud.modelarmor_v1</code> 입출력 검사 + 로컬 PII/인젝션 방어 + <code>before_tool_callback</code> 메타데이터 SSRF(<code>169.254.169.254</code>) 및 <code>user_id</code> IDOR 차단 플러그인 생성</td>
-                </tr>
-                <tr>
-                  <td><code>app/app_utils/cost_guard_plugin.py</code></td>
-                  <td><span class="pill pill-green mono">C6.1</span></td>
-                  <td>단일 턴(<code>invocation_id</code>) 단위 LLM 호출 횟수 카운터 자동 리셋(기본 10회 상한) 및 요청별 <code>max_output_tokens</code>(기본 2,048) 강제 캡 플러그인 생성</td>
-                </tr>
-                <tr>
-                  <td><code>app/fast_api_app.py</code> &amp; <code>Dockerfile</code></td>
-                  <td><span class="pill pill-green mono">C1.2 · C4.3 · C5.1</span></td>
-                  <td>FastAPI 엔트리포인트에 Managed Session/Memory URI 및 <code>otel_to_cloud=True</code> 연결, <code>Dockerfile</code>에 비특권 유저(<code>USER 10001:10001</code>) 전환 추가</td>
-                </tr>
-                <tr>
-                  <td><code>deployment/terraform/service.tf</code><br><code>variables.tf</code> · <code>storage.tf</code></td>
-                  <td><span class="pill pill-green mono">C1.1 · C1.2 · C2.3 · C3.1 · C3.2 · C4.1 · C4.3 · C5.1 · C5.2</span></td>
-                  <td>기존 CPU/메모리 사이징 보존 + <code>/list-apps:8080</code> Startup/Liveness 프로브 · <code>startup_cpu_boost</code>, Direct VPC Egress, 인바운드 잠금(<code>INTERNAL_LOAD_BALANCER</code> 또는 <code>INTERNAL_ONLY</code>), 최소 권한 SA(<code>storage.objectUser</code>), <code>deletion_protection=true</code>, Gen2 샌드박스, GCS Versioning &amp; 7일 Soft Delete 적용</td>
-                </tr>
-                <tr>
-                  <td><code>deployment/terraform/production_ready.tf</code></td>
-                  <td><span class="pill pill-green mono">C3.1 · C3.2</span></td>
-                  <td>Private Google Access 전용 서브넷(<code>/26</code>) 선언 + <em>(대외 공개 시)</em> Serverless NEG · Backend Service · Cloud Armor WAF 정책(OWASP SQLi/XSS + Rate Limit) 와이어링</td>
-                </tr>
-                <tr>
-                  <td><code>deployment/terraform/alerts.tf</code> &amp; <code>budget.tf</code></td>
-                  <td><span class="pill pill-green mono">C5.3 · C6.1</span></td>
-                  <td>Cloud Run <code>PromQL 5xx 에러 비율(&gt; 2%)</code> · <code>P95 지연(&gt; 15,000ms)</code> · <code>Model Armor 차단 급증</code> 알람 및 월간 클라우드 예산 임계치(50%·90%·100%) 알람 생성</td>
-                </tr>
-                <tr>
-                  <td><code>.cloudbuild/staging.yaml</code> &amp; <code>tests/eval/*</code></td>
-                  <td><span class="pill pill-green mono">C7.1</span></td>
-                  <td>스테이징 배포 직후 공식 <code>uvx google-agents-cli eval run --dataset ... --metrics ...</code> 품질 평가 게이트 스텝 및 골든 데이터셋(<code>smoke_dataset.json</code>) 생성</td>
-                </tr>
-                <tr>
-                  <td><code>scripts/canary_rollout.sh</code></td>
-                  <td><span class="pill pill-green mono">C7.2</span></td>
-                  <td>배포 전 현재 정상 리비전(<code>$PREVIOUS_REVISION</code>)을 기록한 뒤 <code>10% → 50% → 100%</code> 점진 전환 및 실패 시 즉시 이전 리비전으로 복원하는 스크립트 생성</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="track-only" data-track="agent_runtime">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th style="width:290px;">구분 / 생성 · 패치된 파일</th><th style="width:120px;">적용 체크포인트</th><th>무엇이 어떻게 처리되었는가 (플랫폼 자동 vs 코드·IaC 패치 내역)</th></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>플랫폼 기본 제공 (코드 생성 없음)</strong></td>
-                  <td><span class="pill pill-blue mono">C1.1 · C1.2 · C2.1 · C3.2 · C5.1 · C7.2</span></td>
-                  <td>🟢 <strong>6개 <code>MANAGED_NATIVE</code> 자동 충족</strong> — Reasoning Engine 런타임/헬스체크(<code>C1.1~1.2</code>), 내장 Managed Sessions(<code>C2.1</code>), IAM 전용 인바운드(<code>C3.2</code>), 내장 Cloud Trace(<code>C5.1</code>), 무중단 리비전 관리(<code>C7.2</code>)</td>
-                </tr>
-                <tr>
-                  <td><code>app/agent.py</code> &amp; <code>app/app_utils/services.py</code></td>
-                  <td><span class="pill pill-green mono">C2.2 · C5.2 · C6.2</span></td>
-                  <td><strong>Agent Platform Memory Bank</strong> 연동 + <code>after_agent_callback=auto_save_session_to_memory</code> 자동 저장 장착, <code>HttpRetryOptions(attempts=5)</code> 지수 백오프 상향, <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code> 설정</td>
-                </tr>
-                <tr>
-                  <td><code>app/app_utils/model_armor_plugin.py</code></td>
-                  <td><span class="pill pill-green mono">C4.2</span></td>
-                  <td>실제 <code>google.cloud.modelarmor_v1</code> 입출력 검사 + 로컬 PII/인젝션 방어 + <code>before_tool_callback</code> 메타데이터 SSRF(<code>169.254.169.254</code>) 및 <code>user_id</code> IDOR 차단 플러그인 장착</td>
-                </tr>
-                <tr>
-                  <td><code>app/app_utils/cost_guard_plugin.py</code></td>
-                  <td><span class="pill pill-green mono">C6.1</span></td>
-                  <td>단일 턴(<code>invocation_id</code>) 단위 LLM 호출 횟수 카운터 자동 리셋(기본 10회 상한) 및 요청별 <code>max_output_tokens</code>(기본 2,048) 강제 캡 플러그인 장착</td>
-                </tr>
-                <tr>
-                  <td><code>Dockerfile</code></td>
-                  <td><span class="pill pill-green mono">C4.3</span></td>
-                  <td>컨테이너 루트 탈취 방지를 위해 비특권 전용 유저(<code>USER 10001:10001</code>) 생성 및 전환 구문 삽입</td>
-                </tr>
-                <tr>
-                  <td><code>deployment/terraform/service.tf</code><br><code>variables.tf</code> · <code>storage.tf</code></td>
-                  <td><span class="pill pill-green mono">C2.3 · C3.1 · C4.1 · C5.2 · C7.2</span></td>
-                  <td>Reasoning Engine에 <strong><code>psc_interface_config</code></strong> 바인딩, 최소 권한 SA(<code>storage.objectUser</code> 축소 및 불필요한 <code>cloudsql.client</code> 제거), <code>NO_CONTENT</code> 프라이버시, GCS Versioning &amp; 7일 Soft Delete, <code>lifecycle.ignore_changes</code> 적용</td>
-                </tr>
-                <tr>
-                  <td><code>deployment/terraform/production_ready.tf</code></td>
-                  <td><span class="pill pill-green mono">C3.1</span></td>
-                  <td>Private Google Access 전용 서브넷(<code>/28</code>) 및 사설 VPC 연동용 <strong>PSC Interface(<code>google_compute_network_attachment</code>)</strong> 리소스 선언</td>
-                </tr>
-                <tr>
-                  <td><code>deployment/terraform/alerts.tf</code> &amp; <code>budget.tf</code></td>
-                  <td><span class="pill pill-green mono">C5.3 · C6.1</span></td>
-                  <td><strong><code>aiplatform.googleapis.com/ReasoningEngine</code></strong> 전용 에러율 · <code>P95 지연(&gt; 15,000ms)</code> · <code>Model Armor 차단 급증</code> 알람 및 월간 예산 임계치(50%·90%·100%) 알람 생성</td>
-                </tr>
-                <tr>
-                  <td><code>.cloudbuild/staging.yaml</code> &amp; <code>tests/eval/*</code></td>
-                  <td><span class="pill pill-green mono">C7.1</span></td>
-                  <td>스테이징 배포 직후 공식 <code>uvx google-agents-cli eval run --dataset ... --metrics ...</code> 품질 평가 게이트 스텝 및 골든 데이터셋(<code>smoke_dataset.json</code>) 생성</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
 

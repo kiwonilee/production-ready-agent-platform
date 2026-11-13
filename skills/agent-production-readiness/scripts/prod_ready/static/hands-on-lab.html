@@ -1,0 +1,3554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise AI Agent Production-Readiness Hands-On Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #F7F9FC;
+      --surface: #FFFFFF;
+      --surface-muted: #F4F7FB;
+      --surface-subtle: #EAEFF6;
+      --ink: #0F172A;
+      --ink-muted: #475569;
+      --ink-faint: #64748B;
+      --g-blue: #4285F4;
+      --g-red: #EA4335;
+      --g-yellow: #FBBC04;
+      --g-green: #34A853;
+      --navy: #1967D2;
+      --primary: #1A73E8;
+      --primary-hover: #1557B0;
+      --accent: #1A73E8;
+      --indigo: #1967D2;
+      --green: #137333;
+      --green-bg: #E6F4EA;
+      --amber: #B06000;
+      --amber-bg: #FEF7E0;
+      --red: #C5221F;
+      --red-bg: #FCE8E6;
+      --purple: #6D28D9;
+      --purple-bg: #F3E8FF;
+      --border: rgba(66, 133, 244, 0.14);
+      --code-bg: #0F172A;
+      --code-head: #1E293B;
+      --shadow: 0 12px 34px rgba(15, 23, 42, 0.055);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 9px;
+      --font-sans: 'Google Sans', 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'Google Sans Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      font-family: var(--font-sans);
+      background-color: #F7F9FC;
+      background-image:
+        radial-gradient(circle at 10% 8%, rgba(66, 133, 244, 0.12), transparent 34%),
+        radial-gradient(circle at 90% 6%, rgba(52, 168, 83, 0.11), transparent 34%),
+        radial-gradient(circle at 52% 26%, rgba(251, 188, 4, 0.08), transparent 40%),
+        radial-gradient(circle at 78% 68%, rgba(234, 67, 53, 0.05), transparent 36%),
+        radial-gradient(rgba(15, 23, 42, 0.055) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+      background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+      color: var(--ink);
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { margin: 0; min-height: 100vh; line-height: 1.65; }
+    code, pre, kbd, .mono { font-family: var(--font-mono); }
+
+    .hidden { display: none !important; }
+
+    /* Track visibility helper */
+    body[data-track="cloud_run"] .track-only[data-track="agent_runtime"] { display: none !important; }
+    body[data-track="agent_runtime"] .track-only[data-track="cloud_run"] { display: none !important; }
+
+    /* Inline code pill */
+    p code, li code, td code, summary code {
+      background: rgba(66, 133, 244, 0.09);
+      color: #1967D2;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 0.88em;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* Fixed Frosted Header with Google 4-Color Top Accent */
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: 76px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(66, 133, 244, 0.14);
+    }
+    .topbar::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3.5px;
+      background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .topbar-inner {
+      max-width: 1560px;
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .brand-divider {
+      width: 1.5px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.14);
+      flex-shrink: 0;
+    }
+    .brand-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .brand-sub {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink-muted);
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Badges & Buttons */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .pill-navy { background: linear-gradient(135deg, #4285F4, #1A73E8); color: #fff; }
+    .pill-blue { background: #E8F0FE; color: #1967D2; }
+    .pill-green { background: #E6F4EA; color: #137333; }
+    .pill-amber { background: #FEF7E0; color: #B06000; }
+    .pill-red { background: #FCE8E6; color: #C5221F; }
+    .pill-purple { background: var(--purple-bg); color: var(--purple); }
+    .pill-gray { background: #F1F5F9; color: var(--ink-muted); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      border-radius: 12px;
+      transition: background 0.16s ease, transform 0.08s ease, box-shadow 0.16s ease;
+      text-decoration: none;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: linear-gradient(135deg, #4285F4 0%, #1A73E8 100%);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #1A73E8 0%, #1557B0 100%); box-shadow: 0 6px 16px rgba(26, 115, 232, 0.32); }
+    .btn-navy {
+      background: linear-gradient(135deg, #4285F4 0%, #1A73E8 100%);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.22);
+    }
+    .btn-navy:hover { background: linear-gradient(135deg, #1A73E8 0%, #1557B0 100%); }
+    .btn-green {
+      background: linear-gradient(135deg, #34A853 0%, #1E8E3E 100%);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(52, 168, 83, 0.25);
+    }
+    .btn-green:hover { background: linear-gradient(135deg, #1E8E3E 0%, #137333 100%); }
+    .btn-subtle {
+      background: #EEF2F7;
+      color: var(--ink);
+      padding: 9px 14px;
+      font-size: 13.5px;
+    }
+    .btn-subtle:hover { background: #E2E8F0; }
+    .btn-sm { padding: 6px 11px; font-size: 12.5px; border-radius: 8px; }
+    .btn:disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
+
+    /* ==================== CLEAN DUAL-TRACK BLUEPRINT LANDING ==================== */
+    .home-shell {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 108px 24px 72px;
+    }
+    .home-hero {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 24px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .home-hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #1A73E8;
+      background: #FFFFFF;
+      border: 1px solid rgba(66, 133, 244, 0.22);
+      padding: 5px 12px;
+      border-radius: 999px;
+      box-shadow: 0 2px 10px rgba(66, 133, 244, 0.08);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .google-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .google-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .google-dots span:nth-child(1) { background: #4285F4; }
+    .google-dots span:nth-child(2) { background: #EA4335; }
+    .google-dots span:nth-child(3) { background: #FBBC04; }
+    .google-dots span:nth-child(4) { background: #34A853; }
+    .home-hero h1 {
+      margin: 0 0 8px;
+      font-size: 31px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      color: var(--ink);
+    }
+    .home-hero p {
+      margin: 0;
+      font-size: 16px;
+      color: var(--ink-muted);
+      line-height: 1.6;
+    }
+
+    .home-track-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px;
+      align-items: stretch;
+    }
+    .home-track-card {
+      position: relative;
+      background: #FFFFFF;
+      border-radius: 22px;
+      padding: 30px 30px 28px;
+      box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+      border: 1.5px solid rgba(66, 133, 244, 0.16);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+    }
+    .home-track-card[data-track-card="cloud_run"] {
+      border-color: rgba(52, 168, 83, 0.18);
+    }
+    .home-track-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: linear-gradient(90deg, #34A853 0%, #4285F4 55%, #FBBC04 100%);
+    }
+    .home-track-card[data-track-card="agent_runtime"]::before {
+      background: linear-gradient(90deg, #4285F4 0%, #7C4DFF 45%, #EA4335 78%, #FBBC04 100%);
+    }
+    .home-track-card:hover {
+      box-shadow: 0 22px 50px rgba(52, 168, 83, 0.16);
+      transform: translateY(-4px);
+      border-color: rgba(52, 168, 83, 0.55);
+    }
+    .home-track-card[data-track-card="agent_runtime"]:hover {
+      box-shadow: 0 22px 50px rgba(66, 133, 244, 0.18);
+      border-color: rgba(66, 133, 244, 0.55);
+    }
+    .home-track-card:active {
+      transform: translateY(-1px);
+    }
+    .home-track-card:focus-visible {
+      outline: 3px solid rgba(66, 133, 244, 0.4);
+      outline-offset: 2px;
+    }
+
+    .htc-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .htc-identity {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .htc-emblem {
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #E6F4EA 0%, #E8F0FE 100%);
+      border: 1px solid rgba(52, 168, 83, 0.24);
+    }
+    .home-track-card[data-track-card="agent_runtime"] .htc-emblem {
+      background: linear-gradient(135deg, #E8F0FE 0%, #FCE8E6 55%, #FEF7E0 100%);
+      border-color: rgba(66, 133, 244, 0.24);
+    }
+    .htc-emblem svg { width: 28px; height: 28px; display: block; }
+    .htc-kicker {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #137333;
+      text-transform: uppercase;
+    }
+    .home-track-card[data-track-card="agent_runtime"] .htc-kicker {
+      color: #1967D2;
+    }
+    .htc-title {
+      margin: 2px 0 0;
+      font-size: 25px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    .htc-duration {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #137333;
+      background: #E6F4EA;
+      border: 1px solid rgba(52, 168, 83, 0.28);
+      padding: 6px 13px;
+      border-radius: 999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+    .home-track-card[data-track-card="agent_runtime"] .htc-duration {
+      color: #1967D2;
+      background: #E8F0FE;
+      border-color: rgba(66, 133, 244, 0.28);
+    }
+    .home-track-card:hover .htc-duration {
+      background: #1E8E3E;
+      color: #FFFFFF;
+      border-color: #1E8E3E;
+      transform: translateX(2px);
+    }
+    .home-track-card[data-track-card="agent_runtime"]:hover .htc-duration {
+      background: #1A73E8;
+      color: #FFFFFF;
+      border-color: #1A73E8;
+    }
+
+    .htc-sub {
+      margin: 16px 0 20px;
+      font-size: 15px;
+      color: #334155;
+      line-height: 1.62;
+    }
+
+    /* Colorful Google-Style Stacked Features & Decision Framework */
+    .htc-pc {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px 0 0;
+      border-top: 1px solid var(--border);
+      flex: 1;
+    }
+    .htc-pc-block {
+      border-radius: 14px;
+      padding: 16px 18px;
+      border-left: 4px solid #34A853;
+      background: rgba(230, 244, 234, 0.42);
+    }
+    .home-track-card[data-track-card="agent_runtime"] .htc-pc-block.features {
+      border-left-color: #4285F4;
+      background: rgba(232, 240, 254, 0.44);
+    }
+    .htc-pc-block.bestfor {
+      border-left-color: #FBBC04;
+      background: linear-gradient(135deg, rgba(254, 247, 224, 0.72), rgba(252, 232, 230, 0.28));
+    }
+    .htc-pc-block h4 {
+      margin: 0 0 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 8px;
+      background: #CEEAD6;
+      color: #137333;
+    }
+    .home-track-card[data-track-card="agent_runtime"] .htc-pc-block.features h4 {
+      background: #D2E3FC;
+      color: #1967D2;
+    }
+    .htc-pc-block.bestfor h4 {
+      background: #FEEFC3;
+      color: #B06000;
+    }
+    .htc-pc-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .htc-pc-list li {
+      position: relative;
+      padding-left: 20px;
+      margin: 0;
+      font-size: 14.6px;
+      line-height: 1.62;
+      color: #1E293B;
+    }
+    .htc-pc-list li::before {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .htc-pc-block.features .htc-pc-list li::before { content: "•"; color: #34A853; font-size: 17px; top: -1px; }
+    .home-track-card[data-track-card="agent_runtime"] .htc-pc-block.features .htc-pc-list li::before { color: #4285F4; }
+    .htc-pc-block.bestfor .htc-pc-list li::before { content: "›"; color: #EA4335; font-size: 18px; top: -2px; }
+
+    /* Colorful Google 4-Color Deployment Tip Strip */
+    .home-tip-bar {
+      position: relative;
+      overflow: hidden;
+      margin-top: 24px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F4F8FF 52%, #F1FAF4 100%);
+      border: 1px solid rgba(66, 133, 244, 0.22);
+      border-radius: 16px;
+      padding: 18px 24px 18px 26px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .home-tip-bar::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(180deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .home-tip-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #34A853, #1E8E3E);
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      box-shadow: 0 4px 10px rgba(52, 168, 83, 0.25);
+    }
+    .home-tip-body h4 {
+      margin: 0 0 4px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .home-tip-body p {
+      margin: 0;
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: #334155;
+    }
+
+    /* ==================== MAIN 2-COLUMN CODELAB SHELL (v1 Original) ==================== */
+    .shell {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 96px 24px 72px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .sidebar {
+      position: sticky;
+      top: 96px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card {
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1.5px solid rgba(66, 133, 244, 0.14);
+    }
+    .sidebar .card::before,
+    .lab-step.card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    body[data-track="cloud_run"] .lab-step.card::before,
+    body[data-track="cloud_run"] .sidebar .card:first-child::before {
+      background: linear-gradient(90deg, #34A853 0%, #4285F4 55%, #FBBC04 100%);
+    }
+    body[data-track="agent_runtime"] .lab-step.card::before,
+    body[data-track="agent_runtime"] .sidebar .card:first-child::before {
+      background: linear-gradient(90deg, #4285F4 0%, #7C4DFF 45%, #EA4335 78%, #FBBC04 100%);
+    }
+    .card-pad { padding: 24px; }
+    .card-pad-lg { padding: 30px 34px; }
+
+    /* Sidebar Elements */
+    .progress-track {
+      height: 8px;
+      background: #E8EEF5;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4285F4 0%, #FBBC04 52%, #34A853 100%);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: var(--surface-subtle);
+      padding: 4px;
+      border-radius: 10px;
+    }
+    .seg-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 7px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .seg-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .step-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .step-nav-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border: none;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .step-nav-btn:hover { background: #F1F6FE; }
+    .step-nav-btn.active {
+      background: #E8F0FE;
+      color: #1967D2;
+      font-weight: 700;
+    }
+    .step-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      background: #EEF2F7;
+      color: var(--ink-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-nav-btn.active .step-dot {
+      background: #1A73E8;
+      color: #fff;
+    }
+    .step-nav-btn.done .step-dot {
+      background: #E6F4EA;
+      color: #137333;
+      border: 1px solid rgba(52, 168, 83, 0.4);
+    }
+    .step-nav-meta {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-faint);
+      flex-shrink: 0;
+    }
+
+    /* Form Controls */
+    .env-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 12px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-bottom: 5px;
+    }
+    .field input {
+      width: 100%;
+      padding: 8px 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.18);
+    }
+
+    /* Main Content Sections */
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+    }
+    .lab-step { display: block; }
+    .lab-step.hidden-step { display: none; }
+
+    h1 {
+      margin: 12px 0 8px;
+      font-size: 26px;
+      line-height: 1.3;
+      letter-spacing: -0.025em;
+      font-weight: 700;
+    }
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+    }
+    h3 {
+      margin: 20px 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    p { margin: 8px 0; color: var(--ink-muted); font-size: 14.5px; }
+    ul, ol { margin: 8px 0; padding-left: 20px; color: var(--ink-muted); font-size: 14.5px; }
+    li { margin: 6px 0; }
+    li strong, p strong { color: var(--ink); }
+
+    /* Callouts (Google 4-Color Tinted Blocks) */
+    .callout {
+      border-radius: 14px;
+      padding: 15px 18px;
+      margin: 14px 0;
+      border: 1px solid transparent;
+      border-left-width: 4px;
+      font-size: 14px;
+    }
+    .callout-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .callout-blue { background: rgba(232, 240, 254, 0.58); border-color: rgba(66, 133, 244, 0.24); border-left-color: #4285F4; color: #174EA6; }
+    .callout-green { background: rgba(230, 244, 234, 0.65); border-color: rgba(52, 168, 83, 0.24); border-left-color: #34A853; color: #0D652D; }
+    .callout-amber { background: rgba(254, 247, 224, 0.78); border-color: rgba(251, 188, 4, 0.32); border-left-color: #FBBC04; color: #9A5300; }
+    .callout p { margin: 4px 0 0; color: inherit; font-size: 13.8px; }
+
+    /* Terminal Code Blocks & agy Prompt Block */
+    .code-wrap {
+      border-radius: 13px;
+      overflow: hidden;
+      background: var(--code-bg);
+      margin: 12px 0;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .code-wrap.prompt-card {
+      background: #141933;
+      border: 1px solid rgba(56, 189, 248, 0.28);
+    }
+    .code-head {
+      background: var(--code-head);
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .prompt-card .code-head { background: #1E2547; }
+    .code-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .copy-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s ease;
+    }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.22); }
+    .copy-btn.copied { background: #16A34A; }
+    .code-pre {
+      margin: 0;
+      padding: 15px 16px;
+      color: #F8FAFC;
+      font-size: 13px;
+      line-height: 1.65;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .prompt-card .code-pre {
+      font-family: var(--font-sans);
+      font-size: 13.8px;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+    .code-output {
+      background: #111827;
+      border-top: 1px dashed rgba(255, 255, 255, 0.12);
+      padding: 13px 16px;
+      color: #A7F3D0;
+      font-size: 12.5px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: var(--surface-subtle);
+      padding: 5px;
+      border-radius: 11px;
+      margin: 10px 0 4px;
+    }
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 14px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    th {
+      background: var(--surface-muted);
+      color: var(--ink-muted);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 11px 14px;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      vertical-align: top;
+      color: var(--ink);
+    }
+    tr:hover td { background: #FAFAFC; }
+
+    /* Verification Sub-checklist */
+    .verify-box {
+      background: linear-gradient(135deg, rgba(230, 244, 234, 0.48), rgba(232, 240, 254, 0.36));
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-top: 20px;
+      border: 1px solid rgba(52, 168, 83, 0.24);
+      border-left: 4px solid #34A853;
+    }
+    .verify-box-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #137333;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .verify-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+      font-size: 13.8px;
+      color: var(--ink);
+    }
+    .verify-item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      margin-top: 2px;
+      accent-color: #1E8E3E;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Step Footer Navigation */
+    .step-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.07);
+    }
+    .step-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .step-header-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Accordion FAQ */
+    details.faq {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px 18px;
+      margin: 10px 0;
+      background: #fff;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+    details.faq:hover {
+      border-color: rgba(66, 133, 244, 0.34);
+    }
+    details.faq[open] {
+      border-color: rgba(66, 133, 244, 0.32);
+      border-left: 4px solid #4285F4;
+    }
+    details.faq summary {
+      position: relative;
+      display: block;
+      padding-right: 30px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      list-style: none;
+    }
+    details.faq summary::-webkit-details-marker { display: none; }
+    details.faq summary::after {
+      content: "+";
+      position: absolute;
+      right: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 18px;
+      line-height: 1;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    details.faq[open] summary::after { content: "−"; }
+    details.faq .faq-body { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(66, 133, 244, 0.12); }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .kpi-card {
+      background: var(--surface-muted);
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(66, 133, 244, 0.16);
+      border-left: 4px solid #4285F4;
+    }
+    .kpi-card:nth-child(2) { border-left-color: #EA4335; }
+    .kpi-card:nth-child(3) { border-left-color: #FBBC04; }
+    .kpi-card:nth-child(4) { border-left-color: #34A853; }
+    .kpi-label { font-size: 12px; font-weight: 700; color: var(--ink-faint); }
+    .kpi-val { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--ink); margin-top: 3px; }
+    .kpi-sub { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+
+    /* Checkpoint Detail & Profile Matrix (3-2) */
+    .cp-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0 12px;
+    }
+    .cp-summary-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-top: 3px solid #4285F4;
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+    }
+    .cp-summary-card:nth-child(2) { border-top-color: #34A853; }
+    .cp-summary-card:nth-child(3) { border-top-color: #FBBC04; }
+    .cp-summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(32, 33, 36, 0.08);
+    }
+    .cp-summary-card.active {
+      border-color: rgba(26, 115, 232, 0.45);
+      background: #F8FBFF;
+      box-shadow: 0 6px 18px rgba(26, 115, 232, 0.12);
+    }
+    .cp-sc-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .cp-sc-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+    .cp-sc-desc { font-size: 12.8px; color: var(--ink-muted); line-height: 1.55; margin: 0; }
+    .cp-sc-meta {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+      font-size: 12px;
+      color: var(--ink-faint);
+      line-height: 1.5;
+    }
+
+    .cp-q-legend {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 16px;
+      margin: 0 0 14px;
+    }
+    .cp-q-legend-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .cp-q-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+    }
+    .cp-q-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--ink-muted);
+    }
+
+    .cp-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 12px 0 8px;
+    }
+    .cp-filter-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: var(--surface-subtle);
+      padding: 4px;
+      border-radius: 11px;
+    }
+    .cp-filter-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .cp-filter-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.09);
+    }
+    .cp-toggle-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .cp-toggle-label input { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
+
+    .cp-matrix-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      margin: 10px 0 16px;
+      box-shadow: 0 2px 10px rgba(32, 33, 36, 0.04);
+    }
+    .cp-matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+    .cp-matrix-table thead th {
+      background: #F4F7FB;
+      color: var(--ink-muted);
+      font-size: 11.8px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      padding: 12px 14px;
+      border-bottom: 1.5px solid rgba(66, 133, 244, 0.18);
+      vertical-align: middle;
+    }
+    .cp-matrix-table tbody td {
+      padding: 14px 14px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      vertical-align: top;
+    }
+    .cp-matrix-table tbody tr.cp-row { transition: background 0.14s ease, opacity 0.18s ease; }
+    .cp-matrix-table tbody tr.cp-row:hover td { background: #F9FBFF; }
+    .cp-matrix-table tbody tr.cp-dimmed { opacity: 0.36; }
+    .cp-matrix-table tbody tr.cp-hidden { display: none; }
+
+    .cp-domain-row td {
+      background: linear-gradient(90deg, #F1F6FE 0%, #F8FAFC 100%) !important;
+      border-top: 1.5px solid rgba(66, 133, 244, 0.2) !important;
+      border-bottom: 1px solid rgba(66, 133, 244, 0.12);
+      padding: 10px 14px !important;
+    }
+    .cp-domain-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .cp-domain-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #174EA6;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cp-domain-weight {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      background: #fff;
+      border: 1px solid rgba(66, 133, 244, 0.22);
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+
+    .cp-id-col { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+    .cp-sev {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+    .cp-sev-crit { background: #FCE8E6; color: #C5221F; }
+    .cp-sev-std { background: #F1F5F9; color: #475569; }
+
+    .cp-title-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 5px;
+    }
+    .cp-title {
+      font-size: 14.2px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+    .cp-ba-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin: 8px 0 9px;
+      background: #F8FAFC;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .cp-ba-row {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 10px;
+      align-items: baseline;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--ink-muted);
+      word-break: keep-all;
+    }
+    .cp-ba-row strong { color: var(--ink); }
+    .cp-ba-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .cp-ba-tag.check { background: #FEF7E0; color: #9A5300; border: 1px solid rgba(251, 188, 4, 0.38); }
+    .cp-ba-tag.bp { background: #E8F0FE; color: #174EA6; border: 1px solid rgba(66, 133, 244, 0.34); }
+    .cp-ba-tag.fix { background: #E6F4EA; color: #137333; border: 1px solid rgba(52, 168, 83, 0.34); }
+    .cp-ba-tag.auto { background: #F3E8FD; color: #681DA8; border: 1px solid rgba(124, 77, 255, 0.32); }
+    .cp-desc {
+      font-size: 13.3px;
+      color: #334155;
+      line-height: 1.62;
+      margin: 4px 0 6px;
+      word-break: keep-all;
+    }
+    .cp-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.8px;
+      color: var(--ink-faint);
+      line-height: 1.5;
+      padding-top: 4px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.06);
+    }
+    .cp-meta code {
+      font-size: 11.5px;
+      background: #F1F5F9;
+      color: #334155;
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    .cp-cond-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    .cp-cond-note {
+      font-size: 11.5px;
+      color: var(--ink-faint);
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .cp-col-profile {
+      text-align: center;
+      vertical-align: middle !important;
+      white-space: nowrap;
+      width: 56px;
+      padding: 10px 6px !important;
+    }
+    .cp-matrix-table thead th[data-cp-col] {
+      width: 56px;
+      padding: 10px 4px;
+      font-size: 11.2px;
+      line-height: 1.3;
+    }
+    .cp-matrix-table th.cp-col-hi,
+    .cp-matrix-table td.cp-col-hi { background: rgba(232, 240, 254, 0.42); }
+    .cp-badge-on {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: #E6F4EA;
+      color: #137333;
+      border: 1px solid rgba(52, 168, 83, 0.36);
+      font-size: 13px;
+      font-weight: 800;
+      border-radius: 999px;
+      line-height: 1;
+    }
+    .cp-badge-auto {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: #E8F0FE;
+      color: #174EA6;
+      border: 1px solid rgba(66, 133, 244, 0.36);
+      font-size: 12.5px;
+      font-weight: 800;
+      border-radius: 999px;
+      line-height: 1;
+    }
+    .cp-badge-off {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: #F1F5F9;
+      color: #94A3B8;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: 999px;
+      line-height: 1;
+    }
+    .cp-badge-sub {
+      display: block;
+      margin-top: 3px;
+      font-family: var(--font-mono);
+      font-size: 9.8px;
+      color: #137333;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Responsive */
+    @media (max-width: 1080px) {
+      .shell, .home-track-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cp-summary-grid, .cp-q-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .topbar-inner { padding: 0 14px; }
+      .brand-sub, .topbar-badge-hide { display: none; }
+      .shell { padding: 88px 14px 56px; }
+      .home-shell { padding: 92px 14px 48px; }
+      .home-hero h1 { font-size: 24px; }
+      .home-track-card { padding: 24px 20px; }
+      .card-pad-lg { padding: 20px; }
+      .env-grid, .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .topbar, .sidebar, .step-footer, .copy-btn, .tab-bar { display: none !important; }
+      .shell { display: block; padding: 0; }
+      .lab-step.hidden-step { display: block !important; }
+      .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; margin-bottom: 16px; }
+      .tab-panel { display: block !important; }
+    }
+  </style>
+</head>
+<body data-track="cloud_run">
+
+  <!-- ==================== FIXED TOP NAVBAR (v1 Original Preserved) ==================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" onclick="showLanding()" title="런타임 트랙 선택 화면으로 이동">
+        <!-- Official Google Cloud SVG Wordmark -->
+        <svg viewBox="0 0 224 36" fill="none" style="height:26px;width:auto;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud">
+          <path d="M110.371 27.915C107.508 27.915 105.137 26.9938 103.257 25.1515C101.39 23.3092 100.456 20.8818 100.456 17.8693C100.456 14.9191 101.359 12.4917 103.164 10.5872C104.981 8.67018 107.352 7.71167 110.278 7.71167C112.195 7.71167 113.85 8.20337 115.244 9.18677C116.651 10.1702 117.759 11.7075 118.568 13.7988C118.643 14.0104 118.711 14.2283 118.773 14.4523C118.836 14.6764 118.892 14.9316 118.942 15.2179L103.63 21.7158L102.566 18.6349L115.244 13.2573L114.89 14.9565C114.417 13.6245 113.757 12.6598 112.91 12.0623C112.076 11.4648 111.149 11.166 110.128 11.166C108.385 11.166 106.998 11.7635 105.964 12.9586C104.931 14.1411 104.415 15.6971 104.415 17.6266C104.415 19.444 105.012 20.9938 106.207 22.276C107.402 23.5581 108.852 24.1992 110.558 24.1992C111.578 24.1992 112.531 23.944 113.415 23.4336C114.298 22.9233 115.07 22.2075 115.73 21.2863L118.755 23.2656C117.908 24.6598 116.751 25.7863 115.282 26.6453C113.813 27.4917 112.176 27.915 110.371 27.915Z" fill="#FC413D"/>
+          <path d="M94.2754 27.336V0.597412H98.3459V27.336H94.2754Z" fill="#00AF57"/>
+          <path d="M81.784 36C79.6429 36 77.8753 35.5519 76.4811 34.6556C75.0994 33.7593 73.9479 32.334 73.0268 30.3797L76.5371 28.8299C77.1222 29.9378 77.8317 30.8029 78.6658 31.4253C79.4998 32.0602 80.5205 32.3776 81.728 32.3776C83.5703 32.3776 84.9707 31.8423 85.9292 30.7718C86.9002 29.7013 87.3857 28.2075 87.3857 26.2905V24.554H87.255C86.9562 25.0021 86.533 25.4565 85.9853 25.917C85.4375 26.3652 84.7653 26.7511 83.9687 27.0747C83.172 27.3859 82.3006 27.5415 81.3546 27.5415C79.4749 27.5415 77.8442 27.1245 76.4624 26.2905C75.0807 25.4565 74.0226 24.2988 73.2882 22.8175C72.5537 21.3237 72.1865 19.6121 72.1865 17.6826C72.1865 15.778 72.5537 14.0727 73.2882 12.5664C74.0226 11.0478 75.0683 9.85897 76.4251 9.00005C77.7944 8.14113 79.3878 7.71167 81.2052 7.71167C82.4998 7.71167 83.6886 7.96686 84.7716 8.47723C85.8546 8.9876 86.701 9.71582 87.311 10.6619H87.3857V8.29051H91.2695V25.1328C91.2695 32.3776 88.1077 36 81.784 36ZM81.784 23.8444C82.9292 23.8444 83.9251 23.5768 84.7716 23.0415C85.618 22.5063 86.2653 21.7656 86.7135 20.8195C87.1616 19.861 87.3857 18.7718 87.3857 17.5519C87.3857 16.3071 87.1616 15.2179 86.7135 14.2843C86.2653 13.3382 85.618 12.61 84.7716 12.0996C83.9251 11.5893 82.9355 11.3341 81.8027 11.3341C80.6948 11.3341 79.7176 11.5955 78.8712 12.1183C78.0247 12.6287 77.3649 13.3569 76.8919 14.3029C76.4189 15.249 76.1824 16.3382 76.1824 17.5706C76.1824 18.8652 76.4189 19.9855 76.8919 20.9316C77.3774 21.8776 78.0434 22.5996 78.8898 23.0975C79.7363 23.5955 80.701 23.8444 81.784 23.8444Z" fill="#3186FF"/>
+          <path d="M60.6284 27.952C58.7114 27.952 56.9873 27.5101 55.4562 26.6263C53.9375 25.7425 52.7487 24.5288 51.8898 22.9852C51.0434 21.4292 50.6201 19.6803 50.6201 17.7384C50.6201 15.7467 51.0558 13.9852 51.9272 12.4541C52.811 10.9106 54.0122 9.71555 55.5309 8.86907C57.0496 8.0226 58.7487 7.59937 60.6284 7.59937C62.533 7.59937 64.2446 8.02883 65.7633 8.88775C67.2944 9.74667 68.4956 10.9479 69.367 12.4915C70.2384 14.035 70.674 15.784 70.674 17.7384C70.674 19.6803 70.2446 21.4292 69.3857 22.9852C68.5267 24.5413 67.3317 25.7612 65.8006 26.645C64.2819 27.5164 62.5579 27.952 60.6284 27.952ZM60.6284 24.4043C61.811 24.4043 62.8566 24.1118 63.7653 23.5267C64.6865 22.9292 65.396 22.1263 65.894 21.118C66.4043 20.0973 66.6595 18.9707 66.6595 17.7384C66.6595 16.5184 66.4043 15.4106 65.894 14.4147C65.396 13.4064 64.6865 12.6097 63.7653 12.0247C62.8442 11.4396 61.7985 11.1471 60.6284 11.1471C59.533 11.1471 58.5247 11.4272 57.6035 11.9873C56.6823 12.5475 55.9479 13.3317 55.4002 14.34C54.8649 15.3359 54.5973 16.4686 54.5973 17.7384C54.5973 18.9583 54.8463 20.0786 55.3442 21.0993C55.8546 22.1076 56.5641 22.9105 57.4728 23.5081C58.394 24.1056 59.4458 24.4043 60.6284 24.4043Z" fill="#FFBE00"/>
+          <path d="M38.9126 27.952C36.9956 27.952 35.2715 27.5101 33.7404 26.6263C32.2217 25.7425 31.0329 24.5288 30.174 22.9852C29.3275 21.4292 28.9043 19.6803 28.9043 17.7384C28.9043 15.7467 29.34 13.9852 30.2114 12.4541C31.0952 10.9106 32.2964 9.71555 33.8151 8.86907C35.3338 8.0226 37.0329 7.59937 38.9126 7.59937C40.8171 7.59937 42.5288 8.02883 44.0474 8.88775C45.5786 9.74667 46.7798 10.9479 47.6512 12.4915C48.5225 14.035 48.9582 15.784 48.9582 17.7384C48.9582 19.6803 48.5288 21.4292 47.6698 22.9852C46.8109 24.5413 45.6159 25.7612 44.0848 26.645C42.5661 27.5164 40.842 27.952 38.9126 27.952ZM38.9126 24.4043C40.0952 24.4043 41.1408 24.1118 42.0495 23.5267C42.9707 22.9292 43.6802 22.1263 44.1781 21.118C44.6885 20.0973 44.9437 18.9707 44.9437 17.7384C44.9437 16.5184 44.6885 15.4106 44.1781 14.4147C43.6802 13.4064 42.9707 12.6097 42.0495 12.0247C41.1283 11.4396 40.0827 11.1471 38.9126 11.1471C37.8172 11.1471 36.8089 11.4272 35.8877 11.9873C34.9665 12.5475 34.2321 13.3317 33.6844 14.34C33.1491 15.3359 32.8815 16.4686 32.8815 17.7384C32.8815 18.9583 33.1304 20.0786 33.6284 21.0993C34.1387 22.1076 34.8483 22.9105 35.757 23.5081C36.6782 24.1056 37.73 24.4043 38.9126 24.4043Z" fill="#FC413D"/>
+          <path d="M13.8174 27.9522C11.2531 27.9273 8.91285 27.2925 6.79667 26.0477C4.69294 24.7904 3.03112 23.0913 1.8112 20.9502C0.603734 18.8091 0 16.4564 0 13.8921C0 11.2904 0.603734 8.93152 1.8112 6.81534C3.01867 4.69916 4.68049 3.03734 6.79667 1.82987C8.91285 0.609958 11.2655 0 13.8548 0C15.8713 0 17.7199 0.336099 19.4004 1.0083C21.0809 1.6805 22.5124 2.71369 23.695 4.10788L20.9875 6.94605C19.9294 5.86306 18.8402 5.08506 17.7199 4.61203C16.612 4.139 15.3423 3.90248 13.9108 3.90248C12.0933 3.90248 10.4502 4.31327 8.98132 5.13485C7.51244 5.95642 6.34854 7.13277 5.48962 8.66389C4.64315 10.1826 4.21991 11.944 4.21991 13.9481C4.21991 15.9025 4.64315 17.6514 5.48962 19.195C6.33609 20.7261 7.49377 21.9211 8.96264 22.7801C10.4315 23.639 12.0809 24.0684 13.9108 24.0684C15.5415 24.0684 16.9979 23.7821 18.2801 23.2095C19.5747 22.6245 20.6203 21.7531 21.417 20.5954C22.2137 19.4377 22.6929 18.0311 22.8547 16.3755H13.7614V12.5104H26.7199C26.8444 13.3319 26.9066 14.0788 26.9066 14.751C26.9066 17.3651 26.3651 19.6805 25.2821 21.6971C24.1991 23.7012 22.6618 25.251 20.6701 26.3464C18.6908 27.4419 16.4066 27.9771 13.8174 27.9522Z" fill="#3186FF"/>
+          <path d="M143.722 27.9709C139.751 27.9709 136.44 26.639 133.789 23.9751C131.137 21.2987 129.812 17.9502 129.812 13.9294C129.812 9.89625 131.143 6.56638 133.807 3.93983C136.471 1.31328 139.77 0 143.704 0C144.986 0 146.224 0.168049 147.419 0.504148C148.614 0.840248 149.697 1.3195 150.668 1.94191C151.652 2.55186 152.679 3.43568 153.749 4.59335L150.911 7.28215C149.99 6.29875 149.199 5.60165 148.54 5.19086C147.892 4.78008 147.17 4.46887 146.374 4.25725C145.577 4.03319 144.693 3.92115 143.722 3.92115C140.946 3.92115 138.619 4.84232 136.739 6.68464C134.859 8.51451 133.919 10.9232 133.919 13.9108C133.919 16.8859 134.853 19.3195 136.72 21.2116C138.587 23.0913 140.921 24.0311 143.722 24.0311C144.706 24.0311 145.652 23.8942 146.56 23.6203C147.469 23.3464 148.297 22.9606 149.044 22.4626C149.791 21.9647 150.6 21.2303 151.471 20.2593L154.384 23.0415C153.189 24.3734 152.063 25.363 151.004 26.0103C149.959 26.6576 148.826 27.1431 147.606 27.4668C146.386 27.8029 145.092 27.9709 143.722 27.9709Z" fill="#212226"/>
+          <path d="M156.44 27.3547V0.616182H160.51V27.3547H156.44Z" fill="#212226"/>
+          <path d="M172.811 27.9709C169.911 27.9709 167.515 27.0062 165.622 25.0767C163.73 23.1473 162.784 20.7199 162.784 17.7946C162.784 14.8319 163.73 12.3983 165.622 10.4938C167.527 8.5892 169.923 7.63692 172.811 7.63692C175.699 7.63692 178.095 8.59542 180 10.5124C181.905 12.4294 182.857 14.8568 182.857 17.7946C182.857 20.7199 181.911 23.1473 180.019 25.0767C178.127 27.0062 175.724 27.9709 172.811 27.9709ZM172.811 24.4232C174.517 24.4232 175.948 23.807 177.106 22.5747C178.263 21.3298 178.842 19.7365 178.842 17.7946C178.842 15.8278 178.257 14.2344 177.087 13.0145C175.929 11.7946 174.504 11.1846 172.811 11.1846C171.106 11.1846 169.674 11.7946 168.517 13.0145C167.359 14.2344 166.78 15.8278 166.78 17.7946C166.78 19.7365 167.353 21.3298 168.498 22.5747C169.656 23.807 171.093 24.4232 172.811 24.4232Z" fill="#212226"/>
+          <path d="M192.043 27.9709C189.778 27.9709 188.029 27.3174 186.796 26.0103C185.564 24.6908 184.948 22.8298 184.948 20.4274V8.2531H189.018V19.8112C189.018 21.3672 189.373 22.556 190.083 23.3776C190.805 24.1991 191.832 24.6099 193.164 24.6099C194.558 24.6099 195.734 24.0747 196.693 23.0041C197.651 21.9211 198.13 20.6265 198.13 19.1203V8.2531H202.201V27.3547H198.336V22.8174L200.184 24.6659H198.224C197.688 25.6244 196.854 26.4149 195.722 27.0373C194.589 27.6597 193.363 27.9709 192.043 27.9709Z" fill="#212226"/>
+          <path d="M213.481 27.9709C210.879 27.9709 208.72 27.0311 207.002 25.1514C205.296 23.2593 204.444 20.8133 204.444 17.8133C204.444 14.8382 205.309 12.4045 207.039 10.5124C208.782 8.62032 210.96 7.67426 213.574 7.67426C214.894 7.67426 216.108 7.97302 217.215 8.57053C218.336 9.15559 219.176 9.92737 219.736 10.8859H219.867V0.616182H223.9V27.3547H220.016V23.9751L220.446 24.722H219.904C219.307 25.7054 218.429 26.4958 217.271 27.0933C216.114 27.6784 214.85 27.9709 213.481 27.9709ZM214.209 24.4605C215.84 24.4605 217.209 23.8381 218.317 22.5933C219.437 21.3361 219.998 19.7365 219.998 17.7946C219.998 15.8527 219.431 14.2718 218.298 13.0518C217.178 11.8319 215.815 11.222 214.209 11.222C212.603 11.222 211.234 11.8319 210.101 13.0518C208.981 14.2718 208.421 15.8589 208.421 17.8133C208.421 19.7427 208.975 21.3361 210.083 22.5933C211.203 23.8381 212.578 24.4605 214.209 24.4605Z" fill="#212226"/>
+        </svg>
+        <span class="brand-divider" aria-hidden="true"></span>
+        <div class="brand-title-wrap">
+          <span class="brand-title">AI Agent Production-Readiness Lab</span>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="topTrackBtn" class="btn btn-subtle btn-sm topbar-badge-hide hidden" onclick="showLanding()">
+          <span id="topTrackLabel">Cloud Run</span> · 트랙 변경
+        </button>
+        <a id="topWorkbenchLink" href="https://prod-ready-workbench-1018407696981.us-central1.run.app" target="_blank" rel="noopener noreferrer" class="btn btn-navy btn-sm">
+          <span>Web Workbench 열기 ↗</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== VIEW 1: CLEAN DUAL-TRACK LANDING ==================== -->
+  <main id="landingView" class="home-shell">
+    <section class="home-hero">
+      <div>
+        <div class="home-hero-eyebrow">
+          <span class="google-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          <span>DUAL-TRACK ARCHITECTURE LAB</span>
+        </div>
+        <h1>프로덕션 AI 에이전트, 어떤 런타임으로 배포할까요?</h1>
+        <p>Agent Runtime과 Cloud Run의 특징과 선택 기준을 비교하고, 원하는 카드를 선택해 실습을 시작하세요.</p>
+      </div>
+    </section>
+
+    <section id="landingTrackGrid" class="home-track-grid" aria-label="배포 런타임 트랙 선택"></section>
+
+    <aside class="home-tip-bar" aria-label="배포 선택 팁">
+      <div class="home-tip-icon" aria-hidden="true">✓</div>
+      <div class="home-tip-body">
+        <h4>배포 팁 · 망설여진다면 Cloud Run으로 시작하세요</h4>
+        <p>
+          코드 변경 없이 두 환경을 오갈 수 있으므로, 우선 비용 부담이 적은 <strong>Cloud Run으로 시작</strong>하는 것을 권장합니다.
+          장기 문맥 유지가 중요해지면 단일 명령어(<code>adk deploy agent_engine</code> 또는 <code>uvx google-agents-cli deploy</code>)로 타겟만 전환할 수 있습니다.
+        </p>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ==================== VIEW 2: 2-COLUMN CODELAB SHELL (v1 Original) ==================== -->
+  <div id="workspaceView" class="shell hidden">
+    <!-- Left Sticky Sidebar -->
+    <aside class="sidebar">
+      <!-- Lab Progress & Step Nav Card -->
+      <div class="card card-pad">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span id="sidebarTrackBadge" class="pill pill-navy mono">Cloud Run</span>
+          <span id="sidebarProgressLabel" class="mono" style="font-size:12.5px;font-weight:700;color:var(--accent);">0 / 9 완료 (0%)</span>
+        </div>
+
+        <div class="progress-track">
+          <div id="sidebarProgressFill" class="progress-fill" style="width: 4%;"></div>
+        </div>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(66,133,244,0.12);">
+          <div style="font-size:11.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">실습 목차 (Step 0 ~ Step 8)</div>
+          <ul id="stepNavList" class="step-nav"></ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Codelab Area -->
+    <main class="main-col">
+
+      <!-- ==================== STEP 0 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="0" id="step-0">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 0 / 8</span>
+            <span class="pill pill-gray mono">약 5분</span>
+            <h2>실습 환경 준비 및 GCP 프로젝트 설정</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(0)">✓ 완료 표시</button>
+        </div>
+
+        <p>실습 시작 전, 필수 CLI(<code>python3</code>, <code>uv</code>, <code>gcloud</code>, <code>agy</code>)를 확인하고 본인의 GCP 프로젝트 정보를 입력합니다.</p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0 8px;">
+          <h3 style="margin:0;">0-1. 내 실습 환경 변수 맞춤 설정</h3>
+          <button onclick="resetEnvConfig()" class="btn btn-subtle btn-sm" style="padding:4px 10px;font-size:12px;">기본값 초기화</button>
+        </div>
+        <div style="background:var(--surface-muted);border-radius:14px;padding:16px;border:1px solid rgba(66,133,244,0.14);">
+          <div class="env-grid">
+            <div class="field">
+              <label for="envProjectMain">GCP Project ID</label>
+              <input id="envProjectMain" type="text" placeholder="예: my-gcp-project-id" oninput="updateEnvFromInputs('main')" />
+            </div>
+            <div class="field">
+              <label for="envRegionMain">GCP Region</label>
+              <input id="envRegionMain" type="text" oninput="updateEnvFromInputs('main')" />
+            </div>
+            <div class="field">
+              <label for="envAgentMain">실습 Agent 서비스명</label>
+              <input id="envAgentMain" type="text" oninput="updateEnvFromInputs('main')" />
+            </div>
+            <div class="field track-only" data-track="agent_runtime">
+              <label for="envEngineIdMain">Reasoning Engine ID (Step 5 배포 후 입력)</label>
+              <input id="envEngineIdMain" type="text" oninput="updateEnvFromInputs('main')" />
+            </div>
+          </div>
+        </div>
+
+        <h3>0-2. Cloud Shell 열기 및 필수 CLI 도구 설치·확인</h3>
+        <ol>
+          <li><a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;text-decoration:underline;">Google Cloud Console ↗</a>에 로그인한 뒤, 우측 상단의 <strong>Cloud Shell 활성화 (<code>&gt;_</code>)</strong> 아이콘을 클릭해 터미널을 엽니다.</li>
+          <li>열린 Cloud Shell 터미널에 아래 명령어를 복사·실행하여 <code>python3</code>, <code>gcloud</code> 버전을 확인하고, 파이썬 패키지 매니저 <strong><code>uv</code></strong>를 설치(미설치 시 자동 설치)합니다.</li>
+        </ol>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · Cloud Shell에서 도구 버전 확인 및 uv 설치</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="python3 --version
+gcloud --version | head -n 1
+command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+uv --version
+agy --version"></pre>
+        </div>
+
+        <div class="callout callout-blue">
+          <div class="callout-title">🧰 실습에 사용하는 필수 CLI 도구 안내</div>
+          <ul style="margin:6px 0 0 18px;">
+            <li><strong><code>python3</code> · <code>gcloud</code></strong> — Python 실행 및 Google Cloud 배포용 CLI로, <strong>Cloud Shell에 기본 설치</strong>되어 있습니다.</li>
+            <li><strong><code>uv</code></strong> — <code>google-agents-cli</code> 실행과 패키지 설치를 빠르게 처리하는 Python 도구입니다. 위 명령어로 자동 설치됩니다.</li>
+            <li><strong><code>agy</code></strong> — 대화형 AI 코딩 CLI(Antigravity)입니다.</li>
+          </ul>
+        </div>
+
+        <h3>0-3. GCP 프로젝트 설정 및 필수 API 활성화</h3>
+        <p>Cloud Shell 터미널에서 <code>0-1</code>에 입력한 GCP 프로젝트를 기본값으로 지정하고, 에이전트 배포·진단에 필요한 Google Cloud API를 한 번에 활성화합니다.</p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 프로젝트 설정 및 GCP API 활성화</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="gcloud config set project {{PROJECT_ID}}
+
+gcloud services enable \
+  run.googleapis.com \
+  cloudbuild.googleapis.com \
+  artifactregistry.googleapis.com \
+  aiplatform.googleapis.com \
+  secretmanager.googleapis.com \
+  --project={{PROJECT_ID}}"></pre>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="showLanding()">← 트랙 선택으로</button>
+          <button class="btn btn-primary" onclick="completeAndNext(0)">Step 0 완료하고 Step 1로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 1 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="1" id="step-1">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 1 / 8</span>
+            <span class="pill pill-gray mono">약 7분</span>
+            <h2>심플한 AI Agent 만들기 (ADK 프로토타입)</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(1)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          먼저 <strong>Google ADK</strong> 기반의 단순한 환율 안내 에이전트(<code>{{AGENT_NAME}}</code>)를 만듭니다.
+          아무런 보안·세션·관측성 가드레일이 없는 상태에서 시작해야 Step 3~4의 Before/After 효과를 확실하게 확인할 수 있습니다.
+        </p>
+
+        <div class="tab-bar" data-tabgroup="step1">
+          <button class="tab-btn active" onclick="switchTab('step1', 'scaffold', this)">방법 A · agents-cli 로 스캐폴딩 (권장)</button>
+          <button class="tab-btn" onclick="switchTab('step1', 'manual', this)">방법 B · 직접 ADK 코드 직접 생성</button>
+          <button class="tab-btn" onclick="switchTab('step1', 'existing', this)">방법 C · 기존 ADK 코드 활용하기</button>
+        </div>
+
+        <div class="tab-panel active" data-tabgroup="step1" data-tab="scaffold">
+          <h3>1-1. <code>agents-cli</code>로 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 템플릿 스캐폴딩</h3>
+          <p><code>agents-cli</code>로 선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 타겟의 표준 프로젝트를 생성합니다. <span class="track-only" data-track="agent_runtime">(<code>agent_runtime</code> 타겟은 7개 <code>MANAGED_NATIVE</code> 항목이 기본 인식되어 시작 점수가 약 <code>49.2 / 100</code>부터 출발합니다.)</span></p>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label" data-auto-tpl="1">bash · agents-cli ({{TARGET_KEY}}) 스캐폴딩</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="mkdir -p ~/agent-lab && cd ~/agent-lab
+uvx google-agents-cli scaffold create {{AGENT_NAME}} \
+  --agent adk_python \
+  --deployment-target {{TARGET_KEY}} \
+  --region {{REGION}} \
+  --yes
+cd {{AGENT_NAME}}
+uv sync"></pre>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tabgroup="step1" data-tab="manual">
+          <h3>1-1. 프로젝트 디렉터리 및 <code>pyproject.toml</code> · <code>app/agent.py</code> 직접 생성</h3>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · 최소 ADK 에이전트 생성</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="mkdir -p ~/agent-lab/{{AGENT_NAME}}/app
+cd ~/agent-lab/{{AGENT_NAME}}
+
+cat &lt;&lt; 'EOF' &gt; pyproject.toml
+[project]
+name = &quot;{{AGENT_NAME}}&quot;
+version = &quot;0.1.0&quot;
+description = &quot;Simple ADK Currency Assistant for Production-Readiness Lab&quot;
+requires-python = &quot;&gt;=3.11&quot;
+dependencies = [
+    &quot;google-adk&gt;=1.0.0&quot;,
+    &quot;fastapi&gt;=0.115.0&quot;,
+    &quot;uvicorn&gt;=0.32.0&quot;,
+    &quot;python-dotenv&gt;=1.0.1&quot;,
+]
+EOF
+
+touch app/__init__.py
+
+cat &lt;&lt; 'EOF' &gt; app/agent.py
+from google.adk.agents import Agent
+from google.adk.apps import App
+from google.adk.models import Gemini
+from google.genai import types
+
+def get_exchange_rate(currency_from: str = &quot;USD&quot;, currency_to: str = &quot;KRW&quot;) -&gt; dict:
+    &quot;&quot;&quot;Returns a sample FX exchange rate between two currencies.&quot;&quot;&quot;
+    sample_rates = {(&quot;USD&quot;, &quot;KRW&quot;): 1385.50, (&quot;EUR&quot;, &quot;KRW&quot;): 1498.20, (&quot;JPY&quot;, &quot;KRW&quot;): 9.12}
+    rate = sample_rates.get((currency_from.upper(), currency_to.upper()), 1.0)
+    return {&quot;from&quot;: currency_from.upper(), &quot;to&quot;: currency_to.upper(), &quot;rate&quot;: rate}
+
+root_agent = Agent(
+    name=&quot;root_agent&quot;,
+    model=Gemini(model=&quot;gemini-2.5-flash&quot;, retry_options=types.HttpRetryOptions(attempts=3)),
+    instruction=&quot;You are a concise enterprise currency assistant. Use get_exchange_rate when asked.&quot;,
+    tools=[get_exchange_rate],
+)
+
+app = App(root_agent=root_agent, name=&quot;app&quot;)
+EOF
+
+uv sync
+uv run python -c &quot;from app.agent import root_agent, app; print('Loaded:', root_agent.name, 'app:', app.name)&quot;"></pre>
+            <div class="code-output">Loaded: root_agent app: app</div>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tabgroup="step1" data-tab="existing">
+          <h3>1-1. 기존에 개발 중인 Agent 프로젝트 바로 연결하기</h3>
+          <p>
+            이미 로컬에 개발 중인 Google ADK 또는 Python 에이전트 코드가 있다면 새 프로젝트를 만들지 않고 그대로 활용할 수 있습니다.
+            <code>agent-production-readiness</code> 스킬이 기존 구조(단순 프로토타입 / <code>agents-cli</code> 프로젝트 모두 지원)를 자동 감지해 진단·패치합니다.
+          </p>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · 기존 Agent 프로젝트 폴더 이동 및 환경 확인</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="# 기존 에이전트 프로젝트 루트 경로로 이동 (실제 경로로 변경)
+cd /path/to/{{AGENT_NAME}}
+
+# 프로젝트 구조 및 의존성 동기화 확인
+ls -la
+uv sync"></pre>
+          </div>
+          <div class="callout callout-blue">
+            <div class="callout-title">💡 기존 코드로 실습할 때 참고</div>
+            <p>이후 <strong>Step 2 ~ Step 5</strong>의 <code>cd ~/agent-lab/{{AGENT_NAME}}</code> 명령 대신 본인 기존 프로젝트 경로에서 그대로 진행하시면 됩니다. <code>0-1</code>의 <strong>실습 Agent 서비스명</strong>을 본인 서비스명으로 입력해 두면 배포·진단 명령어도 자동으로 맞춰집니다.</p>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(0)">← 이전 (Step 0)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(1)">Step 1 완료하고 Step 2(Play 01)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 2 (PLAY 01: Skill 설치 & agy 실행) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="2" id="step-2">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 2 / 8</span>
+            <span class="pill pill-blue mono">PLAY 01</span>
+            <span class="pill pill-gray mono">약 3분</span>
+            <h2>Agent Skill 설치 및 <code>agy</code> 실행 · 확인</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(2)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          <strong>Play 01</strong>에서는 Cloud Shell에 <code>agent-production-readiness</code> 스킬을 설치하고,
+          <strong>Antigravity CLI (<code>agy</code>)</strong>를 실행해 스킬이 정상 로드되었는지 확인합니다.
+        </p>
+
+        <h3>2-1. <code>agent-production-readiness</code> Agent Skill 설치</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · Antigravity 글로벌 스킬 디렉터리에 설치 (단일 명령)</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
+curl -fsSL &quot;{{SKILL_DOWNLOAD_URL}}/api/skill/download&quot; | tar -xz -C ~/.gemini/skills/
+ls -la ~/.gemini/skills/agent-production-readiness/SKILL.md"></pre>
+        </div>
+
+        <h3>2-2. Antigravity CLI (<code>agy</code>) 실행 · 로그인 및 <code>/skills</code> 확인</h3>
+        <p><strong>① 터미널에서 에이전트 프로젝트 루트로 이동해 <code>agy</code>를 실행합니다:</strong></p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 에이전트 프로젝트 루트에서 agy 실행</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+agy"></pre>
+        </div>
+
+        <div class="callout callout-blue" style="margin-top:10px;">
+          <div class="callout-title">🔐 <code>agy</code> 최초 실행 시 로그인·인증 선택 순서</div>
+          <p style="margin-top:4px;">처음 <code>agy</code>를 실행하면 인증 선택 메뉴가 순서대로 나타납니다. 아래 순서대로 선택하세요:</p>
+          <ol style="margin:6px 0 0 18px;">
+            <li><strong><code>2. Use a Google Cloud project</code></strong></li>
+            <li><strong><code>1. Continue with Google Cloud</code></strong></li>
+            <li><strong><code>2. Pay As You Go – Pay only for the tokens you use, billed through Gemini platform.</code></strong></li>
+            <li><strong><code>프로젝트 ID 입력</code></strong></li>
+          </ol>
+        </div>
+
+        <p><strong>② <code>agy &gt;</code> 대화창에서 <code>/skills</code>를 입력해 스킬이 정상 설치되었는지 확인합니다:</strong></p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">agy &gt; command · 설치된 스킬 목록 확인</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="/skills"></pre>
+          <div class="code-output">Shared skills · From ~/.gemini/skills
+  agent-production-readiness: Audits, scores, and hardens local Google Cloud AI Agent projects...</div>
+        </div>
+
+        <div class="callout callout-green">
+          <div class="callout-title">✅ 준비 완료 · <code>agy</code> 대화창을 그대로 열어 두세요</div>
+          <p>스킬 목록에 <code>agent-production-readiness</code>가 보이면 설치 완료입니다! 열린 <code>agy &gt;</code> 창을 닫지 않고 다음 단계(<strong>Play 02</strong>)로 바로 이어갑니다. (<code>agy</code> 없는 CI/헤드리스 환경이라면 2-1 설치만 마치고 바로 Step 3의 <strong>방법 B</strong>로 이동하세요.)</p>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(1)">← 이전 (Step 1)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(2)">Step 2 완료하고 Step 3(Play 02)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 3 (PLAY 02: agy 진단 & 시뮬레이션) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="3" id="step-3">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 3 / 8</span>
+            <span class="pill pill-blue mono">PLAY 02</span>
+            <span class="pill pill-gray mono">약 6분</span>
+            <h2><code>agy</code>로 취약점 진단 · 시뮬레이션 (Before)</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(3)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          <strong>Play 02</strong>에서는 열어 둔 <strong>Antigravity CLI (<code>agy</code>) 대화창에 자연어로 지시</strong>하여
+          운영 환경 프로필을 선택한 뒤 <code>scan</code>(17개 핵심 프로덕션 항목 점검)과 <code>simulate</code>(4대 모의 공격 시뮬레이션)를 한 번에 실행합니다.
+        </p>
+
+        <h3>3-1. Antigravity CLI (<code>agy</code>)로 Before 진단 &amp; 모의 공격 시뮬레이션</h3>
+        <div class="tab-bar" data-tabgroup="step3diag">
+          <button class="tab-btn active" onclick="switchTab('step3diag', 'agy', this)">방법 A · Antigravity CLI (agy) 대화형 실행 (권장)</button>
+          <button class="tab-btn" onclick="switchTab('step3diag', 'cli', this)">방법 B · AI CLI 없이 스크립트 직접 실행 (CI/Headless)</button>
+        </div>
+
+        <div class="tab-panel active" data-tabgroup="step3diag" data-tab="agy">
+          <p><strong>① 열려 있는 <code>agy &gt;</code> 대화창에 아래 프롬프트를 그대로 붙여넣으세요:</strong></p>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 기준 scan + simulate 요청</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 scan 하고, 4대 장애 시나리오 simulate 도 함께 실행해줘.
+조치사항에 대해 아직 수정하지 말고, 현재 종합 점수와 주요 RED/AMBER 블로커, 시뮬레이션 방어 결과를 표로 요약해줘."></pre>
+          </div>
+
+          <p><strong>② 진단 실행 전 나타나는 운영 환경 선택 메뉴(Pre-Scan Gate)에서 화살표(<code>↑↓</code>) + <code>Enter</code>로 환경을 고릅니다:</strong></p>
+          <div class="code-wrap track-only" data-track="cloud_run">
+            <div class="code-head">
+              <span class="code-label">agy &gt; Question 1/1 · Cloud Run 운영 환경 프로필 선택</span>
+            </div>
+            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 대외 공개 엔터프라이즈 — 외부 고객용 · 전체 17개 풀 하드닝 + WAF
+  2. 사내 업무용 운영 — 임직원 전용 · 전체 17개 (사내 IAP/VPC 격리, 외부 WAF 제외)
+  3. 사내 경량 / PoC — 사내 테스트 · 단발성 · 핵심 8개 최소 비용
+  4. 직접 맞춤 조합하기 (4가지 환경 질문으로 선택)</div>
+          </div>
+          <div class="code-wrap track-only" data-track="agent_runtime">
+            <div class="code-head">
+              <span class="code-label">agy &gt; Question 1/1 · Agent Runtime 운영 환경 프로필 선택</span>
+            </div>
+            <div class="code-output" style="border-top:none;">&gt; 1. (Recommended) 대외 공개 엔터프라이즈 — 외부 고객용 · 전체 17개 (플랫폼 자동 6개 + 직접 하드닝 11개)
+  2. 사내 업무용 운영 — 임직원 전용 · 전체 17개 (PSC-I 사내망 연동 + PII/Model Armor · 직접 하드닝 11개)
+  3. 사내 경량 / PoC — 사내 테스트 · 단발성 · 핵심 8개 (플랫폼 자동 3개 + 직접 하드닝 5개)
+  4. 직접 맞춤 조합하기 (4가지 환경 질문으로 선택)</div>
+          </div>
+
+          <div class="callout callout-blue">
+            <div class="callout-title">💡 프로필 선택 &amp; <code>agy</code> 실행 팁</div>
+            <ul style="margin:6px 0 0 18px;">
+              <li class="track-only" data-track="cloud_run"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>17개 WAF</code> / <code>17개 사내 IAP</code> / <code>8개 기본선</code>)로 즉시 <code>scan</code> + <code>simulate</code>가 실행되며, 불필요한 <code>N/A</code> 항목과 시나리오는 자동 제외됩니다. <span style="color:var(--ink-faint);">(전체 17개 + WAF 체험은 <strong>1번</strong> 권장)</span></li>
+              <li class="track-only" data-track="agent_runtime"><strong>1~3번 프리셋 선택 시</strong>: 추가 질문 없이 해당 항목 범위(<code>17개 풀 하드닝</code> / <code>17개 사내 운영</code> / <code>8개 기본선</code>)로 즉시 <code>scan</code> + <code>simulate</code>가 실행되며, Agent Runtime이 기본 제공하는 <strong>6개 <code>MANAGED_NATIVE</code> 항목</strong>은 자동 통과 처리됩니다. <span style="color:var(--ink-faint);">(전체 17개 체험은 <strong>1번</strong> 권장)</span></li>
+              <li><strong>4번 <code>직접 맞춤 조합하기</code> 선택 시</strong>: <strong>4가지 질문(<code>Question 1/4</code>–<code>4/4</code>)</strong> — ① 공개 범위(사내/외부) · ② 대화 기억(단발성/멀티턴 Managed) · ③ 사내 VPC/DB 연동 · ④ 운영 단계/PII 민감도 — 가 순서대로 표시되어 화살표+Enter만으로 맞춤 조합할 수 있습니다.</li>
+              <li><strong>컴퓨트 사이징 보존 (v2 원칙)</strong>: CPU · 메모리 · <code>concurrency</code> · <code>min_instances</code>는 에이전트 부하 테스트 없이 자동 상향하지 않고 기존 값을 그대로 유지하며, 비감점 권고(<code>Advisory</code>)로만 안내합니다.</li>
+              <li>권한 확인 창이 뜨면 <strong>Allow(허용)</strong>를 선택하세요. 터미널이 중간에 끊겨도 같은 폴더에서 <code>agy -c</code>를 입력하면 직전 대화에 바로 이어집니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tabgroup="step3diag" data-tab="cli">
+          <p><code>agy</code>를 사용할 수 없는 CI/헤드리스 환경에서는 스킬 내부 스크립트를 직접 실행해도 동일한 결과를 얻습니다.</p>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label" data-auto-tpl="1">bash · 직접 실행 (scan + simulate · {{TARGET_KEY}})</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan . --target {{TARGET_KEY}}
+python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simulate . --target {{TARGET_KEY}}"></pre>
+          </div>
+        </div>
+
+        <h3>3-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 17개 핵심 체크포인트 상세 &amp; 선택 프로필별 적용 매핑표 (<code>C1.1</code>–<code>C7.2</code> · v2)</h3>
+        <p class="track-only" data-track="cloud_run">
+          Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q4</code>)</strong>에 따라
+          <strong>Cloud Run</strong> 환경에서 각 체크포인트가 무엇을 점검·자동 패치하는지, 그리고 <strong>내 선택에서 적용/제외(<code>N/A</code>)되는 항목</strong>이 무엇인지 한눈에 확인할 수 있습니다.
+        </p>
+        <p class="track-only" data-track="agent_runtime">
+          Pre-Scan 메뉴에서 선택한 프로필(<strong>1~3번</strong>) 또는 <strong>4번 직접 맞춤 조합(<code>Q1</code>~<code>Q4</code>)</strong>에 따라
+          <strong>Agent Runtime</strong> 환경에서 각 체크포인트가 어떻게 처리되는지 확인할 수 있습니다.
+          (<span class="pill pill-green mono" style="font-size:11px;">MANAGED_NATIVE</span> 표시 <strong>6개 항목</strong>은 플랫폼 기본 제공으로 자동 통과 처리되며, <strong>나머지 11개 항목</strong>을 집중 하드닝합니다.)
+        </p>
+
+        <!-- 프로필 3종 요약 카드 (클릭 시 아래 테이블 강조/필터 연동) -->
+        <div class="cp-summary-grid" role="group" aria-label="프로필별 적용 범위 요약">
+          <div class="cp-summary-card" data-cp-card="p1" onclick="filterCheckpointProfile('p1')">
+            <div class="cp-sc-top">
+              <span class="cp-sc-title">1. 대외 공개 엔터프라이즈</span>
+              <span class="pill pill-blue mono track-only" data-track="cloud_run" style="font-size:11.5px;">17 / 17 (WAF)</span>
+              <span class="pill pill-blue mono track-only" data-track="agent_runtime" style="font-size:11.5px;">17 / 17 (6 자동 · 11 패치)</span>
+            </div>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">외부 고객 대상 프로덕션 서비스. Serverless NEG + Cloud Armor WAF · Managed Sessions &amp; Memory Bank · Model Armor API · SRE 알람 · 안전 카나리 롤백까지 전 영역 풀 하드닝을 적용합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">외부 고객 대상 프로덕션 서비스. 플랫폼 기본 제공 6개 항목에 더해 Memory Bank · PSC-I 사설망 연동 · Model Armor API · ReasoningEngine SRE 알람 · 공식 평가 게이트까지 11개 항목을 집중 하드닝합니다.</p>
+            <div class="cp-sc-meta">시뮬레이션: <strong>4 / 4 전체 검증</strong> (SIM-1 ~ SIM-4)</div>
+          </div>
+
+          <div class="cp-summary-card" data-cp-card="p2" onclick="filterCheckpointProfile('p2')">
+            <div class="cp-sc-top">
+              <span class="cp-sc-title">2. 사내 업무용 운영</span>
+              <span class="pill pill-green mono track-only" data-track="cloud_run" style="font-size:11.5px;">17 / 17 (사내 IAP)</span>
+              <span class="pill pill-green mono track-only" data-track="agent_runtime" style="font-size:11.5px;">17 / 17 (6 자동 · 11 패치)</span>
+            </div>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 임직원 전용 · 멀티턴 · 사내 DB/VPC 연동 · PII 보호 환경. <code>C3.2</code>를 외부 LB/WAF 대신 <strong><code>internal_iap</code>(사내 전용 격리)</strong> 모드로 적용해 비용 없이 인바운드를 잠급니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 임직원 전용 · 멀티턴 · 사내 DB/VPC 연동 · PII 보호 환경. IAM 인증 엔드포인트(자동)와 함께 <strong>PSC Interface(<code>psc_interface_config</code>)</strong> 및 Model Armor PII/SSRF 방어를 적용합니다.</p>
+            <div class="cp-sc-meta">시뮬레이션: <strong>4 / 4 전체 검증</strong> (SIM-1 ~ SIM-4)</div>
+          </div>
+
+          <div class="cp-summary-card" data-cp-card="p3" onclick="filterCheckpointProfile('p3')">
+            <div class="cp-sc-top">
+              <span class="cp-sc-title">3. 사내 경량 / PoC</span>
+              <span class="pill pill-amber mono track-only" data-track="cloud_run" style="font-size:11.5px;">8 / 17 적용</span>
+              <span class="pill pill-amber mono track-only" data-track="agent_runtime" style="font-size:11.5px;">8 / 17 (3 자동 · 5 패치)</span>
+            </div>
+            <p class="cp-sc-desc track-only" data-track="cloud_run">사내 테스트 · 단발성(Stateless) · 최소 비용 환경. 추가 인프라 비용이 없는 <strong>공통 기본선 8개</strong>만 적용해 불필요한 <code>N/A</code> 경고를 모두 제거합니다.</p>
+            <p class="cp-sc-desc track-only" data-track="agent_runtime">사내 테스트 · 단발성(Stateless) · 최소 비용 환경. 공통 기본선 8개(플랫폼 자동 3개 + 코드/IAM/비루트/비용 가드 5개)만 적용해 불필요한 <code>N/A</code> 경고를 제거합니다.</p>
+            <div class="cp-sc-meta">시뮬레이션: <strong>1 / 1 검증</strong> (SIM-3 턴별 루프·토큰 상한만 검증)</div>
+          </div>
+        </div>
+
+        <!-- 4번 직접 맞춤 조합(Q1~Q4) 가산 규칙 안내 -->
+        <div class="cp-q-legend">
+          <div class="cp-q-legend-title">🧩 4번 <code>직접 맞춤 조합하기</code> 선택 시 — 공통 기본선 8개(<code>C1.1 · C1.2 · C4.1 · C4.3 · C5.1 · C5.2 · C6.1 · C6.2</code>) + 선택한 질문 항목 자동 합산</div>
+          <div class="cp-q-grid track-only" data-track="cloud_run">
+            <div class="cp-q-item"><span class="pill pill-red" style="font-size:11px;flex-shrink:0;">Q1 외부 고객 공개</span><span>+ <code>C3.2</code>(<code>external_waf</code>) · <code>C4.2</code>(Model Armor + SSRF/IDOR)</span></div>
+            <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 멀티턴·장기기억</span><span>+ <code>C2.1</code>(Managed Sessions) · <code>C2.2</code>(Memory Bank) · <code>C2.3</code>(GCS 보존)</span></div>
+            <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q3 사내 DB·VPC</span><span>+ <code>C3.1</code>(Direct VPC Egress + Private Google Access 서브넷)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q4 실운영 · PII</span><span>+ <code>C4.2</code> · <code>C5.3</code> · <code>C7.1</code> · <code>C7.2</code> <span style="color:var(--ink-faint);">(사내 전용이면 <code>C3.2 internal_iap</code> 포함)</span></span></div>
+          </div>
+          <div class="cp-q-grid track-only" data-track="agent_runtime">
+            <div class="cp-q-item"><span class="pill pill-red" style="font-size:11px;flex-shrink:0;">Q1 외부 고객 공개</span><span>+ <code>C3.2</code>(⚡ IAM 자동) · <code>C4.2</code>(Model Armor + SSRF/IDOR)</span></div>
+            <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q2 멀티턴·장기기억</span><span>+ <code>C2.1</code>(⚡ 세션 자동) · <code>C2.2</code>(Memory Bank) · <code>C2.3</code>(GCS 보존)</span></div>
+            <div class="cp-q-item"><span class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Q3 사내 DB·VPC</span><span>+ <code>C3.1</code>(PSC Interface Network Attachment + Private Google Access)</span></div>
+            <div class="cp-q-item"><span class="pill pill-amber" style="font-size:11px;flex-shrink:0;">Q4 실운영 · PII</span><span>+ <code>C4.2</code> · <code>C5.3</code>(ReasoningEngine 알람) · <code>C7.1</code> · <code>C7.2</code>(⚡ 자동)</span></div>
+          </div>
+        </div>
+
+        <!-- 인터랙티브 프로필 필터 바 -->
+        <div class="cp-toolbar">
+          <div class="cp-filter-group" role="tablist" aria-label="프로필별 테이블 필터">
+            <button type="button" class="cp-filter-btn active" data-cp-filter="all" onclick="filterCheckpointProfile('all')">전체 비교 (17개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p1" onclick="filterCheckpointProfile('p1')">1. 대외 공개 (17개)</button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p2" onclick="filterCheckpointProfile('p2')"><span class="track-only" data-track="cloud_run">2. 사내 운영 (17개 · IAP)</span><span class="track-only" data-track="agent_runtime">2. 사내 운영 (17개 · PSC-I)</span></button>
+            <button type="button" class="cp-filter-btn" data-cp-filter="p3" onclick="filterCheckpointProfile('p3')">3. 사내 PoC (8개)</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-muted);">
+              <span style="display:inline-flex;align-items:center;gap:4px;"><span class="cp-badge-on" style="width:20px;height:20px;font-size:11px;">✓</span> 적용</span>
+              <span class="track-only" data-track="agent_runtime" style="display:inline-flex;align-items:center;gap:4px;"><span class="cp-badge-auto" style="width:20px;height:20px;font-size:11px;">⚡</span> 자동</span>
+              <span style="display:inline-flex;align-items:center;gap:4px;"><span class="cp-badge-off" style="width:20px;height:20px;font-size:11px;">—</span> 제외</span>
+            </span>
+            <label class="cp-toggle-label">
+              <input type="checkbox" id="cpHideExcluded" onchange="toggleCheckpointExcluded()" />
+              <span>제외(<code>—</code>) 항목 숨기기</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 17개 체크포인트 상세 매핑표 (선택된 트랙 전용 표시 + 프로필 매핑) -->
+        <div class="cp-matrix-wrap">
+          <table class="cp-matrix-table" id="cpMatrixTable">
+            <thead>
+              <tr>
+                <th style="width:84px;">ID · 등급</th>
+                <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 체크포인트 의미 · 프로덕션 Best Practice · 자동 패치 내역</th>
+                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 대외 공개 엔터프라이즈 (17개)">1. 대외<br><span class="track-only" data-track="cloud_run" style="font-weight:500;color:var(--ink-faint);">(WAF)</span><span class="track-only" data-track="agent_runtime" style="font-weight:500;color:var(--ink-faint);">(17)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 사내 업무용 운영 (17개)">2. 사내<br><span class="track-only" data-track="cloud_run" style="font-weight:500;color:var(--ink-faint);">(IAP)</span><span class="track-only" data-track="agent_runtime" style="font-weight:500;color:var(--ink-faint);">(17)</span></th>
+                <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 사내 경량 / PoC (8개)">3. PoC<br><span style="font-weight:500;color:var(--ink-faint);">(8)</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- D1 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">1️⃣ 런타임 &amp; 헬스체크 (Runtime &amp; Probes · 2개 항목 · 사이징 자동 상향 없음)</span>
+                    <span class="cp-domain-weight">도메인 가중치 1x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C1.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">인프라 코드(IaC) 기반 에이전트 런타임 선언 (<code>service.tf</code>)</span>
+                    <span class="track-only" data-track="agent_runtime"><span class="pill pill-green mono" style="font-size:10.5px;">MANAGED_NATIVE</span></span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    콘솔 수동 조작이나 일회성 <code>gcloud run deploy</code> 명령으로만 에이전트를 배포하면, 누가 어떤 환경변수·권한·네트워크 설정을 바꿨는지 이력이 남지 않고 장애 시 동일 환경을 즉시 재구축할 수 없습니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    관리형 에이전트 런타임(Reasoning Engine) 역시 콘솔이나 수동 스크립트로만 관리하면 스테이징·프로덕션 간 설정 불일치(Configuration Drift)가 발생합니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>에이전트 런타임 인프라가 Git으로 버전 관리되는 Terraform 코드(<code>deployment/terraform/service.tf</code>)로 선언되어 있는지 체크합니다. <em>(순수 Python 프로토타입은 IaC가 아예 없고, 기본 스캐폴딩은 보안·프로브·네트워크 블록이 비어 있음)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>컴퓨트·네트워크·IAM·환경변수를 <strong>Terraform(<code>google_cloud_run_v2_service.app</code>) 단일 코드(Single Source of Truth)</strong>로 선언해 코드 리뷰와 재현 가능한 배포를 보장해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><strong>프로토타입(Mode A)</strong>은 <code>deployment/terraform/service.tf</code>·<code>variables.tf</code>·<code>storage.tf</code> 표준 IaC 세트를 신규 생성하고, <strong><code>agents-cli</code> 프로젝트(Mode B)</strong>는 기존 <code>service.tf</code> 구조를 유지한 채 누락된 운영 블록만 인플레이스(In-Place) 주입합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — <code>agents-cli</code>가 <code>deployment/terraform/service.tf</code>에 관리형 <code>google_vertex_ai_reasoning_engine.app</code> 리소스를 기본 생성하며, 하부 컴퓨트 풀은 플랫폼이 자동 운영합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Reasoning Engine 리소스 정의를 Terraform 코드로 유지하고, 사설망(<code>psc_interface_config</code>) 및 텔레메트리 환경변수를 코드로 바인딩합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span>기존 <code>google_vertex_ai_reasoning_engine.app</code> 선언을 검증·보존하며, 누락 시 표준 Reasoning Engine Terraform 리소스를 생성합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C1.2</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">콜드스타트 장애 방지용 헬스체크 프로브 &amp; Startup CPU Boost</span>
+                    <span class="track-only" data-track="agent_runtime"><span class="pill pill-green mono" style="font-size:10.5px;">MANAGED_NATIVE</span></span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    ADK 에이전트는 컨테이너 기동 시 LLM SDK·도구·전역 런타임을 초기화하느라 수 초가 걸립니다. 헬스 프로브가 없으면 초기화가 끝나기 전에 고객 요청이 유입되어 <code>502 Bad Gateway</code> 에러가 발생하고, 프로세스가 멈춰도(Hang) 죽은 컨테이너가 방치됩니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    관리형 에이전트 컨테이너의 기동 상태 확인과 비정상 워커 자동 재시작이 보장되어야 콜드스타트 및 프로세스 멈춤 장애를 예방할 수 있습니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code> 컨테이너 블록에 <code>startup_probe</code>, <code>liveness_probe</code>, <code>startup_cpu_boost</code>가 누락되어 있는지 체크합니다. <em>(기본 스캐폴딩은 세 항목 모두 미설정 상태)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>ADK 경량 상태 엔드포인트(<code>GET /list-apps:8080</code>)에 <strong>Startup/Liveness 프로브</strong>를 연결해 준비 완료 후에만 트래픽을 라우팅하고, <strong><code>startup_cpu_boost = true</code></strong>로 초기 기동 동안 CPU를 부스트해야 합니다. <em>(단, CPU·메모리·<code>min_instances</code>는 에이전트별 부하 특성이 다르므로 임의 상향하지 않고 부하 테스트 후 결정)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>service.tf</code> 컨테이너 블록에 <code>startup_cpu_boost = true</code>, <code>startup_probe</code>(<code>/list-apps:8080</code>, <code>failure_threshold=10</code>), <code>liveness_probe</code>(<code>/list-apps:8080</code>, <code>period_seconds=30</code>)를 자동 삽입합니다. <strong>(기존 <code>cpu</code>/<code>memory</code>/<code>min_instances</code> 값은 변경하지 않고 그대로 보존)</strong></span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Agent Engine 컨트롤 플레인이 내부 워커의 Readiness/Liveness 헬스체크와 비정상 인스턴스 자동 교체를 기본 수행합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>플랫폼 내장 헬스체크를 그대로 활용하고, 에이전트 리소스 스펙은 <code>tests/load_test/</code> 부하 테스트 결과에 맞춰 조정합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span>별도 프로브 코드를 추가하지 않고 자동 통과 처리하며, 기존 컴퓨트 사이징을 그대로 보존합니다.</span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>app/fast_api_app.py</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+              </tr>
+
+              <!-- D2 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">2️⃣ 세션 &amp; 장기 기억 영속성 (Managed-First · 3개 항목 · Self-Hosted는 참고 옵션)</span>
+                    <span class="cp-domain-weight">도메인 가중치 2x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C2.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">멀티턴 대화 유실 방지용 영속 세션 스토어 (Agent Platform Managed Sessions)</span>
+                    <span class="track-only" data-track="agent_runtime"><span class="pill pill-green mono" style="font-size:10.5px;">MANAGED_NATIVE</span></span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    서버리스 컨테이너는 트래픽에 따라 수시로 스케일아웃·축소·재배포됩니다. 대화 상태를 컨테이너 메모리(RAM)에만 두면 다음 질문이 다른 인스턴스로 라우팅되는 순간 에이전트가 이전 대화를 전부 잊어버리는 치명적 장애가 발생합니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    멀티턴 에이전트는 워커 인스턴스가 늘어나거나 재기동되어도 사용자의 진행 중인 대화 상태(Session State &amp; Events)가 끊기지 않고 유지되어야 합니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>휘발성 메모리 세션(<code>InMemorySessionService</code>)을 사용 중인지, 또는 외부 영속 세션 서비스 연동이 누락되어 있는지 체크합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>별도 DB 구축·운영 부담이 없는 <strong>Agent Platform Managed Session Service(<code>VertexAiSessionService</code> / <code>agentengine://</code>)</strong>를 기본 사용하여 모든 컨테이너가 중앙 세션을 공유하도록 설계해야 합니다. <em>(※ 폐쇄망 규제 등 특수 요건 시에만 Self-Hosted Cloud SQL / Memorystore Redis 자체 구축 옵션 선택)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/services.py</code>를 생성해 <code>GOOGLE_CLOUD_AGENT_ENGINE_ID</code>가 설정되면 <strong>Managed Session Service</strong>를 반환하도록 구성하고, <code>app/fast_api_app.py</code>의 <code>get_fast_api_app(session_service_uri=...)</code> 및 <code>service.tf</code> 환경변수를 자동 연결합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Agent Runtime은 별도 설정 없이도 플랫폼 내장 <strong>Managed Session Service</strong>가 자동 바인딩되어 멀티턴 대화를 영속 저장합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>플랫폼 내장 Managed Session을 기본 활용합니다. <em>(※ 특수 규제 요건 시에만 Self-Hosted DB 자체 구축 옵션 고려)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span>추가 DB 인프라 생성 없이 내장 Managed Session 구성을 확인하고 자동 통과 처리합니다.</span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>app/app_utils/services.py</code><code>app/fast_api_app.py</code><code>deployment/terraform/service.tf</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C2.2</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">세션 간 사용자 문맥 회상을 위한 장기 기억 (Agent Platform Memory Bank)</span>
+                  </div>
+                  <p class="cp-desc">
+                    영속 세션(<code>C2.1</code>)만으로는 현재 대화창 안에서의 문맥만 유지될 뿐, 사용자가 새 대화창(새 세션)을 열면 과거 대화에서 파악한 사용자 선호도·업무 맥락을 전혀 기억하지 못합니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>세션 간 장기 기억 서비스(<code>VertexAiMemoryBankService</code>) 연동과 대화 종료 시 기억을 자동 추출·저장하는 콜백이 누락되어 있는지 체크합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><strong>Agent Platform Memory Bank</strong>를 연결하고, ADK 에이전트의 <strong><code>after_agent_callback</code></strong>에서 매 턴 종료 시 중요 사실을 Memory Bank에 비동기 저장하도록 구성하는 것이 권장 표준입니다. <em>(※ 자체 Vector DB/AlloyDB 구축은 별도 참고 옵션)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/services.py</code>에 <code>build_memory_service_uri()</code> 및 <code>auto_save_session_to_memory</code> 콜백 함수를 생성하고, <code>app/agent.py</code>의 <code>Agent(..., after_agent_callback=auto_save_session_to_memory)</code>에 자동 장착합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>app/app_utils/services.py</code><code>app/agent.py</code><code>app/fast_api_app.py</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C2.3</span><span class="cp-sev cp-sev-std">Medium</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">GCS 아티팩트·로그 버킷 데이터 유실 방지 (Versioning &amp; Soft Delete)</span>
+                  </div>
+                  <p class="cp-desc">
+                    에이전트가 생성한 문서·아티팩트와 운영 감사 로그가 저장되는 GCS 버킷에 보호 정책이 없으면, 코드 버그나 운영자 실수로 객체가 덮어써지거나 삭제됐을 때 영구 유실됩니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>deployment/terraform/storage.tf</code>의 로그·아티팩트 버킷에 <code>versioning</code> 및 <code>soft_delete_policy</code> 블록이 설정되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>운영 GCS 버킷에는 <strong>객체 버전 관리(<code>versioning.enabled = true</code>)</strong>로 덮어쓰기 이력을 보존하고, <strong>최소 7일 이상의 Soft Delete(<code>retention_duration_seconds = 604800</code>)</strong>로 실수 삭제 시 즉시 복구할 수 있어야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/storage.tf</code>의 <code>google_storage_bucket.logs_data_bucket</code> 리소스 안에 <code>versioning { enabled = true }</code> 및 <code>soft_delete_policy { retention_duration_seconds = 604800 }</code> 블록을 자동 삽입합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/storage.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+
+              <!-- D3 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">3️⃣ 사내망 네트워크 &amp; 인바운드 통제 (Private Networking &amp; Edge · 2개 항목 · 구 C3.3 통합)</span>
+                    <span class="cp-domain-weight">도메인 가중치 2x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C3.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">사내 VPC 프라이빗 아웃바운드 (Direct VPC Egress) &amp; Private Google Access</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">사내 VPC 프라이빗 아웃바운드 (PSC Interface) &amp; Private Google Access</span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    에이전트 도구가 사내 프라이빗 DB·내부 API를 호출할 때 VPC Egress가 없으면 사설 IP 대역에 아예 연결할 수 없고, 서브넷에 Private Google Access(PGA)가 꺼져 있으면 Gemini·GCS API 트래픽이 공인 인터넷으로 우회합니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    Google 관리형 테넌트에서 동작하는 Agent Runtime 컨테이너가 고객 VPC 내부의 사내 DB·프라이빗 API에 접근하려면 Private Service Connect Interface(PSC-I) 브리지가 반드시 연결되어야 합니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>의 <code>vpc_access</code> 블록과 <code>private_ip_google_access = true</code>가 켜진 전용 서브넷 구성 여부를 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>별도 커넥터 VM 비용이 없는 <strong>Direct VPC Egress(<code>PRIVATE_RANGES_ONLY</code>)</strong>를 사용하고, <strong>Private Google Access(<code>private_ip_google_access = true</code>)가 활성화된 전용 <code>/26</code> 서브넷</strong>을 연결하는 것이 권장 표준입니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>production_ready.tf</code>에 PGA가 켜진 전용 서브넷(<code>/26</code>)을 선언하고, <code>service.tf</code> 템플릿에 <code>vpc_access { network_interfaces {...} egress = "PRIVATE_RANGES_ONLY" }</code> 블록을 자동 주입합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>google_compute_network_attachment</code> 리소스 선언과 <code>service.tf</code>의 <code>psc_interface_config</code> 바인딩 누락 여부를 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>PGA가 켜진 전용 <code>/28</code> 서브넷에 <strong><code>google_compute_network_attachment</code>(PSC Interface)</strong>를 생성하고, 이를 Reasoning Engine의 <strong><code>psc_interface_config</code></strong>에 직접 연결해야 공인 IP 없이 사내망과 통신할 수 있습니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>production_ready.tf</code>에 PGA 서브넷(<code>/28</code>)과 <code>google_compute_network_attachment.agent_psc_attachment</code>를 생성하고, <code>service.tf</code>의 <code>reasoning_engine_spec.psc_interface_config</code>에 자동 바인딩합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>deployment/terraform/production_ready.tf</code><code>deployment/terraform/variables.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C3.2</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">인바운드 직접 노출 차단 &amp; 엣지 방어 (대외: Cloud Armor WAF / 사내: IAP 격리)</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">인바운드 엔드포인트 IAM 제로 트러스트 인증 통제</span>
+                    <span class="track-only" data-track="agent_runtime"><span class="pill pill-green mono" style="font-size:10.5px;">MANAGED_NATIVE</span></span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    기본 설정(<code>INGRESS_TRAFFIC_ALL</code>)으로 배포하면 <code>*.run.app</code> 기본 URL이 전 세계 인터넷에 그대로 열려 DDoS·봇 과금 폭탄·웹 취약점 공격에 무방비로 노출됩니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    에이전트 호출 엔드포인트가 인증 없는 공용 URL로 노출되지 않고 인가된 호출자만 접근할 수 있어야 합니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>가 <code>INGRESS_TRAFFIC_ALL</code> 상태이거나 기본 <code>*.run.app</code> URL 우회 접속(<code>default_uri_disabled</code> 미설정)이 열려 있는지 체크합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><strong>대외 공개 서비스(<code>external_waf</code>)</strong>는 <code>INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER</code> + <code>default_uri_disabled = true</code>로 직접 접속을 막고 앞단에 <strong>Global HTTPS LB + Cloud Armor WAF(OWASP Top 10 + Rate Limit)</strong>를 배치해야 합니다. <strong>사내 전용 서비스(<code>internal_iap</code>)</strong>는 불필요한 외부 LB/WAF 비용 없이 <code>INGRESS_TRAFFIC_INTERNAL_ONLY</code> 및 IAP/IAM으로 격리합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span>선택한 프로필에 맞춰 <strong>대외 공개 시</strong> Serverless NEG · Backend Service(<code>security_policy</code> 바인딩) · Cloud Armor WAF 정책(SQLi/XSS/IP당 분당 120회 제한)을 <code>production_ready.tf</code>에 생성하고, <strong>사내 운영 시</strong> <code>INGRESS_TRAFFIC_INTERNAL_ONLY</code> + <code>default_uri_disabled = true</code>로 패치합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Agent Runtime은 퍼블릭 무인증 웹 URL을 생성하지 않으며, 모든 API 호출에 Google Cloud IAM 인증을 기본 강제합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>별도 로드밸런서 없이 플랫폼 IAM 인가 체계를 그대로 사용하고, 호출 측 백엔드/게이트웨이에만 최소 호출 권한을 부여합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span>인바운드 IAM 보호가 기본 활성화되어 있으므로 추가 인프라 생성 없이 자동 통과 처리합니다.</span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>deployment/terraform/production_ready.tf</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run" title="Cloud Armor WAF 적용">✓</span><span class="cp-badge-sub track-only" data-track="cloud_run">WAF</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on track-only" data-track="cloud_run" title="사내 IAP/내부 전용 적용">✓</span><span class="cp-badge-sub track-only" data-track="cloud_run">IAP</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+
+              <!-- D4 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">4️⃣ 보안, 최소 권한 &amp; 가드레일 (Security &amp; Guardrails · 3개 항목 · 구 C4.4 통합)</span>
+                    <span class="cp-domain-weight">도메인 가중치 2x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">최소 권한 전용 서비스 계정(SA) · 리소스 삭제 보호 &amp; Secret 버전 고정</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">최소 권한 전용 서비스 계정(SA) &amp; Secret 버전 고정</span>
+                  </div>
+                  <p class="cp-desc">
+                    에이전트 런타임에 과도한 IAM 권한(예: 버킷 삭제가 가능한 <code>roles/storage.admin</code>이나 미사용 DB 권한)이 부여되어 있으면, 프롬프트 인젝션이나 도구 취약점 발생 시 프로젝트 전체 데이터 삭제로 피해가 확산됩니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>variables.tf</code>의 서비스 계정 권한에 <code>roles/storage.admin</code>이 포함되어 있는지, <code>service.tf</code>의 <code>deletion_protection</code>이 <code>false</code>인지, Secret Manager 참조가 <code>latest</code>로 열려 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>전용 SA 권한을 객체 읽기/쓰기만 가능한 <strong><code>roles/storage.objectUser</code></strong>로 축소하고, 실수 방지를 위해 <strong><code>deletion_protection = true</code></strong>를 켜며, Secret은 검증된 특정 버전(<code>"1"</code>)으로 고정해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>variables.tf</code>의 <code>roles/storage.admin</code>을 <code>roles/storage.objectUser</code>로 교체하고, <code>service.tf</code>의 <code>deletion_protection = false</code>를 <code>true</code>로, Secret 버전 <code>"latest"</code>를 고정 버전으로 자동 패치합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>variables.tf</code>의 <code>app_sa_roles</code>에 과도한 <code>roles/storage.admin</code>이나 사용하지 않는 <code>roles/cloudsql.client</code> 권한이 부여되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>에이전트 전용 SA에서 불필요한 <code>roles/cloudsql.client</code>를 제거하고 <strong><code>roles/storage.objectUser</code></strong> 등 실제 필요한 최소 권한만 유지해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>variables.tf</code>에서 <code>roles/storage.admin</code> → <code>roles/storage.objectUser</code> 축소 및 미사용 <code>roles/cloudsql.client</code> 제거를 수행하고, Secret 버전을 고정합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/variables.tf</code><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.2</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">Model Armor 입출력/PII 가드레일 &amp; 도구 SSRF·호출자 신원(IDOR) 방어</span>
+                  </div>
+                  <p class="cp-desc">
+                    시스템 프롬프트 지시만으로는 탈옥(Prompt Injection)이나 개인정보(주민번호·카드번호) 유출을 막을 수 없습니다. 또한 LLM이 도구(Function Calling) 인자에 내부 메타데이터 주소(<code>169.254.169.254</code>)나 다른 사람의 <code>user_id</code>를 넣도록 유도당하면 토큰 탈취(SSRF)와 타인 정보 조회(IDOR) 사고가 발생합니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>코드 레벨에서 입출력 프롬프트/PII를 검사하는 가드레일 플러그인과 도구 실행 직전 인자를 검증하는 콜백이 등록되어 있는지 체크합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>세션 저장 전(<code>on_user_message_callback</code>), LLM 호출 전/후(<code>before/after_model_callback</code>)에 <strong>Google Cloud Model Armor API(<code>modelarmor_v1</code>) + 로컬 PII/인젝션 방어</strong>를 수행하고, <strong><code>before_tool_callback</code></strong>에서 사설/메타데이터 IP(SSRF)와 세션 <code>user_id</code> 불일치(IDOR)를 코드로 강제 차단해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/model_armor_plugin.py</code>(<code>ModelArmorGuardrailPlugin</code>)를 생성하고, <code>app/agent.py</code>의 <code>App(..., plugins=[ModelArmorGuardrailPlugin(), ...])</code> 및 <code>service.tf</code>의 <code>MODEL_ARMOR_TEMPLATE_ID</code> 환경변수를 자동 주입합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>app/app_utils/model_armor_plugin.py</code><code>app/agent.py</code><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C4.3</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">컨테이너 비특권(Non-Root) 실행 &amp; Gen2 리눅스 샌드박스</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">컨테이너 비특권(Non-Root) 실행 하드닝</span>
+                  </div>
+                  <p class="cp-desc">
+                    컨테이너가 기본 <code>root(UID 0)</code> 계정으로 실행되면, 에이전트가 사용하는 서드파티 패키지나 도구에서 원격 코드 실행(RCE) 취약점이 터졌을 때 공격자가 컨테이너 루트 권한을 즉시 획득하게 됩니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>Dockerfile</code>에 비특권 <code>USER</code> 지시자가 누락되어 있는지, 그리고 <code>service.tf</code>에 2세대 실행 환경(<code>EXECUTION_ENVIRONMENT_GEN2</code>)이 지정되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><code>Dockerfile</code>에서 전용 비특권 유저(UID <code>10001</code>)로 프로세스를 실행하고, Cloud Run 런타임에 전체 Linux 커널 격리를 제공하는 <strong><code>EXECUTION_ENVIRONMENT_GEN2</code></strong>를 명시해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>Dockerfile</code>의 <code>ENTRYPOINT</code> 직전에 <code>useradd -u 10001 agentuser</code> 및 <code>USER 10001:10001</code>을 삽입하고, <code>service.tf</code> 템플릿에 <code>execution_environment = "EXECUTION_ENVIRONMENT_GEN2"</code>를 추가합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>커스텀 <code>Dockerfile</code> 사용 시 비특권 <code>USER</code> 전환 구문이 누락되어 <code>root(UID 0)</code>로 실행되는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>컨테이너 이미지 빌드 시 비특권 유저(<code>USER 10001:10001</code>)로 전환해 최소 권한 프로세스로 실행해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>Dockerfile</code>에 <code>useradd --create-home --uid 10001 agentuser</code> 및 <code>USER 10001:10001</code> 전환 구문을 자동 삽입합니다.</span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>Dockerfile</code><code>deployment/terraform/service.tf</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>Dockerfile</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+
+              <!-- D5 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">5️⃣ 관측성, 프라이버시 &amp; SRE 골든 시그널 알람 (Observability &amp; Alerts · 3개 항목)</span>
+                    <span class="cp-domain-weight">도메인 가중치 2x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C5.1</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">OpenTelemetry GenAI 분산 트레이싱 (Cloud Trace)</span>
+                    <span class="track-only" data-track="agent_runtime"><span class="pill pill-green mono" style="font-size:10.5px;">MANAGED_NATIVE</span></span>
+                  </div>
+                  <p class="cp-desc">
+                    에이전트 응답이 느려졌을 때 분산 트레이싱이 없으면 Gemini 모델 추론이 느린지, 외부 도구 API가 느린지, 서브에이전트 라우팅이 반복된 것인지 병목 구간을 전혀 찾을 수 없습니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>Cloud Trace 연동 옵션(<code>otel_to_cloud = True</code>)과 OpenTelemetry GenAI 시맨틱 컨벤션 환경변수가 활성화되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>ADK FastAPI 앱에서 <strong><code>otel_to_cloud = True</code></strong>를 켜고 <strong><code>OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"</code></strong>을 설정해 모든 LLM·도구 스팬을 Cloud Trace로 수집해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/fast_api_app.py</code>에 <code>otel_to_cloud=True</code>를 설정하고, <code>service.tf</code> 컨테이너 환경변수에 <code>OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"</code>을 자동 주입합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Agent Runtime은 <code>GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"</code> 설정만으로 플랫폼이 Cloud Trace 분산 스팬을 자동 수집합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>플랫폼 내장 텔레메트리 환경변수를 활성화하고 GenAI 시맨틱 컨벤션 표준을 유지합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>service.tf</code> 내 <code>GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"</code> 설정을 검증·유지하고 자동 통과 처리합니다.</span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>app/fast_api_app.py</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C5.2</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">트레이스 스팬 PII 평문 기록 차단(<code>NO_CONTENT</code>) &amp; 선택적 BigQuery 감사</span>
+                  </div>
+                  <p class="cp-desc">
+                    분산 트레이싱을 켤 때 프라이버시 옵션을 잠그지 않으면, 고객이 입력한 개인정보·기밀 질문과 모델 응답 원문이 Cloud Trace 스팬 속성에 평문으로 저장되어 사내 뷰어 권한자 전체에게 노출됩니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>OpenTelemetry 환경변수(<code>NO_CONTENT</code>)뿐 아니라 ADK 자체 스팬 캡처 비활성화(<code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code>)까지 함께 설정되어 있는지 체크합니다. <em>(기본 스캐폴딩은 ADK 스팬 캡처 차단 변수가 빠져 있어 원문이 그대로 기록됨)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Cloud Trace에는 지연시간·토큰 수·상태코드만 남기도록 <strong>두 환경변수를 모두 잠그고</strong>, 원문 감사가 필요한 경우에만 IAM이 분리된 <strong>BigQuery Agent Analytics(<code>enable_bq_analytics=true</code>, <code>US</code> 멀티리전)</strong>로 옵트인 수집해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>service.tf</code>와 <code>app/agent.py</code>에 <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="NO_CONTENT"</code> 및 <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code>를 동시 주입합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>app/agent.py</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C5.3</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">Cloud Run SRE 골든 시그널 운영 알람 (<code>alerts.tf</code>)</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">Agent Runtime (<code>ReasoningEngine</code>) SRE 골든 시그널 운영 알람 (<code>alerts.tf</code>)</span>
+                  </div>
+                  <p class="cp-desc">
+                    로그와 트레이스를 수집하더라도 자동 알람 정책이 없으면, 에이전트 5xx 장애·응답 지연 급증·프롬프트 인젝션 공격이 발생했을 때 고객 불만이 접수되기 전까지 운영팀이 장애를 인지할 수 없습니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>deployment/terraform/alerts.tf</code>에 Cloud Run 리소스(<code>cloud_run_revision</code>) 대상 에러율·지연시간·가드레일 차단 알람이 정의되어 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>단순 건수가 아닌 <strong>PromQL 5xx 에러 비율(&gt; 2%)</strong>, 에이전트 추론 특성을 반영한 <strong>P95 응답 지연(&gt; 15,000ms)</strong>, 그리고 <strong>Model Armor 차단 로그 급증(Log-based Metric)</strong> 3대 골든 시그널 알람을 Terraform으로 구성해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/alerts.tf</code>를 생성해 Cloud Run PromQL 5xx 비율 알람, P95 15초 지연 알람, <code>guardrail_block</code> 로그 기반 알람 정책을 일괄 선언합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>deployment/terraform/alerts.tf</code>에 <code>aiplatform.googleapis.com/ReasoningEngine</code> 전용 메트릭 기반 알람이 구성되어 있는지 점검합니다. <em>(런타임과 맞지 않는 메트릭을 걸어두면 알람이 동작하지 않음)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Agent Runtime 리소스 타입(<strong><code>aiplatform.googleapis.com/ReasoningEngine</code></strong>)의 에러 메트릭, <strong>P95 응답 지연(&gt; 15,000ms)</strong>, 그리고 <strong>Model Armor 차단 급증</strong> 알람을 구성해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/alerts.tf</code>를 생성해 <code>ReasoningEngine</code> 전용 에러·P95 지연(15초)·가드레일 차단 급증 알람 정책을 선언합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/alerts.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+
+              <!-- D6 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">6️⃣ FinOps 비용 통제 &amp; 쿼터 회복력 (FinOps &amp; Resilience · 2개 항목)</span>
+                    <span class="cp-domain-weight">도메인 가중치 1x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C6.1</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">무한 도구 루프 차단(턴별 리셋) · 출력 토큰 캡 &amp; 월간 예산 알람</span>
+                  </div>
+                  <p class="cp-desc">
+                    에이전트가 도구 호출 실패 후 재시도 루프에 빠지면 단일 사용자 질문 한 번에 수십~수백 번 LLM을 재귀 호출하여 수분 만에 막대한 토큰 과금과 쿼터 고갈을 일으킵니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>단일 사용자 질문(<code>invocation_id</code>)당 LLM 호출 횟수 상한과 <code>max_output_tokens</code> 제한 플러그인이 있는지, 그리고 클라우드 월간 예산 알람(<code>budget.tf</code>)이 있는지 점검합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><strong><code>invocation_id</code>(단일 턴) 단위로 카운터를 자동 리셋</strong>해 정상적인 멀티턴 대화는 막지 않으면서 한 턴 내 과도한 루프(기본 10회 초과)만 정확히 차단하고, 매 요청의 <code>max_output_tokens</code>(기본 2,048)와 월간 클라우드 예산 임계치(50%·90%·100%) 알람을 함께 걸어야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/app_utils/cost_guard_plugin.py</code>(<code>CostTokenGuardrailPlugin</code>)를 생성해 <code>app/agent.py</code>에 등록하고, 선택적 월간 예산 알람(<code>deployment/terraform/budget.tf</code>)을 자동 생성합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>app/app_utils/cost_guard_plugin.py</code><code>app/agent.py</code><code>deployment/terraform/budget.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C6.2</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">Gemini API 429(DSQ) 쿼터 소진 방어 &amp; 지수 백오프 재시도</span>
+                  </div>
+                  <p class="cp-desc">
+                    동시 접속자가 몰리는 피크 시간대에는 Gemini API에서 일시적인 <code>429 RESOURCE_EXHAUSTED</code>(동적 공유 쿼터 경합)가 발생할 수 있습니다. 재시도 설정이 약하면 고객 화면에 즉시 에러가 노출됩니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>app/agent.py</code>의 Gemini 모델 설정에 충분한 지수 백오프 재시도(<code>attempts &gt;= 5</code>)와 엔드포인트 위치(<code>GOOGLE_CLOUD_LOCATION</code>)가 구성되어 있는지 체크합니다. <em>(기본 스캐폴딩은 <code>attempts=3</code>으로 버스트 트래픽 시 조기 실패 가능)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><code>HttpRetryOptions(attempts=5, initial_delay=1.0, exp_base=2.0, http_status_codes=[429, 500, 502, 503, 504])</code>로 <strong>5회 지수 백오프</strong>를 적용하고, 글로벌 공유 쿼터 풀 활용을 위해 <code>GOOGLE_CLOUD_LOCATION="global"</code>(데이터 레지던시 필요 시 리전 고정)을 설정합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>app/agent.py</code>의 <code>HttpRetryOptions(attempts=3)</code>를 5회 지수 백오프로 상향 패치하고, <code>service.tf</code>의 <code>GOOGLE_CLOUD_LOCATION</code> 환경변수를 설정합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>app/agent.py</code><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+
+              <!-- D7 -->
+              <tr class="cp-domain-row">
+                <td colspan="5">
+                  <div class="cp-domain-head">
+                    <span class="cp-domain-name">7️⃣ Day-2 CI/CD 품질 게이트 &amp; 무중단 배포 (CI/CD &amp; Eval Gate · 2개 항목)</span>
+                    <span class="cp-domain-weight">도메인 가중치 1x</span>
+                  </div>
+                </td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C7.1</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title">CI/CD 공식 <code>agents-cli eval run</code> 자동 품질 평가 게이트</span>
+                  </div>
+                  <p class="cp-desc">
+                    프롬프트 한 줄이나 도구 설명만 수정해도 에이전트가 엉뚱한 도구를 호출하거나 답변 품질이 급락(Regression)할 수 있습니다. 일반 단위 테스트(pytest)만으로는 에이전트 지능 저하를 걸러낼 수 없습니다.
+                  </p>
+                  <div class="cp-ba-list">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>CI/CD 파이프라인(<code>.cloudbuild/staging.yaml</code>)에 스테이징 배포 직후 골든 데이터셋으로 에이전트 품질을 검증하는 <code>agents-cli eval run</code> 단계가 있는지 체크합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>스테이징 배포 후 <strong><code>uvx google-agents-cli eval run --dataset tests/eval/datasets/smoke_dataset.json --metrics tool_trajectory_avg_score,response_match_score</code></strong>를 자동 실행해 합격 기준 미달 시 프로덕션 승격을 차단해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>tests/eval/eval_config.yaml</code> 및 골든 데이터셋(<code>smoke_dataset.json</code>)을 생성하고, <code>.cloudbuild/staging.yaml</code>에 공식 <code>agents-cli eval run</code> 품질 게이트 스텝을 삽입합니다.</span></div>
+                  </div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>.cloudbuild/staging.yaml</code><code>tests/eval/eval_config.yaml</code><code>tests/eval/datasets/smoke_dataset.json</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C7.2</span><span class="cp-sev cp-sev-std">High</span></div></td>
+                <td>
+                  <div class="cp-title-row">
+                    <span class="cp-title track-only" data-track="cloud_run">무중단 카나리 트래픽 분할 &amp; 이전 안정 리비전 즉시 롤백</span>
+                    <span class="cp-title track-only" data-track="agent_runtime">Terraform <code>lifecycle.ignore_changes</code> 드리프트 방지 &amp; 무중단 배포</span>
+                    <span class="track-only" data-track="agent_runtime"><span class="pill pill-green mono" style="font-size:10.5px;">MANAGED_NATIVE</span></span>
+                  </div>
+                  <p class="cp-desc track-only" data-track="cloud_run">
+                    신규 에이전트 버전을 배포하자마자 트래픽 100%를 한 번에 넘기면, 미처 발견하지 못한 런타임 오류 발생 시 전체 고객이 동시에 장애를 겪게 됩니다. 또한 롤백 시 <code>--to-latest</code>를 쓰면 방금 실패한 최신 리비전으로 다시 고정되는 실수가 발생합니다.
+                  </p>
+                  <p class="cp-desc track-only" data-track="agent_runtime">
+                    CI/CD 파이프라인이 배포한 신규 에이전트 버전을 Terraform이 구버전으로 덮어쓰지 않도록 라이프사이클 격리가 필요합니다.
+                  </p>
+                  <div class="cp-ba-list track-only" data-track="cloud_run">
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span><code>service.tf</code>의 트래픽/이미지 <code>lifecycle.ignore_changes</code> 설정과 직전 정상 리비전(<code>$PREVIOUS_REVISION</code>)을 캡처해 점진 배포·롤백하는 스크립트 구비 여부를 체크합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>배포 전 현재 100% 트래픽을 받고 있는 <strong>정상 리비전 이름(<code>$PREVIOUS_REVISION</code>)을 먼저 기록</strong>한 뒤 <code>10% → 50% → 100%</code> 순으로 트래픽을 옮기고, 헬스체크 실패 시 즉시 <code>--to-revisions="$PREVIOUS_REVISION=100"</code>으로 복원해야 합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>service.tf</code>의 <code>lifecycle.ignore_changes</code>를 보강하고, <code>$PREVIOUS_REVISION</code> 기반 안전 롤백 로직이 내장된 <code>scripts/canary_rollout.sh</code>를 자동 생성합니다.</span></div>
+                  </div>
+                  <div class="cp-ba-list track-only" data-track="agent_runtime">
+                    <div class="cp-ba-row"><span class="cp-ba-tag auto">플랫폼 제공</span><span>🟢 <strong>MANAGED_NATIVE</strong> — Reasoning Engine이 내부 워커 교체 및 무중단 엔드포인트 업데이트를 플랫폼 차원에서 자동 처리합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span><code>service.tf</code>에 <code>lifecycle.ignore_changes</code>를 설정해 CI/CD 코드 배포와 Terraform 인프라 상태가 충돌하지 않도록 유지합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/service.tf</code>의 <code>lifecycle.ignore_changes</code> 구성을 검증·보존하고 불필요한 스크립트 생성 없이 자동 통과 처리합니다.</span></div>
+                  </div>
+                  <div class="cp-meta track-only" data-track="cloud_run"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>scripts/canary_rollout.sh</code></div>
+                  <div class="cp-meta track-only" data-track="agent_runtime"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on track-only" data-track="cloud_run">✓</span><span class="cp-badge-auto track-only" data-track="agent_runtime">⚡</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 4대 장애·공격 시뮬레이션 매핑표 -->
+        <h4 style="margin:18px 0 8px;font-size:14.5px;font-weight:700;color:var(--ink);">🛡️ 4대 모의 공격 · 장애 시뮬레이션 매핑 (<code>SIM-1</code>–<code>SIM-4</code>)</h4>
+        <p style="margin:0 0 10px;font-size:13.5px;">선택한 프로필에서 제외(<code>N/A</code>)된 체크포인트와 연결된 시뮬레이션은 자동으로 <strong><code>SKIPPED (N/A)</code></strong> 처리되어 불필요한 거짓 경고를 만들지 않습니다.</p>
+        <div class="cp-matrix-wrap">
+          <table class="cp-matrix-table" id="simMatrixTable">
+            <thead>
+              <tr>
+                <th style="width:84px;">시나리오</th>
+                <th><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 모의 공격 · 장애 시나리오 상세 &amp; 검증 방식</th>
+                <th style="width:56px;text-align:center;" data-cp-col="p1" title="1. 대외 공개">1. 대외</th>
+                <th style="width:56px;text-align:center;" data-cp-col="p2" title="2. 사내 운영">2. 사내</th>
+                <th style="width:56px;text-align:center;" data-cp-col="p3" title="3. 사내 PoC">3. PoC</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-1</span></td>
+                <td>
+                  <div class="cp-title-row"><span class="cp-title">프롬프트 인젝션 &amp; 시스템 프롬프트 · PII 탈취 공격</span><span class="pill pill-gray mono" style="font-size:11px;">C4.2</span></div>
+                  <p class="cp-desc" style="margin-bottom:0;">악의적 사용자가 <code>Ignore previous instructions...</code> 탈옥이나 주민번호·카드번호 입력을 시도할 때 <code>ModelArmorGuardrailPlugin</code>(Model Armor API + 로컬 폴백)이 모델 호출 직전에 차단/마스킹하는지 검증합니다.</p>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-2</span></td>
+                <td>
+                  <div class="cp-title-row"><span class="cp-title">도구 악용 내부 메타데이터 SSRF · IDOR &amp; 인바운드 노출 공격</span><span class="pill pill-gray mono" style="font-size:11px;">C4.2 · C3.2</span></div>
+                  <p class="cp-desc track-only" data-track="cloud_run" style="margin-bottom:0;">도구 인자에 GCP 메타데이터 URL(<code>http://169.254.169.254</code>)이나 타 사용자 <code>user_id</code>를 주입하는 공격을 <code>before_tool_callback</code>이 차단하는지와, Cloud Run 인바운드(WAF 또는 사내 IAP)가 잠겨 있는지 함께 검증합니다.</p>
+                  <p class="cp-desc track-only" data-track="agent_runtime" style="margin-bottom:0;">도구 인자에 GCP 메타데이터 URL(<code>http://169.254.169.254</code>)이나 타 사용자 <code>user_id</code>를 주입하는 공격을 <code>before_tool_callback</code>이 차단하는지와, IAM 인가 엔드포인트 보호 상태를 함께 검증합니다.</p>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="1">
+                <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-3</span></td>
+                <td>
+                  <div class="cp-title-row"><span class="cp-title">에이전트 무한 도구 루프(15회 연속) &amp; 출력 토큰 폭탄</span><span class="pill pill-gray mono" style="font-size:11px;">C6.1</span></div>
+                  <p class="cp-desc" style="margin-bottom:0;">단일 턴(<code>invocation_id</code>) 내에서 15회 이상 LLM·도구가 재귀 호출될 때 <code>CostTokenGuardrailPlugin</code>이 상한선(기본 10회)과 <code>max_output_tokens</code>에서 즉시 차단하는지 검증합니다.</p>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-on">✓</span></td>
+              </tr>
+              <tr class="cp-row" data-p1="1" data-p2="1" data-p3="0">
+                <td><span class="pill pill-navy mono" style="font-size:11.5px;">SIM-4</span></td>
+                <td>
+                  <div class="cp-title-row"><span class="cp-title">컨테이너 재시작 · 스케일아웃 시 멀티턴 세션 &amp; 장기 기억 유지</span><span class="pill pill-gray mono" style="font-size:11px;">C2.1 · C2.2</span></div>
+                  <p class="cp-desc" style="margin-bottom:0;">인스턴스가 교체되어도 <strong>Agent Platform Managed Sessions</strong>(<code>C2.1</code>)와 <strong>Memory Bank</strong>(<code>C2.2</code>)를 통해 대화 문맥과 사용자 선호가 유실되지 않는지 검증합니다.</p>
+                </td>
+                <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>
+                <td class="cp-col-profile" data-cp-col="p3"><span class="cp-badge-off">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>3-3. 예상 진단 결과 (Before Hardening · 1번 전체 기준)</h3>
+        <div class="track-only" data-track="cloud_run">
+          <div class="code-wrap">
+            <div class="code-output" style="border-top:none;">Target: cloud_run  |  Weighted Score: 9.8 / 100.0 (Mode B 스캐폴딩 시작 시: 23.5 / 100.0 · 🔴 Not Production Ready)
+Advisories: CPU/메모리/min_instances는 강제 상향 없이 기존 값 유지 (Locust 부하 테스트 후 직접 튜닝 안내)
+Simulator: 0 / 4 Scenarios Protected (프롬프트 인젝션 / SSRF / 무한 루프 / 세션 유실 취약)</div>
+          </div>
+        </div>
+        <div class="track-only" data-track="agent_runtime">
+          <div class="code-wrap">
+            <div class="code-output" style="border-top:none;">Target: agent_runtime  |  Weighted Score: 7.6 / 100.0 (Mode B 스캐폴딩 시작 시: 43.2 / 100.0 · 6 MANAGED_NATIVE)
+Gate Verdict: 🔴 Not Production Ready
+Simulator: 0 / 4 Scenarios Protected (Model Armor / Memory Bank / Cost Guard / PSC-I 설정 누락)</div>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(2)">← 이전 (Step 2)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(3)">Step 3 완료하고 Step 4(Play 03)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 4 (PLAY 03: 17개 핵심 항목 자동 하드닝) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 4 / 8</span>
+            <span class="pill pill-blue mono">PLAY 03</span>
+            <span class="pill pill-gray mono">약 7분</span>
+            <h2><code>agy</code>로 17개 핵심 프로덕션 항목 자동 하드닝</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          <strong>Play 03</strong>에서는 열려 있는 <code>agy</code> 대화창에서 그대로 이어서 <strong>Diff 검토 → 프로덕션 항목 일괄 패치 → <code>uv lock</code> → 재검증(<code>4/4 Protected</code>) → 보안 리포트 생성</strong>까지 한 번에 진행합니다.
+        </p>
+
+        <h3>4-1. 자동 하드닝 패치 &amp; 재검증 실행</h3>
+        <div class="tab-bar" data-tabgroup="step4harden">
+          <button class="tab-btn active" onclick="switchTab('step4harden', 'agy', this)">방법 A · Antigravity CLI (agy) 대화형 자동 패치 (권장)</button>
+          <button class="tab-btn" onclick="switchTab('step4harden', 'cli', this)">방법 B · 스크립트 직접 실행 (CI/Headless)</button>
+        </div>
+
+        <div class="tab-panel active" data-tabgroup="step4harden" data-tab="agy">
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label" data-auto-tpl="1">agy &gt; prompt · {{TARGET_LABEL}} 자동 패치 &amp; 리포트 생성</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="방금 사전 확인하고 진단한 {{TARGET_LABEL}} 기준의 항목(--items)과 파라미터(--params)대로 diff 를 먼저 요약해 주고, apply 해서 프로덕션 하드닝을 적용해줘.
+적용 후에는:
+1) `uv lock` 으로 lockfile 을 갱신하고,
+2) 동일한 범위로 scan 과 simulate 를 다시 실행해 100.0 / 100.0 및 적용 시나리오 전체 Protected 통과를 검증한 뒤,
+3) READINESS_REPORT.md 와 READINESS_REPORT.html 을 생성해줘."></pre>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tabgroup="step4harden" data-tab="cli">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label" data-auto-tpl="1">bash · diff → apply → uv lock → simulate → report ({{TARGET_KEY}})</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+export SKILL_BIN=&quot;$HOME/.gemini/skills/agent-production-readiness/scripts/prod_ready.py&quot;
+
+python3 &quot;$SKILL_BIN&quot; diff . --target {{TARGET_KEY}} --items ALL | head -n 60
+python3 &quot;$SKILL_BIN&quot; apply . --target {{TARGET_KEY}} --items ALL
+uv lock
+python3 &quot;$SKILL_BIN&quot; simulate . --target {{TARGET_KEY}}
+python3 &quot;$SKILL_BIN&quot; report . --target {{TARGET_KEY}} -o READINESS_REPORT.md"></pre>
+            <div class="code-output">✅ Readiness Score: 100.0 / 100.0 (🟢 Production Ready) · Summary: 4 / 4 Scenarios Protected
+📄 Exported: READINESS_REPORT.md &amp; READINESS_REPORT.html</div>
+          </div>
+        </div>
+
+        <h3>4-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 트랙에서 반영된 핵심 산출물</h3>
+        <div class="track-only" data-track="cloud_run">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>생성·패치된 파일</th><th>체크포인트</th><th>엔터프라이즈 역할</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>app/app_utils/model_armor_plugin.py</code></td><td><span class="pill pill-green mono">C4.2</span></td><td>Model Armor API 입출력 프롬프트·PII 차단 + 도구 SSRF/IDOR 차단</td></tr>
+                <tr><td><code>app/app_utils/cost_guard_plugin.py</code></td><td><span class="pill pill-green mono">C6.1</span></td><td><code>invocation_id</code>별 턴 루프 상한 + <code>max_output_tokens</code> 캡</td></tr>
+                <tr><td><code>app/app_utils/services.py</code></td><td><span class="pill pill-green mono">C2.1 · C2.2</span></td><td>Agent Platform Managed Sessions &amp; Memory Bank 연결 <em>(Self-Hosted는 참고 주석)</em></td></tr>
+                <tr><td><code>app/fast_api_app.py</code> &amp; <code>Dockerfile</code></td><td><span class="pill pill-green mono">C1.2 · C4.3</span></td><td>FastAPI 서버 엔트리포인트 + Non-root 컨테이너(<code>USER 10001</code>) · Gen2</td></tr>
+                <tr><td><code>deployment/terraform/*.tf</code></td><td><span class="pill pill-green mono">C1.1~C6.2</span></td><td>Cloud Run v2(사이징 보존), Direct VPC + PGA, NEG+Cloud Armor WAF(또는 IAP), PromQL SRE 알림</td></tr>
+                <tr><td><code>scripts/canary_rollout.sh</code></td><td><span class="pill pill-green mono">C7.2</span></td><td>Cloud Run 카나리(<code>10→50→100%</code>) &amp; 이전 안정 리비전 안전 롤백</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="track-only" data-track="agent_runtime">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>구분 / 파일</th><th>체크포인트</th><th>엔터프라이즈 역할</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>플랫폼 자동 제공 (6개)</strong></td><td><span class="pill pill-green mono">MANAGED_NATIVE</span></td><td>인프라·헬스(<code>C1.1~1.2</code>), Managed Sessions(<code>C2.1</code>), IAM 인바운드(<code>C3.2</code>), Managed OTel(<code>C5.1</code>), 배포 라이프사이클(<code>C7.2</code>)</td></tr>
+                <tr><td><code>app/app_utils/services.py</code> &amp; <code>agent.py</code></td><td><span class="pill pill-green mono">C2.2</span></td><td>Agent Platform Memory Bank + <code>after_agent_callback</code> 장기 기억 자동 저장</td></tr>
+                <tr><td><code>app/app_utils/model_armor_plugin.py</code></td><td><span class="pill pill-green mono">C4.2</span></td><td>Model Armor API 입출력·PII 차단 + 도구 SSRF/IDOR 가드레일</td></tr>
+                <tr><td><code>app/app_utils/cost_guard_plugin.py</code></td><td><span class="pill pill-green mono">C6.1 · C6.2</span></td><td>턴별 루프·토큰 상한 서킷 브레이커 + <code>budget.tf</code> + <code>ReasoningEngine</code> 전용 <code>alerts.tf</code></td></tr>
+                <tr><td><code>deployment/terraform/service.tf</code></td><td><span class="pill pill-green mono">C3.1 · C4.1 · C5.2</span></td><td><code>psc_interface_config</code> 연결, 전용 SA(<code>storage.objectUser</code>), <code>NO_CONTENT</code> 프라이버시</td></tr>
+                <tr><td><code>deployment/terraform/production_ready.tf</code></td><td><span class="pill pill-green mono">C3.1</span></td><td>사설 VPC 연동용 <strong>PSC Interface (<code>google_compute_network_attachment</code>)</strong> + PGA 서브넷</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(3)">← 이전 (Step 3)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 5 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="5" id="step-5">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 5 / 8</span>
+            <span class="pill pill-gray mono" id="step5TimePill">약 8분</span>
+            <h2 data-auto-tpl="1">{{TARGET_LABEL}}에 하드닝된 에이전트 배포하기</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(5)">✓ 완료 표시</button>
+        </div>
+
+        <h3>5-1. 최소 권한 전용 서비스 계정(SA) 생성 (공통)</h3>
+        <p>기본 공유 SA 대신 에이전트 전용 서비스 계정(<code>{{SA_EMAIL}}</code>)을 생성해 최소 권한만 부여합니다.</p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 전용 서비스 계정 생성 및 최소 권한 부여</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="gcloud iam service-accounts create {{SA_ID}} \
+  --display-name=&quot;{{AGENT_NAME}} Runtime SA&quot; \
+  --project={{PROJECT_ID}}
+
+gcloud projects add-iam-policy-binding {{PROJECT_ID}} \
+  --member=&quot;serviceAccount:{{SA_EMAIL}}&quot; \
+  --role=&quot;roles/aiplatform.user&quot;
+
+gcloud projects add-iam-policy-binding {{PROJECT_ID}} \
+  --member=&quot;serviceAccount:{{SA_EMAIL}}&quot; \
+  --role=&quot;roles/logging.logWriter&quot;
+
+gcloud projects add-iam-policy-binding {{PROJECT_ID}} \
+  --member=&quot;serviceAccount:{{SA_EMAIL}}&quot; \
+  --role=&quot;roles/cloudtrace.agent&quot;"></pre>
+        </div>
+
+        <!-- CLOUD RUN DEPLOY -->
+        <div class="track-only" data-track="cloud_run">
+          <div class="callout callout-blue" style="margin-top:16px;">
+            <div class="callout-title">🚀 5-2 배포 모드 선택 안내</div>
+            <ul style="margin:6px 0 0 18px;">
+              <li><strong>엔터프라이즈 Terraform + <code>agents-cli deploy</code> (권장 · 기본)</strong> — Step 4에서 하드닝한 전체 인프라(Direct VPC · PGA · Serverless NEG + Cloud Armor WAF · PromQL SRE 알람 · 예산 캡)를 실제 GCP에 프로비저닝하고 Managed Sessions/Memory Bank 연동 에이전트를 배포합니다. <span style="color:var(--ink-faint);">(약 10~15분 소요 · 실운영/PoC 표준)</span></li>
+              <li><strong>빠른 Cloud Run 배포 (간편 실습)</strong> — 외부 인프라 생성을 생략하고 하드닝된 앱 컨테이너와 전용 SA만 3분 만에 배포합니다. <span style="color:var(--ink-faint);">(Qwiklabs 등 시간·권한이 제한된 샌드박스용)</span></li>
+            </ul>
+          </div>
+
+          <div class="tab-bar" data-tabgroup="step5cr">
+            <button class="tab-btn active" onclick="switchTab('step5cr', 'tf', this)">엔터프라이즈 Terraform + agents-cli 배포 (권장)</button>
+            <button class="tab-btn" onclick="switchTab('step5cr', 'fast', this)">빠른 Cloud Run 배포 (간편 실습 · 3분)</button>
+          </div>
+
+          <div class="tab-panel active" data-tabgroup="step5cr" data-tab="tf">
+            <h3>5-2. Terraform 프로비저닝 + <code>agents-cli deploy</code></h3>
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">bash · Terraform + google-agents-cli deploy</span>
+                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre" data-tpl="# Cloud Shell에 terraform 미설치 시 HashiCorp 공식 저장소에서 자동 설치
+if ! terraform -version 2>/dev/null | grep -q &quot;^Terraform v&quot;; then
+  wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  echo &quot;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?&lt;=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main&quot; | sudo tee /etc/apt/sources.list.d/hashicorp.list
+  sudo apt-get update &amp;&amp; sudo apt-get install -y terraform
+fi
+
+cd ~/agent-lab/{{AGENT_NAME}}/deployment/terraform
+terraform init
+terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot; -var=&quot;monthly_budget_amount_usd=1000&quot;
+
+cd ../..
+uvx google-agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --service-account={{SA_EMAIL}} --no-confirm-project"></pre>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tabgroup="step5cr" data-tab="fast">
+            <h3>5-2. 빠른 Cloud Run 컨테이너 빌드 및 1차 배포</h3>
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">bash · gcloud run deploy --source=.</span>
+                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+
+gcloud run deploy {{AGENT_NAME}} \
+  --source=. \
+  --region={{REGION}} \
+  --project={{PROJECT_ID}} \
+  --service-account={{SA_EMAIL}} \
+  --set-env-vars=&quot;GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_PROJECT={{PROJECT_ID}},GOOGLE_CLOUD_LOCATION=global&quot; \
+  --cpu=1 \
+  --memory=1Gi \
+  --concurrency=40 \
+  --allow-unauthenticated \
+  --quiet"></pre>
+            </div>
+          </div>
+
+          <h3>5-3. 라이브 엔드포인트 스모크 테스트</h3>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Cloud Run URL 조회 및 /list-apps 확인</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
+echo &quot;Deployed URL: ${SERVICE_URL}&quot;
+curl -sS &quot;${SERVICE_URL}/list-apps&quot; ; echo"></pre>
+            <div class="code-output">["app"]</div>
+          </div>
+        </div>
+
+        <!-- AGENT RUNTIME DEPLOY -->
+        <div class="track-only" data-track="agent_runtime">
+          <div class="callout callout-blue">
+            <div class="callout-title">🚀 5-2 Agent Runtime 배포 모드 선택 안내</div>
+            <p style="margin-top:4px;">Agent Runtime은 별도 <code>gcloud</code> 명령 대신 <code>uvx google-agents-cli deploy</code>로 컨테이너를 배포하며 최초 배포는 <strong>5~10분</strong> 소요됩니다(<code>--no-wait</code> + <code>--status</code> 사용).</p>
+            <ul style="margin:6px 0 0 18px;">
+              <li><strong>Terraform PSC-I 포함 엔터프라이즈 배포 (권장 · 기본)</strong> — 사내망 프라이빗 연동용 PSC-I(<code>Network Attachment</code>)와 <code>--agent-identity</code>를 포함해 실제 운영 표준으로 배포합니다.</li>
+              <li><strong>빠른 <code>agents-cli</code> 배포 (간편 실습)</strong> — VPC/PSC-I 프로비저닝 없이 Agent Runtime 컨테이너와 전용 SA만 빠르게 배포합니다.</li>
+            </ul>
+          </div>
+
+          <div class="tab-bar" data-tabgroup="step5ar">
+            <button class="tab-btn active" onclick="switchTab('step5ar', 'tf', this)">Terraform PSC-I 포함 엔터프라이즈 배포 (권장)</button>
+            <button class="tab-btn" onclick="switchTab('step5ar', 'fast', this)">빠른 agents-cli 배포 (간편 실습)</button>
+          </div>
+
+          <div class="tab-panel active" data-tabgroup="step5ar" data-tab="tf">
+            <h3>5-2. Terraform PSC-I 생성 후 <code>agents-cli deploy</code></h3>
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">bash · Terraform PSC-I + agents-cli deploy</span>
+                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre" data-tpl="# Cloud Shell에 terraform 미설치 시 HashiCorp 공식 저장소에서 자동 설치
+if ! terraform -version 2>/dev/null | grep -q &quot;^Terraform v&quot;; then
+  wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  echo &quot;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?&lt;=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main&quot; | sudo tee /etc/apt/sources.list.d/hashicorp.list
+  sudo apt-get update &amp;&amp; sudo apt-get install -y terraform
+fi
+
+cd ~/agent-lab/{{AGENT_NAME}}/deployment/terraform
+terraform init
+terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;
+cd ../..
+
+uvx google-agents-cli deploy \
+  --project={{PROJECT_ID}} \
+  --region={{REGION}} \
+  --service-account={{SA_EMAIL}} \
+  --network-attachment=&quot;projects/{{PROJECT_ID}}/regions/{{REGION}}/networkAttachments/{{AGENT_NAME}}-psc-attachment&quot; \
+  --agent-identity \
+  --min-instances=1 --max-instances=10 \
+  --no-confirm-project --no-wait"></pre>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tabgroup="step5ar" data-tab="fast">
+            <h3>5-2. 빠른 <code>agents-cli deploy</code>로 Agent Runtime 배포</h3>
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">bash · google-agents-cli deploy (--no-wait / --status)</span>
+                <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+
+# 방법 B(최소 코드 직접 생성)로 시작했다면 배포 메타데이터 1회 초기화
+uvx google-agents-cli scaffold enhance . --deployment-target agent_runtime --region {{REGION}} --yes
+
+# Agent Runtime 배포 시작 (5~10분 소요)
+uvx google-agents-cli deploy \
+  --project={{PROJECT_ID}} \
+  --region={{REGION}} \
+  --service-account={{SA_EMAIL}} \
+  --update-env-vars=&quot;GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=global&quot; \
+  --min-instances=1 \
+  --max-instances=10 \
+  --no-confirm-project \
+  --no-wait
+
+# 배포 진행 상태 확인 (완료 시 Engine ID 출력)
+uvx google-agents-cli deploy --status"></pre>
+            </div>
+          </div>
+
+          <h3>5-3. 배포 목록 확인 &amp; ADK 스트리밍 호출 테스트</h3>
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Engine ID 조회 및 실시간 질의 테스트</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="uvx google-agents-cli deploy --list
+uvx google-agents-cli run --mode=adk &quot;100 USD를 KRW로 환산해줘&quot;"></pre>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(Play 04)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 6 (PLAY 04: Web JSON 위자드 진단) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="6" id="step-6">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 6 / 8</span>
+            <span class="pill pill-green mono">PLAY 04</span>
+            <span class="pill pill-gray mono">약 6분</span>
+            <h2>Web Workbench에서 런타임 JSON 진단 위자드 실행</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(6)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          이제 <strong>Play 04 (Zero-IAM Web Workbench)</strong>에서 실제 배포된 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 설정 JSON을
+          <strong>Step-by-Step 위자드</strong>로 점검합니다.
+        </p>
+
+        <h3>6-1. 배포된 실서비스 설정 JSON 추출</h3>
+        <div class="track-only" data-track="cloud_run">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Cloud Run 서비스 Describe JSON 출력</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="gcloud run services describe {{AGENT_NAME}} \
+  --region={{REGION}} \
+  --project={{PROJECT_ID}} \
+  --format=json"></pre>
+          </div>
+        </div>
+
+        <div class="track-only" data-track="agent_runtime">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Agent Runtime REST API JSON 조회</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="curl -s \
+  -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; \
+  -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; \
+  &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/projects/{{PROJECT_ID}}/locations/{{REGION}}/reasoningEngines&quot;"></pre>
+          </div>
+        </div>
+
+        <h3>6-2. Web Workbench 열기 &amp; 위자드 시작</h3>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0 16px;">
+          <a id="step6WorkbenchBtn" href="https://prod-ready-workbench-1018407696981.us-central1.run.app" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+            <span>🚀 Production-Readiness Web Workbench 열기 ↗</span>
+          </a>
+          <span class="mono" style="font-size:12.5px;color:var(--ink-faint);" id="step6WorkbenchUrlText"></span>
+        </div>
+        <ol>
+          <li>웹 화면에서 <strong><code>Play 02 · 실서비스 런타임 JSON 진단</code></strong> 탭을 열고, 런타임 모드로 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong>을 선택합니다.</li>
+          <li>복사한 JSON을 붙여넣고(또는 GCP 미배포 시 <strong>[샘플 JSON 불러오기]</strong> 클릭) <strong><code>[진단 위자드 시작하기]</code></strong>를 누릅니다.</li>
+        </ol>
+
+        <h3>6-3. 위자드 체크포인트 선택 가이드 (<span data-auto-tpl="1">{{TARGET_LABEL}}</span>)</h3>
+        <div class="track-only" data-track="cloud_run">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>점검 항목</th><th>예상 상태</th><th>실습 추천 선택</th></tr></thead>
+              <tbody>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R1.1</td><td>스케일링 · 콜드스타트 · CPU 할당</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>간헐 트래픽은 <strong>현재 유지</strong> / 상시 SLA는 <strong>설정 변경</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R1.2</td><td>CPU · 메모리 · 동시성 사이징</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td><strong>현재 스펙 유지</strong> 또는 부하 테스트 기반 수치 입력</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R1.3</td><td>HTTP Liveness 프로브 &amp; Gen2</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td><strong>🛠️ 프로브 추가</strong> (<code>/list-apps</code>) 추천</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R2.1</td><td>멀티턴 세션·메모리 영속성</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>단일턴은 <strong>Stateless 유지</strong> / 멀티턴은 <code>agentengine://</code> 등 선택</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>인바운드 노출 범위</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭은 <strong>퍼블릭 의도</strong> / 사내 전용은 <strong>인바운드 제한</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>아웃바운드 Direct VPC Egress</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭 API만 호출 시 <strong>미연결 적합</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 확인 완료</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Model Armor · SSRF 가드레일</td><td><span class="pill pill-purple mono">🟣 코드 확인</span></td><td>Step 4에서 적용 완료 → <strong>이미 적용됨</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="track-only" data-track="agent_runtime">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>점검 항목</th><th>예상 상태</th><th>실습 추천 선택</th></tr></thead>
+              <tbody>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R1.1</td><td>관리형 스케일링 &amp; 헬스체크</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R2.1</td><td>Managed Session Service &amp; Memory Bank</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.1</td><td>제로 트러스트 IAM 인바운드</td><td><span class="pill pill-green mono">🟢 MANAGED_NATIVE</span></td><td>플랫폼 기본 제공 (자동 통과)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R3.2</td><td>PSC Interface (사설 VPC 접근)</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>사설 DB 접근이 없으면 <strong>미연결 적합</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.1</td><td>전용 최소 권한 서비스 계정</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>전용 SA(<code>{{SA_EMAIL}}</code>) 확인 완료</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R4.2</td><td>Model Armor · SSRF 가드레일</td><td><span class="pill pill-purple mono">🟣 코드 확인</span></td><td>Step 4에서 적용 완료 → <strong>이미 적용됨</strong></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R5.1</td><td>OTel 프롬프트 평문 차단</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">R6.1</td><td>Global DSQ 429 쿼터 분산</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td><code>GOOGLE_CLOUD_LOCATION=global</code> 확인 완료</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 7 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="7" id="step-7">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 7 / 8</span>
+            <span class="pill pill-green mono">PLAY 04</span>
+            <span class="pill pill-gray mono">약 5분</span>
+            <h2>최종 진단 리포트 생성 · 맞춤형 명령어 반영 · 재검증</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(7)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          위자드 마지막 단계에서 <strong><code>[최종 진단 리포트 생성하기]</code></strong>를 클릭하면,
+          내가 변경 대상으로 선택한 항목만 조합된 맞춤형 실행 명령어와 <strong>Markdown(<code>.md</code>) 리포트</strong>가 생성됩니다.
+        </p>
+
+        <h3>7-1. 리포트에서 생성된 맞춤형 업데이트 명령어 실행</h3>
+        <div class="track-only" data-track="cloud_run">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Cloud Run 맞춤형 업데이트 (R1.3 + R5.1 선택 예시)</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="gcloud run services update {{AGENT_NAME}} \
+  --region={{REGION}} \
+  --project={{PROJECT_ID}} \
+  --execution-environment=gen2 \
+  --liveness-probe=httpGet.path=/list-apps,httpGet.port=8080,periodSeconds=30 \
+  --update-env-vars=&quot;OTEL_SERVICE_NAME={{AGENT_NAME}},OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT,OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental&quot;"></pre>
+          </div>
+        </div>
+
+        <div class="track-only" data-track="agent_runtime">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Agent Runtime 맞춤형 업데이트 (R5.1 선택 예시)</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+uvx google-agents-cli deploy \
+  --project={{PROJECT_ID}} \
+  --region={{REGION}} \
+  --service-account={{SA_EMAIL}} \
+  --update-env-vars=&quot;OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT,GOOGLE_CLOUD_LOCATION=global&quot; \
+  --no-confirm-project --no-wait
+
+uvx google-agents-cli deploy --status"></pre>
+          </div>
+        </div>
+
+        <div class="callout callout-green">
+          <div class="callout-title">🎉 End-to-End 검증 완료</div>
+          <p>반영 후 Step 6의 JSON 조회 명령어를 다시 붙여넣어 모든 검증 항목이 <strong><code>🟢 GREEN</code></strong>인지 확인하고, 우측 상단의 <strong><code>[리포트(.md) 다운로드]</code></strong>로 증적 파일을 저장하세요.</p>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료하고 Step 8로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 8 ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="8" id="step-8">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 8 / 8</span>
+            <span class="pill pill-gray mono">약 3분</span>
+            <h2>실습 리소스 정리 (Clean-Up) &amp; 트러블슈팅 FAQ</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(8)">✓ 완료 표시</button>
+        </div>
+
+        <h3>8-1. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 실습 리소스 삭제</h3>
+        <div class="track-only" data-track="cloud_run">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Cloud Run 서비스 및 실습용 SA 삭제</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="gcloud run services delete {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --quiet
+gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet"></pre>
+          </div>
+        </div>
+
+        <div class="track-only" data-track="agent_runtime">
+          <div class="code-wrap">
+            <div class="code-head">
+              <span class="code-label">bash · Agent Runtime (Reasoning Engine) 및 SA 삭제</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="curl -X DELETE \
+  -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; \
+  -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; \
+  &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/projects/{{PROJECT_ID}}/locations/{{REGION}}/reasoningEngines/{{ENGINE_ID}}?force=true&quot;
+
+gcloud iam service-accounts delete {{SA_EMAIL}} --project={{PROJECT_ID}} --quiet"></pre>
+          </div>
+        </div>
+
+        <h3>8-2. 자주 묻는 질문 &amp; 트러블슈팅 FAQ</h3>
+
+        <details class="faq">
+          <summary>Q1. <code>agy</code>에서 <code>agent-production-readiness</code> 스킬을 찾지 못한다고 나와요.</summary>
+          <div class="faq-body">
+            <p><code>~/.gemini/skills/agent-production-readiness/SKILL.md</code> (또는 Global <code>~/.gemini/antigravity-cli/skills/</code>, 워크스페이스 로컬 <code>.agents/skills/</code>) 경로가 올바른지 확인하세요.</p>
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>Q2. <code>agy</code> 세션이 끊겼거나 Agent Runtime 배포가 타임아웃되었어요.</summary>
+          <div class="faq-body">
+            <p><code>agy</code>는 같은 폴더에서 <code>agy -c</code>로 직전 대화를 그대로 복구할 수 있습니다. Agent Runtime 배포는 서버 측에서 계속 진행되므로 <code>uvx google-agents-cli deploy --status</code>로 완료를 확인하세요.</p>
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>Q3. 배포 중 <code>RUN uv sync --frozen</code> 오류가 발생합니다.</summary>
+          <div class="faq-body">
+            <p><code>apply</code> 패치 후 <code>pyproject.toml</code>이 갱신되므로 배포 전 프로젝트 루트에서 <code>uv lock</code>을 1회 실행해 lockfile을 동기화하세요.</p>
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>Q4. 터미널에서 복사한 JSON을 붙여넣을 때 줄바꿈이 깨져도 되나요?</summary>
+          <div class="faq-body">
+            <p>네, Web Workbench 백엔드가 터미널 하드 줄바꿈으로 <code>@sha256:...</code> 중간에 들어간 제어문자를 자동으로 정규화하여 파싱합니다.</p>
+          </div>
+        </details>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(7)">← 이전 (Step 7)</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-subtle" onclick="showLanding()">다른 트랙 체험하기</button>
+            <button class="btn btn-green" onclick="markAllComplete()">🎉 실습 완료 처리</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const STEPS_META = [
+      { id: 0, code: "0", title: "실습 환경 준비 & API 활성화", time: "5분" },
+      { id: 1, code: "1", title: "심플 ADK Agent 생성", time: "7분" },
+      { id: 2, code: "2", title: "Play 01 · Skill 설치 & agy 실행", time: "3분" },
+      { id: 3, code: "3", title: "Play 02 · agy 진단 & 시뮬레이션", time: "6분" },
+      { id: 4, code: "4", title: "Play 03 · 17개 항목 자동 하드닝", time: "7분" },
+      { id: 5, code: "5", title: "Google Cloud 배포", time: "8분" },
+      { id: 6, code: "6", title: "Play 04 · Web JSON 위자드 진단", time: "6분" },
+      { id: 7, code: "7", title: "최종 리포트 & 명령어 재검증", time: "5분" },
+      { id: 8, code: "8", title: "리소스 정리 & FAQ", time: "3분" },
+    ];
+
+    const TRACKS = {
+      agent_runtime: {
+        key: "agent_runtime",
+        label: "Agent Runtime",
+        shortLabel: "Agent Runtime",
+        cardTitle: "Agent Runtime",
+        kicker: "TRACK 01 · MANAGED RUNTIME",
+        duration: "약 55분",
+        subtitle: "인프라 관리를 최소화하고 Google 관리형 서비스를 최대한 활용하는 에이전트 전용 런타임입니다.",
+        features: [
+          "<strong>완전 관리형 세션 · 메모리</strong> — 별도 DB 구축 없이 관리형 세션 서비스(Managed Session Service)가 자동 구성되어 재시작 후에도 장기 대화 문맥을 유지합니다.",
+          "<strong>기본 내장 기능</strong> — ADK 도구 인증(Auth)과 관측성(Observability)을 별도 설정 없이 기본 제공합니다.",
+          "<strong>빠른 응답성</strong> — 콜드 스타트(Cold start) 지연이 1초 미만(Sub-second)으로 최소화되어 즉각 응답합니다.",
+          "<strong>Always-on 비용 모델</strong> — 유휴 상태에서도 인스턴스가 유지되는 동안 vCPU·메모리(GB) 사용 시간에 비례해 과금됩니다.",
+          "<strong>제어 권한 제한</strong> — 컨테이너 직접 소유권이 없으며, 사용자 지정 네트워크 구성에 제약이 있습니다."
+        ],
+        bestFor: [
+          "<strong>장기적인 대화(Long-lived)와 문맥 유지(Memory)가 필수적일 때</strong> — 사용자와 며칠~몇 주에 걸쳐 대화하며 이전 맥락을 기억해야 하는 챗봇에 적합합니다.",
+          "<strong>세션 DB · 인프라 운영(DevOps)을 최소화하고 싶을 때</strong> — 백엔드 데이터베이스를 팀에서 직접 구축·운영하지 않으려는 경우 가장 좋은 선택입니다."
+        ],
+        beforeScore: "초기 점수: 7.6 / 100 (Mode B: 43.2)",
+        deployTitle: "3. Agent Runtime 배포",
+        deployCmd: "agents-cli deploy --no-wait",
+        wizardSub: "JSON 붙여넣기 → 8개 위자드",
+        kpiPlay01: "6 기본 + 11 패치",
+        kpiPlay01Sub: "6개 MANAGED_NATIVE 자동 가점",
+        kpiPlay02: "8개 위자드"
+      },
+      cloud_run: {
+        key: "cloud_run",
+        label: "Cloud Run",
+        shortLabel: "Cloud Run",
+        cardTitle: "Cloud Run",
+        kicker: "TRACK 02 · SERVERLESS CONTAINER",
+        resourceTag: "google_cloud_run_v2_service",
+        duration: "약 45분",
+        subtitle: "컨테이너 기반으로 실제 HTTPS 엔드포인트를 유연하게 제공하는 서버리스 환경입니다.",
+        features: [
+          "<strong>비용 효율성 (Scale-to-zero)</strong> — 사용한 만큼만 과금(Pay-per-use)되며, 트래픽이 없으면 인스턴스가 0으로 축소되어 유휴 비용이 없습니다.",
+          "<strong>높은 구성 유연성</strong> — 커스텀 컨테이너와 사이드카(Sidecar) 프로세스를 자유롭게 구성할 수 있습니다.",
+          "<strong>세션(기억)의 휘발성</strong> — 기본 인-프로세스 저장으로 재시작 시 문맥이 초기화됩니다. 유지가 필요하면 Firestore·Postgres를 직접 운영하거나 <code>--agent_engine_id</code>로 연동해야 합니다.",
+          "<strong>콜드 스타트 지연</strong> — 0에서 깨어날 때 컨테이너 부팅으로 수 초간의 지연이 발생할 수 있습니다."
+        ],
+        bestFor: [
+          "<strong>비용 절감과 예측 가능성이 가장 중요할 때</strong> — 트래픽 패턴이 불규칙해서 유휴 시 인스턴스를 0으로 내리는(Scale-to-zero) 구조가 유리할 때 적합합니다.",
+          "<strong>커스텀 컨테이너 · 경량 Stateless 환경</strong> — 사용자 지정 컨테이너 구성이 필요하거나 일회성 질의응답(Stateless) 위주의 가벼운 에이전트에 적합합니다."
+        ],
+        beforeScore: "초기 점수: 9.8 / 100 (Mode B: 23.5)",
+        deployTitle: "3. Cloud Run 배포",
+        deployCmd: "gcloud run deploy / Terraform",
+        wizardSub: "JSON 붙여넣기 → 10개 위자드",
+        kpiPlay01: "17개 패치",
+        kpiPlay01Sub: "7대 영역 직접 코드·IaC 하드닝",
+        kpiPlay02: "10개 위자드"
+      }
+    };
+
+    const HOSTED_WORKBENCH_URL = "https://prod-ready-workbench-1018407696981.us-central1.run.app";
+    const WORKBENCH_URL =
+      typeof window !== "undefined" && /^https?:/.test(window.location.protocol)
+        ? window.location.origin
+        : HOSTED_WORKBENCH_URL;
+    const isLocalOrInternalProxy =
+      typeof window !== "undefined" &&
+      (["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname) ||
+        window.location.hostname.endsWith(".googlers.com"));
+    const SKILL_DOWNLOAD_URL =
+      typeof window !== "undefined" &&
+      /^https?:/.test(window.location.protocol) &&
+      !isLocalOrInternalProxy
+        ? window.location.origin
+        : HOSTED_WORKBENCH_URL;
+
+    const DEFAULT_ENV = {
+      projectId: "",
+      region: "us-central1",
+      agentName: "my-currency-agent",
+      engineId: "1234567890123456789",
+    };
+
+    const STORAGE_KEY = "prod_ready_hands_on_lab_v3";
+
+    let state = {
+      pageMode: "landing", // "landing" | "workspace"
+      track: "cloud_run",
+      previewTrack: "cloud_run",
+      env: { ...DEFAULT_ENV },
+      activeStep: 0,
+      viewMode: "step", // "step" | "all"
+      doneSteps: {},
+      checkedItems: {},
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            if (parsed.pageMode === "workspace") state.pageMode = "workspace";
+            if (parsed.track && TRACKS[parsed.track]) state.track = parsed.track;
+            if (parsed.previewTrack && TRACKS[parsed.previewTrack]) state.previewTrack = parsed.previewTrack;
+            state.env = { ...DEFAULT_ENV, ...(parsed.env || {}) };
+            if (state.env.projectId === "geap-sandbox-kwlee") state.env.projectId = "";
+            state.activeStep = Number.isInteger(parsed.activeStep) ? parsed.activeStep : 0;
+            state.viewMode = parsed.viewMode === "all" ? "all" : "step";
+            state.doneSteps = parsed.doneSteps || {};
+            state.checkedItems = parsed.checkedItems || {};
+          }
+        }
+      } catch (_) {}
+    }
+
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+    }
+
+    function deriveSaId(agentName) {
+      const clean = (agentName || "my-currency-agent").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "");
+      const base = `sa-${clean || "agent"}`;
+      return base.slice(0, 28).replace(/-+$/, "");
+    }
+
+    function registerInlineTemplates() {
+      document.querySelectorAll("code:not(pre code), .code-output, [data-auto-tpl]").forEach(el => {
+        if (!el.getAttribute("data-tpl") && (el.textContent || "").includes("{{")) {
+          el.setAttribute("data-tpl", el.textContent);
+        }
+      });
+    }
+
+    function applyTemplates() {
+      const tr = TRACKS[state.track];
+      const proj = state.env.projectId.trim() || "<YOUR_PROJECT_ID>";
+      const reg = state.env.region.trim() || DEFAULT_ENV.region;
+      const agent = state.env.agentName.trim() || DEFAULT_ENV.agentName;
+      const wb = WORKBENCH_URL;
+      const engineId = (state.env.engineId || DEFAULT_ENV.engineId).trim();
+      const saId = deriveSaId(agent);
+      const saEmail = `${saId}@${proj}.iam.gserviceaccount.com`;
+
+      const map = {
+        "{{PROJECT_ID}}": proj,
+        "{{REGION}}": reg,
+        "{{AGENT_NAME}}": agent,
+        "{{WORKBENCH_URL}}": wb,
+        "{{SKILL_DOWNLOAD_URL}}": SKILL_DOWNLOAD_URL,
+        "{{ENGINE_ID}}": engineId,
+        "{{SA_ID}}": saId,
+        "{{SA_EMAIL}}": saEmail,
+        "{{TARGET_KEY}}": tr.key,
+        "{{TARGET_LABEL}}": tr.label,
+      };
+
+      document.querySelectorAll("[data-tpl]").forEach(el => {
+        let txt = el.getAttribute("data-tpl") || "";
+        for (const [k, v] of Object.entries(map)) {
+          txt = txt.split(k).join(v);
+        }
+        el.textContent = txt;
+      });
+
+      const topLink = document.getElementById("topWorkbenchLink");
+      const step6Btn = document.getElementById("step6WorkbenchBtn");
+      const step6Txt = document.getElementById("step6WorkbenchUrlText");
+      if (topLink) topLink.href = wb;
+      if (step6Btn) step6Btn.href = wb;
+      if (step6Txt) step6Txt.textContent = wb;
+    }
+
+    function syncEnvInputs() {
+      const fields = [
+        ["envProjectMain", state.env.projectId],
+        ["envRegionMain", state.env.region],
+        ["envAgentMain", state.env.agentName],
+        ["envEngineIdMain", state.env.engineId],
+      ];
+      fields.forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el && el.value !== val) el.value = val;
+      });
+    }
+
+    function updateEnvFromInputs() {
+      const projEl = document.getElementById("envProjectMain");
+      const regEl = document.getElementById("envRegionMain");
+      const agentEl = document.getElementById("envAgentMain");
+      const engEl = document.getElementById("envEngineIdMain");
+      if (projEl) state.env.projectId = projEl.value;
+      if (regEl) state.env.region = regEl.value;
+      if (agentEl) state.env.agentName = agentEl.value;
+      if (engEl) state.env.engineId = engEl.value;
+      syncEnvInputs();
+      applyTemplates();
+      saveState();
+    }
+
+    function resetEnvConfig() {
+      state.env = { ...DEFAULT_ENV };
+      syncEnvInputs();
+      applyTemplates();
+      saveState();
+    }
+
+    const TRACK_EMBLEMS = {
+      cloud_run: `<svg viewBox="0 0 24 24" fill="none" aria-label="Cloud Run"><path d="M5 4.5L11.2 12L5 19.5H9.2L15.4 12L9.2 4.5H5Z" fill="#4285F4"/><path d="M12.2 4.5L18.4 12L12.2 19.5H16.2L22 12L16.2 4.5H12.2Z" fill="#34A853"/><path d="M2.5 8.5L5.4 12L2.5 15.5H5.2L8.1 12L5.2 8.5H2.5Z" fill="#FBBC04"/></svg>`,
+      agent_runtime: `<svg viewBox="0 0 24 24" fill="none" aria-label="Agent Runtime"><defs><linearGradient id="gSpark" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4285F4"/><stop offset="50%" stop-color="#EA4335"/><stop offset="100%" stop-color="#FBBC04"/></linearGradient></defs><path d="M12 2.2L14.9 9.1L21.8 12L14.9 14.9L12 21.8L9.1 14.9L2.2 12L9.1 9.1L12 2.2Z" fill="url(#gSpark)"/><path d="M12 7.2L13.4 10.6L16.8 12L13.4 13.4L12 16.8L10.6 13.4L7.2 12L10.6 10.6L12 7.2Z" fill="#FFFFFF" opacity="0.92"/></svg>`
+    };
+
+    function renderLandingCards() {
+      const grid = document.getElementById("landingTrackGrid");
+      if (!grid) return;
+
+      const order = ["agent_runtime", "cloud_run"];
+      grid.innerHTML = order.map((key) => {
+        const tr = TRACKS[key];
+
+        return `
+          <article class="home-track-card" data-track-card="${key}" role="button" tabindex="0" aria-label="${tr.cardTitle} 실습 시작하기" onclick="selectTrack('${key}', true, 0)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectTrack('${key}', true, 0);}">
+            <div class="htc-head">
+              <div class="htc-identity">
+                <div class="htc-emblem">${TRACK_EMBLEMS[key]}</div>
+                <div style="min-width:0;">
+                  <div class="htc-kicker">${tr.kicker}</div>
+                  <h2 class="htc-title">${tr.cardTitle}</h2>
+                </div>
+              </div>
+              <span class="htc-duration">${tr.duration} · 시작 →</span>
+            </div>
+
+            <p class="htc-sub">${tr.subtitle}</p>
+
+            <div class="htc-pc">
+              <div class="htc-pc-block features">
+                <h4>특징</h4>
+                <ul class="htc-pc-list">${tr.features.map(f => `<li>${f}</li>`).join("")}</ul>
+              </div>
+              <div class="htc-pc-block bestfor">
+                <h4>💡 선택 기준 (Decision Framework)</h4>
+                <ul class="htc-pc-list">${tr.bestFor.map(b => `<li>${b}</li>`).join("")}</ul>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function applyTrackUI() {
+      const tr = TRACKS[state.track];
+      document.body.setAttribute("data-track", tr.key);
+      document.getElementById("sidebarTrackBadge").textContent = tr.shortLabel;
+      document.getElementById("topTrackLabel").textContent = tr.shortLabel;
+
+      applyTemplates();
+      renderSidebarNav();
+    }
+
+    function selectTrack(trackKey, enterWorkspace, targetStep) {
+      if (!TRACKS[trackKey]) return;
+      state.track = trackKey;
+      if (typeof targetStep === "number") state.activeStep = targetStep;
+      applyTrackUI();
+      if (enterWorkspace) {
+        showWorkspace(state.activeStep);
+      }
+      saveState();
+    }
+
+    function showLanding() {
+      state.pageMode = "landing";
+      document.getElementById("landingView").classList.remove("hidden");
+      document.getElementById("workspaceView").classList.add("hidden");
+      document.getElementById("topTrackBtn").classList.add("hidden");
+      renderLandingCards();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      saveState();
+    }
+
+    function showWorkspace(stepIdx) {
+      state.pageMode = "workspace";
+      document.getElementById("landingView").classList.add("hidden");
+      document.getElementById("workspaceView").classList.remove("hidden");
+      document.getElementById("topTrackBtn").classList.remove("hidden");
+      if (typeof stepIdx === "number") state.activeStep = stepIdx;
+      renderStepVisibility();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      saveState();
+    }
+
+    function renderSidebarNav() {
+      const tr = TRACKS[state.track];
+      const ul = document.getElementById("stepNavList");
+      const doneCount = STEPS_META.filter(s => Boolean(state.doneSteps[s.id])).length;
+      const pct = Math.round((doneCount / STEPS_META.length) * 100);
+
+      document.getElementById("sidebarProgressLabel").textContent = `${doneCount} / ${STEPS_META.length} 완료 (${pct}%)`;
+      document.getElementById("sidebarProgressFill").style.width = `${Math.max(4, pct)}%`;
+
+      ul.innerHTML = STEPS_META.map(s => {
+        const isDone = Boolean(state.doneSteps[s.id]);
+        const isActive = state.activeStep === s.id;
+        const cls = ["step-nav-btn", isActive ? "active" : "", isDone ? "done" : ""].filter(Boolean).join(" ");
+        const title = s.id === 5 ? `${tr.shortLabel} 배포` : s.title;
+        return `
+          <li>
+            <button class="${cls}" onclick="goToStep(${s.id})">
+              <span class="step-dot">${isDone ? "✓" : s.code}</span>
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${title}</span>
+              <span class="step-nav-meta">${s.time}</span>
+            </button>
+          </li>
+        `;
+      }).join("");
+    }
+
+    function renderStepVisibility() {
+      document.querySelectorAll(".lab-step").forEach(sec => {
+        const sid = Number(sec.getAttribute("data-step"));
+        const shouldHide = sid !== state.activeStep;
+        sec.classList.toggle("hidden-step", shouldHide);
+
+        const doneBtn = sec.querySelector(".step-done-btn");
+        if (doneBtn) {
+          const done = Boolean(state.doneSteps[sid]);
+          doneBtn.textContent = done ? "✓ 완료됨" : "✓ 완료 표시";
+          doneBtn.style.background = done ? "var(--green-bg)" : "";
+          doneBtn.style.color = done ? "var(--green)" : "";
+        }
+      });
+
+      document.querySelectorAll("input[type='checkbox'][data-chk]").forEach(cb => {
+        const key = cb.getAttribute("data-chk");
+        cb.checked = Boolean(state.checkedItems[key]);
+      });
+
+      renderSidebarNav();
+    }
+
+    function setViewMode(mode) {
+      state.viewMode = mode === "all" ? "all" : "step";
+      saveState();
+      renderStepVisibility();
+    }
+
+    function goToStep(stepId) {
+      state.activeStep = stepId;
+      saveState();
+      renderStepVisibility();
+      if (state.viewMode === "all") {
+        const el = document.getElementById(`step-${stepId}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+
+    function toggleStepDone(stepId) {
+      state.doneSteps[stepId] = !state.doneSteps[stepId];
+      saveState();
+      renderStepVisibility();
+    }
+
+    function completeAndNext(stepId) {
+      state.doneSteps[stepId] = true;
+      state.activeStep = Math.min(stepId + 1, STEPS_META.length - 1);
+      saveState();
+      renderStepVisibility();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function markAllComplete() {
+      STEPS_META.forEach(s => { state.doneSteps[s.id] = true; });
+      saveState();
+      renderStepVisibility();
+    }
+
+    function saveCheckbox(cb) {
+      const key = cb.getAttribute("data-chk");
+      if (key) state.checkedItems[key] = cb.checked;
+      saveState();
+    }
+
+    function switchTab(group, tabKey, btnEl) {
+      const bar = btnEl.closest(".tab-bar");
+      bar.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btnEl.classList.add("active");
+      document.querySelectorAll(`.tab-panel[data-tabgroup="${group}"]`).forEach(panel => {
+        panel.classList.toggle("active", panel.getAttribute("data-tab") === tabKey);
+      });
+    }
+
+    let activeCpProfile = "all";
+
+    function applyCheckpointFilterUI() {
+      const hideExcluded = Boolean(document.getElementById("cpHideExcluded")?.checked);
+      document.querySelectorAll("[data-cp-filter]").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-cp-filter") === activeCpProfile);
+      });
+      document.querySelectorAll("[data-cp-card]").forEach(card => {
+        card.classList.toggle("active", card.getAttribute("data-cp-card") === activeCpProfile);
+      });
+      document.querySelectorAll("#cpMatrixTable [data-cp-col], #simMatrixTable [data-cp-col]").forEach(cell => {
+        cell.classList.toggle("cp-col-hi", activeCpProfile !== "all" && cell.getAttribute("data-cp-col") === activeCpProfile);
+      });
+      document.querySelectorAll("#cpMatrixTable tr.cp-row, #simMatrixTable tr.cp-row").forEach(row => {
+        const included = activeCpProfile === "all" || row.getAttribute(`data-${activeCpProfile}`) === "1";
+        row.classList.toggle("cp-dimmed", !included);
+        row.classList.toggle("cp-hidden", hideExcluded && !included);
+      });
+    }
+
+    function filterCheckpointProfile(profile) {
+      activeCpProfile = activeCpProfile === profile && profile !== "all" ? "all" : profile;
+      applyCheckpointFilterUI();
+    }
+
+    function toggleCheckpointExcluded() {
+      applyCheckpointFilterUI();
+    }
+
+    function copyCodeBlock(btn) {
+      const pre = btn.closest(".code-wrap").querySelector(".code-pre");
+      const text = pre ? pre.textContent : "";
+      const orig = btn.textContent;
+      const done = () => {
+        btn.textContent = "✓ 복사됨";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove("copied"); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); } catch (_) {}
+          document.body.removeChild(ta);
+          done();
+        });
+      }
+    }
+
+    function init() {
+      loadState();
+      registerInlineTemplates();
+      syncEnvInputs();
+      applyTrackUI();
+      renderLandingCards();
+      if (state.pageMode === "workspace") {
+        showWorkspace(state.activeStep);
+      } else {
+        showLanding();
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

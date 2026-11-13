@@ -1,0 +1,20 @@
+steps:
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: deploy-staging
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        uvx google-agents-cli deploy --project ${_STAGING_PROJECT_ID} --region ${_REGION}
+
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: load_test
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        uvx locust==2.31.1 -f tests/load_test/load_test.py --headless -t 30s -u 2 -r 0.5
+
+substitutions:
+  _STAGING_PROJECT_ID: YOUR_STAGING_PROJECT_ID
+  _REGION: us-east1

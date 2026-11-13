@@ -1,0 +1,36 @@
+# Python & Packaging
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+uv.lock
+
+# OS, IDE & Local Env
+.DS_Store
+.env
+.env.*
+.vscode/
+.idea/
+
+# Terraform Local State & Caches
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Generated Reports & Bundles
+READINESS_REPORT.md
+READINESS_REPORT.html
+production-ready-bundle.zip
+agent-production-readiness.tar.gz
+
+# Internal Documents & Tests
+deliverables/
+ideation/
+tests/

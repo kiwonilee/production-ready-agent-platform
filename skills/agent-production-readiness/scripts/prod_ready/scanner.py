@@ -489,16 +489,14 @@ def _evaluate_item(
             return ("AMBER", False, "fast_api_app.py에 otel_to_cloud는 있으나 Terraform OTel 환경변수 누락")
         return ("RED", False, "OpenTelemetry 분산 트레이싱 미구성")
 
-    # C5.2: Trace Privacy (NO_CONTENT mandatory) & Optional BigQuery Analytics
+    # C5.2: Trace Span Privacy (NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false)
     if cid == "C5.2":
         has_no_content = bool(re.search(r'value\s*=\s*"NO_CONTENT"', service_tf))
         has_adk_span_off = "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" in service_tf and bool(
             re.search(r'value\s*=\s*"false"', service_tf)
         )
-        has_bq = "BigQueryAgentAnalyticsPlugin" in agent_py
         if has_no_content and has_adk_span_off:
-            bq_note = " + 선택적 BigQueryAgentAnalyticsPlugin 활성" if has_bq else " (선택적 BQ Analytics는 미사용)"
-            return ("GREEN", False, f"NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 프라이버시 가드 완료{bq_note}")
+            return ("GREEN", False, "NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 트레이스 프라이버시 가드 완료")
         if has_no_content:
             return (
                 "AMBER",

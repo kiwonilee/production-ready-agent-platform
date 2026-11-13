@@ -93,7 +93,7 @@ flowchart LR
 | ID | 점검 항목 | Cloud Run (`cloud_run`) | Agent Runtime (`agent_runtime`) | 생성/수정 파일 |
 | :---: | :--- | :--- | :--- | :--- |
 | **`C5.1`** | **OpenTelemetry GenAI 분산 트레이싱** | `OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_latest_experimental"` + `otel_to_cloud = True` | 🟢 **MANAGED_NATIVE** (`GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY="true"`) | `deployment/terraform/service.tf`, `app/fast_api_app.py` |
-| **`C5.2`** | **`NO_CONTENT` 프라이버시 & Opt-In BQ** | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="NO_CONTENT"` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"` *(선택: `enable_bq_analytics=true` 시 `US` 리전 BQ 플러그인)* | Cloud Run과 동일 (`service.tf` 환경변수 + 선택적 BQ 플러그인) | `deployment/terraform/service.tf`, `app/agent.py` |
+| **`C5.2`** | **트레이스 `NO_CONTENT` 프라이버시** | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="NO_CONTENT"` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"` | Cloud Run과 동일 (`service.tf` 환경변수) | `deployment/terraform/service.tf` |
 | **`C5.3`** | **타겟별 SRE 골든 시그널 알람** | `cloud_run_revision` P95 지연(`> 15s`) · **PromQL 5xx 비율(`> 2%`)** 알럿 | **`aiplatform.googleapis.com/ReasoningEngine`** 전용 지연/에러 메트릭 알럿 | `deployment/terraform/alerts.tf` |
 
 ### 6️⃣ FinOps 비용 통제 & 쿼터 회복력 (FinOps & Resilience — 가중치 `1x`)
@@ -182,7 +182,7 @@ This toolkit bridges the **Day-2 Production Readiness Gap** after **ADK (`google
 | **`C4.1`** | Security | `roles/storage.objectUser`, pinned Secret version *(preserves `deletion_protection`)* | `roles/storage.objectUser`, strip unused `cloudsql.client`, pinned Secret version | `variables.tf`, `service.tf` |
 | **`C4.3`** | Security | Non-root `USER 10001:10001` + `EXECUTION_ENVIRONMENT_GEN2` | Non-root `USER 10001:10001` | `Dockerfile`, `service.tf` |
 | **`C5.1`** | Observability | `OTEL_SEMCONV_STABILITY_OPT_IN` + `otel_to_cloud=True` | 🟢 `MANAGED_NATIVE` (`ENABLE_TELEMETRY=true`) | `service.tf`, `app/fast_api_app.py` |
-| **`C5.2`** | Observability | `NO_CONTENT` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false` (+ opt-in `BigQueryAgentAnalyticsPlugin` in `US`) | Same | `service.tf`, `app/agent.py` |
+| **`C5.2`** | Observability | `NO_CONTENT` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false` | Same | `deployment/terraform/service.tf` |
 | **`C5.3`** | Observability | Cloud Run P95 latency (`15s`) + PromQL 5xx ratio (`>2%`) | `ReasoningEngine` latency & error metrics | `deployment/terraform/alerts.tf` |
 | **`C6.1`** | FinOps | Per-turn `invocation_id` loop cap + Thinking-model-safe opt-in `max_output_tokens` (`0`=unlimited) | Same | `app/app_utils/cost_guard_plugin.py`, `app/agent.py` |
 | **`C6.2`** | FinOps | Fail-fast `HttpRetryOptions(attempts=3, jitter=1.0)` + `GOOGLE_CLOUD_LOCATION` (`global` or residency region) | Same | `app/agent.py`, `service.tf` |

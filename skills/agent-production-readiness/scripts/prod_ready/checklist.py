@@ -41,7 +41,6 @@ class CustomParams:
     vpc_subnet_name: str = "default"
     subnet_cidr: str = "10.128.64.0/28"
     egress_mode: str = "PRIVATE_RANGES_ONLY"
-    enable_bq_analytics: bool = False
     latency_p95_ms: int = 15000
     model_location: str = "global"
     max_llm_calls_per_turn: int = 10
@@ -287,26 +286,18 @@ CHECKLIST_ITEMS: list[ChecklistItemSpec] = [
         domain_id="D5",
         domain_name="5. 관측성 & 알람",
         domain_weight=2,
-        title="트레이스 스팬 PII 평문 기록 차단(NO_CONTENT) & 선택적 BigQuery 감사",
+        title="트레이스 스팬 PII 평문 기록 차단 (NO_CONTENT)",
         severity="Critical",
         before_summary="Cloud Trace 스팬에 사용자 프롬프트·PII 원문 노출 위험 (ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS 미비)",
-        after_criteria="OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 강제 (+ 선택 enable_bq_analytics=true 시 BigQueryAgentAnalyticsPlugin 연동)",
-        why_it_matters="일반 개발자도 조회하는 Cloud Trace 스팬에는 프롬프트·PII 본문을 남기지 않아야(NO_CONTENT) 합니다. 감사·품질 분석용 구조화 로깅은 필요한 워크로드에서 선택(Opt-in) 활성화합니다.",
+        after_criteria="OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 설정",
+        why_it_matters="일반 개발자도 조회하는 Cloud Trace 스팬에는 지연시간·토큰 수 등 메타데이터만 남기고 고객 프롬프트·PII 원문은 기록하지 않아야 합니다.",
         verify_cmd='grep -n "NO_CONTENT" deployment/terraform/service.tf && grep -n "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" deployment/terraform/service.tf',
         agent_runtime_mode="TIER_1_AUTO",
-        agent_runtime_desc="google_vertex_ai_reasoning_engine env에 NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 패치 (+ 선택 BQ Analytics)",
+        agent_runtime_desc="google_vertex_ai_reasoning_engine env에 NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 패치",
         cloud_run_mode="TIER_1_AUTO",
-        cloud_run_desc="service.tf에 NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 강제 (+ 선택 BQ Analytics)",
-        gke_desc="동일한 NO_CONTENT 가드 및 선택적 BigQueryAgentAnalyticsPlugin 구성",
-        target_files=["deployment/terraform/service.tf", "app/agent.py"],
-        custom_fields=[
-            CustomFieldSpec(
-                "enable_bq_analytics",
-                "BigQuery Agent Analytics 플러그인 활성화 (선택 · BQ 데이터셋 필요)",
-                "false",
-                ["false", "true"],
-            ),
-        ],
+        cloud_run_desc="service.tf에 NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 패치",
+        gke_desc="동일한 NO_CONTENT 및 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 환경변수 구성",
+        target_files=["deployment/terraform/service.tf"],
     ),
     ChecklistItemSpec(
         id="C5.3",

@@ -339,9 +339,6 @@ variable "vpc_subnet_name" {{
         ]
         if target == "cloud_run":
             roles.append('    "roles/secretmanager.secretAccessor",')
-        if "C5.2" in item_ids and params.enable_bq_analytics:
-            roles.append('    "roles/bigquery.dataOwner",')
-            roles.append('    "roles/bigquery.jobUser",')
 
         extra_vars = ""
         if target == "cloud_run" and ("C2.1" in item_ids or "C2.2" in item_ids):
@@ -417,8 +414,6 @@ def _prepare_apis_and_iam_and_storage_tf(
         ]
         if target == "cloud_run":
             api_list.extend(["run.googleapis.com", "secretmanager.googleapis.com"])
-        if "C5.2" in item_ids and params.enable_bq_analytics:
-            api_list.append("bigquery.googleapis.com")
         formatted_apis = "\n".join(f'    "{a}",' for a in api_list)
         apis_content = f'''locals {{
   services = [
@@ -1437,51 +1432,15 @@ async def auto_save_session_to_memory(callback_context):
 
         # Strictly inject ONLY the plugins whose checklist items were selected!
         need_cost = "C6.1" in item_ids and "CostTokenGuardrailPlugin" not in txt
-        need_bq = "C5.2" in item_ids and params.enable_bq_analytics and "BigQueryAgentAnalyticsPlugin" not in txt
 
-        if need_cost or need_bq:
-            lines: list[str] = ["", "# Production FinOps & Observability Plugins (Tailored by --items)"]
-            plugin_entries: list[str] = []
-            if need_cost:
-                lines.append("from app.app_utils.cost_guard_plugin import CostTokenGuardrailPlugin")
-                plugin_entries.append("CostTokenGuardrailPlugin()")
-                applied_agent.append("C6.1")
-            lines.append(f"_plugins = [{', '.join(plugin_entries)}]")
-            if need_bq:
-                applied_agent.append("C5.2")
-                lines.extend(
-                    [
-                        "import logging",
-                        "import os",
-                        "from google.adk.plugins.bigquery_agent_analytics_plugin import (",
-                        "    BigQueryAgentAnalyticsPlugin,",
-                        "    BigQueryLoggerConfig,",
-                        ")",
-                        "from google.cloud import bigquery",
-                        "",
-                        '_project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")',
-                        '_dataset_id = os.environ.get("BQ_ANALYTICS_DATASET_ID", "adk_agent_analytics")',
-                        '# Never pass "global" to BigQuery dataset location',
-                        '_bq_location = os.environ.get("BQ_ANALYTICS_LOCATION", "US")',
-                        "if _project_id:",
-                        "    try:",
-                        "        bq = bigquery.Client(project=_project_id)",
-                        '        bq.create_dataset(f"{_project_id}.{_dataset_id}", exists_ok=True)',
-                        "        _plugins.append(",
-                        "            BigQueryAgentAnalyticsPlugin(",
-                        "                project_id=_project_id,",
-                        "                dataset_id=_dataset_id,",
-                        "                location=_bq_location,",
-                        "                config=BigQueryLoggerConfig(",
-                        '                    gcs_bucket_name=os.environ.get("BQ_ANALYTICS_GCS_BUCKET"),',
-                        '                    connection_id=os.environ.get("BQ_ANALYTICS_CONNECTION_ID"),',
-                        "                ),",
-                        "            )",
-                        "        )",
-                        "    except Exception as exc:",
-                        '        logging.warning("Failed to initialize BigQuery Analytics: %s", exc)',
-                    ]
-                )
+        if need_cost:
+            lines: list[str] = [
+                "",
+                "# Production FinOps Guardrail Plugin (C6.1)",
+                "from app.app_utils.cost_guard_plugin import CostTokenGuardrailPlugin",
+                "_plugins = [CostTokenGuardrailPlugin()]",
+            ]
+            applied_agent.append("C6.1")
             plugin_block = "\n".join(lines) + "\n"
 
             if "app = App(" in txt:

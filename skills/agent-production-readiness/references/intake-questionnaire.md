@@ -40,7 +40,6 @@ Then union based on the 3 answers:
 | `vpc_network_name` | `"default"` | Target VPC network name (`C3.1`) |
 | `vpc_subnet_name` | `"default"` | Target VPC subnet name for Cloud Run Direct VPC Egress (`C3.1`) |
 | `egress_mode` | `"PRIVATE_RANGES_ONLY"` | Cloud Run VPC Egress mode (`PRIVATE_RANGES_ONLY` or `ALL_TRAFFIC`) |
-| `enable_bq_analytics` | `false` | Opt-in BigQuery Agent Analytics plugin in `US` multi-region (`C5.2`) |
 | `latency_p95_ms` | `15000` | P95 latency alert threshold in ms (`C5.3`) |
 | `max_llm_calls_per_turn` | `10` | Per-turn (`invocation_id`) LLM call cap (`C6.1`) |
 | `max_output_tokens` | `0` | Opt-in per-request `max_output_tokens` cap (`0` = disabled for Thinking model safety, `C6.1`) |

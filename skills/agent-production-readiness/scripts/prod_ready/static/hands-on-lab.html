@@ -2227,17 +2227,17 @@ python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py simula
                 <td><div class="cp-id-col"><span class="pill pill-blue mono" style="font-size:11.5px;">C5.2</span><span class="cp-sev cp-sev-crit">Critical</span></div></td>
                 <td>
                   <div class="cp-title-row">
-                    <span class="cp-title">트레이스 스팬 PII 평문 기록 차단(<code>NO_CONTENT</code>) &amp; 선택적 BigQuery 감사</span>
+                    <span class="cp-title">트레이스 스팬 PII 평문 기록 차단 (<code>NO_CONTENT</code>)</span>
                   </div>
                   <p class="cp-desc">
                     분산 트레이싱을 켤 때 프라이버시 옵션을 잠그지 않으면, 고객이 입력한 개인정보·기밀 질문과 모델 응답 원문이 Cloud Trace 스팬 속성에 평문으로 저장되어 사내 뷰어 권한자 전체에게 노출됩니다.
                   </p>
                   <div class="cp-ba-list">
-                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>OpenTelemetry 환경변수(<code>NO_CONTENT</code>)뿐 아니라 ADK 자체 스팬 캡처 비활성화(<code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code>)까지 함께 설정되어 있는지 체크합니다. <em>(기본 스캐폴딩은 ADK 스팬 캡처 차단 변수가 빠져 있어 원문이 그대로 기록됨)</em></span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Cloud Trace에는 지연시간·토큰 수·상태코드만 남기도록 <strong>두 환경변수를 모두 잠그고</strong>, 원문 감사가 필요한 경우에만 IAM이 분리된 <strong>BigQuery Agent Analytics(<code>enable_bq_analytics=true</code>, <code>US</code> 멀티리전)</strong>로 옵트인 수집해야 합니다.</span></div>
-                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>service.tf</code>와 <code>app/agent.py</code>에 <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="NO_CONTENT"</code> 및 <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code>를 동시 주입합니다.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag check">점검 &amp; 위험</span><span>OpenTelemetry 환경변수(<code>NO_CONTENT</code>)뿐 아니라 ADK 자체 스팬 캡처 비활성화(<code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code>)까지 함께 설정되어 있는지 체크합니다. <em>(ADK 기본값이 <code>true</code>라 이 변수가 없으면 스팬에 원문이 그대로 기록됨)</em></span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag bp">Best Practice</span><span>Cloud Trace에는 지연시간·토큰 수·상태코드만 남기고 고객 프롬프트와 응답 본문은 기록되지 않도록 <strong>두 환경변수를 모두 잠급니다</strong>.</span></div>
+                    <div class="cp-ba-row"><span class="cp-ba-tag fix">자동 패치 내역</span><span><code>deployment/terraform/service.tf</code>에 <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="NO_CONTENT"</code> 및 <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false"</code>를 동시 주입합니다.</span></div>
                   </div>
-                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code><code>app/agent.py</code></div>
+                  <div class="cp-meta"><span>📄 파일:</span><code>deployment/terraform/service.tf</code></div>
                 </td>
                 <td class="cp-col-profile" data-cp-col="p1"><span class="cp-badge-on">✓</span></td>
                 <td class="cp-col-profile" data-cp-col="p2"><span class="cp-badge-on">✓</span></td>

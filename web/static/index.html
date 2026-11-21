@@ -276,6 +276,20 @@
       height: 4px;
       background: linear-gradient(90deg, #34A853 0%, #4285F4 55%, #FBBC04 100%);
     }
+    .g-accent-amber::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, #FBBC04 0%, #EA4335 50%, #34A853 100%);
+    }
+    .g-accent-red::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, #EA4335 0%, #FBBC04 60%, #4285F4 100%);
+    }
     .g-tip-banner {
       position: relative;
       overflow: hidden;
@@ -328,7 +342,7 @@
   <header class="topbar">
     <div class="topbar-inner">
       <!-- Left Brand: Google Cloud SVG + Divider + Header Title -->
-      <div class="brand select-none" onclick="openInputView()" title="런타임 진단 첫 화면으로 이동">
+      <div class="brand select-none" onclick="openHubView()" title="메인 포털 홈으로 이동">
         <svg viewBox="0 0 224 36" fill="none" style="height:26px;width:auto;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud">
           <path d="M110.371 27.915C107.508 27.915 105.137 26.9938 103.257 25.1515C101.39 23.3092 100.456 20.8818 100.456 17.8693C100.456 14.9191 101.359 12.4917 103.164 10.5872C104.981 8.67018 107.352 7.71167 110.278 7.71167C112.195 7.71167 113.85 8.20337 115.244 9.18677C116.651 10.1702 117.759 11.7075 118.568 13.7988C118.643 14.0104 118.711 14.2283 118.773 14.4523C118.836 14.6764 118.892 14.9316 118.942 15.2179L103.63 21.7158L102.566 18.6349L115.244 13.2573L114.89 14.9565C114.417 13.6245 113.757 12.6598 112.91 12.0623C112.076 11.4648 111.149 11.166 110.128 11.166C108.385 11.166 106.998 11.7635 105.964 12.9586C104.931 14.1411 104.415 15.6971 104.415 17.6266C104.415 19.444 105.012 20.9938 106.207 22.276C107.402 23.5581 108.852 24.1992 110.558 24.1992C111.578 24.1992 112.531 23.944 113.415 23.4336C114.298 22.9233 115.07 22.2075 115.73 21.2863L118.755 23.2656C117.908 24.6598 116.751 25.7863 115.282 26.6453C113.813 27.4917 112.176 27.915 110.371 27.915Z" fill="#FC413D"/>
           <path d="M94.2754 27.336V0.597412H98.3459V27.336H94.2754Z" fill="#00AF57"/>
@@ -350,19 +364,177 @@
 
       <!-- Right Action Controls (Unified Height & Rhythm with Hands-On Lab) -->
       <div class="topbar-actions">
-        <span class="topbar-status-pill topbar-badge-hide">
-          <span class="h-2 w-2 rounded-full bg-[#34A853]"></span>
-          <span>Zero-IAM Read-Only</span>
-        </span>
-        <a href="/lab" target="_blank" rel="noopener noreferrer" class="g-btn-blue topbar-cta">
-          <span>실습 가이드 (Lab) ↗</span>
+        <button id="topHubBtn" onclick="openHubView()" class="hidden btn-subtle inline-flex items-center justify-center rounded-[10px] h-9 px-3.5 text-[13px] font-bold text-[#0F172A] bg-[#EEF2F7] hover:bg-[#E2E8F0] transition">
+          <span>← 메인 홈</span>
+        </button>
+        <a href="/deck" class="topbar-badge-hide btn-subtle inline-flex items-center justify-center rounded-[10px] h-9 px-3.5 text-[13px] font-bold text-[#0F172A] bg-[#EEF2F7] hover:bg-[#E2E8F0] transition">
+          <span>01 · 소개 장표 ↗</span>
+        </a>
+        <a href="/checklist" class="btn-subtle inline-flex items-center justify-center rounded-[10px] h-9 px-3.5 text-[13px] font-bold text-[#0F172A] bg-[#EEF2F7] hover:bg-[#E2E8F0] transition">
+          <span>02 · 체크리스트 ↗</span>
+        </a>
+        <a href="/lab" class="g-btn-blue topbar-cta">
+          <span>03 · 실습 가이드 ↗</span>
         </a>
       </div>
     </div>
   </header>
 
+  <!-- ==================== MAIN PORTAL HUB LANDING (4-Step End-to-End Journey) ==================== -->
+  <div id="portalHubView" class="max-w-[1480px] mx-auto px-6 pt-[108px] pb-16">
+    <!-- Hero Header -->
+    <div class="card-surface g-accent-rainbow p-8 md:p-10 mb-7">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-2.5 max-w-3xl">
+          <div class="inline-flex items-center gap-2 rounded-full bg-white border border-[#4285F4]/25 px-3.5 py-1 text-[12px] font-mono font-bold text-[#1967D2] shadow-sm">
+            <span class="inline-flex items-center gap-1">
+              <span class="h-2 w-2 rounded-full bg-[#4285F4]"></span>
+              <span class="h-2 w-2 rounded-full bg-[#EA4335]"></span>
+              <span class="h-2 w-2 rounded-full bg-[#FBBC04]"></span>
+              <span class="h-2 w-2 rounded-full bg-[#34A853]"></span>
+            </span>
+            <span>ENTERPRISE AI AGENT PRODUCTION-READINESS PLATFORM · Checklist v3</span>
+          </div>
+          <h1 class="m-0 text-[28px] md:text-[32px] font-bold tracking-[-0.03em] text-[#0F172A] leading-[1.25]">
+            Google Cloud AI 에이전트 프로덕션 준비도 통합 포털
+          </h1>
+          <p class="m-0 text-[15.5px] leading-[1.65] text-[#475569]">
+            전체 시스템 아키텍처와 런타임 3종 비교·장단점 발표 슬라이드(<strong>01 소개 장표</strong>)부터, 에이전트 특성에 맞춘 환경별 5개 범주 점검 기준(<strong>02 체크리스트</strong>), 엔드투엔드 코드랩 실습(<strong>03 Hands-On Lab</strong>), 배포 후 설정 JSON 감사(<strong>04 런타임 진단 위자드</strong>)까지 한 곳에서 이어지는 <strong>4단계 여정</strong>으로 구성되어 있습니다.
+          </p>
+        </div>
+        <a href="/api/skill/download" class="inline-flex items-center gap-2 rounded-xl bg-[#F4F7FB] hover:bg-[#E8F0FE] border border-[#4285F4]/25 px-4 py-2.5 text-[13px] font-bold text-[#1967D2] transition">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          <span>Antigravity Skill 다운로드 (.tar.gz)</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 4-Stage Journey Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
+      <!-- Card 01: System Overview Presentation Deck (/deck) -->
+      <a href="/deck" class="card-surface g-accent-red p-6 flex flex-col justify-between no-underline group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(234,67,53,0.16)] transition duration-200">
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="h-11 w-11 rounded-2xl bg-[#FCE8E6] border border-[#EA4335]/25 flex items-center justify-center text-[#C5221F]">
+              <span class="material-symbols-outlined text-[24px]">slideshow</span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-[#FCE8E6] px-2.5 py-1 font-mono text-[11.5px] font-bold text-[#C5221F]">01 · OVERVIEW DECK</span>
+          </div>
+          <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#C5221F] transition">
+            시스템 소개 발표 장표 (13 Slides)
+          </h2>
+          <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
+            도입 필요성과 <strong>Prototype vs. Production</strong> 차이부터 환경별 검사 항목·특화 기능·<strong>Agent Runtime · Cloud Run · GKE 장단점 비교</strong>까지 발표용 16:9 슬라이드로 제공합니다.
+          </p>
+          <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
+            <li class="flex items-center gap-2"><span class="text-[#EA4335] font-bold">•</span><span>도입 배경 · Prototype vs. Production 2단계 Gap</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#EA4335] font-bold">•</span><span>환경별 점검 항목 차이 &amp; Agent 특화 기능</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#EA4335] font-bold">•</span><span>런타임 3종 장단점 · 선택 기준 · PDF 인쇄 지원</span></li>
+          </ul>
+        </div>
+        <div class="mt-5 pt-3.5 border-t border-[#4285F4]/12 flex items-center justify-between">
+          <span class="font-mono text-[12px] font-bold text-[#64748B]">/deck</span>
+          <span class="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-[#EA4335] to-[#D93025] px-3.5 py-2 text-[13px] font-bold text-white shadow-sm">
+            <span>발표 장표 열기</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+          </span>
+        </div>
+      </a>
+
+      <!-- Card 02: Dedicated Checklist Reference (/checklist) -->
+      <a href="/checklist" class="card-surface g-accent-amber p-6 flex flex-col justify-between no-underline group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(251,188,4,0.20)] transition duration-200">
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="h-11 w-11 rounded-2xl bg-[#FEF7E0] border border-[#FBBC04]/40 flex items-center justify-center text-[#B06000]">
+              <span class="material-symbols-outlined text-[24px]">checklist</span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-[#FEF7E0] px-2.5 py-1 font-mono text-[11.5px] font-bold text-[#B06000]">02 · CHECKLIST</span>
+          </div>
+          <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#B06000] transition">
+            환경별 프로덕션 체크리스트
+          </h2>
+          <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
+            <strong>Agent Runtime · Cloud Run · GKE</strong> 환경별로 <strong>에이전트 특성에서 나온 항목만</strong> 5개 범주(<code>Features · Optimize · Delivery &amp; Eval · Observability · Security</code>)로 정리했습니다. 일반 플랫폼 Best Practice는 <strong>플랫폼 Skill</strong>(<code>google/skills</code> · cloud)을 함께 참조하세요.
+          </p>
+          <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
+            <li class="flex items-center gap-2"><span class="text-[#D97706] font-bold">•</span><span>항목별 Check · Best Practice · 참고 문서</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#D97706] font-bold">•</span><span>조건부 항목(멀티턴 · 장기 기억 · AI 생성 코드 · 외부 도구 · 유휴 · 사용자 대신 호출) &amp; Preview 표시</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#D97706] font-bold">•</span><span>agents-cli CI/CD 파이프라인 · <code>agents-cli eval</code> 평가 데이터셋 · 평가 게이트</span></li>
+          </ul>
+        </div>
+        <div class="mt-5 pt-3.5 border-t border-[#4285F4]/12 flex items-center justify-between">
+          <span class="font-mono text-[12px] font-bold text-[#64748B]">/checklist</span>
+          <span class="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-[#FBBC04] to-[#F29900] px-3.5 py-2 text-[13px] font-bold text-white shadow-sm">
+            <span>체크리스트 보기</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+          </span>
+        </div>
+      </a>
+
+      <!-- Card 03: Hands-On Lab (/lab) -->
+      <a href="/lab" class="card-surface g-accent-blue p-6 flex flex-col justify-between no-underline group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(66,133,244,0.16)] transition duration-200">
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="h-11 w-11 rounded-2xl bg-[#E8F0FE] border border-[#4285F4]/25 flex items-center justify-center text-[#1967D2]">
+              <span class="material-symbols-outlined text-[24px]">school</span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-[#E8F0FE] px-2.5 py-1 font-mono text-[11.5px] font-bold text-[#1967D2]">03 · HANDS-ON LAB</span>
+          </div>
+          <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#1A73E8] transition">
+            실습 가이드 (Hands-On Lab)
+          </h2>
+          <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
+            ADK 프로토타입 생성부터 배포 대상 설정, 정적 진단, 자동 패치 적용, 클라우드 배포, 라이브 점검까지 따라 하는 <strong>Step 0 ~ Step 10 코드랩</strong>입니다.
+          </p>
+          <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
+            <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Agent Runtime · Cloud Run · GKE 3대 트랙 선택</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Antigravity CLI 프롬프트 원클릭 복사 &amp; 진행률 저장</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Terraform + <code>agents-cli deploy</code> 배포 명령어</span></li>
+          </ul>
+        </div>
+        <div class="mt-5 pt-3.5 border-t border-[#4285F4]/12 flex items-center justify-between">
+          <span class="font-mono text-[12px] font-bold text-[#64748B]">/lab</span>
+          <span class="g-btn-blue inline-flex items-center gap-1 rounded-xl px-3.5 py-2 text-[13px] font-bold">
+            <span>실습 가이드 시작</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+          </span>
+        </div>
+      </a>
+
+      <!-- Card 04: Runtime Diagnosis Workbench (/workbench or inline openInputView) -->
+      <div onclick="openInputView('step-01-select')" role="button" tabindex="0" class="card-surface g-accent-green p-6 flex flex-col justify-between cursor-pointer group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(52,168,83,0.16)] transition duration-200">
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div class="h-11 w-11 rounded-2xl bg-[#E6F4EA] border border-[#34A853]/25 flex items-center justify-center text-[#137333]">
+              <span class="material-symbols-outlined text-[24px]">fact_check</span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-[#E6F4EA] px-2.5 py-1 font-mono text-[11.5px] font-bold text-[#137333]">04 · WORKBENCH</span>
+          </div>
+          <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#137333] transition">
+            배포 후 런타임 진단 위자드
+          </h2>
+          <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
+            별도 GCP IAM 권한 연동 없이 터미널에서 조회한 설정 JSON을 붙여넣고, <strong>단계별 위자드</strong>로 아키텍처·성능 의도를 점검해 맞춤형 명령어와 리포트를 생성합니다.
+          </p>
+          <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
+            <li class="flex items-center gap-2"><span class="text-[#34A853] font-bold">•</span><span>Zero-IAM Read-Only: 3대 런타임 JSON 즉시 분석</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#34A853] font-bold">•</span><span>원클릭 데모 샘플 JSON 제공 (즉시 체험 가능)</span></li>
+            <li class="flex items-center gap-2"><span class="text-[#34A853] font-bold">•</span><span>선택 항목만 반영된 맞춤형 CLI/Terraform 명령어</span></li>
+          </ul>
+        </div>
+        <div class="mt-5 pt-3.5 border-t border-[#4285F4]/12 flex items-center justify-between">
+          <span class="font-mono text-[12px] font-bold text-[#64748B]">/workbench</span>
+          <span class="g-btn-green inline-flex items-center gap-1 rounded-xl px-3.5 py-2 text-[13px] font-bold">
+            <span>진단 위자드 열기</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MAIN BODY (Unified 2-Column Shell: 340px Sidebar + Fluid Main) ==================== -->
-  <div class="shell">
+  <div id="workbenchShell" class="shell hidden">
     <!-- Left Sticky Sidebar -->
     <aside class="sidebar">
       <!-- Runtime Diagnosis Wizard Sidebar Card -->
@@ -408,7 +580,7 @@
         <div id="sidebarCheckSection" class="hidden border-t border-[#4285F4]/15 pt-4 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-[11.5px] font-bold uppercase tracking-[0.04em] text-[#64748B]">위자드 체크리스트</span>
-            <span id="sidebarScoreBadge" class="font-mono text-[12.5px] font-bold text-[#1967D2]">0 / 11 확인</span>
+            <span id="sidebarScoreBadge" class="font-mono text-[12.5px] font-bold text-[#1967D2]">진단 전</span>
           </div>
           <ul id="sidebarCheckList" class="space-y-1 max-h-[340px] overflow-y-auto pr-1 p-0 m-0 list-none"></ul>
           <button id="sidebarReportBtn" onclick="openReportView()"
@@ -429,7 +601,7 @@
           <div class="mb-3.5 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center rounded-[10px] bg-gradient-to-r from-[#34A853] to-[#1E8E3E] px-3 py-1 font-mono text-[12.5px] font-bold text-white">RUNTIME WIZARD</span>
-              <span class="inline-flex items-center rounded-[10px] bg-[#E8F0FE] px-3 py-1 font-mono text-[12.5px] font-bold text-[#1967D2]">Cloud Run &amp; Agent Runtime</span>
+              <span class="inline-flex items-center rounded-[10px] bg-[#E8F0FE] px-3 py-1 font-mono text-[12.5px] font-bold text-[#1967D2]">Agent Runtime · Cloud Run · GKE</span>
               <span class="inline-flex items-center rounded-[10px] bg-[#FEF7E0] px-3 py-1 text-[12.5px] font-bold text-[#B06000]">Zero-IAM · 약 3분 소요</span>
             </div>
           </div>
@@ -438,12 +610,19 @@
             배포된 에이전트 설정 JSON 기반 단계별 위자드 점검 및 최종 리포트 생성
           </h1>
           <p class="mt-2.5 mb-0 text-[14.5px] leading-[1.65] text-[#475569]">
-            Cloud Run 또는 Agent Runtime의 설정 JSON을 붙여넣으면, <strong>JSON으로 검증된 항목</strong>과 <strong>아키텍처·부하테스트 의도를 확인해야 할 항목</strong>을 위자드 형태로 하나씩 점검한 뒤 최종 프로덕션 준비도 리포트와 맞춤형 실행 명령어를 완성해 드립니다.
+            Agent Runtime, Cloud Run, 또는 GKE(Autopilot/Standard · Agent Sandbox · Agent Substrate)의 설정 JSON을 붙여넣으면, <strong>JSON으로 검증된 항목</strong>과 <strong>아키텍처·부하테스트 의도를 확인해야 할 항목</strong>을 위자드 형태로 하나씩 점검한 뒤 최종 프로덕션 준비도 리포트와 맞춤형 실행 명령어를 완성해 드립니다.
           </p>
 
           <!-- Compact Zero-IAM Notice Strip (Inside Hero Card so Top Aligns with Sidebar & Lab) -->
           <div class="mt-4 rounded-[14px] bg-[#E6F4EA]/60 border border-[#34A853]/25 border-l-4 border-l-[#34A853] px-4 py-3 text-[13.8px] leading-[1.6] text-[#0D652D]">
             <strong>Zero-IAM 읽기 전용 진단:</strong> GCP 프로젝트에 어떠한 IAM 권한도 요구하지 않으며 운영 환경을 임의로 변경하지 않습니다. 터미널에서 조회한 설정 JSON만 붙여넣으면 브라우저에서 안전하게 진단합니다.
+          </div>
+
+          <!-- Checklist v3 Scope Notice: agent-characteristic items only + platform skills -->
+          <div class="mt-3 rounded-[14px] bg-[#E8F0FE]/60 border border-[#4285F4]/25 border-l-4 border-l-[#4285F4] px-4 py-3 text-[13.8px] leading-[1.6] text-[#174EA6]">
+            <strong>체크리스트 v3 점검 범위:</strong> 이 위자드는 <strong>에이전트 특성에서 나온 항목</strong>(세션 · 장기 기억 · 평가 게이트 · 트레이스 · 에이전트 신원 · Agent Registry · Agent Gateway · 사용자 위임 인증 등)만 점수에 반영합니다.
+            헬스 프로브 · PDB · Non-Root · 사설 연결 · Terraform IaC · 알림 정책 같은 일반 플랫폼 Best Practice는 <strong>플랫폼 Skill 참조 권장</strong>으로 따로 안내하며, 프로덕션 전에 함께 점검하실 것을 강력히 권장합니다.
+            <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener" class="font-bold text-[#1967D2] underline">google/skills · cloud 플랫폼 Skill 보기 ↗</a>
           </div>
 
           <!-- Clean 3-Step Flow Grid (Google Blue / Yellow / Green) -->
@@ -456,7 +635,7 @@
             <div class="rounded-xl bg-[#FEF7E0]/70 border border-[#FBBC04]/30 border-l-4 border-l-[#FBBC04] p-4">
               <div class="font-mono text-[12px] font-bold text-[#B06000]">STEP 02 · WIZARD 점검</div>
               <div class="mt-1 text-[15px] font-bold text-[#0F172A]">항목별 아키텍처·성능 하나씩 확인</div>
-              <div class="mt-0.5 text-[13.5px] text-[#475569]">퍼블릭/내부 · 세션 · 부하테스트 스펙 선택</div>
+              <div class="mt-0.5 text-[13.5px] text-[#475569]">세션 · 에이전트 신원 · 외부 호출 통제 확인</div>
             </div>
             <div class="rounded-xl bg-[#E6F4EA]/65 border border-[#34A853]/25 border-l-4 border-l-[#34A853] p-4">
               <div class="font-mono text-[12px] font-bold text-[#137333]">STEP 03 · FINAL REPORT</div>
@@ -477,13 +656,17 @@
             </div>
             <!-- Segmented Runtime Selector -->
             <div class="inline-flex items-center gap-1 rounded-xl bg-[#EAEFF6] p-1">
+              <button id="rtBtnAr" onclick="setRuntimeMode('agent_runtime')"
+                class="h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#1967D2] shadow-sm transition">
+                🧠 Agent Runtime
+              </button>
               <button id="rtBtnCr" onclick="setRuntimeMode('cloud_run')"
-                class="h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#137333] shadow-sm transition">
+                class="h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition">
                 ☁️ Cloud Run
               </button>
-              <button id="rtBtnAr" onclick="setRuntimeMode('agent_runtime')"
+              <button id="rtBtnGke" onclick="setRuntimeMode('gke')"
                 class="h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition">
-                🧠 Agent Runtime
+                ☸️ GKE
               </button>
             </div>
           </div>
@@ -503,8 +686,8 @@
                     class="w-full rounded-lg bg-white px-3 py-2 font-mono text-[14px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:ring-2 focus:ring-[#4285F4]/20 focus:outline-none" />
                 </div>
                 <div>
-                  <label id="cmdServiceLabel" class="block text-[13px] font-semibold text-[#475569] mb-1">Cloud Run 서비스명</label>
-                  <input id="cmdServiceInput" type="text" value="currency-agent" oninput="updateCommandBox()"
+                  <label id="cmdServiceLabel" class="block text-[13px] font-semibold text-[#475569] mb-1">Engine ID (비우면 전체 목록)</label>
+                  <input id="cmdServiceInput" type="text" value="" oninput="updateCommandBox()"
                     class="w-full rounded-lg bg-white px-3 py-2 font-mono text-[14px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:ring-2 focus:ring-[#4285F4]/20 focus:outline-none" />
                 </div>
               </div>
@@ -542,13 +725,17 @@
 
             <!-- One-click Demo Sample Loaders -->
             <div class="flex flex-wrap items-center gap-2">
+              <button onclick="loadSampleJson('agent_runtime')"
+                class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E8F0FE] hover:bg-[#D2E3FC] border border-[#4285F4]/25 px-3 text-[12.5px] font-bold text-[#1967D2] transition">
+                <span>샘플 채우기: Agent Runtime (Graph Workflow)</span>
+              </button>
               <button onclick="loadSampleJson('cloud_run')"
                 class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E6F4EA] hover:bg-[#CEEAD6] border border-[#34A853]/25 px-3 text-[12.5px] font-bold text-[#137333] transition">
                 <span>샘플 채우기: Cloud Run (currency-agent)</span>
               </button>
-              <button onclick="loadSampleJson('agent_runtime')"
-                class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E8F0FE] hover:bg-[#D2E3FC] border border-[#4285F4]/25 px-3 text-[12.5px] font-bold text-[#1967D2] transition">
-                <span>샘플 채우기: Agent Runtime (Graph Workflow)</span>
+              <button onclick="loadSampleJson('gke')"
+                class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#FEF7E0] hover:bg-[#FEEFC3] border border-[#FBBC04]/40 px-3 text-[12.5px] font-bold text-[#B06000] transition">
+                <span>샘플 채우기: GKE (gke-enterprise-agent)</span>
               </button>
             </div>
           </div>
@@ -558,7 +745,7 @@
           </p>
 
           <div class="rounded-xl bg-[#F4F7FB] border border-[#4285F4]/12 p-3">
-            <textarea id="jsonPasteArea" rows="7" placeholder="여기에 gcloud run services describe ... 또는 reasoningEngines 조회 결과(JSON)를 붙여넣으세요..."
+            <textarea id="jsonPasteArea" rows="7" placeholder="여기에 gcloud run services describe ..., reasoningEngines 조회 결과, 또는 GKE kubectl 멀티 JSON(deploy/pdb/hpa/netpol + ns + CRD) 결과를 붙여넣으세요..."
               class="w-full rounded-lg bg-white p-3.5 font-mono text-[13.5px] leading-relaxed text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:ring-2 focus:ring-[#4285F4]/20 focus:outline-none"></textarea>
           </div>
 
@@ -592,13 +779,13 @@
   </button>
 
   <script>
-    let runtimeMode = "cloud_run";
+    let runtimeMode = "agent_runtime";  // order: Agent Runtime (fully managed) → Cloud Run → GKE (most control)
     let analyzedResults = [];
     let activeResultIndex = 0;
     // Runtime Workbench UI Phase: "input" | "wizard" | "report"
     let workbenchPhase = "input";
     let wizardStepIdx = 0;
-    // Per-check user Wizard decision: { [checkId]: { action: "keep_ok" | "keep_public" | "keep_stateless" | "keep_in_code" | "apply_fix" | "apply_vertex" | "apply_cloudsql" | "defer", category: "ok" | "fix" | "defer", label: string } }
+    // Per-check user Wizard decision (keyed by checklist v3 ID, e.g. "CR-S2"): { action: "keep_ok" | "keep_stateless" | "keep_in_code" | "apply_fix" | "apply_identity" | "defer", category: "ok" | "fix" | "defer", label: string }
     let wizardDecisions = {};
     // Track user-selected checkpoints to include in the dynamic combined remediation command (derived from wizardDecisions)
     let selectedFixIds = new Set();
@@ -616,18 +803,26 @@
       runtimeMode = mode;
       const btnCr = document.getElementById("rtBtnCr");
       const btnAr = document.getElementById("rtBtnAr");
+      const btnGke = document.getElementById("rtBtnGke");
       const svcLabel = document.getElementById("cmdServiceLabel");
       const svcInput = document.getElementById("cmdServiceInput");
+      const inactiveCls = "h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition";
+      btnCr.className = inactiveCls;
+      btnAr.className = inactiveCls;
+      if (btnGke) btnGke.className = inactiveCls;
+
       if (mode === "cloud_run") {
         btnCr.className = "h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#137333] shadow-sm transition";
-        btnAr.className = "h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition";
         svcLabel.textContent = "Cloud Run 서비스명";
-        if (!svcInput.value) svcInput.value = "currency-agent";
+        if (!svcInput.value || svcInput.value === "gke-enterprise-agent" || svcInput.value === "agent-prod") svcInput.value = "currency-agent";
+      } else if (mode === "gke") {
+        if (btnGke) btnGke.className = "h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#B06000] shadow-sm transition";
+        svcLabel.textContent = "GKE Namespace (예: gke-enterprise-agent)";
+        if (!svcInput.value || svcInput.value === "currency-agent") svcInput.value = "gke-enterprise-agent";
       } else {
         btnAr.className = "h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#1967D2] shadow-sm transition";
-        btnCr.className = "h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition";
         svcLabel.textContent = "Engine ID (비우면 전체 목록)";
-        if (svcInput.value === "currency-agent") svcInput.value = "";
+        if (svcInput.value === "currency-agent" || svcInput.value === "gke-enterprise-agent" || svcInput.value === "agent-prod") svcInput.value = "";
       }
       updateCommandBox();
     }
@@ -641,6 +836,17 @@
       if (runtimeMode === "cloud_run") {
         const targetSvc = svc || "YOUR_AGENT_SERVICE";
         cmdEl.textContent = `gcloud run services describe ${targetSvc} \\\n  --region=${reg} \\\n  --project=${proj} \\\n  --format=json`;
+      } else if (runtimeMode === "gke") {
+        const targetNs = svc || "gke-enterprise-agent";
+        cmdEl.textContent =
+          `# [방법 1 · 권장] 현재 kubeconfig 컨텍스트의 GKE 워크로드·네임스페이스·확장 CRD 일괄 조회 (멀티 JSON 그대로 붙여넣기 가능)\n` +
+          `kubectl get deployment,pdb,hpa,networkpolicy -n ${targetNs} -o json\n` +
+          `kubectl get ns ${targetNs} -o json\n` +
+          `for r in podmonitoring gateway gcpagentgateway gcpbackend gcpegresspolicy sandboxtemplate workerpool; do\n` +
+          `  kubectl get "$r" -n ${targetNs} -o json 2>/dev/null\n` +
+          `done\n\n` +
+          `# [방법 2 · 클러스터 설정까지 함께 점검 시 위 출력 아래에 이어서 붙여넣기]\n` +
+          `# gcloud container clusters describe ${targetNs} --region=${reg} --project=${proj} --format=json`;
       } else {
         const suffix = svc ? `/${svc}` : "";
         cmdEl.textContent = `curl -s -H "Authorization: Bearer $(gcloud auth print-access-token)" \\\n  "https://${reg}-aiplatform.googleapis.com/v1beta1/projects/${proj}/locations/${reg}/reasoningEngines${suffix}"`;
@@ -687,7 +893,7 @@
         return;
       }
 
-      analyzedResults = data.results;
+      analyzedResults = data.results.map(normalizeResult);
       activeResultIndex = 0;
       initCheckpointsForActive();
       document.getElementById("sidebarCheckSection").classList.remove("hidden");
@@ -713,28 +919,16 @@
 
       const cfg = d.detected_config || {};
       userTuningParams = {
-        min_instances: String(cfg.min_scale !== undefined ? Math.max(1, cfg.min_scale) : 1),
-        max_instances: String(cfg.max_scale !== undefined ? cfg.max_scale : 20),
-        cpu_alloc: "no-cpu-throttling",
-        cpu: normalizeCpuOption(cfg.cpu),
-        memory: cfg.memory || "512Mi",
-        concurrency: String(cfg.concurrency !== undefined ? cfg.concurrency : 80),
-        liveness_path: "/list-apps",
-        exec_env: "gen2",
-        session_mode: "vertex_session",
         agent_engine_id: "<ENGINE_ID>",
-        cloudsql_instance: `${d.service_name || "agent"}-db`,
-        ingress_target: "internal-and-cloud-load-balancing",
-        vpc_network: "default",
-        vpc_subnet: "default",
-        vpc_egress: "private-ranges-only",
-        sa_name: `${d.service_name || "agent"}-sa`,
-        psc_attachment: "agent-psc",
+        sa_name: d.runtime_type === "agent_runtime" ? "sa-agent" : `${d.service_name || "agent"}-sa`,
+        gke_namespace: cfg.namespace || d.service_name || "gke-enterprise-agent",
+        gke_pattern: cfg.execution_pattern === "agent_sandbox" ? "agent_sandbox" : "agent_substrate",
+        gke_cluster_mode: cfg.cluster_mode === "standard" ? "standard" : "autopilot",
       };
 
       // Pre-confirm ONLY checks that are objectively GREEN from the pasted JSON.
       // All RED / AMBER / REVIEW items remain unanswered until the user confirms them step-by-step in the Wizard!
-      d.checks.forEach(c => {
+      (d.checks || []).forEach(c => {
         if (c.status === "GREEN") {
           const choices = getWizardChoicesForCheck(d, c);
           const first = choices[0];
@@ -753,7 +947,28 @@
       });
     }
 
+    function openHubView() {
+      workbenchPhase = "hub";
+      const hub = document.getElementById("portalHubView");
+      const shell = document.getElementById("workbenchShell");
+      const topHubBtn = document.getElementById("topHubBtn");
+      if (hub) hub.classList.remove("hidden");
+      if (shell) shell.classList.add("hidden");
+      if (topHubBtn) topHubBtn.classList.add("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function ensureWorkbenchShellVisible() {
+      const hub = document.getElementById("portalHubView");
+      const shell = document.getElementById("workbenchShell");
+      const topHubBtn = document.getElementById("topHubBtn");
+      if (hub) hub.classList.add("hidden");
+      if (shell) shell.classList.remove("hidden");
+      if (topHubBtn) topHubBtn.classList.remove("hidden");
+    }
+
     function openInputView(scrollTargetId) {
+      ensureWorkbenchShellVisible();
       workbenchPhase = "input";
       document.getElementById("runtimeSetupSections").classList.remove("hidden");
       document.getElementById("multiAgentBar").classList.add("hidden");
@@ -772,6 +987,12 @@
     function openWizardView(stepIdx) {
       const d = analyzedResults[activeResultIndex];
       if (!d) return;
+      if (!d.checks || d.checks.length === 0) {
+        ensureWorkbenchShellVisible();
+        openReportView();
+        return;
+      }
+      ensureWorkbenchShellVisible();
       workbenchPhase = "wizard";
       wizardStepIdx = Math.max(0, Math.min(stepIdx, d.checks.length - 1));
       document.getElementById("runtimeSetupSections").classList.add("hidden");
@@ -837,11 +1058,6 @@
       const picked = choices.find(o => o.id === optionId);
       if (!picked) return;
 
-      if (checkId === "R2.1") {
-        if (optionId === "apply_vertex") userTuningParams.session_mode = "vertex_session";
-        if (optionId === "apply_cloudsql") userTuningParams.session_mode = "cloudsql";
-      }
-
       wizardDecisions[checkId] = {
         action: picked.id,
         category: picked.category,
@@ -878,619 +1094,352 @@
       }
     }
 
+    // ==================== Checklist v3 metadata (source: prod_ready/catalog_v3.json · docs/checklist-v3-spec.md) ====================
+    const PLATFORM_SKILLS_URL = "https://github.com/google/skills/tree/main/skills/cloud";
+    const PLATFORM_GROUP_LABEL = "플랫폼 Skill 참조 권장";
+    const CHECKLIST_CATEGORY_ORDER = ["F", "O", "D", "OB", "S"];
+    const CHECKLIST_CATEGORIES = {
+      F: { name: "Features", sub: "에이전트 기능" },
+      O: { name: "Optimize", sub: "런타임 최적화" },
+      D: { name: "Delivery & Eval", sub: "배포 · 품질 평가" },
+      OB: { name: "Observability", sub: "관측성" },
+      S: { name: "Security", sub: "보안" },
+    };
+    const CONDITION_LABELS = {
+      conv: "멀티턴 대화",
+      memory: "장기 기억 필요",
+      code: "AI 생성 코드 실행",
+      tools: "MCP·외부 도구 호출",
+      idle: "자주 일시정지·재개하는 상태 유지형 에이전트",
+      delegated: "사용자 대신 외부 도구 호출",
+    };
+    // kind: target-independent semantic key used by the wizard choices & command builders
+    const V3_ITEM_META = {
+      "CR-F1": { kind: "session", cat: "F", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
+      "CR-F2": { kind: "memory", cat: "F", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
+      "CR-D1": { kind: "pipeline", cat: "D", title: "CI/CD 파이프라인 (agents-cli)" },
+      "CR-D2": { kind: "evalgate", cat: "D", title: "평가 데이터셋 · 평가 게이트" },
+      "CR-OB1": { kind: "trace", cat: "OB", title: "Cloud Trace · 프롬프트 미기록" },
+      "CR-S1": { kind: "auth", cat: "S", title: "인증된 호출만 허용" },
+      "CR-S2": { kind: "identity", cat: "S", title: "에이전트 전용 신원 · 최소 권한" },
+      "CR-S3": { kind: "registry", cat: "S", preview: true, title: "Agent Registry 등록" },
+      "CR-S5": { kind: "code_isolation", cat: "S", preview: true, cond: "code", title: "AI 생성 코드 격리 (Cloud Run sandboxes)" },
+      "CR-S4": { kind: "gateway", cat: "S", preview: true, cond: "tools", title: "Agent Gateway (외부 호출 통제)" },
+      "CR-S6": { kind: "delegated_auth", cat: "S", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
+      "AR-F1": { kind: "session", cat: "F", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
+      "AR-F2": { kind: "memory", cat: "F", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
+      "AR-D1": { kind: "pipeline", cat: "D", title: "CI/CD 파이프라인 (agents-cli)" },
+      "AR-D2": { kind: "evalgate", cat: "D", title: "평가 데이터셋 · 평가 게이트" },
+      "AR-OB1": { kind: "trace", cat: "OB", title: "프롬프트 미기록" },
+      "AR-S1": { kind: "identity", cat: "S", title: "에이전트 전용 신원 · 최소 권한" },
+      "AR-S2": { kind: "registry", cat: "S", preview: true, title: "Agent Registry 등록" },
+      "AR-S4": { kind: "code_isolation", cat: "S", cond: "code", title: "AI 생성 코드 격리 (Code Execution)" },
+      "AR-S3": { kind: "gateway", cat: "S", preview: true, cond: "tools", title: "Agent Gateway (외부 호출 통제)" },
+      "AR-S5": { kind: "delegated_auth", cat: "S", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
+      "GKE-F1": { kind: "session", cat: "F", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
+      "GKE-F2": { kind: "memory", cat: "F", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
+      "GKE-O1": { kind: "graceful", cat: "O", title: "무중단 종료 (긴 응답 보호)" },
+      "GKE-O2": { kind: "idle_suspend", cat: "O", cond: "idle", title: "에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)" },
+      "GKE-D1": { kind: "pipeline", cat: "D", title: "CI/CD 파이프라인 (agents-cli)" },
+      "GKE-D2": { kind: "evalgate", cat: "D", title: "평가 데이터셋 · 평가 게이트" },
+      "GKE-OB1": { kind: "trace", cat: "OB", title: "Cloud Trace · 프롬프트 미기록" },
+      "GKE-S1": { kind: "identity", cat: "S", title: "에이전트 전용 신원 · 최소 권한" },
+      "GKE-S2": { kind: "substrate", cat: "S", cond: "code", title: "AI 생성 코드 격리 (Agent Substrate · Agent Sandbox)" },
+      "GKE-S3": { kind: "registry", cat: "S", preview: true, title: "Agent Registry 등록" },
+      "GKE-S4": { kind: "gateway", cat: "S", preview: true, cond: "tools", title: "Agent Gateway for GKE (외부 호출 통제)" },
+      "GKE-S5": { kind: "delegated_auth", cat: "S", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
+    };
+    const DEFAULT_PLATFORM_SKILLS = {
+      cloud_run: ["cloud-run-basics", "cloud-run-alert-configuration", "google-cicd-terraform", "google-cloud-waf-security"],
+      agent_runtime: ["agent-platform-deploy", "agent-platform-agent-registry", "agent-platform-access-audit", "agent-platform-alert-configuration"],
+      gke: ["gke-productionize", "gke-reliability", "gke-workload-security", "gke-workload-identity", "gke-networking", "gke-alert-configuration"],
+    };
+    // Backward compatibility only: older runtime-inspector responses (R*) → v3 IDs. Never shown in the UI.
+    const LEGACY_RUNTIME_ID_MAP = {
+      cloud_run: { "R2.1": "CR-F1", "R3.1": "CR-S1", "R4.1": "CR-S2", "R4.2": "CR-S3", "R4.3": "CR-S4", "R5.1": "CR-OB1" },
+      agent_runtime: { "R4.1": "AR-S1", "R4.2": "AR-S2", "R4.3": "AR-S3", "R5.1": "AR-OB1" },
+      gke: { "R1.3": "GKE-O1", "R2.1": "GKE-F1", "R4.1": "GKE-S1", "R4.2": "GKE-S3", "R4.3": "GKE-S4", "R5.1": "GKE-OB1", "R4.4": "GKE-S2", "R7.1": "GKE-O2" },
+    };
+    const LEGACY_PLATFORM_ID_MAP = {
+      cloud_run: {
+        "R1.1": { id: "PLAT-SCALING", skills: "cloud-run-basics" },
+        "R1.2": { id: "PLAT-SIZING", skills: "cloud-run-basics" },
+        "R1.3": { id: "PLAT-PROBE", skills: "cloud-run-basics" },
+        "R3.2": { id: "PLAT-VPC", skills: "cloud-run-basics · google-cloud-waf-security" },
+      },
+      agent_runtime: {
+        "R3.2": { id: "PLAT-PSCI", skills: "agent-platform-deploy · google-cloud-waf-security" },
+      },
+      gke: {
+        "R1.1": { id: "PLAT-HA", skills: "gke-reliability · gke-productionize" },
+        "R1.2": { id: "PLAT-SIZING", skills: "gke-productionize" },
+        "R3.1": { id: "PLAT-NETPOL", skills: "gke-networking · gke-workload-security" },
+      },
+    };
+    // Older engine checklist IDs (C*) → v3 IDs per target.
+    const LEGACY_CHECKLIST_ID_MAP = {
+      "C2.1": { cloud_run: "CR-F1", agent_runtime: "AR-F1", gke: "GKE-F1" },
+      "C1.2": { gke: "GKE-O1" },
+      "C7.1": { cloud_run: "CR-D2", agent_runtime: "AR-D2", gke: "GKE-D2" },  // + *-D1 pipeline (guidance only)
+      "C5.1": { cloud_run: "CR-OB1", agent_runtime: "AR-OB1", gke: "GKE-OB1" },
+      "C4.1": { cloud_run: "CR-S2", agent_runtime: "AR-S1", gke: "GKE-S1" },
+      "C4.2": { cloud_run: "CR-S3", agent_runtime: "AR-S2", gke: "GKE-S3" },
+      "C4.4": { cloud_run: "CR-S4", agent_runtime: "AR-S3", gke: "GKE-S4" },
+    };
+
+    function categoryCodeFromId(id) {
+      const m = /^(?:CR|AR|GKE)-(OB|F|O|D|S)\d+$/.exec(String(id || ""));
+      return m ? m[1] : "";
+    }
+
+    function itemKind(c) {
+      const meta = V3_ITEM_META[c && c.id];
+      return meta ? meta.kind : "";
+    }
+
+    function categoryLabel(c) {
+      if (!c) return "";
+      const code = c.category && CHECKLIST_CATEGORIES[c.category] ? c.category : categoryCodeFromId(c.id);
+      const base = CHECKLIST_CATEGORIES[code];
+      const name = c.category_name || (base ? base.name : "");
+      const sub = c.category_sub || (base ? base.sub : "");
+      if (name) return sub ? `${name} · ${sub}` : name;
+      return c.domain || "";
+    }
+
+    function normalizeResult(d) {
+      if (!d || d.__v3normalized) return d;
+      const rt = d.runtime_type;
+      const rtMap = LEGACY_RUNTIME_ID_MAP[rt] || {};
+      const platMap = LEGACY_PLATFORM_ID_MAP[rt] || {};
+      const platform = Array.isArray(d.platform_skill_checks) ? d.platform_skill_checks.filter(Boolean) : [];
+      const scored = [];
+      (Array.isArray(d.checks) ? d.checks : []).forEach(c => {
+        if (!c) return;
+        const raw = String(c.id || "");
+        if (c.group === "platform_skill" || c.scored === false) {
+          platform.push(c);
+          return;
+        }
+        if (platMap[raw]) {
+          platform.push(Object.assign({}, c, {
+            id: platMap[raw].id,
+            legacy_id: c.legacy_id || raw,
+            skills: c.skills || platMap[raw].skills,
+            scored: false,
+            group: "platform_skill",
+            domain: PLATFORM_GROUP_LABEL,
+          }));
+          return;
+        }
+        let id = raw;
+        if (rtMap[raw]) id = rtMap[raw];
+        else if (LEGACY_CHECKLIST_ID_MAP[raw] && LEGACY_CHECKLIST_ID_MAP[raw][rt]) id = LEGACY_CHECKLIST_ID_MAP[raw][rt];
+        const meta = V3_ITEM_META[id] || {};
+        const nc = Object.assign({}, c, { id });
+        if (id !== raw) {
+          nc.legacy_id = c.legacy_id || raw;
+          if (meta.title) nc.title = meta.title;
+        }
+        const code = (nc.category && CHECKLIST_CATEGORIES[nc.category]) ? nc.category : (meta.cat || categoryCodeFromId(id));
+        if (code) {
+          nc.category = code;
+          nc.category_name = nc.category_name || CHECKLIST_CATEGORIES[code].name;
+          nc.category_sub = nc.category_sub || CHECKLIST_CATEGORIES[code].sub;
+        }
+        if (nc.preview === undefined || nc.preview === null) nc.preview = Boolean(meta.preview);
+        if (!nc.condition && meta.cond) nc.condition = meta.cond;
+        if (nc.condition && !nc.condition_label) nc.condition_label = CONDITION_LABELS[nc.condition] || String(nc.condition);
+        if (id !== raw || !nc.domain) nc.domain = categoryLabel(nc);
+        if (!nc.title) nc.title = meta.title || id;
+        scored.push(nc);
+      });
+      const catRank = (c) => {
+        const i = CHECKLIST_CATEGORY_ORDER.indexOf(c.category);
+        return i < 0 ? CHECKLIST_CATEGORY_ORDER.length : i;
+      };
+      d.checks = scored
+        .map((c, i) => ({ c, i }))
+        .sort((a, b) => (catRank(a.c) - catRank(b.c)) || (a.i - b.i))
+        .map(x => x.c);
+      d.platform_skill_checks = platform;
+      d.platform_skills = (Array.isArray(d.platform_skills) && d.platform_skills.length)
+        ? d.platform_skills
+        : (DEFAULT_PLATFORM_SKILLS[rt] || []);
+      d.platform_skills_url = d.platform_skills_url || PLATFORM_SKILLS_URL;
+      d.__v3normalized = true;
+      return d;
+    }
+
+    function isPreviewCheck(c) {
+      return Boolean(c && c.preview);
+    }
+
+    function wizOpt(id, category, badge, title, shortLabel, desc, extra) {
+      return Object.assign({ id, category, badge, title, shortLabel, desc }, extra || {});
+    }
+
+    function verifiedOnly(c, title, shortLabel) {
+      return [wizOpt("keep_ok", "ok", "🟢 검증 통과", title, shortLabel || "JSON 검증 통과", c.current_state || "")];
+    }
+
+    function deferOpt(title, shortLabel) {
+      return wizOpt("defer", "defer", "📋 추후 확인", title, shortLabel, "명령어에는 포함하지 않고 최종 리포트의 후속 확인 목록에 기록합니다.");
+    }
+
     function getWizardChoicesForCheck(d, c) {
-      const cfg = d.detected_config || {};
-      if (d.runtime_type === "cloud_run") {
-        if (c.id === "R1.1") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "현재 항시 Warm 스케일링 설정 유지",
-              shortLabel: "JSON 검증 통과 (항시 Warm)",
-              desc: "minScale >= 1, startup-cpu-boost, CPU Always-On 설정이 이미 적용되어 있습니다.",
-            }];
-          }
-          return [
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 의도된 설정",
-              title: `현재 설정 유지 (minScale=${cfg.min_scale ?? 0} — 간헐 트래픽 · 유휴 비용 절감 우선)`,
-              shortLabel: `현재 유지 (min=${cfg.min_scale ?? 0}, 비용 우선)`,
-              desc: "콜드스타트가 허용되거나 트래픽이 간헐적인 서비스라면 현재 설정이 합리적입니다.",
-            },
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 설정 변경",
-              title: "콜드스타트 방지 및 상시 CPU 설정 적용 (SLA · 비동기 후처리 우선)",
-              shortLabel: "Warm 인스턴스 및 CPU 할당 변경",
-              desc: "Min/Max 인스턴스 수와 CPU 할당 모드를 직접 지정해 조치 명령어에 포함합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "실제 트래픽 패턴 관측 후 추후 결정",
-              shortLabel: "추후 결정 (트래픽 관측 필요)",
-              desc: "명령어에는 포함하지 않고 최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R1.2") {
-          return [
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 의도된 스펙",
-              title: `부하 테스트 완료 — 현재 스펙(${cfg.cpu || "1000m"} / ${cfg.memory || "512Mi"} / 동시성 ${cfg.concurrency ?? 80}) 유지`,
-              shortLabel: `현재 스펙 유지 (${cfg.cpu || "1000m"}/${cfg.memory || "512Mi"}/동시성 ${cfg.concurrency ?? 80})`,
-              desc: "실제 워크로드 테스트 결과 현재 CPU·메모리·동시성으로 충분함을 확인했습니다.",
-            },
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 스펙 변경",
-              title: "부하 테스트로 산정한 CPU · 메모리 · 동시성 수치로 변경",
-              shortLabel: "부하 테스트 기반 스펙 업데이트",
-              desc: "임의 권장값이 아닌, 직접 측정/결정한 CPU·Memory·Concurrency 값을 입력합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 테스트",
-              title: "아직 부하 테스트 전 — 성능 테스트 수행 후 추후 결정",
-              shortLabel: "추후 결정 (부하 테스트 필요)",
-              desc: "성능 테스트를 먼저 진행한 뒤 적정 스펙을 확정하도록 리포트에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R1.3") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "현재 HTTP Liveness 프로브 유지",
-              shortLabel: "JSON 검증 통과 (HTTP Liveness)",
-              desc: "HTTP Liveness 프로브가 이미 구성되어 있습니다.",
-            }];
-          }
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 프로브 추가",
-              title: "HTTP Liveness 프로브 및 Gen2 실행 환경 설정 추가",
-              shortLabel: "HTTP Liveness 프로브 추가",
-              desc: "에이전트 컨테이너에 경량 HTTP 헬스 경로(예: /list-apps, /health)가 있는 경우 선택하세요.",
-              hasInlineParams: true,
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 현재 유지",
-              title: "현재 기본 TCP Startup 프로브 유지 (별도 HTTP 헬스 경로 미사용)",
-              shortLabel: "현재 TCP 프로브 유지",
-              desc: "컨테이너에 전용 헬스체크 HTTP 경로가 없거나 기본 TCP 프로브로 충분합니다.",
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "컨테이너 헬스 엔드포인트 구현 여부 확인 후 추후 결정",
-              shortLabel: "추후 확인 (헬스 경로 점검)",
-              desc: "최종 리포트의 후속 확인 목록에 남깁니다.",
-            },
-          ];
-        }
-        if (c.id === "R2.1") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "감지된 외부 세션/메모리 저장소 연동 유지",
-              shortLabel: "JSON 검증 통과 (영속 세션 연동됨)",
-              desc: "세션 영속성 환경변수 또는 인스턴스 연결이 확인되었습니다.",
-            }];
-          }
-          return [
-            {
-              id: "keep_in_code",
-              category: "ok",
-              badge: "🟢 코드 내 구현됨",
-              title: "조치 불필요 — 코드 내부에서 이미 Agent Runtime Session / Memory Bank · Firestore 등을 사용 중",
-              shortLabel: "적합 (코드 내 Managed Session/DB 사용)",
-              desc: "describe JSON에는 보이지 않지만 애플리케이션 코드가 외부 세션/메모리 서비스를 직접 호출합니다.",
-            },
-            {
-              id: "keep_stateless",
-              category: "ok",
-              badge: "🟢 Stateless 의도",
-              title: "조치 불필요 — 단일 턴(Stateless) 에이전트임",
-              shortLabel: "적합 (Stateless 아키텍처)",
-              desc: "멀티턴 대화 상태를 서버에 유지할 필요가 없는 설계입니다.",
-            },
-            {
-              id: "apply_vertex",
-              category: "fix",
-              badge: "🛠️ 관리형 세션 연동",
-              title: "Agent Runtime Session Service / Memory Bank(agentengine://) 연동 추가",
-              shortLabel: "Managed Session Service 연동",
-              desc: "Cloud SQL 구축 없이 관리형 세션·Memory Bank URI를 환경변수로 연결합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "apply_cloudsql",
-              category: "fix",
-              badge: "🛠️ Cloud SQL 연동",
-              title: "자체 Cloud SQL 세션 DB 인스턴스 연결 추가",
-              shortLabel: "Cloud SQL 세션 DB 연결",
-              desc: "Cloud Run 서비스에 Cloud SQL 인스턴스 연결을 추가합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "코드 내부 세션 구현 방식(InMemory vs 영속 저장소) 확인 후 추후 결정",
-              shortLabel: "추후 확인 (세션 구현 점검)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R3.1") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: `현재 내부/LB 인그레스 제한(${cfg.ingress}) 유지`,
-              shortLabel: `JSON 검증 통과 (${cfg.ingress})`,
-              desc: "퍼블릭 인터넷 직접 접근이 이미 차단되어 있습니다.",
-            }];
-          }
-          return [
-            {
-              id: "keep_public",
-              category: "ok",
-              badge: "🟢 퍼블릭 의도",
-              title: "퍼블릭 대고객 / 외부 A2A 에이전트임 (ingress: all 의도된 구성)",
-              shortLabel: "적합 (퍼블릭/외부 A2A + IAM 확인 첨부)",
-              desc: "ingress 변경은 하지 않으며, 대신 최종 리포트에 allUsers 무인증 노출 여부를 확인하는 get-iam-policy 조회 명령어를 함께 제공합니다.",
-            },
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 인바운드 제한",
-              title: "사내 전용 또는 Cloud Armor LB/WAF 경유 에이전트 → Ingress 제한 적용",
-              shortLabel: "Ingress 제한 적용 (사내/LB 전용)",
-              desc: "기본 .run.app 퍼블릭 직접 유입을 차단하고 내부 또는 Load Balancer 경유만 허용합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "서비스 노출 범위 및 IAM 정책 확인 후 추후 결정",
-              shortLabel: "추후 확인 (노출 범위/IAM 점검)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R3.2") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "현재 Direct VPC / 커넥터 아웃바운드 연결 유지",
-              shortLabel: "JSON 검증 통과 (VPC Egress 연결됨)",
-              desc: "사설망 아웃바운드 연결이 이미 구성되어 있습니다.",
-            }];
-          }
-          return [
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 미연결 적합",
-              title: "조치 불필요 — Gemini API · 퍼블릭 외부 API · 퍼블릭 MCP 서버만 호출함",
-              shortLabel: "적합 (퍼블릭 아웃바운드만 사용)",
-              desc: "사설 IP 리소스 호출이 없다면 Direct VPC Egress 미연결이 서브넷 IP 절약 측면에서 올바른 선택입니다.",
-            },
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ Direct VPC 연결",
-              title: "사설 VPC 리소스(사설 DB · ERP · internal 서비스) 호출 필요 → Direct VPC Egress 연결",
-              shortLabel: "Direct VPC Egress 연결",
-              desc: "연결할 VPC Network, Subnet, Egress 범위를 직접 지정합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "아웃바운드 호출 대상의 사설망 여부 확인 후 추후 결정",
-              shortLabel: "추후 확인 (호출 대상 네트워크 점검)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R4.1") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: `전용 서비스 계정(${d.service_account}) 사용 중 확인됨`,
-              shortLabel: "JSON 검증 통과 (전용 SA 사용)",
-              desc: "기본 Compute Engine SA가 아닌 전용 SA가 적용되어 있습니다. (최소 권한 Role만 부여됐는지 주기적 점검 권장)",
-            }];
-          }
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 교체 권장",
-              title: "전용 최소 권한 서비스 계정 생성 및 교체 (🔴 기본 Compute SA 위험 제거)",
-              shortLabel: "전용 최소 권한 SA 생성/교체",
-              desc: "JSON에서 기본 Compute Engine SA 사용이 객관적으로 확인되었습니다. 전용 SA로 분리를 강력 권장합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 교체",
-              title: "권한 영향도 파악 후 추후 전용 SA로 교체",
-              shortLabel: "추후 교체 (기본 SA 위험 인지)",
-              desc: "최종 리포트의 후속 확인 목록에 높은 우선순위로 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R4.2") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "Agent Identity (SPIFFE ID) & Agent Registry 자동 등록 구성됨",
-              shortLabel: "JSON 검증 통과 (Agent Identity / Registry)",
-              desc: "functional-type=agent와 identity-type=agent-identity가 설정되어 Agent Registry 자동 등록이 활성화되어 있습니다.",
-            }];
-          }
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 권장 적용",
-              title: "Agent Identity (SPIFFE ID) + Agent Registry 자동 등록 활성화 (--no-traffic 안전 전환)",
-              shortLabel: "Agent Identity & Registry 활성화",
-              desc: "agentregistry/apphub API 활성화 후 --functional-type=agent --identity-type=agent-identity --no-traffic 명령어를 생성합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 현재 SA 유지",
-              title: "현재 전용 IAM 서비스 계정(SA) 모드 유지 (Preview 기능 단계적 도입 예정)",
-              shortLabel: "현재 전용 SA 모드 유지",
-              desc: "GA 전용 서비스 계정 구성을 유지하고 추후 Agent Identity로 단계적 전환합니다.",
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "SPIFFE Principal IAM 매핑 검토 후 추후 적용",
-              shortLabel: "추후 확인 (SPIFFE IAM 매핑)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R4.3") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "Model Armor 가드레일 환경변수 확인됨",
-              shortLabel: "JSON 검증 통과 (Model Armor)",
-              desc: "Model Armor 관련 설정이 감지되었습니다.",
-            }];
-          }
-          return [
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 단계적 도입 확인",
-              title: "GA 인프라 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 기반 위에 단계적 도입",
-              shortLabel: "적합 (GA 인프라 보안 + 단계적 AGW 도입)",
-              desc: "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.",
-            },
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛡️ 거버넌스 점검",
-              title: "Model Armor Floor Settings 정책 확인 및 로컬 Agent Skill 스캔",
-              shortLabel: "Model Armor Floor Settings 확인",
-              desc: "최종 리포트에 Model Armor Floor Settings 조회 명령과 로컬 Agent Skill 스캔 안내를 포함합니다.",
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "Self-Managed Agent Gateway / SWP 정책 검토 후 추후 결정",
-              shortLabel: "추후 확인 (AGW / SWP 단계적 도입)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R5.1") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "OTel 프롬프트 평문 차단(NO_CONTENT) 이미 설정됨",
-              shortLabel: "JSON 검증 통과 (NO_CONTENT)",
-              desc: "Cloud Trace 스팬에 민감한 프롬프트 원문이 기록되지 않도록 설정되어 있습니다.",
-            }];
-          }
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 권장 적용",
-              title: "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 추가 (프로덕션 권장)",
-              shortLabel: "OTel NO_CONTENT 환경변수 추가",
-              desc: "운영 트레이싱 환경에서 고객 개인정보(PII) 평문 노출을 사전에 차단합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 예외/미사용",
-              title: "조치 불필요 — OTel GenAI 트레이싱 미사용 또는 프롬프트 로깅이 의도된 개발/테스트 환경",
-              shortLabel: "적합 (OTel 미사용 또는 개발 환경)",
-              desc: "프롬프트 트레이싱 정책상 변경이 필요하지 않음을 확인했습니다.",
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "관측성 및 개인정보 보호 정책 확인 후 추후 결정",
-              shortLabel: "추후 확인 (OTel PII 정책)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R6.1") {
-          if (c.status === "GREEN") {
-            return [{
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 검증 통과",
-              title: "GOOGLE_CLOUD_LOCATION=global (Global DSQ) 설정 확인됨",
-              shortLabel: "JSON 검증 통과 (Global DSQ)",
-              desc: "Global Dynamic Shared Quota를 통해 429 쿼터 오류를 완화하도록 구성되어 있습니다. (무한 루프 상한 로직은 로컬 코드/Agent Skill에서 확인)",
-            }];
-          }
-          if (c.status === "REVIEW") {
-            return [
-              {
-                id: "keep_ok",
-                category: "ok",
-                badge: "🟢 레지던시 의도",
-                title: "데이터 레지던시 규제로 인해 현재 리전 고정 설정 유지",
-                shortLabel: "적합 (데이터 레지던시 리전 고정)",
-                desc: "규정 준수를 위해 의도적으로 특정 리전 엔드포인트를 사용하고 있습니다.",
-              },
-              {
-                id: "apply_fix",
-                category: "fix",
-                badge: "🛠️ Global 전환",
-                title: "GOOGLE_CLOUD_LOCATION=global로 전환 (Global DSQ 429 쿼터 분산)",
-                shortLabel: "Global 엔드포인트 전환",
-                desc: "데이터 레지던시 제약이 없다면 global 엔드포인트로 전환해 쿼터 안정성을 높입니다.",
-              },
-              {
-                id: "defer",
-                category: "defer",
-                badge: "📋 추후 확인",
-                title: "데이터 레지던시 요건 확인 후 추후 결정",
-                shortLabel: "추후 확인 (레지던시 요건)",
-                desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-              },
-            ];
-          }
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 권장 적용",
-              title: "GOOGLE_CLOUD_LOCATION=global 환경변수 명시 설정",
-              shortLabel: "GOOGLE_CLOUD_LOCATION=global 설정",
-              desc: "Global DSQ를 사용하도록 환경변수를 명시합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 코드 기본값 유지",
-              title: "조치 불필요 — 코드 내부에서 위치 설정을 관리 중",
-              shortLabel: "적합 (코드 내부 설정 사용)",
-              desc: "애플리케이션 코드에서 의도한 리전/글로벌 엔드포인트를 직접 지정합니다.",
-            },
-          ];
-        }
-      } else {
-        // Agent Runtime
-        if (c.status === "GREEN") {
-          return [{
-            id: "keep_ok",
-            category: "ok",
-            badge: "🟢 검증 통과",
-            title: `${c.check_type === "MANAGED_NATIVE" ? "Agent Runtime 플랫폼 기본 제공" : "JSON 검증 기준 충족"} — 현재 유지`,
-            shortLabel: c.check_type === "MANAGED_NATIVE" ? "플랫폼 기본 제공 (통과)" : "JSON 검증 통과",
-            desc: c.current_state,
-          }];
-        }
-        if (c.id === "R3.2") {
-          return [
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 미연결 적합",
-              title: "조치 불필요 — Gemini API / 퍼블릭 외부 API만 호출함 (PSC-I 불필요)",
-              shortLabel: "적합 (퍼블릭 아웃바운드만 사용)",
-              desc: "사설 VPC 리소스 접근이 없다면 PSC Network Attachment 연결이 필요하지 않습니다.",
-            },
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ PSC-I 연결",
-              title: "사설 VPC DB · 온프레미스 API 접근 필요 → PSC Network Attachment 연결",
-              shortLabel: "PSC-I Network Attachment 연결",
-              desc: "연결할 PSC Network Attachment 이름을 입력합니다.",
-              hasInlineParams: true,
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "사설망 연동 대상 확인 후 추후 결정",
-              shortLabel: "추후 확인 (사설망 대상 점검)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R4.1") {
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 전용 SA 권장",
-              title: "에이전트 전용 커스텀 서비스 계정 지정 재배포",
-              shortLabel: "전용 커스텀 SA 지정",
-              desc: "기본 공유 Reasoning Engine SA 대신 전용 SA를 지정해 최소 권한을 분리합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 현재 유지",
-              title: "현재 기본 Reasoning Engine 서비스 계정 유지 (샌드박스/단독 프로젝트)",
-              shortLabel: "현재 SA 유지",
-              desc: "현재 환경에서는 별도 SA 분리가 불필요합니다.",
-            },
-          ];
-        }
-        if (c.id === "R4.2") {
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 권장 적용",
-              title: "Agent Identity (SPIFFE ID) 활성화 및 Agent Registry 자동 등록",
-              shortLabel: "Agent Identity & Registry 활성화",
-              desc: "agentregistry/apphub API 활성화 및 --agent-identity 재배포 명령어(※ --service-account 와 상호 배타적)를 생성합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 현재 SA 유지",
-              title: "현재 전용 커스텀 SA 유지 (추후 Agent Identity 전환 예정)",
-              shortLabel: "현재 SA 유지",
-              desc: "현재는 전용 커스텀 서비스 계정 기반으로 운영합니다.",
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "Agent Identity IAM 매핑 확인 후 추후 적용",
-              shortLabel: "추후 확인 (Agent Identity)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R4.3") {
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 게이트웨이 적용",
-              title: "Agent Gateway + UAP/IAP V2 (DRY_RUN 시작) & BYOC CA 번들 적용",
-              shortLabel: "Agent Gateway (DRY_RUN) 적용",
-              desc: "로컬 Agent Skill C4.4 하드닝으로 Agent Gateway(HTTP 498 방지를 위해 iamEnforcementMode=DRY_RUN 기본)와 Dockerfile CA 번들을 구성하고 Model Armor Floor Settings를 확인합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 직접 Egress 유지",
-              title: "조치 불필요 — 현재 직접 Egress/코드 가드레일 유지",
-              shortLabel: "적합 (직접 Egress 유지)",
-              desc: "중앙 Agent Gateway 도입 전 단계이거나 별도 보안 경계로 통제 중입니다.",
-            },
-            {
-              id: "defer",
-              category: "defer",
-              badge: "📋 추후 확인",
-              title: "Agent Gateway(DRY_RUN) · Model Armor 정책 검토 후 추후 결정",
-              shortLabel: "추후 확인 (Agent Gateway 검토)",
-              desc: "최종 리포트의 후속 확인 목록에 기록합니다.",
-            },
-          ];
-        }
-        if (c.id === "R5.1") {
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ 권장 적용",
-              title: "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 설정",
-              shortLabel: "OTel NO_CONTENT 설정",
-              desc: "트레이스에 민감한 프롬프트 원문이 기록되지 않도록 방지합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 예외/개발환경",
-              title: "조치 불필요 — 현재 OTel 설정 유지 (개발/디버깅 목적)",
-              shortLabel: "적합 (현재 OTel 설정 유지)",
-              desc: "현재 환경에서는 프롬프트 로깅 설정 변경이 필요하지 않습니다.",
-            },
-          ];
-        }
-        if (c.id === "R6.1") {
-          return [
-            {
-              id: "apply_fix",
-              category: "fix",
-              badge: "🛠️ Global 전환",
-              title: "GOOGLE_CLOUD_LOCATION=global 설정 적용",
-              shortLabel: "Global 엔드포인트 설정",
-              desc: "Global DSQ를 통해 429 쿼터 오류를 완화합니다.",
-            },
-            {
-              id: "keep_ok",
-              category: "ok",
-              badge: "🟢 현재 유지",
-              title: "데이터 레지던시 또는 코드 기본값 의도대로 현재 유지",
-              shortLabel: "적합 (현재 리전 설정 유지)",
-              desc: "의도된 엔드포인트 설정을 유지합니다.",
-            },
-          ];
-        }
+      const rt = d.runtime_type;
+      const kind = itemKind(c);
+      const isGreen = c.status === "GREEN";
+      const previewNote = isPreviewCheck(c) ? " (Preview 항목이라 Production Ready 판정을 막지 않습니다.)" : "";
+
+      if (kind === "session") {
+        if (isGreen) return verifiedOnly(c, "감지된 관리형 영속 세션 저장(VertexAiSessionService) 연동 유지", "JSON 검증 통과 (관리형 영속 세션 저장)");
+        const fixTitle = rt === "agent_runtime"
+          ? "코드의 InMemorySessionService 재정의를 제거하고 관리형 영속 세션 저장 사용"
+          : "VertexAiSessionService(관리형 영속 세션 저장) 연동 추가";
+        const fixDesc = rt === "cloud_run"
+          ? "세션 서비스 URI(agentengine://)를 환경변수로 연결합니다. 코드 쪽 연결은 로컬 Agent Skill로 반영합니다."
+          : "재시작·스케일아웃 후에도 대화가 이어지도록 로컬 Agent Skill로 세션 서비스를 연결합니다.";
+        return [
+          wizOpt("keep_in_code", "ok", "🟢 코드 내 구현됨", "조치 불필요 — 코드에서 이미 VertexAiSessionService를 사용 중", "적합 (코드에서 관리형 영속 세션 저장 사용)", "설정 JSON에는 보이지 않지만 애플리케이션 코드가 외부 세션 저장소를 사용합니다."),
+          wizOpt("keep_stateless", "ok", "🟢 조건 미해당", "조치 불필요 — 단일 턴 에이전트 (멀티턴 대화 아님)", "조건 미해당 (단일 턴)", "이전 대화를 이어갈 필요가 없는 설계라 이 조건부 항목은 해당하지 않습니다."),
+          wizOpt("apply_fix", "fix", "🛠️ 관리형 영속 세션 저장 연동", fixTitle, "VertexAiSessionService 연동", fixDesc, { hasInlineParams: rt === "cloud_run" }),
+          deferOpt("코드의 세션 구현(InMemory 여부) 확인 후 추후 결정", "추후 확인 (세션 구현 점검)"),
+        ];
       }
-      return [{
-        id: "keep_ok",
-        category: "ok",
-        badge: "🟢 확인 완료",
-        title: "현재 설정 확인 완료",
-        shortLabel: "확인 완료",
-        desc: c.current_state,
-      }];
+
+      if (kind === "memory") {
+        if (isGreen) return verifiedOnly(c, "관리형 장기 기억 저장(VertexAiMemoryBankService) 연결 유지", "JSON 검증 통과 (관리형 장기 기억 저장)");
+        return [
+          wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — 세션을 넘어 사용자를 기억할 필요가 없음", "조건 미해당 (장기 기억 불필요)", "개인화 기억이 필요 없는 에이전트라 이 조건부 항목은 해당하지 않습니다."),
+          wizOpt("apply_fix", "fix", "🛠️ Memory Bank 연결", "VertexAiMemoryBankService(Memory Bank) 연결 추가", "Memory Bank 연결", "로컬 Agent Skill로 Memory Bank 서비스를 연결해 세션 간 기억을 관리합니다."),
+          deferOpt("개인화 요구사항 확인 후 추후 결정", "추후 확인 (장기 기억 요구)"),
+        ];
+      }
+
+      if (kind === "graceful") {
+        if (isGreen) return verifiedOnly(c, "종료 유예 시간이 최대 응답 시간보다 김 — 현재 설정 유지", "JSON 검증 통과 (무중단 종료)");
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ 권장 적용", "terminationGracePeriodSeconds를 최대 응답 시간 이상으로 + preStop 적용", "종료 유예 시간 · preStop 적용", "배포·노드 업그레이드 때 진행 중인 LLM 스트리밍 응답이 잘리지 않도록 합니다."),
+          wizOpt("keep_ok", "ok", "🟢 의도된 설정", "응답이 짧아 기본 종료 유예 시간(30초)으로 충분함", "적합 (응답 시간 짧음)", "최대 응답 시간이 유예 시간보다 충분히 짧음을 확인했습니다."),
+          deferOpt("최대 응답 시간 측정 후 추후 결정", "추후 확인 (응답 시간 측정)"),
+        ];
+      }
+
+      if (kind === "pipeline") {
+        if (isGreen) return verifiedOnly(c, "agents-cli CI/CD 파이프라인 확인", "검증 통과 (CI/CD 파이프라인)");
+        return [
+          wizOpt("keep_ok", "ok", "🟢 구성됨", "agents-cli로 만든 CI/CD 파이프라인이 이미 있음", "적합 (파이프라인 운영 중)", "PR 테스트 → staging → prod 흐름이 코드로 관리되고 있습니다."),
+          wizOpt("apply_fix", "fix", "🛠️ 파이프라인 생성", "agents-cli scaffold enhance . --cicd-runner google_cloud_build 실행", "파이프라인 생성 (agents-cli)", "체크리스트는 파이프라인 파일을 직접 만들지 않습니다. agents-cli로 생성하고, CI/CD 인프라(agents-cli infra cicd)는 직접 구성합니다."),
+          deferOpt("배포 흐름 확정 후 추후 생성", "추후 확인 (CI/CD 파이프라인)"),
+        ];
+      }
+
+      if (kind === "evalgate") {
+        if (isGreen) return verifiedOnly(c, "CI/CD 평가 게이트 구성 확인", "JSON 검증 통과 (평가 게이트)");
+        return [
+          wizOpt("keep_ok", "ok", "🟢 구성됨", "배포 파이프라인에 agents-cli eval 기준 점수 게이트가 이미 있음", "적합 (평가 게이트 운영 중)", "기준에 못 미치면 다음 단계 배포를 멈추도록 구성되어 있습니다."),
+          wizOpt("apply_fix", "fix", "🛠️ 게이트 추가", "agents-cli 파이프라인에 평가 점수 게이트 추가", "평가 게이트 추가", "파이프라인이 없으면 먼저 agents-cli scaffold enhance . --cicd-runner google_cloud_build로 생성한 뒤, 로컬 Agent Skill로 평가 데이터셋과 게이트를 추가합니다. CI/CD 인프라(agents-cli infra cicd)는 직접 구성합니다."),
+          deferOpt("평가 데이터셋 준비 후 추후 적용", "추후 확인 (평가 데이터셋)"),
+        ];
+      }
+
+      if (kind === "trace") {
+        if (isGreen) return verifiedOnly(c, "프롬프트·응답 본문 미기록(NO_CONTENT) 설정 확인", "JSON 검증 통과 (프롬프트 미기록)");
+        const fixTitle = rt === "agent_runtime"
+          ? "GenAI 메시지 본문 수집 끄기 (OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT)"
+          : "Cloud Trace 내보내기(otel_to_cloud) + 메시지 본문 수집 끄기(NO_CONTENT)";
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ 권장 적용", fixTitle, rt === "agent_runtime" ? "프롬프트 미기록 설정" : "Cloud Trace + 프롬프트 미기록", "에이전트·도구 호출 단계를 추적하면서 개인정보가 섞인 프롬프트·응답 본문은 기록하지 않습니다."),
+          wizOpt("keep_ok", "ok", "🟢 예외 환경", "조치 불필요 — 개발/테스트 환경이라 본문 수집이 의도됨", "적합 (개발/테스트 환경)", "운영 환경이 아니어서 현재 트레이스 설정을 유지합니다."),
+          deferOpt("관측성 · 개인정보 정책 확인 후 추후 결정", "추후 확인 (트레이스 정책)"),
+        ];
+      }
+
+      if (kind === "auth") {
+        if (isGreen) return verifiedOnly(c, "allUsers 호출 권한 없음 — 인증된 호출만 허용", "JSON 검증 통과 (인증 필수)");
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ 인증 필수화", "allUsers 호출 권한 제거 — Cloud Run IAM 인증 요구", "allUsers 호출 권한 제거", "공개 엔드포인트는 토큰 비용과 프롬프트 인젝션의 공격 대상이 됩니다. 프런트엔드나 다른 서비스는 전용 서비스 계정으로 호출하도록 바꿉니다."),
+          wizOpt("keep_ok", "ok", "🟢 별도 인증 계층", "앞단 IAP 등 별도 인증 계층으로 이미 보호 중", "적합 (별도 인증 계층)", "공개 호출 권한이 남아 있어도 앞단에서 인증된 요청만 전달됨을 확인했습니다."),
+          deferOpt("호출 주체(프런트엔드·다른 서비스) 정리 후 적용", "추후 확인 (호출 주체 정리)"),
+        ];
+      }
+
+      if (kind === "identity") {
+        if (isGreen) return verifiedOnly(c, "에이전트 전용 신원으로 실행 중 — 최소 권한만 부여됐는지 주기적으로 점검", "JSON 검증 통과 (전용 신원)");
+        const opts = [];
+        if (rt === "gke") {
+          opts.push(wizOpt("apply_fix", "fix", "🛠️ 전용 신원 적용", "Workload Identity로 전용 서비스 계정 연결 (Agent Identity 사용 가능 시 우선)", "전용 신원(Workload Identity) 적용", "노드 기본 서비스 계정 대신 에이전트 전용 신원으로 실행하고 필요한 최소 역할만 부여합니다."));
+        } else {
+          opts.push(wizOpt("apply_identity", "fix", "🛠️ Agent Identity", "Agent Identity(Preview)로 에이전트 고유 신원 부여", "Agent Identity 적용", rt === "agent_runtime" ? "--agent-identity로 재배포합니다. (--service-account와 함께 쓸 수 없습니다.)" : "에이전트 고유 신원을 부여합니다. 사용할 수 없는 프로젝트라면 전용 서비스 계정을 선택하세요."));
+          opts.push(wizOpt("apply_fix", "fix", "🛠️ 전용 SA", "전용 서비스 계정 생성 · 교체 (최소 권한 역할만 부여)", "전용 서비스 계정 교체", rt === "cloud_run" ? "기본 Compute 서비스 계정 대신 전용 서비스 계정으로 실행합니다." : "기본 서비스 에이전트 권한에 의존하지 않도록 전용 서비스 계정을 지정합니다.", { hasInlineParams: true }));
+        }
+        opts.push(deferOpt("권한 영향도 파악 후 추후 전환", "추후 확인 (전용 신원 전환)"));
+        return opts;
+      }
+
+      if (kind === "registry") {
+        if (isGreen) return verifiedOnly(c, "Agent Registry 등록 확인", "JSON 검증 통과 (Agent Registry)");
+        const fixDesc = rt === "cloud_run"
+          ? "Agent Registry · App Hub API를 활성화하고 서비스를 에이전트 유형(--functional-type=agent)으로 배포해 자동 등록합니다. (--no-traffic로 안전 전환)"
+          : (rt === "gke"
+              ? "Agent Registry · App Hub API를 활성화하고 Deployment에 에이전트 유형 레이블을 지정해 자동 등록합니다."
+              : "Agent Registry · App Hub API를 활성화하고 에이전트 등록 상태를 확인합니다.");
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ 등록 (Preview)", "Agent Registry에 에이전트 등록", "Agent Registry 등록", fixDesc + previewNote),
+          wizOpt("keep_ok", "ok", "🟢 단계적 도입", "Preview 기능이라 거버넌스 단계에서 단계적으로 도입 예정", "단계적 도입 예정 (Preview)", "Preview 항목은 점검·안내만 하며 판정을 막지 않습니다."),
+          deferOpt("조직 거버넌스 정책 확인 후 추후 등록", "추후 확인 (Agent Registry)"),
+        ];
+      }
+
+      if (kind === "gateway") {
+        if (isGreen) return verifiedOnly(c, "외부 호출이 Agent Gateway를 거쳐 정책으로 통제됨", "JSON 검증 통과 (Agent Gateway)");
+        const gwName = rt === "cloud_run" ? "Agent Gateway for Cloud Run" : (rt === "gke" ? "Agent Gateway for GKE" : "Agent Gateway");
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ Gateway 연결 (Preview)", `${gwName}로 MCP·외부 도구 호출에 접근 정책 적용`, `${gwName} 연결`, "정책은 시험 모드로 검증한 뒤 강제 모드로 전환합니다." + previewNote),
+          wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — MCP 서버·외부 API·다른 에이전트를 호출하지 않음", "조건 미해당 (외부 호출 없음)", "외부 도구를 호출하지 않는 에이전트라 이 조건부 항목은 해당하지 않습니다."),
+          deferOpt("외부 호출 대상과 정책 범위 정리 후 추후 결정", "추후 확인 (Agent Gateway)"),
+        ];
+      }
+
+      if (kind === "substrate") {
+        if (isGreen) return verifiedOnly(c, "AI 생성 코드가 샌드박스에서 격리 실행됨", "JSON 검증 통과 (코드 격리)");
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ 샌드박스 적용", "AI 생성 코드를 Agent Substrate on GKE 샌드박스에서 실행 (대안: Agent Sandbox on GKE)", "코드 실행 샌드박스 적용", "상시 실행·사이드카·Arm·Autopilot이 필요하거나 Autopilot을 쓰면 Agent Sandbox on GKE를 선택합니다.", { hasInlineParams: true }),
+          wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — AI가 만든 코드·셸을 실행하지 않음", "조건 미해당 (코드 실행 없음)", "코드 실행 도구가 없는 에이전트라 이 조건부 항목은 해당하지 않습니다."),
+          deferOpt("클러스터 버전 · 노드 풀 요건 확인 후 추후 결정", "추후 확인 (코드 격리)"),
+        ];
+      }
+
+      if (kind === "idle_suspend") {
+        if (isGreen) return verifiedOnly(c, "Agent Substrate에서 유휴 에이전트 일시정지 · 복원", "JSON 검증 통과 (유휴 일시정지 · 복원)");
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ Agent Substrate 적용", "유휴 에이전트를 Agent Substrate on GKE에서 스냅샷 일시정지 · 요청 시 복원", "Agent Substrate 일시정지 · 복원", "GKE Standard 1.37 이상이 필요합니다. 로컬 Agent Skill로 Agent Substrate 매니페스트를 생성합니다."),
+          wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — 유휴 시간이 길지 않은 에이전트", "조건 미해당 (유휴 시간 짧음)", "사용자 입력·도구 응답 대기 시간이 길지 않아 이 조건부 항목은 해당하지 않습니다."),
+          deferOpt("클러스터 모드(Standard) · 버전 요건 확인 후 추후 결정", "추후 확인 (유휴 일시정지 · 복원)"),
+        ];
+      }
+
+      if (kind === "delegated_auth") {
+        if (isGreen) return verifiedOnly(c, "외부 도구·MCP 호출에 Agent Identity auth manager의 사용자 위임 토큰 사용", "검증 통과 (사용자 위임 인증)");
+        return [
+          wizOpt("apply_guide", "fix", "🛠️ 위임 인증 전환 (Preview)", "auth manager auth provider(3-legged OAuth)로 사용자 위임 토큰 사용", "사용자 위임 인증 전환 (안내)", "auth manager에 auth provider를 만들고 google-adk[agent-identity]로 도구·MCP 호출에 연결합니다. 정적 API 키·PAT는 코드와 환경변수에서 제거합니다. 자동 적용 없이 안내 명령만 생성합니다." + previewNote),
+          wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — 사용자 계정으로 외부 시스템을 호출하지 않음", "조건 미해당 (사용자 대신 호출 없음)", "에이전트 자신의 신원으로만 외부 도구를 호출해 이 조건부 항목은 해당하지 않습니다."),
+          deferOpt("외부 시스템 OAuth 클라이언트 준비 후 추후 전환", "추후 확인 (사용자 위임 인증)"),
+        ];
+      }
+
+      // Unknown / future item IDs: generic, non-crashing choices
+      if (isGreen) return verifiedOnly(c, "JSON 검증 기준 충족 — 현재 설정 유지", "JSON 검증 통과");
+      const generic = [
+        wizOpt("keep_ok", "ok", "🟢 확인 완료", "현재 설정이 의도에 맞음을 확인", "확인 완료", c.current_state || ""),
+      ];
+      if (c.gcloud_cmd) {
+        generic.push(wizOpt("apply_fix", "fix", "🛠️ 권장 적용", c.how_to_fix_title || "권장 설정 적용", c.how_to_fix_title || "권장 설정 적용", c.recommended_state || ""));
+      }
+      generic.push(deferOpt("추가 확인 후 추후 결정", "추후 확인"));
+      return generic;
     }
 
     function copyCustomCommand(btnEl) {
@@ -1508,460 +1457,375 @@
     }
 
     function buildSingleCheckCommand(d, c) {
-      const proj = d.project_id || "YOUR_PROJECT_ID";
-      const reg = d.region || "us-central1";
-      const svc = d.service_name || "my-agent";
-      const p = userTuningParams;
-      const port = (d.detected_config && d.detected_config.port) ? d.detected_config.port : 8080;
-
-      if (d.runtime_type === "cloud_run") {
-        if (c.id === "R1.1") {
-          const cpuFlag = p.cpu_alloc === "no-cpu-throttling" ? "  --no-cpu-throttling" : "  --cpu-throttling";
-          return (
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --min-instances=${p.min_instances || "1"} \\\n` +
-            `  --max-instances=${p.max_instances || "20"} \\\n` +
-            `  --cpu-boost \\\n` +
-            cpuFlag
-          );
-        }
-        if (c.id === "R1.2") {
-          return (
-            `# 사용자 부하 테스트 기반 설정값 반영\n` +
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --cpu=${p.cpu || "1"} \\\n` +
-            `  --memory=${p.memory || "512Mi"} \\\n` +
-            `  --concurrency=${p.concurrency || "80"}`
-          );
-        }
-        if (c.id === "R1.3") {
-          const path = (p.liveness_path || "/list-apps").startsWith("/") ? p.liveness_path : `/${p.liveness_path}`;
-          const envLine = p.exec_env === "gen2" ? `  --execution-environment=gen2 \\\n` : "";
-          return (
-            `# ⚠️ 컨테이너에 ${path} 경로가 실제 존재하는지 확인 후 실행하세요\n` +
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            envLine +
-            `  --liveness-probe=httpGet.path=${path},httpGet.port=${port},periodSeconds=30`
-          );
-        }
-        if (c.id === "R2.1") {
-          if (p.session_mode === "cloudsql") {
-            const inst = (p.cloudsql_instance || `${svc}-db`).trim();
-            return (
-              `gcloud run services update ${svc} \\\n` +
-              `  --region=${reg} \\\n` +
-              `  --project=${proj} \\\n` +
-              `  --add-cloudsql-instances=${proj}:${reg}:${inst} \\\n` +
-              `  --update-env-vars="INSTANCE_CONNECTION_NAME=${proj}:${reg}:${inst}"`
-            );
-          }
-          const engId = (p.agent_engine_id || "<ENGINE_ID>").trim();
-          return (
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --update-env-vars="ADK_SESSION_SERVICE_URI=agentengine://projects/${proj}/locations/${reg}/reasoningEngines/${engId}"`
-          );
-        }
-        if (c.id === "R3.1") {
-          return (
-            `# [Step 1 · 읽기 전용] 현재 무인증 공개(allUsers) 여부 확인\n` +
-            `gcloud run services get-iam-policy ${svc} --region=${reg} --project=${proj}\n\n` +
-            `# [Step 2] Ingress 제한 적용\n` +
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --ingress=${p.ingress_target || "internal-and-cloud-load-balancing"}`
-          );
-        }
-        if (c.id === "R3.2") {
-          return (
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --network=${p.vpc_network || "default"} \\\n` +
-            `  --subnet=${p.vpc_subnet || "default"} \\\n` +
-            `  --vpc-egress=${p.vpc_egress || "private-ranges-only"}`
-          );
-        }
-        if (c.id === "R4.1") {
-          const saName = (p.sa_name || `${svc}-sa`).trim();
-          return (
-            `gcloud iam service-accounts create ${saName} --project=${proj}\n` +
-            `gcloud run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --service-account=${saName}@${proj}.iam.gserviceaccount.com`
-          );
-        }
-      } else {
-        if (c.id === "R3.2") {
-          return (
-            `uvx google-agents-cli deploy \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --network-attachment=projects/${proj}/regions/${reg}/networkAttachments/${p.psc_attachment || "agent-psc"}`
-          );
-        }
-      }
-      return c.gcloud_cmd || "";
+      return buildCommandForChecks(d, [c]) || c.gcloud_cmd || "";
     }
 
-    function buildCustomRemediationCommand(d) {
-      syncSelectedFixIds();
-      const chosen = d.checks.filter(c => selectedFixIds.has(c.id));
-      const r31Dec = wizardDecisions["R3.1"];
-      const wantsPublicIamAudit = d.runtime_type === "cloud_run" && r31Dec && r31Dec.action === "keep_public";
+    function decisionAction(c) {
+      const dec = wizardDecisions[c.id];
+      return dec ? dec.action : "";
+    }
 
+    function joinMultiline(head, flags, envPairs) {
+      const lines = head.slice();
+      flags.forEach(f => {
+        lines[lines.length - 1] += " \\";
+        lines.push(`  ${f}`);
+      });
+      if (envPairs.length > 0) {
+        lines[lines.length - 1] += " \\";
+        lines.push(`  --update-env-vars="${envPairs.join(",")}"`);
+      }
+      return lines.join("\n");
+    }
+
+    function delegatedAuthGuide(c) {
+      return `# [${c.id} · Preview] 사용자 위임 인증 (Agent Identity auth manager) — 자동 적용 없음 (안내만)\n` +
+        `# 1) auth manager에 auth provider(3-legged OAuth) 생성: https://docs.cloud.google.com/iam/docs/auth-with-3lo-v2\n` +
+        `# 2) pyproject.toml에 google-adk[agent-identity] 추가 → 도구·MCP에 GcpAuthProviderScheme(auth provider) 연결\n` +
+        `# 3) 코드·환경변수의 정적 API 키·PAT 제거 (개요: https://docs.cloud.google.com/iam/docs/auth-manager-overview)`;
+    }
+
+    function buildCommandForChecks(d, checks) {
       const proj = d.project_id || "YOUR_PROJECT_ID";
       const reg = d.region || "us-central1";
       const svc = d.service_name || "my-agent";
       const p = userTuningParams;
-      const port = (d.detected_config && d.detected_config.port) ? d.detected_config.port : 8080;
-
-      if (chosen.length === 0) {
-        if (wantsPublicIamAudit) {
-          return (
-            `# 위자드에서 런타임 변경(조치)으로 선택한 항목은 없습니다.\n` +
-            `# [R3.1 참고 · 읽기 전용] 퍼블릭 에이전트의 allUsers 무인증 허용 여부만 아래 명령으로 확인하세요:\n` +
-            `gcloud run services get-iam-policy ${svc} --region=${reg} --project=${proj}`
-          );
-        }
-        return (
-          "# 위자드에서 '🛠️ 설정 변경'으로 선택한 항목이 없습니다.\n" +
-          "# 모든 항목이 현재 의도에 맞거나 추후 확인으로 분류되었습니다."
-        );
-      }
-
-      const ids = chosen.map(c => c.id);
-      const idSet = new Set(ids);
+      const ids = checks.map(c => c.id);
+      const localDir = "<내_로컬_에이전트_폴더>";
 
       if (d.runtime_type === "cloud_run") {
         const preCmds = [];
         const updateFlags = [];
         const envPairs = [];
-        const localVerifyItems = [];
+        const betaFlags = [];
+        const localItems = [];
+        let wantsRegistry = false;
 
-        if (wantsPublicIamAudit) {
-          preCmds.push(`# [R3.1 참고 · 읽기 전용] 퍼블릭 에이전트 IAM 정책(allUsers 여부) 확인\ngcloud run services get-iam-policy ${svc} --region=${reg} --project=${proj}`);
-        }
-        if (idSet.has("R1.1")) {
-          updateFlags.push(`--min-instances=${p.min_instances || "1"}`, `--max-instances=${p.max_instances || "20"}`, "--cpu-boost");
-          updateFlags.push(p.cpu_alloc === "no-cpu-throttling" ? "--no-cpu-throttling" : "--cpu-throttling");
-        }
-        if (idSet.has("R1.2")) {
-          updateFlags.push(`--cpu=${p.cpu || "1"}`, `--memory=${p.memory || "512Mi"}`, `--concurrency=${p.concurrency || "80"}`);
-        }
-        if (idSet.has("R1.3")) {
-          const path = (p.liveness_path || "/list-apps").startsWith("/") ? p.liveness_path : `/${p.liveness_path}`;
-          if (p.exec_env === "gen2") updateFlags.push("--execution-environment=gen2");
-          updateFlags.push(`--liveness-probe=httpGet.path=${path},httpGet.port=${port},periodSeconds=30`);
-        }
-        if (idSet.has("R2.1")) {
-          if (p.session_mode === "cloudsql") {
-            const inst = (p.cloudsql_instance || `${svc}-db`).trim();
-            updateFlags.push(`--add-cloudsql-instances=${proj}:${reg}:${inst}`);
-            envPairs.push(`INSTANCE_CONNECTION_NAME=${proj}:${reg}:${inst}`);
-          } else {
+        checks.forEach(c => {
+          const kind = itemKind(c);
+          const action = decisionAction(c);
+          if (kind === "session") {
             const engId = (p.agent_engine_id || "<ENGINE_ID>").trim();
             envPairs.push(`ADK_SESSION_SERVICE_URI=agentengine://projects/${proj}/locations/${reg}/reasoningEngines/${engId}`);
+            localItems.push(c.id);
+          } else if (kind === "memory" || kind === "evalgate" || kind === "gateway") {
+            localItems.push(c.id);
+          } else if (kind === "trace") {
+            envPairs.push(
+              `OTEL_SERVICE_NAME=${svc}`,
+              "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT",
+              "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false"
+            );
+            localItems.push(c.id);
+          } else if (kind === "auth") {
+            preCmds.push(
+              `# [${c.id}] 현재 호출 권한(allUsers 여부) 확인\n` +
+              `gcloud run services get-iam-policy ${svc} --region=${reg} --project=${proj}\n` +
+              `# [${c.id}] allUsers 호출 권한 제거 → 인증된 호출만 허용\n` +
+              `gcloud run services remove-iam-policy-binding ${svc} \\\n` +
+              `  --region=${reg} \\\n` +
+              `  --project=${proj} \\\n` +
+              `  --member=allUsers \\\n` +
+              `  --role=roles/run.invoker`
+            );
+          } else if (kind === "identity") {
+            if (action === "apply_identity") {
+              betaFlags.push("--identity-type=agent-identity");
+            } else {
+              const saName = (p.sa_name || `${svc}-sa`).trim();
+              preCmds.push(`# [${c.id}] 전용 서비스 계정 생성 (이미 있으면 건너뜀) — 필요한 최소 역할만 부여하세요\ngcloud iam service-accounts create ${saName} --project=${proj} 2>/dev/null || true`);
+              updateFlags.push(`--service-account=${saName}@${proj}.iam.gserviceaccount.com`);
+            }
+          } else if (kind === "registry") {
+            wantsRegistry = true;
+            betaFlags.push("--functional-type=agent");
+          } else if (kind === "delegated_auth") {
+            preCmds.push(delegatedAuthGuide(c));
+          } else if (c.gcloud_cmd) {
+            preCmds.push(`# [${c.id}]\n${c.gcloud_cmd}`);
           }
-        }
-        if (idSet.has("R3.1")) {
-          preCmds.push(`# [R3.1 사전 확인] 현재 IAM 바인딩(allUsers 여부) 조회\ngcloud run services get-iam-policy ${svc} --region=${reg} --project=${proj}`);
-          updateFlags.push(`--ingress=${p.ingress_target || "internal-and-cloud-load-balancing"}`);
-        }
-        if (idSet.has("R3.2")) {
-          updateFlags.push(`--network=${p.vpc_network || "default"}`, `--subnet=${p.vpc_subnet || "default"}`, `--vpc-egress=${p.vpc_egress || "private-ranges-only"}`);
-        }
-        if (idSet.has("R4.1") && !idSet.has("R4.2")) {
-          const saName = (p.sa_name || `${svc}-sa`).trim();
-          preCmds.push(`# [R4.1] 전용 서비스 계정 생성 (이미 존재하면 건너뜀)\ngcloud iam service-accounts create ${saName} --project=${proj} 2>/dev/null || true`);
-          updateFlags.push(`--service-account=${saName}@${proj}.iam.gserviceaccount.com`);
-        }
-        if (idSet.has("R4.2")) {
-          preCmds.push(
-            `# [R4.2] Agent Registry & App Hub API 활성화 및 Agent Identity 적용 (--no-traffic 안전 전환)\n` +
-            `gcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project=${proj}\n` +
-            `gcloud beta run services update ${svc} \\\n` +
-            `  --region=${reg} \\\n` +
-            `  --project=${proj} \\\n` +
-            `  --functional-type=agent \\\n` +
-            `  --identity-type=agent-identity \\\n` +
-            `  --no-traffic\n` +
-            `gcloud agent-registry agents list --location=${reg} --project=${proj}`
-          );
-        }
-        if (idSet.has("R4.3")) {
-          localVerifyItems.push("R4.3");
-        }
-        if (idSet.has("R5.1")) {
-          envPairs.push(
-            `OTEL_SERVICE_NAME=${svc}`,
-            "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT",
-            "OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental"
-          );
-        }
-        if (idSet.has("R6.1")) {
-          envPairs.push("GOOGLE_CLOUD_LOCATION=global");
-        }
+        });
 
         const blocks = [];
+        if (wantsRegistry) {
+          blocks.push(`# [Agent Registry · Preview] Agent Registry & App Hub API 활성화\ngcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project=${proj}`);
+        }
         if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
         if (updateFlags.length > 0 || envPairs.length > 0) {
-          const lines = [
-            `# [위자드에서 변경 선택한 항목: ${ids.join(", ")}] Cloud Run 런타임 반영`,
+          blocks.push(joinMultiline([
+            `# [선택한 항목: ${ids.join(", ")}] Cloud Run 런타임 반영`,
             `gcloud run services update ${svc} \\`,
             `  --region=${reg} \\`,
             `  --project=${proj}`,
-          ];
-          updateFlags.forEach(f => {
-            lines[lines.length - 1] += " \\";
-            lines.push(`  ${f}`);
-          });
-          if (envPairs.length > 0) {
-            lines[lines.length - 1] += " \\";
-            lines.push(`  --update-env-vars="${envPairs.join(",")}"`);
-          }
-          blocks.push(lines.join("\n"));
+          ], updateFlags, envPairs));
         }
-        if (localVerifyItems.length > 0) {
+        if (betaFlags.length > 0) {
+          blocks.push(joinMultiline([
+            `# [Preview] 에이전트 유형 · Agent Identity 적용 (--no-traffic로 새 리비전을 먼저 검증)`,
+            `gcloud beta run services update ${svc} \\`,
+            `  --region=${reg} \\`,
+            `  --project=${proj}`,
+          ], [...new Set(betaFlags), "--no-traffic"], []));
+        }
+        if (wantsRegistry) {
+          blocks.push(`# [Agent Registry 확인] 자동 등록 조회\ngcloud agent-registry agents list --location=${reg} --project=${proj}`);
+        }
+        if (localItems.length > 0) {
+          const uniq = [...new Set(localItems)];
+          const notes = [];
+          if (checks.some(c => itemKind(c) === "gateway")) notes.push("# Agent Gateway for Cloud Run(Preview) 정책은 시험 모드로 검증한 뒤 강제 모드로 전환하세요.");
           blocks.push(
-            `# [R4.3 · Cloud Run Agent Gateway 단계적 도입 가이드 & Model Armor Floor Settings 확인]\n` +
-            `# Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에\n` +
-            `# Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.\n` +
-            `gcloud model-armor floorsettings describe --full-uri="projects/${proj}/locations/global/floorSetting"\n` +
-            `uv run prod-ready scan <내_로컬_에이전트_폴더>`
+            `# [로컬 코드 반영] 세션/Memory Bank 서비스 · Cloud Trace · 평가 게이트 등 코드 영역\n` +
+            (notes.length ? notes.join("\n") + "\n" : "") +
+            `uv run prod-ready apply ${localDir} --target cloud_run --items ${uniq.join(",")}`
           );
-        }
-        return blocks.join("\n\n");
-      } else {
-        const preCmds = [];
-        const deployFlags = [];
-        const envPairs = [];
-        const localVerifyItems = [];
-
-        if (idSet.has("R3.2")) deployFlags.push(`--network-attachment=projects/${proj}/regions/${reg}/networkAttachments/${p.psc_attachment || "agent-psc"}`);
-        if (idSet.has("R4.2")) {
-          preCmds.push(`# [R4.2] Agent Registry & App Hub API 활성화\ngcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project=${proj}`);
-          deployFlags.push("--agent-identity");
-        } else if (idSet.has("R4.1")) {
-          deployFlags.push(`--service-account=sa-agent@${proj}.iam.gserviceaccount.com`);
-        }
-        if (idSet.has("R4.3")) localVerifyItems.push("R4.3");
-        if (idSet.has("R5.1")) envPairs.push("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT");
-        if (idSet.has("R6.1")) envPairs.push("GOOGLE_CLOUD_LOCATION=global");
-
-        const blocks = [];
-        if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
-        if (localVerifyItems.length > 0) {
-          blocks.push(
-            `# [R4.3 · Agent Gateway(DRY_RUN) 프로비저닝 & Model Armor Floor Settings 확인]\n` +
-            `uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items C4.4\n` +
-            `gcloud model-armor floorsettings describe --full-uri="projects/${proj}/locations/global/floorSetting"\n` +
-            `gcloud beta network-services agent-gateways list --location=${reg} --project=${proj}`
-          );
-        }
-        if (deployFlags.length > 0 || envPairs.length > 0) {
-          const deployLines = [
-            `# [위자드에서 변경 선택한 항목: ${ids.join(", ")}] Agent Runtime 재배포`,
-            `uvx google-agents-cli deploy \\`,
-            `  --project=${proj} \\`,
-            `  --region=${reg}`,
-          ];
-          deployFlags.forEach(f => {
-            deployLines[deployLines.length - 1] += " \\";
-            deployLines.push(`  ${f}`);
-          });
-          if (envPairs.length > 0) {
-            deployLines[deployLines.length - 1] += " \\";
-            deployLines.push(`  --update-env-vars="${envPairs.join(",")}"`);
-          }
-          blocks.push(deployLines.join("\n"));
-        }
-        if (idSet.has("R4.2")) {
-          blocks.push(`# [R4.2 확인] Agent Registry 자동 등록 조회\ngcloud agent-registry agents list --location=${reg} --project=${proj}`);
         }
         return blocks.join("\n\n");
       }
+
+      if (d.runtime_type === "gke") {
+        const ns = (p.gke_namespace || d.service_name || "gke-enterprise-agent").trim();
+        const isAutopilot = (d.detected_config && d.detected_config.cluster_mode === "autopilot");
+        const preCmds = [];
+        const skillItems = [];
+        const k8sManifests = [];
+        const notes = [];
+        let substrateParams = "";
+        let wantsRegistry = false;
+
+        checks.forEach(c => {
+          const kind = itemKind(c);
+          if (kind === "registry") {
+            wantsRegistry = true;
+            skillItems.push(c.id);
+          } else if (kind === "gateway") {
+            skillItems.push(c.id);
+            k8sManifests.push("deployment/k8s/agent-gateway.yaml");
+            notes.push("# Agent Gateway for GKE(Preview): GKE >= 1.37.2-gke.1042000 Rapid 채널 · 지원 리전 확인 후 적용");
+          } else if (kind === "substrate") {
+            skillItems.push(c.id);
+            if (p.gke_pattern === "agent_sandbox") {
+              k8sManifests.push("deployment/k8s/agent-sandbox.yaml");
+              substrateParams = `'{"gke_execution_pattern":"agent_sandbox","gke_enable_gvisor":true}'`;
+            } else {
+              if (isAutopilot) notes.push("# ⚠️ 현재 클러스터는 Autopilot입니다. Agent Substrate는 GKE Standard >= 1.37 전용이므로 Agent Sandbox on GKE를 선택하세요.");
+              k8sManifests.push("deployment/k8s/agent-substrate.yaml");
+              substrateParams = `'{"gke_cluster_mode":"standard","gke_execution_pattern":"agent_substrate"}'`;
+            }
+          } else if (kind === "idle_suspend") {
+            skillItems.push(c.id);
+            if (!k8sManifests.includes("deployment/k8s/agent-substrate.yaml")) k8sManifests.push("deployment/k8s/agent-substrate.yaml");
+            if (isAutopilot) notes.push("# ⚠️ 유휴 일시정지 · 복원(GKE-O2)은 Agent Substrate 기능이라 GKE Standard >= 1.37 클러스터가 필요합니다.");
+          } else if (kind === "delegated_auth") {
+            preCmds.push(delegatedAuthGuide(c));
+          } else if (kind) {
+            skillItems.push(c.id);
+          } else if (c.gcloud_cmd) {
+            preCmds.push(`# [${c.id}]\n${c.gcloud_cmd}`);
+          }
+        });
+
+        const blocks = [];
+        if (wantsRegistry) {
+          blocks.push(`# [Agent Registry · Preview] Agent Registry & App Hub API 활성화\ngcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project=${proj}`);
+        }
+        if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
+        const uniqItems = [...new Set(skillItems)];
+        if (uniqItems.length > 0) {
+          let applyLine = `uv run prod-ready apply ${localDir} --target gke --items ${uniqItems.join(",")}`;
+          if (substrateParams) applyLine += ` \\\n  --params ${substrateParams}`;
+          blocks.push(
+            `# [선택한 항목: ${ids.join(", ")}] 로컬 GKE 매니페스트 · ADK 코드 반영 (namespace: ${ns})\n` +
+            (notes.length ? [...new Set(notes)].join("\n") + "\n" : "") +
+            applyLine + "\n\n" +
+            `# [Terraform 반영] 변경된 매니페스트를 클러스터에 적용\n` +
+            `terraform -chdir=${localDir}/deployment/terraform apply`
+          );
+        }
+        if (k8sManifests.length > 0) {
+          blocks.push(
+            `# [GKE 확장 매니페스트 적용 (선행 CRD · 클러스터 버전 확인 후 실행)]\n` +
+            [...new Set(k8sManifests)].map(m => `kubectl apply -n ${ns} -f ${m}`).join("\n")
+          );
+        }
+        if (wantsRegistry) {
+          blocks.push(`# [Agent Registry 확인] 자동 등록 조회\ngcloud agent-registry agents list --location=${reg} --project=${proj}`);
+        }
+        return blocks.join("\n\n");
+      }
+
+      // Agent Runtime
+      const preCmds = [];
+      const deployFlags = [];
+      const envPairs = [];
+      const localItems = [];
+      const postCmds = [];
+      let wantsRegistry = false;
+
+      checks.forEach(c => {
+        const kind = itemKind(c);
+        const action = decisionAction(c);
+        if (kind === "session" || kind === "memory" || kind === "evalgate") {
+          localItems.push(c.id);
+        } else if (kind === "trace") {
+          envPairs.push("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT");
+        } else if (kind === "identity") {
+          if (action === "apply_identity") {
+            deployFlags.push("--agent-identity");
+          } else {
+            const saName = (p.sa_name || "sa-agent").trim();
+            preCmds.push(`# [${c.id}] 전용 서비스 계정 생성 (이미 있으면 건너뜀) — 필요한 최소 역할만 부여하세요\ngcloud iam service-accounts create ${saName} --project=${proj} 2>/dev/null || true`);
+            deployFlags.push(`--service-account=${saName}@${proj}.iam.gserviceaccount.com`);
+          }
+        } else if (kind === "registry") {
+          wantsRegistry = true;
+        } else if (kind === "gateway") {
+          localItems.push(c.id);
+          postCmds.push(`# [${c.id} · Preview] Agent Gateway 상태 확인 (정책은 시험 모드로 검증 후 강제 모드로 전환)\ngcloud beta network-services agent-gateways list --location=${reg} --project=${proj}`);
+        } else if (kind === "delegated_auth") {
+          preCmds.push(delegatedAuthGuide(c));
+        } else if (c.gcloud_cmd) {
+          preCmds.push(`# [${c.id}]\n${c.gcloud_cmd}`);
+        }
+      });
+
+      const blocks = [];
+      if (wantsRegistry) {
+        blocks.push(`# [Agent Registry · Preview] Agent Registry & App Hub API 활성화\ngcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project=${proj}`);
+      }
+      if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
+      if (localItems.length > 0) {
+        blocks.push(
+          `# [로컬 코드 반영] 세션 · Memory Bank · 평가 게이트 · Agent Gateway 등 코드 영역\n` +
+          `uv run prod-ready apply ${localDir} --target agent_runtime --items ${[...new Set(localItems)].join(",")}`
+        );
+      }
+      if (deployFlags.length > 0 || envPairs.length > 0) {
+        blocks.push(joinMultiline([
+          `# [선택한 항목: ${ids.join(", ")}] Agent Runtime 재배포`,
+          `uvx google-agents-cli deploy \\`,
+          `  --project=${proj} \\`,
+          `  --region=${reg}`,
+        ], [...new Set(deployFlags)], envPairs));
+      }
+      if (postCmds.length > 0) blocks.push(postCmds.join("\n\n"));
+      if (wantsRegistry) {
+        blocks.push(`# [Agent Registry 확인] 등록 상태 조회\ngcloud agent-registry agents list --location=${reg} --project=${proj}`);
+      }
+      return blocks.join("\n\n");
+    }
+
+    function buildCustomRemediationCommand(d) {
+      syncSelectedFixIds();
+      const chosen = d.checks.filter(c => selectedFixIds.has(c.id));
+      if (chosen.length === 0) {
+        return (
+          "# 위자드에서 '🛠️ 설정 변경'으로 선택한 항목이 없습니다.\n" +
+          "# 모든 항목이 현재 의도에 맞거나 추후 확인으로 분류되었습니다."
+        );
+      }
+      return buildCommandForChecks(d, chosen);
     }
 
     function renderTuningControlsHtml(d, c, optionId) {
       const p = userTuningParams;
-      if (d.runtime_type === "cloud_run") {
-        if (c.id === "R1.1") {
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2.5">
-              <div class="text-[12.5px] font-bold text-[#1967D2]">🎛️ 서비스 SLA·예산에 맞는 스케일링 값 입력</div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">Min Instances</label>
-                  <input type="number" min="0" max="100" value="${escapeHtml(p.min_instances)}"
-                    oninput="updateTuningParam('min_instances', this.value, 'R1.1', false)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">Max Instances</label>
-                  <input type="number" min="1" max="1000" value="${escapeHtml(p.max_instances)}"
-                    oninput="updateTuningParam('max_instances', this.value, 'R1.1', false)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">CPU 할당 모드</label>
-                  <select onchange="updateTuningParam('cpu_alloc', this.value, 'R1.1', true)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none">
-                    <option value="no-cpu-throttling" ${p.cpu_alloc === "no-cpu-throttling" ? "selected" : ""}>Always-On (--no-cpu-throttling)</option>
-                    <option value="cpu-throttling" ${p.cpu_alloc === "cpu-throttling" ? "selected" : ""}>요청 시에만 (--cpu-throttling)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-        if (c.id === "R1.2") {
-          const cpuOpts = ["0.5", "1", "2", "4", "8"];
-          if (!cpuOpts.includes(p.cpu)) cpuOpts.unshift(p.cpu);
-          const memOpts = ["512Mi", "1Gi", "2Gi", "4Gi", "8Gi"];
-          if (!memOpts.includes(p.memory)) memOpts.unshift(p.memory);
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2.5">
-              <div class="text-[12.5px] font-bold text-[#1967D2]">🎛️ 부하 테스트로 확정한 CPU · Memory · Concurrency 입력</div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">CPU (vCPU)</label>
-                  <select onchange="updateTuningParam('cpu', this.value, 'R1.2', true)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none">
-                    ${cpuOpts.map(v => `<option value="${escapeHtml(v)}" ${p.cpu === v ? "selected" : ""}>${escapeHtml(v)} vCPU</option>`).join("")}
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">Memory</label>
-                  <select onchange="updateTuningParam('memory', this.value, 'R1.2', true)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none">
-                    ${memOpts.map(v => `<option value="${escapeHtml(v)}" ${p.memory === v ? "selected" : ""}>${escapeHtml(v)}</option>`).join("")}
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">Concurrency (동시 요청)</label>
-                  <input type="number" min="1" max="1000" value="${escapeHtml(p.concurrency)}"
-                    oninput="updateTuningParam('concurrency', this.value, 'R1.2', false)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-                </div>
-              </div>
-            </div>
-          `;
-        }
-        if (c.id === "R1.3") {
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2.5">
-              <div class="text-[12.5px] font-bold text-[#1967D2]">🎛️ HTTP Health 경로 및 실행 환경 선택</div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">HTTP Health Endpoint Path</label>
-                  <input type="text" value="${escapeHtml(p.liveness_path)}"
-                    oninput="updateTuningParam('liveness_path', this.value, 'R1.3', false)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">Execution Environment</label>
-                  <select onchange="updateTuningParam('exec_env', this.value, 'R1.3', true)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none">
-                    <option value="gen2" ${p.exec_env === "gen2" ? "selected" : ""}>gen2 (--execution-environment=gen2)</option>
-                    <option value="keep" ${p.exec_env === "keep" ? "selected" : ""}>현재 실행 환경 유지</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-        if (c.id === "R2.1") {
-          if (optionId === "apply_cloudsql") {
-            return `
-              <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2">
-                <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ 연결할 Cloud SQL 인스턴스 이름</label>
-                <input type="text" value="${escapeHtml(p.cloudsql_instance)}"
-                  oninput="updateTuningParam('cloudsql_instance', this.value, 'R2.1', false)"
-                  class="w-full sm:w-80 rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-              </div>
-            `;
-          }
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2">
-              <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ 연결할 Agent Runtime (ReasoningEngine) ID</label>
-              <input type="text" value="${escapeHtml(p.agent_engine_id)}"
-                oninput="updateTuningParam('agent_engine_id', this.value, 'R2.1', false)"
-                class="w-full sm:w-80 rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-            </div>
-          `;
-        }
-        if (c.id === "R3.1") {
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2">
-              <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ 적용할 Ingress 정책 선택 (--ingress)</label>
-              <select onchange="updateTuningParam('ingress_target', this.value, 'R3.1', true)"
-                class="w-full sm:w-96 rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none">
-                <option value="internal-and-cloud-load-balancing" ${p.ingress_target === "internal-and-cloud-load-balancing" ? "selected" : ""}>internal-and-cloud-load-balancing (LB/Cloud Armor 경유)</option>
-                <option value="internal" ${p.ingress_target === "internal" ? "selected" : ""}>internal (VPC 사설망 내부 전용)</option>
-              </select>
-            </div>
-          `;
-        }
-        if (c.id === "R3.2") {
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2.5">
-              <div class="text-[12.5px] font-bold text-[#1967D2]">🎛️ Direct VPC Egress 네트워크 정보 입력</div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">VPC Network</label>
-                  <input type="text" value="${escapeHtml(p.vpc_network)}"
-                    oninput="updateTuningParam('vpc_network', this.value, 'R3.2', false)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">Subnet</label>
-                  <input type="text" value="${escapeHtml(p.vpc_subnet)}"
-                    oninput="updateTuningParam('vpc_subnet', this.value, 'R3.2', false)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-[12px] font-semibold text-[#475569] mb-1">VPC Egress 범위</label>
-                  <select onchange="updateTuningParam('vpc_egress', this.value, 'R3.2', true)"
-                    class="w-full rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none">
-                    <option value="private-ranges-only" ${p.vpc_egress === "private-ranges-only" ? "selected" : ""}>private-ranges-only</option>
-                    <option value="all-traffic" ${p.vpc_egress === "all-traffic" ? "selected" : ""}>all-traffic</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-        if (c.id === "R4.1") {
-          return `
-            <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2">
-              <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ 생성할 전용 서비스 계정 이름 (SA ID)</label>
-              <input type="text" value="${escapeHtml(p.sa_name)}"
-                oninput="updateTuningParam('sa_name', this.value, 'R4.1', false)"
-                class="w-full sm:w-80 rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
-            </div>
-          `;
-        }
-      } else if (c.id === "R3.2") {
+      const kind = itemKind(c);
+      const cid = escapeHtml(c.id);
+      const inputCls = "w-full sm:w-80 rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none";
+      if (kind === "session" && d.runtime_type === "cloud_run") {
         return `
           <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2">
-            <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ PSC Network Attachment 이름</label>
-            <input type="text" value="${escapeHtml(p.psc_attachment)}"
-              oninput="updateTuningParam('psc_attachment', this.value, 'R3.2', false)"
-              class="w-full sm:w-80 rounded-lg bg-[#F7F9FC] px-3 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:outline-none" />
+            <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ 세션을 저장할 Agent Platform 인스턴스(ReasoningEngine) ID</label>
+            <input type="text" value="${escapeHtml(p.agent_engine_id)}"
+              oninput="updateTuningParam('agent_engine_id', this.value, '${cid}', false)"
+              class="${inputCls}" />
+          </div>
+        `;
+      }
+      if (kind === "identity" && optionId === "apply_fix" && d.runtime_type !== "gke") {
+        return `
+          <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#4285F4]/25 bg-white p-4 space-y-2">
+            <label class="block text-[12.5px] font-bold text-[#1967D2]">🎛️ 생성할 전용 서비스 계정 이름 (SA ID)</label>
+            <input type="text" value="${escapeHtml(p.sa_name)}"
+              oninput="updateTuningParam('sa_name', this.value, '${cid}', false)"
+              class="${inputCls}" />
+          </div>
+        `;
+      }
+      if (kind === "substrate") {
+        const autopilotConflict = (d.detected_config && d.detected_config.cluster_mode === "autopilot" && p.gke_pattern !== "agent_sandbox");
+        return `
+          <div onclick="event.stopPropagation()" class="mt-3 rounded-xl border border-[#FBBC04]/40 bg-white p-4 space-y-2">
+            <label class="block text-[12.5px] font-bold text-[#B06000]">🎛️ AI 생성 코드 실행 샌드박스 선택</label>
+            <select onchange="updateTuningParam('gke_pattern', this.value, '${cid}', true)"
+              class="w-full sm:w-[500px] rounded-lg bg-[#F7F9FC] px-2.5 py-1.5 font-mono text-[13px] font-semibold text-[#0F172A] border border-[#FBBC04]/40 focus:border-[#E37400] focus:outline-none">
+              <option value="agent_substrate" ${p.gke_pattern !== "agent_sandbox" ? "selected" : ""}>Agent Substrate on GKE (권장 · GKE Standard &gt;= 1.37)</option>
+              <option value="agent_sandbox" ${p.gke_pattern === "agent_sandbox" ? "selected" : ""}>Agent Sandbox on GKE (상시 실행 · 사이드카 · Arm · Autopilot)</option>
+            </select>
+            ${autopilotConflict ? `<div class="rounded-lg bg-[#FCE8E6] border border-[#EA4335]/30 px-3 py-2 text-[12px] font-bold text-[#C5221F]">⚠️ 현재 감지된 클러스터는 GKE Autopilot입니다. Agent Substrate는 GKE Standard(&gt;= 1.37) 전용이므로 Autopilot에서는 Agent Sandbox on GKE를 선택하세요.</div>` : ""}
           </div>
         `;
       }
       return "";
+    }
+
+    function platformSkillLinksHtml(d) {
+      const url = (d.platform_skills_url || PLATFORM_SKILLS_URL).replace(/\/+$/, "");
+      const skills = Array.isArray(d.platform_skills) ? d.platform_skills : [];
+      return skills.map(s =>
+        `<a href="${escapeHtml(url + "/" + s)}" target="_blank" rel="noopener" class="inline-flex items-center rounded-lg bg-white border border-[#4285F4]/25 px-2.5 py-1 font-mono text-[12px] font-bold text-[#1967D2] hover:bg-[#E8F0FE] transition">${escapeHtml(s)} ↗</a>`
+      ).join("");
+    }
+
+    function platformSkillSectionHtml(d, opts) {
+      const items = Array.isArray(d.platform_skill_checks) ? d.platform_skill_checks : [];
+      const url = d.platform_skills_url || PLATFORM_SKILLS_URL;
+      const compact = Boolean(opts && opts.compact);
+      const rows = items.map(it => {
+        const ok = (it.observed_status || it.status) === "GREEN";
+        const chip = ok
+          ? `<span class="inline-flex items-center rounded-lg bg-[#E6F4EA] px-2 py-0.5 font-mono text-[11.5px] font-bold text-[#137333]">설정 확인됨</span>`
+          : `<span class="inline-flex items-center rounded-lg bg-[#E8F0FE] px-2 py-0.5 font-mono text-[11.5px] font-bold text-[#1967D2]">플랫폼 Skill로 점검</span>`;
+        const skills = Array.isArray(it.skills) ? it.skills.join(" · ") : (it.skills || "");
+        return `
+          <li class="rounded-xl bg-white border border-[#4285F4]/15 px-4 py-3 space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              ${chip}
+              <span class="text-[13.5px] font-bold text-[#0F172A]">${escapeHtml(it.title || it.id)}</span>
+              ${skills ? `<span class="font-mono text-[11.5px] font-semibold text-[#475569]">→ ${escapeHtml(skills)}</span>` : ""}
+            </div>
+            ${it.current_state ? `<div class="font-mono text-[12px] text-[#475569] break-words">${escapeHtml(it.current_state)}</div>` : ""}
+            ${!compact && it.recommended_state ? `<div class="text-[12.5px] text-[#334155] break-words">${escapeHtml(it.recommended_state)}</div>` : ""}
+          </li>
+        `;
+      }).join("");
+      return `
+        <details class="rounded-xl bg-[#F4F7FB] border border-[#4285F4]/20 border-l-4 border-l-[#4285F4] px-4 py-3" ${compact ? "" : "open"}>
+          <summary class="cursor-pointer text-[13px] font-bold text-[#1967D2]">
+            🧩 ${escapeHtml(PLATFORM_GROUP_LABEL)} (점수 미반영${items.length ? ` · ${items.length}개 항목` : ""})
+          </summary>
+          <div class="mt-2.5 space-y-2.5">
+            ${d.platform_skill_note ? `<p class="m-0 text-[12.8px] leading-[1.6] text-[#174EA6] font-semibold">${escapeHtml(d.platform_skill_note)}</p>` : ""}
+            <p class="m-0 text-[12.8px] leading-[1.6] text-[#334155]">
+              이 체크리스트는 에이전트 특성에서 나온 항목만 다룹니다. 모든 컨테이너 서비스에 해당하는 일반 플랫폼 Best Practice(헬스 프로브 · 스케일링 · 사설 연결 · Non-Root · Terraform IaC · 알림 정책 등)는
+              <a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="font-bold text-[#1967D2] underline">google/skills · cloud</a>의 플랫폼 Skill로 함께 점검하실 것을 강력히 권장합니다.
+            </p>
+            <div class="flex flex-wrap gap-1.5">${platformSkillLinksHtml(d)}</div>
+            ${rows ? `<ul class="m-0 p-0 list-none space-y-2">${rows}</ul>` : ""}
+          </div>
+        </details>
+      `;
+    }
+
+    function checkBadgesHtml(c) {
+      let html = "";
+      if (isPreviewCheck(c)) {
+        html += `<span class="inline-flex items-center rounded-xl bg-[#F3E8FF] border border-[#9333EA]/20 px-2.5 py-1 font-mono text-[12px] font-bold text-[#6D28D9]">Preview</span>`;
+      }
+      if (c.condition_label || c.condition) {
+        html += `<span class="inline-flex items-center rounded-xl bg-[#FEF7E0] border border-[#FBBC04]/35 px-2.5 py-1 text-[12px] font-bold text-[#B06000]">조건부 · ${escapeHtml(c.condition_label || CONDITION_LABELS[c.condition] || c.condition)}</span>`;
+      }
+      return html;
     }
 
     function renderMultiAgentBar() {
@@ -2041,8 +1905,8 @@
             <button onclick="openWizardView(${idx})"
               class="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[13.5px] transition ${rowCls}">
               <div class="flex min-w-0 flex-1 items-center gap-2">
-                <span class="w-10 shrink-0 font-mono text-[12px] font-bold ${isCurrent ? 'text-[#1967D2]' : 'text-[#475569]'}">${escapeHtml(c.id)}</span>
-                <span class="truncate">${escapeHtml(c.title)}</span>
+                <span class="w-[62px] shrink-0 font-mono text-[12px] font-bold ${isCurrent ? 'text-[#1967D2]' : 'text-[#475569]'}">${escapeHtml(c.id)}</span>
+                <span class="truncate">${escapeHtml(c.title)}${isPreviewCheck(c) ? ' <span class="font-mono text-[10.5px] font-bold text-[#6D28D9]">Preview</span>' : ''}</span>
               </div>
               ${decisionMiniIcon(dec, c.status)}
             </button>
@@ -2144,10 +2008,24 @@
         `;
       }).join("");
 
-      const runtimeAccent = d.runtime_type === "cloud_run" ? "g-accent-green" : "g-accent-blue";
+      const runtimeAccent = d.runtime_type === "cloud_run"
+        ? "g-accent-green"
+        : (d.runtime_type === "gke" ? "g-accent-rainbow" : "g-accent-blue");
       const runtimePillCls = d.runtime_type === "cloud_run"
         ? "bg-gradient-to-r from-[#34A853] to-[#1E8E3E]"
-        : "bg-gradient-to-r from-[#4285F4] to-[#1A73E8]";
+        : (d.runtime_type === "gke" ? "bg-gradient-to-r from-[#F9AB00] to-[#E37400]" : "bg-gradient-to-r from-[#4285F4] to-[#1A73E8]");
+
+      const guarantees = Array.isArray(d.platform_guarantees) ? d.platform_guarantees : [];
+      const guaranteesCardHtml = guarantees.length > 0
+        ? `
+          <div class="rounded-xl bg-[#E6F4EA]/65 border border-[#34A853]/30 border-l-4 border-l-[#34A853] px-4 py-3 space-y-1.5">
+            <div class="text-[12.5px] font-bold text-[#137333]">⚡ ${escapeHtml(d.runtime_label)} 플랫폼 기본 보장 영역 (체크리스트 제외 · ${guarantees.length}개 항목 플랫폼 자동 제공)</div>
+            <ul class="m-0 pl-4 space-y-1 text-[12.5px] leading-[1.55] text-[#0D652D]">
+              ${guarantees.map(g => `<li>${escapeHtml(g)}</li>`).join("")}
+            </ul>
+          </div>
+        `
+        : "";
 
       panel.innerHTML = `
         <!-- Wizard Top Progress Header -->
@@ -2172,6 +2050,10 @@
             </div>
           </div>
 
+          ${guaranteesCardHtml}
+
+          ${platformSkillSectionHtml(d, { compact: true })}
+
           <div class="space-y-2">
             <div class="flex items-center justify-between text-[13px] font-semibold">
               <span class="text-[#1967D2] font-bold">Wizard Step ${wizardStepIdx + 1} / ${total} · 확인 완료 ${answeredCount}건${unansweredCount > 0 ? ` (미확인 ${unansweredCount}건)` : " (전체 확인 완료!)"}</span>
@@ -2193,8 +2075,9 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center rounded-xl bg-[#E8F0FE] px-3 py-1 font-mono text-[13px] font-bold text-[#1967D2]">Step ${wizardStepIdx + 1} · ${escapeHtml(c.id)}</span>
-              <span class="inline-flex items-center rounded-xl bg-[#F4F7FB] border border-[#4285F4]/15 px-3 py-1 text-[12.5px] font-semibold text-[#475569]">${escapeHtml(c.domain)}</span>
+              <span class="inline-flex items-center rounded-xl bg-[#F4F7FB] border border-[#4285F4]/15 px-3 py-1 text-[12.5px] font-semibold text-[#475569]">${escapeHtml(categoryLabel(c))}</span>
               <span class="inline-flex items-center rounded-xl bg-[#FEF7E0] px-3 py-1 text-[12.5px] font-bold text-[#B06000]">${scopeChipLabel(c)}</span>
+              ${checkBadgesHtml(c)}
             </div>
             ${jsonStatusChipHtml(c)}
           </div>
@@ -2207,11 +2090,11 @@
           <!-- Observed JSON State vs Decision Criteria (Mirrors /lab Feature + Decision Framework blocks) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div class="rounded-xl bg-[#E8F0FE]/45 border border-[#4285F4]/18 border-l-4 border-l-[#4285F4] p-4">
-              <div class="text-[12px] font-bold text-[#1967D2] mb-1">JSON에서 감지된 현재 설정 (Observed State)</div>
+              <div class="text-[12px] font-bold text-[#1967D2] mb-1">Check · JSON에서 감지된 현재 설정</div>
               <div class="font-mono text-[13px] font-semibold text-[#0F172A] break-words">${escapeHtml(c.current_state)}</div>
             </div>
             <div class="rounded-xl bg-gradient-to-br from-[#FEF7E0]/80 to-[#FCE8E6]/30 border border-[#FBBC04]/25 border-l-4 border-l-[#FBBC04] p-4">
-              <div class="text-[12px] font-bold text-[#B06000] mb-1">💡 판단 기준 및 선택 가이드</div>
+              <div class="text-[12px] font-bold text-[#B06000] mb-1">💡 Best Practice · 판단 기준</div>
               <div class="font-mono text-[13px] font-semibold text-[#0F172A] break-words">${escapeHtml(c.recommended_state)}</div>
             </div>
           </div>
@@ -2280,24 +2163,46 @@
           ? "⚪ 미응답"
           : (dec.category === "ok" ? "🟢 적합/확인" : (dec.category === "fix" ? "🛠️ 변경 선택" : "📋 추후 확인"));
         const decLabel = dec ? dec.label : "위자드 미응답";
-        return `| ${escMdCell(c.id)} | ${escMdCell(c.domain)} | ${escMdCell(c.title)} | ${escMdCell(c.current_state)} | ${escMdCell(statusTxt + " — " + decLabel)} |`;
+        const tags = [isPreviewCheck(c) ? "Preview" : "", c.condition_label ? `조건부: ${c.condition_label}` : ""].filter(Boolean).join(", ");
+        return `| ${escMdCell(c.id)} | ${escMdCell(categoryLabel(c))} | ${escMdCell(c.title + (tags ? ` (${tags})` : ""))} | ${escMdCell(c.current_state)} | ${escMdCell(statusTxt + " — " + decLabel)} |`;
       }).join("\n");
 
+      const guarantees = Array.isArray(d.platform_guarantees) ? d.platform_guarantees : [];
+      const guaranteesMd = guarantees.length > 0
+        ? `## ⚡ ${d.runtime_label} 플랫폼 기본 보장 영역 (체크리스트 제외 · ${guarantees.length}개 항목)\n\n` +
+          guarantees.map(g => `- ✅ ${g}`).join("\n") + `\n\n---\n\n`
+        : "";
+      const saLabel = d.runtime_type === "gke" ? "KSA (Kubernetes ServiceAccount)" : "서비스 계정";
+      const platItems = Array.isArray(d.platform_skill_checks) ? d.platform_skill_checks : [];
+      const platUrl = (d.platform_skills_url || PLATFORM_SKILLS_URL).replace(/\/+$/, "");
+      const platSkills = Array.isArray(d.platform_skills) ? d.platform_skills : [];
+      const platformMd =
+        `## 3. ${PLATFORM_GROUP_LABEL} (점수 미반영)\n\n` +
+        `이 체크리스트는 에이전트 특성에서 나온 항목만 다룹니다. 일반 플랫폼 Best Practice는 [google/skills · cloud](${platUrl})의 플랫폼 Skill로 함께 점검하실 것을 강력히 권장합니다.\n\n` +
+        (platSkills.length ? platSkills.map(sk => `- [\`${sk}\`](${platUrl}/${sk})`).join("\n") + "\n\n" : "") +
+        (platItems.length
+          ? `| 항목 | JSON 감지 설정 | 참조 Skill |\n| :--- | :--- | :--- |\n` +
+            platItems.map(it => `| ${escMdCell(it.title || it.id)} | ${escMdCell(it.current_state)} | ${escMdCell(Array.isArray(it.skills) ? it.skills.join(" · ") : it.skills)} |`).join("\n") + "\n"
+          : "");
       return (
         `# Enterprise AI Agent 런타임 프로덕션 준비도 진단 리포트\n\n` +
         `- **서비스명**: \`${d.service_name}\` (${d.runtime_label})\n` +
         `- **GCP 프로젝트 / 리전**: \`${d.project_id}\` / \`${d.region}\`\n` +
-        `- **서비스 계정**: \`${d.service_account || "default"}\`\n` +
+        `- **${saLabel}**: \`${d.service_account || "default"}\`\n` +
         `- **진단 일시**: ${d.inspected_at}\n` +
+        `- **체크리스트**: Checklist v3 (에이전트 특성 항목 · Preview 항목은 판정을 막지 않음)\n` +
         `- **최종 요약**: 🟢 적합/의도 확인 **${okCount}건** · 🛠️ 조치 명령어 반영 **${fixCount}건** · 📋 추후 확인/미응답 **${deferCount}건**\n\n` +
         `---\n\n` +
+        guaranteesMd +
         `## 1. 항목별 위자드 점검 결과 (Audit Summary)\n\n` +
-        `| ID | 도메인 | 점검 항목 | JSON 감지 설정 | 최종 결정 |\n` +
+        `| ID | 범주 | 점검 항목 | JSON 감지 설정 | 최종 결정 |\n` +
         `| :--- | :--- | :--- | :--- | :--- |\n` +
         `${rows}\n\n` +
         `---\n\n` +
         `## 2. 맞춤형 통합 실행 명령어 (선택한 조치 항목 반영)\n\n` +
-        `\`\`\`bash\n${customCmd}\n\`\`\`\n`
+        `\`\`\`bash\n${customCmd}\n\`\`\`\n\n` +
+        `---\n\n` +
+        platformMd
       );
     }
 
@@ -2331,12 +2236,18 @@
       const unansweredChecks = d.checks.filter(c => !wizardDecisions[c.id]);
       const pendingCount = deferChecks.length + unansweredChecks.length;
 
+      const blockingFix = fixChecks.filter(c => !isPreviewCheck(c)).length;
+      const blockingPending = [...deferChecks, ...unansweredChecks].filter(c => !isPreviewCheck(c)).length;
+      const previewOpen = (fixChecks.length + pendingCount) - (blockingFix + blockingPending);
+
       let finalVerdict = "";
       let verdictStyle = "";
-      if (fixChecks.length === 0 && pendingCount === 0) {
-        finalVerdict = "🟢 Production Ready — 모든 런타임·아키텍처 항목이 확인/적합 판정되었습니다";
+      if (blockingFix === 0 && blockingPending === 0) {
+        finalVerdict = previewOpen > 0
+          ? `🟢 Production Ready — 필수·조건부 항목이 모두 확인되었습니다 (Preview 항목 ${previewOpen}건은 안내만 하며 판정을 막지 않습니다)`
+          : "🟢 Production Ready — 모든 체크리스트 항목이 확인/적합 판정되었습니다";
         verdictStyle = "bg-[#E6F4EA]/75 text-[#137333] border border-[#34A853]/30 border-l-4 border-l-[#34A853]";
-      } else if (pendingCount === 0) {
+      } else if (blockingPending === 0) {
         finalVerdict = `🛠️ Action Plan Ready — 선택한 ${fixChecks.length}개 항목의 맞춤형 조치 명령어만 실행하면 완료됩니다`;
         verdictStyle = "bg-[#E8F0FE]/75 text-[#1967D2] border border-[#4285F4]/30 border-l-4 border-l-[#4285F4]";
       } else {
@@ -2362,8 +2273,8 @@
           <tr class="border-t border-[#4285F4]/10 hover:bg-[#F7FAFF] transition">
             <td class="px-4 py-3.5 align-top font-mono text-[13px] font-bold text-[#1967D2] whitespace-nowrap">${escapeHtml(c.id)}</td>
             <td class="px-4 py-3.5 align-top">
-              <div class="text-[13.5px] font-bold text-[#0F172A]">${escapeHtml(c.title)}</div>
-              <div class="text-[12px] text-[#64748B] mt-0.5">${escapeHtml(c.domain)}</div>
+              <div class="text-[13.5px] font-bold text-[#0F172A]">${escapeHtml(c.title)}${isPreviewCheck(c) ? ' <span class="font-mono text-[11px] font-bold text-[#6D28D9]">Preview</span>' : ''}</div>
+              <div class="text-[12px] text-[#64748B] mt-0.5">${escapeHtml(categoryLabel(c))}${c.condition_label ? ` · 조건부(${escapeHtml(c.condition_label)})` : ""}</div>
             </td>
             <td class="px-4 py-3.5 align-top font-mono text-[12px] text-[#475569] max-w-[260px] break-words">${escapeHtml(c.current_state)}</td>
             <td class="px-4 py-3.5 align-top">
@@ -2409,6 +2320,23 @@
         `
         : "";
 
+      const reportRtBadgeCls = d.runtime_type === "gke"
+        ? "bg-[#FEF7E0] text-[#B06000]"
+        : (d.runtime_type === "agent_runtime" ? "bg-[#E8F0FE] text-[#1967D2]" : "bg-[#E6F4EA] text-[#137333]");
+      const reportSaLabel = d.runtime_type === "gke" ? "KSA (Kubernetes ServiceAccount)" : "Service Account";
+
+      const reportGuarantees = Array.isArray(d.platform_guarantees) ? d.platform_guarantees : [];
+      const reportGuaranteesHtml = reportGuarantees.length > 0
+        ? `
+          <div class="rounded-2xl bg-[#E6F4EA]/65 border border-[#34A853]/30 border-l-4 border-l-[#34A853] px-5 py-4 space-y-1.5">
+            <div class="text-[13px] font-bold text-[#137333]">⚡ ${escapeHtml(d.runtime_label)} 플랫폼 기본 보장 영역 (체크리스트 제외 · ${reportGuarantees.length}개 항목 플랫폼 자동 제공)</div>
+            <ul class="m-0 pl-4 space-y-1 text-[13px] leading-[1.6] text-[#0D652D]">
+              ${reportGuarantees.map(g => `<li>${escapeHtml(g)}</li>`).join("")}
+            </ul>
+          </div>
+        `
+        : "";
+
       panel.innerHTML = `
         <!-- Final Assessment Report Header -->
         <section class="card-surface g-accent-rainbow card-pad-lg space-y-6">
@@ -2416,11 +2344,11 @@
             <div class="space-y-2 min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#4285F4] to-[#1A73E8] px-3 py-1 font-mono text-[12.5px] font-bold text-white">FINAL REPORT</span>
-                <span class="inline-flex items-center rounded-xl bg-[#E6F4EA] px-3 py-1 font-mono text-[12.5px] font-bold text-[#137333]">${escapeHtml(d.runtime_label)}</span>
+                <span class="inline-flex items-center rounded-xl ${reportRtBadgeCls} px-3 py-1 font-mono text-[12.5px] font-bold">${escapeHtml(d.runtime_label)}</span>
                 <span class="font-mono text-[13px] font-semibold text-[#64748B]">${escapeHtml(d.project_id)} · ${escapeHtml(d.region)}</span>
               </div>
               <h2 class="m-0 text-2xl font-bold tracking-[-0.025em] text-[#0F172A]">${escapeHtml(d.service_name)} 최종 프로덕션 준비도 리포트</h2>
-              <div class="font-mono text-[12.5px] text-[#64748B]">Service Account: ${escapeHtml(d.service_account || "default")} · 생성 시각: ${escapeHtml(d.inspected_at)}</div>
+              <div class="font-mono text-[12.5px] text-[#64748B]">${reportSaLabel}: ${escapeHtml(d.service_account || "default")} · 생성 시각: ${escapeHtml(d.inspected_at)}</div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -2441,6 +2369,10 @@
           <div class="rounded-2xl px-5 py-4 text-[14.5px] font-bold ${verdictStyle}">
             ${escapeHtml(finalVerdict)}
           </div>
+
+          ${reportGuaranteesHtml}
+
+          ${platformSkillSectionHtml(d, { compact: false })}
 
           <!-- 3-Column KPI Summary (Google Green / Blue / Yellow) -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2514,7 +2446,7 @@
               <thead>
                 <tr class="bg-[#F4F7FB] text-[12px] font-bold uppercase tracking-wider text-[#475569]">
                   <th class="px-4 py-3">ID</th>
-                  <th class="px-4 py-3">도메인 & 항목</th>
+                  <th class="px-4 py-3">범주 & 항목</th>
                   <th class="px-4 py-3">JSON 감지 설정</th>
                   <th class="px-4 py-3">사용자 확인 / 최종 결정</th>
                   <th class="px-4 py-3 text-right">편집</th>
@@ -2529,7 +2461,41 @@
       `;
     }
 
+    // Optional: refresh v3 item titles/flags from the server catalog (falls back to the embedded metadata above)
+    (async function loadChecklistV3Catalog() {
+      try {
+        const res = await fetch("/api/checklist/v3");
+        if (!res.ok) return;
+        const cat = await res.json();
+        const items = (cat && cat.items) || {};
+        Object.keys(items).forEach(target => {
+          (Array.isArray(items[target]) ? items[target] : []).forEach(it => {
+            if (!it || !it.id) return;
+            const meta = V3_ITEM_META[it.id] || (V3_ITEM_META[it.id] = { kind: "" });
+            if (it.title) meta.title = it.title;
+            if (it.category) meta.cat = it.category;
+            if (typeof it.preview === "boolean") meta.preview = it.preview;
+            if (it.condition) meta.cond = it.condition;
+          });
+        });
+        if (cat && cat.conditions) Object.assign(CONDITION_LABELS, cat.conditions);
+        if (cat && cat.platform_skills) {
+          Object.keys(cat.platform_skills).forEach(t => {
+            if (Array.isArray(cat.platform_skills[t]) && cat.platform_skills[t].length) DEFAULT_PLATFORM_SKILLS[t] = cat.platform_skills[t];
+          });
+        }
+      } catch (e) {
+        // Keep embedded fallback metadata
+      }
+    })();
+
     updateCommandBox();
+    (function initPortalOrWorkbench() {
+      const params = new URLSearchParams(window.location.search);
+      if (window.location.pathname === "/workbench" || params.get("view") === "workbench") {
+        openInputView("step-01-select");
+      }
+    })();
   </script>
 </body>
 </html>

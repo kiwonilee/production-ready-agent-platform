@@ -1,0 +1,5 @@
+version: 1
+create_params:
+  project_name: gke-enterprise-agent
+  deployment_target: 'gke'
+  session_type: in_memory

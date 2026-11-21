@@ -1,20 +1,25 @@
 schema: agents-cli-extension/v1alpha1
 name: agent-production-readiness
-version: 2.1.0
+version: 3.0.0
 description: >
-  7-Domain, 15-Item Production-Readiness Scanner, Patcher, and Localhost Workbench
-  for Google ADK & google-agents-cli projects targeting Cloud Run and Agent Runtime.
+  Production-Readiness scanner, patcher, and localhost workbench for Google ADK &
+  google-agents-cli projects on Agent Runtime, Cloud Run, and GKE (checklist v3:
+  agent-characteristic items only; general platform BPs are delegated to the
+  Google Cloud platform skills at https://github.com/google/skills/tree/main/skills/cloud).
 skills:
   - path: skills/agent-production-readiness
 commands:
+  - name: doctor
+    description: Dependency preflight — agents-cli (>=1.5.0) + agents-cli skills (required), Google Cloud platform skills (strongly recommended; --install-platform-skills to install)
+    entrypoint: uv run prod-ready doctor .
   - name: scan
-    description: Scan local agent project against the 15-item Production-Readiness rubric
+    description: Scan local agent project against the checklist v3 for its target runtime (runs the dependency preflight first)
     entrypoint: uv run prod-ready scan .
   - name: diff
-    description: Preview unified diffs for production hardening patches
+    description: Preview unified diffs for checklist v3 fixes
     entrypoint: uv run prod-ready diff .
   - name: apply
-    description: Apply selected 15-item production hardening patches in-place
+    description: Apply selected checklist v3 fixes in place
     entrypoint: uv run prod-ready apply .
   - name: ui
     description: Launch the interactive Production-Readiness Workbench on localhost:8090

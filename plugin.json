@@ -1,14 +1,13 @@
 {
   "name": "agent-production-readiness",
   "displayName": "Enterprise AI Agent Production-Readiness Workbench",
-  "version": "2.1.0",
-  "description": "7-Domain, 15-Item (C1.1-C7.1) Production-Readiness Scanner, In-Place Patcher & Localhost Workbench for Google Cloud AI Agents (Cloud Run & Agent Runtime, with Agent Identity/Registry on both and Agent Gateway DRY_RUN on Agent Runtime; 100% compatible with google-agents-cli v1.5.0).",
+  "version": "3.0.0",
+  "description": "Production-readiness checklist v3 scanner, in-place patcher & localhost workbench for Google Cloud AI agents (ADK / google-agents-cli) on Agent Runtime, Cloud Run, and GKE. Only items derived from agent characteristics: persistent sessions & Memory Bank, graceful termination and idle suspend/resume on Agent Substrate (GKE), agents-cli CI/CD pipeline (D1) + eval dataset & score gate (D2), Cloud Trace without prompt capture, authenticated invocation, dedicated agent identity, Agent Registry, Agent Gateway, and AI-generated code isolation (Code Execution · Cloud Run sandboxes · Agent Substrate on GKE). Conditional items apply only when relevant, Preview items never block the verdict, a dependency preflight requires agents-cli >= 1.5.0 + its skills, and general platform best practices are delegated to the Google Cloud platform skills (github.com/google/skills) — strongly recommended to install.",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [
-    "현재 로컬 에이전트 프로젝트의 프로덕션 준비도(15개 핵심 체크리스트)를 스캔하고 항목별 충족 현황을 요약해줘",
-    "이 에이전트를 Cloud Run 프로덕션 기준(전체 항목 충족)으로 강화하기 위한 Diff를 보여주고 패치를 적용해줘",
-    "Agent Runtime(Agent Platform Agent Engine) 타깃으로 프로덕션 준비도를 점검하고 보안성 심의 리포트(READINESS_REPORT.md)를 생성해줘",
-    "로컬호스트에서 인터랙티브 Production-Readiness Workbench 웹 UI를 실행해줘"
+    "이 에이전트 프로젝트의 의존성을 점검하고(doctor) 체크리스트 v3로 스캔해서 범주별 결과를 알려줘",
+    "Agent Runtime(또는 Cloud Run · GKE) 기준으로 보완 Diff를 보여주고 승인하면 적용한 뒤 READINESS_REPORT.md를 만들어줘",
+    "GKE에서 AI 생성 코드 격리(Agent Substrate)와 유휴 에이전트 일시정지·복원이 필요한지 판단하고 적용 방법을 알려줘"
   ],
   "author": {
     "name": "Google Cloud"
@@ -20,8 +19,14 @@
     "agents-cli",
     "cloud-run",
     "agent-runtime",
+    "gke",
+    "agent-sandbox",
+    "agent-substrate",
+    "agent-gateway",
     "production-readiness",
     "terraform",
-    "finops"
+    "code-execution",
+    "cloud-run-sandboxes",
+    "doctor"
   ]
 }

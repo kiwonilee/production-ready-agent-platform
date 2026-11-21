@@ -31,6 +31,7 @@ from prod_ready.scanner import scan_project
 from web.runtime_inspector import (
     DEFAULT_PROJECT_ID,
     DEFAULT_REGION,
+    get_checklist_v3_catalog,
     get_sample_runtime_json,
     inspect_deployed_agent,
     inspect_pasted_json,
@@ -78,6 +79,7 @@ def create_workbench_app(project_dir: str | Path) -> FastAPI:
     app.state.samples_parent = samples_parent if samples_parent.is_dir() else None
 
     @app.get("/", response_class=HTMLResponse)
+    @app.get("/workbench", response_class=HTMLResponse)
     async def index() -> HTMLResponse:
         html_file = STATIC_DIR / "index.html"
         return HTMLResponse(html_file.read_text(encoding="utf-8"))
@@ -86,6 +88,21 @@ def create_workbench_app(project_dir: str | Path) -> FastAPI:
     async def hands_on_lab() -> HTMLResponse:
         lab_file = STATIC_DIR / "hands-on-lab.html"
         return HTMLResponse(lab_file.read_text(encoding="utf-8"))
+
+    @app.get("/checklist", response_class=HTMLResponse)
+    async def checklist_reference() -> HTMLResponse:
+        chk_file = STATIC_DIR / "checklist.html"
+        return HTMLResponse(chk_file.read_text(encoding="utf-8"))
+
+    @app.get("/deck", response_class=HTMLResponse)
+    async def overview_deck() -> HTMLResponse:
+        deck_file = STATIC_DIR / "deck.html"
+        return HTMLResponse(deck_file.read_text(encoding="utf-8"))
+
+    @app.get("/api/checklist/v3")
+    async def api_checklist_v3() -> dict[str, Any]:
+        """Checklist v3 catalog (agent-characteristic items, categories, delegated platform BPs)."""
+        return get_checklist_v3_catalog()
 
     @app.get("/api/skill/download")
     async def api_skill_download() -> Response:

@@ -1,8 +1,8 @@
 """Stage 2 (Post-Deployment): Read-Only GCP Live Runtime Inspector & Remediation Guide Generator.
 
-Queries live Cloud Run services and Agent Runtime (Reasoning Engines) in a target
-Google Cloud project in 100% READ-ONLY mode. Never mutates live resources; instead generates
-tailored, copy-paste-ready remediation guides (`gcloud` CLI, `Terraform`, and Stage 1 `Agent Skill` prompts).
+Queries live Cloud Run services, Agent Runtime (Reasoning Engines), and GKE agent workloads
+in 100% READ-ONLY mode. Never mutates live resources; instead generates tailored,
+copy-paste-ready remediation guides (`gcloud` / `kubectl` CLI, `Terraform`, and Stage 1 `Agent Skill` prompts).
 """
 
 from __future__ import annotations
@@ -21,6 +21,236 @@ DEFAULT_PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "geap-sandbox-kwlee"
 DEFAULT_REGION = os.environ.get("GOOGLE_CLOUD_REGION", "us-central1")
 SELF_SERVICE_NAME = os.environ.get("K_SERVICE", "prod-ready-workbench")
 SNAPSHOT_PATH = Path(__file__).parent / "static" / "runtime_snapshot.json"
+
+
+# ---------------------------------------------------------------------------
+# Checklist v3 classification (Single Source of Truth: prod_ready/catalog_v3.json)
+# ---------------------------------------------------------------------------
+# The live inspector re-classifies its runtime checks onto checklist v3 item IDs.
+# Only agent-characteristic items are scored. General platform best practices
+# (scaling, sizing, probes, private networking, PDB/HPA, PSS/Non-Root ...) are
+# delegated to platform skills and surfaced as an informational, unscored group.
+# Gemini call retry · endpoint (retry_options / GOOGLE_CLOUD_LOCATION) is ADK agent-code territory:
+# it is out of scope (ADK optimization) and is not inspected or scored here.
+
+PLATFORM_SKILLS_URL = "https://github.com/google/skills/tree/main/skills/cloud"
+PLATFORM_GROUP_LABEL = "플랫폼 Skill 참조 권장"
+
+_CATALOG_REL = Path("skills") / "agent-production-readiness" / "scripts" / "prod_ready" / "catalog_v3.json"
+
+_FALLBACK_CATEGORIES = [
+    {"code": "F", "name": "Features", "sub": "에이전트 기능"},
+    {"code": "O", "name": "Optimize", "sub": "런타임 최적화"},
+    {"code": "D", "name": "Delivery & Eval", "sub": "배포 · 품질 평가"},
+    {"code": "OB", "name": "Observability", "sub": "관측성"},
+    {"code": "S", "name": "Security", "sub": "보안"},
+]
+_FALLBACK_CONDITIONS = {
+    "conv": "멀티턴 대화",
+    "memory": "장기 기억 필요",
+    "code": "AI 생성 코드 실행",
+    "tools": "MCP·외부 도구 호출",
+}
+
+
+def _load_catalog_v3() -> dict[str, Any]:
+    candidates = [Path(__file__).resolve().parent.parent / _CATALOG_REL]
+    try:  # installed package layout (pip install .)
+        import prod_ready  # type: ignore
+
+        candidates.append(Path(prod_ready.__file__).resolve().parent / "catalog_v3.json")
+    except Exception:
+        pass
+    for path in candidates:
+        if path.is_file():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+    return {}
+
+
+_CATALOG_V3 = _load_catalog_v3()
+_CATEGORIES = {c["code"]: c for c in (_CATALOG_V3.get("categories") or _FALLBACK_CATEGORIES)}
+_CONDITIONS = _CATALOG_V3.get("conditions") or _FALLBACK_CONDITIONS
+_ITEMS_BY_ID: dict[str, dict[str, Any]] = {
+    item["id"]: item
+    for items in (_CATALOG_V3.get("items") or {}).values()
+    for item in items
+}
+_PLATFORM_SKILLS = _CATALOG_V3.get("platform_skills") or {}
+
+
+def get_checklist_v3_catalog() -> dict[str, Any]:
+    """Returns the checklist v3 catalog (read-only copy) for the workbench UI."""
+    return {
+        "version": _CATALOG_V3.get("version", "v3"),
+        "categories": list(_CATEGORIES.values()),
+        "conditions": dict(_CONDITIONS),
+        "items": _CATALOG_V3.get("items") or {},
+        "delegated_platform_bps": _CATALOG_V3.get("delegated_platform_bps") or [],
+        "platform_skills": _PLATFORM_SKILLS,
+        "platform_skills_repo": _CATALOG_V3.get("platform_skills_repo") or PLATFORM_SKILLS_URL,
+    }
+
+# runtime_type -> {legacy runtime check id -> v3 item id}
+_V3_MAP: dict[str, dict[str, str]] = {
+    "cloud_run": {
+        "R2.1": "CR-F1",
+        "R3.1": "CR-S1",
+        "R4.1": "CR-S2",
+        "R4.2": "CR-S3",
+        "R4.3": "CR-S4",
+        "R5.1": "CR-OB1",
+    },
+    "agent_runtime": {
+        "R2.1": "AR-F1",
+        "R4.1": "AR-S1",
+        "R4.2": "AR-S2",
+        "R4.3": "AR-S3",
+        "R5.1": "AR-OB1",
+    },
+    "gke": {
+        "R1.3": "GKE-O1",
+        "R2.1": "GKE-F1",
+        "R4.1": "GKE-S1",
+        "R4.2": "GKE-S3",
+        "R4.3": "GKE-S4",
+        "R4.4": "GKE-S2",
+        "R7.1": "GKE-O2",
+        "R5.1": "GKE-OB1",
+    },
+}
+
+# runtime_type -> {legacy runtime check id -> (platform id, recommended platform skills)}
+_PLATFORM_MAP: dict[str, dict[str, tuple[str, str]]] = {
+    "cloud_run": {
+        "R1.1": ("PLAT-SCALING", "cloud-run-basics"),
+        "R1.2": ("PLAT-SIZING", "cloud-run-basics"),
+        "R1.3": ("PLAT-PROBE", "cloud-run-basics"),
+        "R3.2": ("PLAT-VPC", "cloud-run-basics · google-cloud-waf-security"),
+    },
+    "agent_runtime": {
+        "R3.2": ("PLAT-PSCI", "agent-platform-deploy · google-cloud-waf-security"),
+    },
+    "gke": {
+        "R1.1": ("PLAT-HA", "gke-reliability · gke-productionize"),
+        "R1.2": ("PLAT-SIZING", "gke-productionize"),
+        "R3.1": ("PLAT-NETPOL", "gke-networking · gke-workload-security"),
+        "R4.1P": ("PLAT-PSS", "gke-workload-security"),
+    },
+}
+
+
+def _category_fields(code: str) -> dict[str, Any]:
+    cat = _CATEGORIES.get(code) or {"code": code, "name": code, "sub": ""}
+    return {
+        "category": code,
+        "category_name": cat.get("name", code),
+        "category_sub": cat.get("sub", ""),
+        "domain": f"{cat.get('name', code)} · {cat.get('sub', '')}".strip(" ·"),
+    }
+
+
+def _apply_checklist_v3(result: dict[str, Any]) -> dict[str, Any]:
+    """Re-classifies legacy runtime checks onto checklist v3 IDs and recomputes summary counts."""
+    runtime_type = result.get("runtime_type", "cloud_run")
+    v3_map = _V3_MAP.get(runtime_type, {})
+    plat_map = _PLATFORM_MAP.get(runtime_type, {})
+    scored: list[dict[str, Any]] = []
+    platform: list[dict[str, Any]] = []
+
+    for chk in result.get("checks", []):
+        legacy = chk.get("id", "")
+        if legacy in v3_map:
+            v3_id = v3_map[legacy]
+            item = _ITEMS_BY_ID.get(v3_id, {})
+            code = item.get("category") or v3_id.split("-")[1].rstrip("0123456789")
+            cond = item.get("condition")
+            chk.update(
+                {
+                    "id": v3_id,
+                    "legacy_id": legacy,
+                    **_category_fields(code),
+                    "live_title": chk.get("title", ""),
+                    "title": item.get("title") or chk.get("title", ""),
+                    "preview": bool(item.get("preview", False)),
+                    "condition": cond,
+                    "condition_label": _CONDITIONS.get(cond) if cond else None,
+                    "scored": True,
+                    "group": "checklist",
+                }
+            )
+            scored.append(chk)
+        elif legacy in plat_map:
+            plat_id, skills = plat_map[legacy]
+            chk.update(
+                {
+                    "id": plat_id,
+                    "legacy_id": legacy.rstrip("P"),
+                    "category": "PLATFORM",
+                    "category_name": PLATFORM_GROUP_LABEL,
+                    "category_sub": "체크리스트 범위 밖 · 점수 미반영",
+                    "domain": PLATFORM_GROUP_LABEL,
+                    "observed_status": chk.get("status"),
+                    "preview": False,
+                    "condition": None,
+                    "condition_label": None,
+                    "scored": False,
+                    "group": "platform_skill",
+                    "skills": skills,
+                    "skills_url": PLATFORM_SKILLS_URL,
+                }
+            )
+            platform.append(chk)
+        else:  # unknown -> keep visible but unscored
+            chk.setdefault("scored", False)
+            chk.setdefault("group", "platform_skill")
+            platform.append(chk)
+
+    order = {item_id: idx for idx, item_id in enumerate(_ITEMS_BY_ID)}
+    scored.sort(key=lambda c: order.get(c["id"], 999))
+
+    green_cnt = sum(1 for c in scored if c["status"] == "GREEN")
+    amber_cnt = sum(1 for c in scored if c["status"] == "AMBER")
+    red_cnt = sum(1 for c in scored if c["status"] == "RED")
+    review_cnt = sum(1 for c in scored if c["status"] == "REVIEW")
+    # Preview items are inspected and guided, but never block the Production Ready verdict.
+    blocking = [c for c in scored if not c.get("preview")]
+    red_block = sum(1 for c in blocking if c["status"] == "RED")
+    amber_block = sum(1 for c in blocking if c["status"] == "AMBER")
+    preview_open = sum(1 for c in scored if c.get("preview") and c["status"] in ("RED", "AMBER", "REVIEW"))
+    preview_note = f" · Preview 항목 {preview_open}건은 판정에 미반영" if preview_open else ""
+    if red_block > 0:
+        verdict = f"🔴 객관적 위험 {red_block}건 발견 (우선 조치 권장){preview_note}"
+    elif amber_block > 0:
+        verdict = f"🟡 검증 항목 양호 · 선택 권고 {amber_block}건 / 사용자 확인 {review_cnt}건{preview_note}"
+    elif review_cnt > 0:
+        verdict = f"🔵 JSON 검증 항목 모두 통과 · 아키텍처/코드 {review_cnt}건 확인 필요{preview_note}"
+    else:
+        verdict = f"🟢 Production Ready (체크리스트 v3 항목 검증 완료){preview_note}"
+
+    result.update(
+        {
+            "checklist_version": "v3",
+            "checks": scored,
+            "platform_skill_checks": platform,
+            "platform_skills": list(_PLATFORM_SKILLS.get(runtime_type, [])),
+            "platform_skills_url": PLATFORM_SKILLS_URL,
+            "platform_skill_note": (
+                "체크리스트는 에이전트 특성 항목만 다룹니다. 스케일링·사이징·헬스 프로브·사설 네트워크·"
+                "PDB·Pod 보안 같은 일반 플랫폼 Best Practice는 google/skills의 플랫폼 Skill을 함께 참고하세요."
+            ),
+            "verdict": verdict,
+            "total_count": len(scored),
+            "green_count": green_cnt,
+            "amber_count": amber_cnt,
+            "red_count": red_cnt,
+            "review_count": review_cnt,
+            "verified_count": green_cnt + amber_cnt + red_cnt,
+        }
+    )
+    return result
 
 
 def _load_snapshot() -> dict[str, Any]:
@@ -203,6 +433,9 @@ def inspect_deployed_agent(
             snap_items = _load_snapshot().get("cloud_run", {}).get("items", [])
             svc = next((i for i in snap_items if i.get("metadata", {}).get("name") == service_name), {})
         return _evaluate_cloud_run_service(project_id, region, service_name, svc, now_str)
+    elif runtime_type == "gke":
+        bundle = get_sample_runtime_json("gke")
+        return _evaluate_gke_workload(project_id, region, service_name or "gke-enterprise-agent", bundle, now_str)
     else:
         ar_url = f"https://{region}-aiplatform.googleapis.com/v1beta1/projects/{project_id}/locations/{region}/reasoningEngines/{service_name}"
         try:
@@ -286,58 +519,363 @@ def _sanitize_terminal_json(raw: str) -> str:
     return "".join(out)
 
 
+_K8S_GKE_KINDS = {
+    "Deployment",
+    "Namespace",
+    "NetworkPolicy",
+    "FQDNNetworkPolicy",
+    "PodDisruptionBudget",
+    "HorizontalPodAutoscaler",
+    "PodMonitoring",
+    "SandboxTemplate",
+    "SandboxWarmPool",
+    "SandboxClaim",
+    "PodSnapshotPolicy",
+    "PodSnapshotStorageConfig",
+    "WorkerPool",
+    "ActorTemplate",
+    "Gateway",
+    "HTTPRoute",
+    "GCPAgentGateway",
+    "GCPBackend",
+    "GCPEgressPolicy",
+    "GCPAuthzPolicy",
+    "GCPExtensionBinding",
+    "InferencePool",
+    "InferenceObjective",
+    "ComputeClass",
+    "ServiceAccount",
+}
+
+
+def _is_gke_cluster_dict(obj: dict[str, Any]) -> bool:
+    if not isinstance(obj, dict):
+        return False
+    if any(k in obj for k in ("autopilot", "nodePools", "workloadIdentityConfig", "privateClusterConfig", "ipAllocationPolicy", "datapathProvider")):
+        return True
+    self_link = str(obj.get("selfLink", ""))
+    return "container.googleapis.com" in self_link and "/clusters/" in self_link
+
+
+def _is_k8s_gke_resource(obj: dict[str, Any]) -> bool:
+    if not isinstance(obj, dict):
+        return False
+    api_ver = str(obj.get("apiVersion", ""))
+    kind = str(obj.get("kind", ""))
+    if "serving.knative.dev" in api_ver:
+        return False
+    if kind in _K8S_GKE_KINDS:
+        return True
+    if api_ver.startswith((
+        "apps/",
+        "networking.k8s.io/",
+        "networking.gke.io/",
+        "policy/",
+        "autoscaling/",
+        "extensions.agents.x-k8s.io/",
+        "podsnapshot.gke.io/",
+        "ate.dev/",
+        "monitoring.googleapis.com/",
+        "gateway.networking.k8s.io/",
+        "inference.networking.k8s.io/",
+    )):
+        return True
+    return False
+
+
+def _is_k8s_list_dict(obj: Any) -> bool:
+    if not isinstance(obj, dict) or not isinstance(obj.get("items"), list):
+        return False
+    items = obj["items"]
+    if obj.get("kind") == "List":
+        return not items or any(_is_k8s_gke_resource(i) or _is_gke_cluster_dict(i) for i in items if isinstance(i, dict))
+    return any(_is_k8s_gke_resource(i) for i in items if isinstance(i, dict))
+
+
+def _parse_json_stream(cleaned: str) -> list[Any]:
+    """Parses either a single JSON document or multiple concatenated JSON objects
+    (e.g., sequential `kubectl get ... -o json` and `gcloud container clusters describe --format=json` outputs).
+    """
+    try:
+        return [json.loads(cleaned, strict=False)]
+    except json.JSONDecodeError as first_err:
+        decoder = json.JSONDecoder(strict=False)
+        docs: list[Any] = []
+        idx = 0
+        n = len(cleaned)
+        while idx < n:
+            while idx < n and cleaned[idx].isspace():
+                idx += 1
+            if idx >= n:
+                break
+            try:
+                obj, end = decoder.raw_decode(cleaned, idx)
+                docs.append(obj)
+                idx = end
+            except json.JSONDecodeError:
+                if not docs:
+                    raise first_err
+                # Skip stray terminal prompt/warning text between JSON outputs
+                next_obj = cleaned.find("{", idx + 1)
+                next_arr = cleaned.find("[", idx + 1)
+                candidates = [p for p in (next_obj, next_arr) if p != -1]
+                if not candidates:
+                    break
+                idx = min(candidates)
+        if not docs:
+            raise first_err
+        return docs
+
+
+def _flatten_k8s_items(raw_items: list[Any]) -> list[dict[str, Any]]:
+    """Flattens nested Kubernetes List objects, arrays, and GkeAgentBundles into individual resource dicts."""
+    flat: list[dict[str, Any]] = []
+    for item in raw_items:
+        if isinstance(item, list):
+            flat.extend(_flatten_k8s_items(item))
+        elif isinstance(item, dict):
+            if _is_k8s_list_dict(item):
+                flat.extend(_flatten_k8s_items(item.get("items", [])))
+            elif item.get("kind") == "GkeAgentBundle":
+                for single_key in ("cluster", "namespace", "deployment", "pdb", "hpa", "podMonitoring", "sandbox", "substrate"):
+                    if isinstance(item.get(single_key), dict):
+                        flat.append(item[single_key])
+                for list_key in ("networkPolicies", "agentGateways"):
+                    if isinstance(item.get(list_key), list):
+                        flat.extend(_flatten_k8s_items(item[list_key]))
+            else:
+                flat.append(item)
+    return flat
+
+
+def _extract_gke_meta(bundle: dict[str, Any], project_hint: str, region_hint: str) -> tuple[str, str, str]:
+    cluster = bundle.get("cluster") or {}
+    deployment = bundle.get("deployment") or {}
+    sandbox = bundle.get("sandbox") or {}
+    substrate = bundle.get("substrate") or {}
+    primary = deployment or sandbox or substrate
+    meta = primary.get("metadata", {}) if isinstance(primary, dict) else {}
+
+    project_id = project_hint or "my-gcp-project"
+    region = str(cluster.get("location") or region_hint or "us-central1")
+    workload_name = str(meta.get("name") or cluster.get("name") or "gke-agent")
+
+    # Try extracting GOOGLE_CLOUD_PROJECT from deployment container env or cluster workloadPool
+    containers = (
+        deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
+        if isinstance(deployment, dict)
+        else []
+    )
+    if containers and isinstance(containers[0], dict):
+        for e in containers[0].get("env", []):
+            if e.get("name") == "GOOGLE_CLOUD_PROJECT" and e.get("value"):
+                project_id = str(e.get("value"))
+                break
+    if project_id == "my-gcp-project":
+        wp = str(cluster.get("workloadIdentityConfig", {}).get("workloadPool", ""))
+        if wp.endswith(".svc.id.goog"):
+            project_id = wp.removesuffix(".svc.id.goog")
+        else:
+            self_link = str(cluster.get("selfLink", ""))
+            if "/projects/" in self_link:
+                parts = self_link.split("/projects/")[1].split("/")
+                if parts and parts[0]:
+                    project_id = parts[0]
+
+    return project_id, region, workload_name
+
+
+def _group_k8s_items_into_bundles(items: list[Any]) -> list[dict[str, Any]]:
+    flat_items = _flatten_k8s_items(items)
+    deployments: list[dict[str, Any]] = []
+    namespaces: dict[str, dict[str, Any]] = {}
+    pdbs: list[dict[str, Any]] = []
+    hpas: list[dict[str, Any]] = []
+    netpols: list[dict[str, Any]] = []
+    pod_monitorings: list[dict[str, Any]] = []
+    sandboxes: list[dict[str, Any]] = []
+    substrates: list[dict[str, Any]] = []
+    gateways: list[dict[str, Any]] = []
+    cluster: dict[str, Any] = {}
+
+    for item in flat_items:
+        if not isinstance(item, dict):
+            continue
+        if _is_gke_cluster_dict(item):
+            cluster = item
+            continue
+        kind = str(item.get("kind", ""))
+        name = str(item.get("metadata", {}).get("name", ""))
+        if kind == "Deployment":
+            deployments.append(item)
+        elif kind == "Namespace" and name:
+            namespaces[name] = item
+        elif kind == "PodDisruptionBudget":
+            pdbs.append(item)
+        elif kind == "HorizontalPodAutoscaler":
+            hpas.append(item)
+        elif kind in ("NetworkPolicy", "FQDNNetworkPolicy"):
+            netpols.append(item)
+        elif kind == "PodMonitoring":
+            pod_monitorings.append(item)
+        elif kind in ("SandboxTemplate", "SandboxWarmPool", "SandboxClaim", "PodSnapshotPolicy", "PodSnapshotStorageConfig"):
+            sandboxes.append(item)
+        elif kind in ("WorkerPool", "ActorTemplate"):
+            substrates.append(item)
+        elif kind in ("Gateway", "HTTPRoute", "GCPAgentGateway", "GCPBackend", "GCPEgressPolicy", "GCPAuthzPolicy", "GCPExtensionBinding"):
+            gateways.append(item)
+
+    if not any([deployments, namespaces, pdbs, hpas, netpols, pod_monitorings, sandboxes, substrates, gateways, cluster]):
+        return []
+
+    if not deployments:
+        ns_obj = next(iter(namespaces.values()), None)
+        return [
+            {
+                "kind": "GkeAgentBundle",
+                "cluster": cluster or None,
+                "namespace": ns_obj,
+                "deployment": None,
+                "pdb": pdbs[0] if pdbs else None,
+                "hpa": hpas[0] if hpas else None,
+                "networkPolicies": netpols,
+                "podMonitoring": pod_monitorings[0] if pod_monitorings else None,
+                "sandbox": sandboxes[0] if sandboxes else None,
+                "substrate": substrates[0] if substrates else None,
+                "agentGateways": gateways,
+            }
+        ]
+
+    bundles: list[dict[str, Any]] = []
+    for dep in deployments:
+        dep_ns = str(dep.get("metadata", {}).get("namespace", "default"))
+        ns_obj = namespaces.get(dep_ns) or (next(iter(namespaces.values()), None) if len(namespaces) == 1 else None)
+        dep_pdbs = [p for p in pdbs if str(p.get("metadata", {}).get("namespace", dep_ns)) == dep_ns]
+        dep_hpas = [h for h in hpas if str(h.get("metadata", {}).get("namespace", dep_ns)) == dep_ns]
+        dep_nps = [n for n in netpols if str(n.get("metadata", {}).get("namespace", dep_ns)) == dep_ns]
+        dep_pms = [m for m in pod_monitorings if str(m.get("metadata", {}).get("namespace", dep_ns)) == dep_ns]
+        bundles.append(
+            {
+                "kind": "GkeAgentBundle",
+                "cluster": cluster or None,
+                "namespace": ns_obj,
+                "deployment": dep,
+                "pdb": dep_pdbs[0] if dep_pdbs else None,
+                "hpa": dep_hpas[0] if dep_hpas else None,
+                "networkPolicies": dep_nps,
+                "podMonitoring": dep_pms[0] if dep_pms else None,
+                "sandbox": sandboxes[0] if sandboxes else None,
+                "substrate": substrates[0] if substrates else None,
+                "agentGateways": gateways,
+            }
+        )
+    return bundles
+
+
 def inspect_pasted_json(
     raw_json: str,
     project_id_hint: str = "",
     region_hint: str = "us-central1",
 ) -> dict[str, Any]:
-    """Parses user-pasted CLI JSON output (Cloud Run service/list or Agent Runtime engine/list)
-    without requiring any GCP IAM permissions on the server.
+    """Parses user-pasted CLI JSON output (Cloud Run, Agent Runtime, or GKE kubectl/gcloud)
+    including multi-JSON terminal streams without requiring any GCP IAM permissions on the server.
     """
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     cleaned = _sanitize_terminal_json(raw_json)
     if not cleaned:
         raise ValueError("붙여넣은 JSON 내용이 비어 있습니다. 터미널 명령어 실행 결과를 붙여넣어 주세요.")
 
-    parsed = json.loads(cleaned, strict=False)
+    docs = _parse_json_stream(cleaned)
     results: list[dict[str, Any]] = []
 
-    # Case 1: Array of Cloud Run services (`gcloud run services list --format=json`)
-    if isinstance(parsed, list):
-        for item in parsed:
-            if isinstance(item, dict) and ("spec" in item or "metadata" in item):
-                p_id, reg, s_name = _extract_cloud_run_meta(item, project_id_hint, region_hint)
-                results.append(_evaluate_cloud_run_service(p_id, reg, s_name, item, now_str))
+    # Multi-JSON stream (e.g., `kubectl get deploy... -o json; kubectl get ns... -o json; gcloud container clusters describe... --format=json`)
+    if len(docs) > 1:
+        has_any_gke = any(
+            (isinstance(d, dict) and (_is_k8s_gke_resource(d) or _is_k8s_list_dict(d) or _is_gke_cluster_dict(d) or d.get("kind") == "GkeAgentBundle"))
+            or (isinstance(d, list) and any(isinstance(x, dict) and (_is_k8s_gke_resource(x) or _is_k8s_list_dict(x) or _is_gke_cluster_dict(x)) for x in d))
+            for d in docs
+        )
+        if has_any_gke:
+            for bundle in _group_k8s_items_into_bundles(docs):
+                p_id, reg, w_name = _extract_gke_meta(bundle, project_id_hint, region_hint)
+                results.append(_evaluate_gke_workload(p_id, reg, w_name, bundle, now_str))
+            if not results:
+                raise ValueError("유효한 Cloud Run, Agent Runtime(ReasoningEngine), 또는 GKE(kubectl / gcloud container) JSON 형식을 찾지 못했습니다.")
+            return {"count": len(results), "results": results}
 
-    elif isinstance(parsed, dict):
-        # Case 2: `{"reasoningEngines": [...]}` from Agent Runtime list API
-        if "reasoningEngines" in parsed and isinstance(parsed["reasoningEngines"], list):
-            for eng in parsed["reasoningEngines"]:
-                disp = eng.get("displayName", "")
-                spec = eng.get("spec", {})
-                if not disp and not spec.get("agentFramework") and not spec.get("packageSpec"):
-                    continue
-                p_id, reg, e_id = _extract_reasoning_engine_meta(eng, project_id_hint, region_hint)
-                results.append(_evaluate_agent_runtime_engine(p_id, reg, e_id, eng, now_str))
+    for parsed in docs:
+        # Case 1: Array of resources (`gcloud run services list`, `gcloud container clusters list`, or K8s array / `[kubectl_list, cluster]`)
+        if isinstance(parsed, list):
+            if any(_is_k8s_gke_resource(item) or _is_k8s_list_dict(item) for item in parsed if isinstance(item, dict)):
+                for bundle in _group_k8s_items_into_bundles(parsed):
+                    p_id, reg, w_name = _extract_gke_meta(bundle, project_id_hint, region_hint)
+                    results.append(_evaluate_gke_workload(p_id, reg, w_name, bundle, now_str))
+            else:
+                for item in parsed:
+                    if isinstance(item, dict) and _is_gke_cluster_dict(item):
+                        bundle = {"kind": "GkeAgentBundle", "cluster": item}
+                        p_id, reg, w_name = _extract_gke_meta(bundle, project_id_hint, region_hint)
+                        results.append(_evaluate_gke_workload(p_id, reg, w_name, bundle, now_str))
+                    elif isinstance(item, dict) and ("spec" in item or "metadata" in item):
+                        p_id, reg, s_name = _extract_cloud_run_meta(item, project_id_hint, region_hint)
+                        results.append(_evaluate_cloud_run_service(p_id, reg, s_name, item, now_str))
 
-        # Case 3: `{"items": [...]}` from Cloud Run v1 list API
-        elif "items" in parsed and isinstance(parsed["items"], list):
-            for item in parsed["items"]:
-                p_id, reg, s_name = _extract_cloud_run_meta(item, project_id_hint, region_hint)
-                results.append(_evaluate_cloud_run_service(p_id, reg, s_name, item, now_str))
+        elif isinstance(parsed, dict):
+            # Case 2: `{"reasoningEngines": [...]}` from Agent Runtime list API
+            if "reasoningEngines" in parsed and isinstance(parsed["reasoningEngines"], list):
+                for eng in parsed["reasoningEngines"]:
+                    disp = eng.get("displayName", "")
+                    spec = eng.get("spec", {})
+                    if not disp and not spec.get("agentFramework") and not spec.get("packageSpec"):
+                        continue
+                    p_id, reg, e_id = _extract_reasoning_engine_meta(eng, project_id_hint, region_hint)
+                    results.append(_evaluate_agent_runtime_engine(p_id, reg, e_id, eng, now_str))
 
-        # Case 4: Single Agent Runtime ReasoningEngine JSON
-        elif "reasoningEngines/" in str(parsed.get("name", "")) or "deploymentSpec" in parsed.get("spec", {}) or "packageSpec" in parsed.get("spec", {}):
-            p_id, reg, e_id = _extract_reasoning_engine_meta(parsed, project_id_hint, region_hint)
-            results.append(_evaluate_agent_runtime_engine(p_id, reg, e_id, parsed, now_str))
+            # Case 3: GKE Agent Bundle JSON (1-click sample or combined cluster + K8s manifests)
+            elif parsed.get("kind") == "GkeAgentBundle" or (
+                any(k in parsed for k in ("deployment", "cluster", "sandbox", "substrate"))
+                and "reasoningEngines" not in parsed
+                and not str(parsed.get("apiVersion", "")).startswith("serving.knative.dev")
+            ):
+                p_id, reg, w_name = _extract_gke_meta(parsed, project_id_hint, region_hint)
+                results.append(_evaluate_gke_workload(p_id, reg, w_name, parsed, now_str))
 
-        # Case 5: Single Cloud Run Service JSON (`gcloud run services describe <NAME> --format=json`)
-        else:
-            p_id, reg, s_name = _extract_cloud_run_meta(parsed, project_id_hint, region_hint)
-            results.append(_evaluate_cloud_run_service(p_id, reg, s_name, parsed, now_str))
+            # Case 4: `{"items": [...]}` — distinguish Kubernetes List (`kubectl get ... -o json`) vs Cloud Run v1 List
+            elif "items" in parsed and isinstance(parsed["items"], list):
+                items = parsed["items"]
+                if _is_k8s_list_dict(parsed):
+                    for bundle in _group_k8s_items_into_bundles(items):
+                        p_id, reg, w_name = _extract_gke_meta(bundle, project_id_hint, region_hint)
+                        results.append(_evaluate_gke_workload(p_id, reg, w_name, bundle, now_str))
+                else:
+                    for item in items:
+                        p_id, reg, s_name = _extract_cloud_run_meta(item, project_id_hint, region_hint)
+                        results.append(_evaluate_cloud_run_service(p_id, reg, s_name, item, now_str))
+
+            # Case 5: Single Kubernetes Resource (`kubectl get deployment ... -o json`, SandboxTemplate, WorkerPool, etc.)
+            elif _is_k8s_gke_resource(parsed):
+                for bundle in _group_k8s_items_into_bundles([parsed]):
+                    p_id, reg, w_name = _extract_gke_meta(bundle, project_id_hint, region_hint)
+                    results.append(_evaluate_gke_workload(p_id, reg, w_name, bundle, now_str))
+
+            # Case 6: Single GKE Cluster JSON (`gcloud container clusters describe ... --format=json`)
+            elif _is_gke_cluster_dict(parsed):
+                bundle = {"kind": "GkeAgentBundle", "cluster": parsed}
+                p_id, reg, w_name = _extract_gke_meta(bundle, project_id_hint, region_hint)
+                results.append(_evaluate_gke_workload(p_id, reg, w_name, bundle, now_str))
+
+            # Case 7: Single Agent Runtime ReasoningEngine JSON
+            elif "reasoningEngines/" in str(parsed.get("name", "")) or "deploymentSpec" in parsed.get("spec", {}) or "packageSpec" in parsed.get("spec", {}):
+                p_id, reg, e_id = _extract_reasoning_engine_meta(parsed, project_id_hint, region_hint)
+                results.append(_evaluate_agent_runtime_engine(p_id, reg, e_id, parsed, now_str))
+
+            # Case 8: Single Cloud Run Service JSON (`gcloud run services describe <NAME> --format=json`)
+            else:
+                p_id, reg, s_name = _extract_cloud_run_meta(parsed, project_id_hint, region_hint)
+                results.append(_evaluate_cloud_run_service(p_id, reg, s_name, parsed, now_str))
 
     if not results:
-        raise ValueError("유효한 Cloud Run 서비스 또는 Agent Runtime(ReasoningEngine) JSON 형식을 찾지 못했습니다.")
+        raise ValueError("유효한 Cloud Run, Agent Runtime(ReasoningEngine), 또는 GKE(kubectl / gcloud container) JSON 형식을 찾지 못했습니다.")
 
     return {
         "count": len(results),
@@ -347,6 +885,85 @@ def inspect_pasted_json(
 
 def get_sample_runtime_json(runtime_type: str = "cloud_run") -> dict[str, Any]:
     """Returns a realistic sample JSON payload so users can test the paste-and-analyze workflow with 1 click."""
+    if runtime_type == "gke":
+        return {
+            "kind": "GkeAgentBundle",
+            "cluster": {
+                "name": "gke-enterprise-agent",
+                "location": "us-central1",
+                "currentMasterVersion": "1.37.2-gke.1042000",
+                "autopilot": {"enabled": True},
+                "networkConfig": {
+                    "datapathProvider": "ADVANCED_DATAPATH",
+                    "defaultEnablePrivateNodes": True,
+                },
+                "workloadIdentityConfig": {
+                    "workloadPool": "geap-sandbox-kwlee.svc.id.goog",
+                },
+            },
+            "namespace": {
+                "apiVersion": "v1",
+                "kind": "Namespace",
+                "metadata": {
+                    "name": "gke-enterprise-agent",
+                    "labels": {
+                        "kubernetes.io/metadata.name": "gke-enterprise-agent",
+                    },
+                },
+            },
+            "deployment": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {
+                    "name": "gke-enterprise-agent",
+                    "namespace": "gke-enterprise-agent",
+                    "labels": {
+                        "app": "gke-enterprise-agent",
+                        "created-by": "agents-cli",
+                    },
+                },
+                "spec": {
+                    "replicas": 1,
+                    "template": {
+                        "metadata": {
+                            "labels": {
+                                "app": "gke-enterprise-agent",
+                            },
+                        },
+                        "spec": {
+                            "serviceAccountName": "gke-enterprise-agent-ksa",
+                            "containers": [
+                                {
+                                    "name": "gke-enterprise-agent",
+                                    "image": "us-central1-docker.pkg.dev/geap-sandbox-kwlee/agent-repo/gke-enterprise-agent:latest",
+                                    "ports": [{"containerPort": 8080}],
+                                    "resources": {
+                                        "requests": {"cpu": "1", "memory": "4Gi"},
+                                        "limits": {"cpu": "1", "memory": "4Gi"},
+                                    },
+                                    "env": [
+                                        {"name": "GOOGLE_GENAI_USE_ENTERPRISE", "value": "true"},
+                                        {"name": "GOOGLE_CLOUD_PROJECT", "value": "geap-sandbox-kwlee"},
+                                        {"name": "GOOGLE_CLOUD_LOCATION", "value": "global"},
+                                        {"name": "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", "value": "true"},
+                                        {"name": "MCP_SERVER_URL", "value": "https://currency-mcp-server-r6j5nyqrla-uc.a.run.app/mcp"},
+                                    ],
+                                    "startupProbe": {"tcpSocket": {"port": 8080}},
+                                    "readinessProbe": {"tcpSocket": {"port": 8080}},
+                                }
+                            ],
+                        },
+                    },
+                },
+            },
+            "pdb": None,
+            "hpa": None,
+            "networkPolicies": [],
+            "podMonitoring": None,
+            "sandbox": None,
+            "substrate": None,
+            "agentGateways": [],
+        }
     if runtime_type == "agent_runtime":
         return {
             "name": "projects/geap-sandbox-kwlee/locations/us-central1/reasoningEngines/2584329788197961728",
@@ -417,7 +1034,7 @@ def get_sample_runtime_json(runtime_type: str = "cloud_run") -> dict[str, Any]:
     }
 
 
-def _evaluate_cloud_run_service(
+def _evaluate_cloud_run_service_legacy(
     project_id: str,
     region: str,
     service_name: str,
@@ -527,11 +1144,12 @@ def _evaluate_cloud_run_service(
         "title": "스케일링 · 콜드스타트 · CPU 할당 정책 (SLA vs 비용 트레이드오프)",
         "status": r11_status,
         "current_state": r11_current,
-        "recommended_state": "트래픽 패턴·지연 SLA에 따라 결정 (간헐 트래픽: min=0 + cpu-boost / 상시 SLA·비동기 후처리: min>=1 + no-cpu-throttling)",
+        "recommended_state": "트래픽 패턴·지연 SLA에 따라 결정 (간헐 트래픽: min=0 + cpu-boost / 상시 SLA·비동기 Memory Bank·OTel flush: min>=1 + --no-cpu-throttling)",
         "why_it_matters": (
             "minScale=0 + startup-cpu-boost=true 조합은 트래픽이 간헐적이거나 유휴 비용을 줄여야 하는 환경에서 합리적인 설정입니다. "
-            "반면 첫 응답 지연 SLA가 엄격하거나 응답 반환 후 백그라운드 작업(OTel 비동기 flush 등)이 실행된다면 "
-            "min-instances >= 1 및 --no-cpu-throttling(CPU Always-On)을 검토하세요."
+            "반면 Cloud Run 기본값(--cpu-throttling / cpu_idle=true)은 HTTP 응답 반환 직후 컨테이너 CPU를 즉시 스로틀링하므로, "
+            "ADK의 비동기 after_agent_callback(Memory Bank 저장)이나 OpenTelemetry 배치 스팬이 유실·동결될 수 있습니다. "
+            "비동기 후처리 또는 엄격한 첫 응답 SLA가 있다면 min-instances >= 1 및 --no-cpu-throttling(cpu_idle=false)을 적용하세요."
         ),
         "how_to_fix_title": "원하는 스케일링 정책 적용 (SLA·예산에 맞게 숫자 조정)",
         "gcloud_cmd": (
@@ -554,28 +1172,26 @@ def _evaluate_cloud_run_service(
     is_default_sizing = (abs(cpu_cores - 1.0) < 0.01 and mem_mib == 512 and concurrency == 80)
     r12_status = "REVIEW"
     if is_default_sizing:
-        r12_current = f"CPU={cpu_str}, Memory={mem_str}, Concurrency={concurrency}, Timeout={timeout_sec}s (Cloud Run 기본값 그대로 사용 중)"
+        r12_current = f"CPU={cpu_str}, Memory={mem_str}, Concurrency={concurrency} (Cloud Run 기본 사이징)"
     else:
-        r12_current = f"CPU={cpu_str}, Memory={mem_str}, Concurrency={concurrency}, Timeout={timeout_sec}s (사용자 커스텀 설정됨)"
+        r12_current = f"CPU={cpu_str}, Memory={mem_str}, Concurrency={concurrency} (사용자 커스텀 설정됨)"
 
     checks.append({
         "id": "R1.2",
         "domain": "1. 런타임 & 스케일링",
         "check_type": "WORKLOAD_TUNING",
         "verification_scope": "WORKLOAD_TUNING",
-        "title": "CPU · 메모리 · 동시성(Concurrency) 사이징 (성능 테스트 기반 산정 필요)",
+        "title": "CPU · 메모리 · 동시성(Concurrency) 사이징 (부하 테스트 기반 확인)",
         "status": r12_status,
         "current_state": r12_current,
-        "recommended_state": "에이전트별 부하 테스트(실제 메모리 사용량·P95 지연·동시 요청 수) 측정 후 직접 결정 (임의 고정값 권장 불가)",
+        "recommended_state": "부하 테스트(Locust) 기반 CPU/Memory/Concurrency 확정 (자동 상향 금지)",
         "why_it_matters": (
-            f"JSON만으로는 {service_name}의 실제 피크 메모리·CPU 사용량을 알 수 없습니다. "
-            "경량 API 래퍼형 에이전트는 512Mi~1Gi로도 충분할 수 있고, 대용량 문서·로컬 캐시·다수 동시 스트리밍을 처리하면 더 큰 메모리가 필요합니다. "
-            "다만 현재 값이 Cloud Run 기본값(512Mi / 동시성 80)이라면, 실제 예상 트래픽으로 부하 테스트를 수행해 "
-            "OOM이나 스레드 경합이 없는 적정 수치를 확정하세요."
+            f"JSON만으로는 {service_name}의 실제 피크 메모리·CPU 사용량을 알 수 없으므로 부하 테스트(`tests/load_test/`) 기반으로 적정 스펙을 확정해야 합니다. "
+            "동시성(`concurrency`)을 높일 때는 요청당 컨텍스트 메모리에 비례해 메모리(`memory`)를 함께 조정하세요."
         ),
-        "how_to_fix_title": "부하 테스트로 확정한 CPU / Memory / Concurrency 값 반영",
+        "how_to_fix_title": "부하 테스트 기반 스펙 반영",
         "gcloud_cmd": (
-            f"# ⚠️ 아래 수치는 예시이며, 부하 테스트 결과에 맞춰 직접 수정 후 실행하세요\n"
+            f"# ⚠️ 아래 CPU/Memory/Concurrency는 부하 테스트 결과에 맞춰 직접 수정 후 실행하세요\n"
             f"gcloud run services update {service_name} \\\n"
             f"  --region={region} \\\n"
             f"  --project={project_id} \\\n"
@@ -587,7 +1203,7 @@ def _evaluate_cloud_run_service(
             f'max_instance_request_concurrency = {concurrency}\n'
             f'containers {{\n  resources {{\n    limits = {{\n      cpu    = "{cpu_str}"\n      memory = "{mem_str}"\n    }}\n  }}\n}}'
         ),
-        "console_guide": f"Cloud Monitoring에서 {service_name}의 메모리/CPU 사용률과 컨테이너 인스턴스 수를 확인한 뒤, 부하 테스트 결과에 맞춰 적정 스펙을 설정하세요.",
+        "console_guide": f"Cloud Monitoring에서 {service_name}의 메모리/CPU 사용률과 응답 시간을 확인한 뒤, 부하 테스트 결과에 맞춰 스펙을 설정하세요.",
     })
 
     # 3. [R1.3] Health Probes & Execution Environment
@@ -848,9 +1464,9 @@ def _evaluate_cloud_run_service(
         )
 
     r42_verify_list_cmd = (
-        f"gcloud beta agent-registry mcp-servers list --location={region} --project={project_id}"
+        f"gcloud agent-registry mcp-servers list --location={region} --project={project_id}"
         if is_mcp_server
-        else f"gcloud beta agent-registry agents list --location={region} --project={project_id}"
+        else f"gcloud agent-registry agents list --location={region} --project={project_id}"
     )
 
     checks.append({
@@ -903,49 +1519,58 @@ def _evaluate_cloud_run_service(
         "console_guide": f"Agent Registry 콘솔 또는 `{r42_verify_list_cmd}`에서 {service_name}가 자동 등록되었는지 확인하세요.",
     })
 
-    # 9. [R4.3] Cloud Run Agent Gateway Staged Adoption Advisory & Model Armor Governance
+    # 9. [R4.3 -> CR-S4] Agent Gateway for Cloud Run (Preview) — 조건부: MCP·외부 도구 호출
     has_guardrail_env = env_map.get("MODEL_ARMOR_ENABLED", "").lower() == "true" or "MODEL_ARMOR_TEMPLATE_ID" in env_map
-    if has_guardrail_env:
+    agw_annotations = [
+        f"{k}={v}"
+        for k, v in {**meta_ann, **tmpl_ann}.items()
+        if "agent-gateway" in k.lower() or "agentgateway" in k.lower()
+    ]
+    if agw_annotations:
         r43_status = "GREEN"
-        r43_current = "Model Armor 관련 환경변수 감지됨 (MODEL_ARMOR_ENABLED / TEMPLATE_ID)"
+        r43_current = f"Agent Gateway 연결 감지됨 ({', '.join(agw_annotations[:2])})" + (
+            " · Model Armor env 감지됨" if has_guardrail_env else ""
+        )
     else:
         r43_status = "REVIEW"
         r43_current = (
-            "Cloud Run은 검증된 GA 인프라 보안(Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor) 위에 "
-            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근 권장 (JSON만으로 앞단 프록시·Model Armor 판별 불가)"
+            "Agent Gateway 연결 미감지 — MCP·외부 도구를 호출하는 에이전트라면 Agent Gateway for Cloud Run(Preview) 적용 검토"
+            + (" · Model Armor env 감지됨" if has_guardrail_env else "")
+            + " (외부 도구 호출이 없으면 해당 없음)"
         )
 
     checks.append({
         "id": "R4.3",
-        "domain": "4. 보안, 신원 & 거버넌스",
-        "check_type": "CODE_VERIFY",
-        "verification_scope": "CODE_VERIFY",
-        "title": "Agent Gateway (Cloud Run 단계적 도입 가이드) & Model Armor 거버넌스",
+        "domain": "Security",
+        "check_type": "ARCH_DECISION",
+        "verification_scope": "ARCH_DECISION",
+        "title": "Agent Gateway for Cloud Run (외부 호출 통제 · Preview)",
         "status": r43_status,
         "current_state": r43_current,
         "recommended_state": (
-            "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
-            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다."
+            "MCP·외부 도구를 호출하는 에이전트: Agent Gateway for Cloud Run(Preview)으로 외부 호출에 접근 정책 적용 "
+            "(초기에는 DRY_RUN으로 로그 검증 후 강제) / 외부 도구 호출이 없으면 해당 없음"
         ),
         "why_it_matters": (
-            "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
-            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다. "
-            "Cloud Run `describe` JSON은 앞단 SWP/IAP/Model Armor Floor Settings나 컨테이너 내부 콜백을 노출하지 않으므로, "
-            "조직의 AI 보안 거버넌스 성숙도에 맞춰 단계적으로 적용 여부를 확인하세요."
+            "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다. "
+            "Agent Gateway for Cloud Run(Preview)을 거치게 하면 MCP·A2A·외부 API 호출에 중앙 접근 정책과 Model Armor 검사를 "
+            "코드 변경 없이 적용할 수 있습니다. `describe` JSON만으로는 게이트웨이 정책 내용까지 확인할 수 없으므로 아래 읽기 전용 명령으로 함께 확인하세요."
         ),
-        "how_to_fix_title": "Model Armor Floor Settings 확인 및 로컬 핵심 점검 (15개 항목)",
+        "how_to_fix_title": "Agent Gateway for Cloud Run 구성 확인 (MCP·외부 도구 호출 시)",
         "gcloud_cmd": (
-            f"# [선택 거버넌스] 프로젝트 단위 Model Armor Floor Settings 정책 확인\n"
-            f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n"
-            f"# 로컬 코드 전체 점검 (15개 핵심 항목 · Cloud Run C4.4 단계적 도입 가이드 주석 포함):\n"
-            f"uv run prod-ready scan <내_로컬_에이전트_폴더>"
+            f"# [Step 1 · 읽기 전용 확인] 프로젝트의 Agent Gateway 목록 조회\n"
+            f"gcloud beta network-services agent-gateways list --location={region} --project={project_id}\n\n"
+            f"# [Step 2] 로컬 코드에 CR-S4(Agent Gateway) 구성 생성\n"
+            f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target cloud_run --items CR-S4\n\n"
+            f"# [선택] 프로젝트 단위 Model Armor Floor Settings 확인\n"
+            f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\""
         ),
         "terraform_snippet": (
-            '# Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에\n'
-            '# Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다.\n'
-            '# (Agent Gateway 자동 리소스 생성은 Agent Runtime 타겟에서 우선 제공)'
+            "# Agent Gateway for Cloud Run (Preview)\n"
+            "# MCP·외부 도구 호출을 게이트웨이로 보내고, 초기에는 DRY_RUN으로 정책을 검증한 뒤 강제합니다.\n"
+            "# 자세한 리소스 정의는 CR-S4 패치 결과(production_ready.tf)를 참고하세요."
         ),
-        "console_guide": "이 항목은 배포를 차단하지 않는 아키텍처 거버넌스 참고(REVIEW) 항목입니다. GA 인프라 보안(Direct VPC + SWP/VPC-SC + IAP + Model Armor) 위에 Self-Managed AGW를 단계적으로 도입하세요.",
+        "console_guide": "MCP·외부 도구를 호출하는 에이전트라면 Agent Gateway for Cloud Run(Preview)으로 외부 호출을 통제하세요. 외부 도구 호출이 없으면 이 항목은 해당 없습니다.",
     })
 
     # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT)
@@ -989,44 +1614,6 @@ def _evaluate_cloud_run_service(
             'env {\n  name  = "OTEL_SEMCONV_STABILITY_OPT_IN"\n  value = "gen_ai_latest_experimental"\n}'
         ),
         "console_guide": f"Cloud Run 콘솔 > {service_name} > [변수 및 보안 비밀] 탭에서 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT`를 추가하세요.",
-    })
-
-    # 10. [R6.1] Gemini Endpoint Location (Global DSQ vs Regional Data Residency)
-    loc_val = env_map.get("GOOGLE_CLOUD_LOCATION", "")
-    is_global_loc = loc_val.lower() == "global"
-    if is_global_loc:
-        r61_status = "GREEN"
-        r61_current = "GOOGLE_CLOUD_LOCATION=global 설정 확인됨 (Global Dynamic Shared Quota 활용)"
-    elif loc_val:
-        r61_status = "REVIEW"
-        r61_current = f"GOOGLE_CLOUD_LOCATION={loc_val} (단일 리전 고정 — 데이터 레지던시 규제 때문이라면 정상, 쿼터 분산이 우선이면 global 검토)"
-    else:
-        r61_status = "AMBER"
-        r61_current = "GOOGLE_CLOUD_LOCATION 환경변수 미감지 (코드 기본값 확인 또는 global 엔드포인트 지정 권장)"
-
-    checks.append({
-        "id": "R6.1",
-        "domain": "6. FinOps 비용 & 쿼터 회복력",
-        "check_type": "RUNTIME_VERIFIED" if is_global_loc else ("ARCH_DECISION" if loc_val else "RUNTIME_RECOMMENDED"),
-        "verification_scope": "RUNTIME_VERIFIED" if (is_global_loc or not loc_val) else "ARCH_DECISION",
-        "title": "Gemini 엔드포인트 위치 (Global DSQ vs 데이터 레지던시)",
-        "status": r61_status,
-        "current_state": r61_current,
-        "recommended_state": "데이터 레지던시 제약이 없다면 GOOGLE_CLOUD_LOCATION=global (429 쿼터 분산) + 로컬 코드 내 루프 상한 확인",
-        "why_it_matters": (
-            "`GOOGLE_CLOUD_LOCATION=global`을 사용하면 Google Cloud의 Global Dynamic Shared Quota(DSQ)를 통해 429 오류를 줄일 수 있습니다. "
-            "단, 특정 국가/리전 데이터 레지던시(예: `asia-northeast3`, `europe-west4`) 준수가 필수인 규제 환경에서는 의도적으로 리전을 고정해야 합니다. "
-            "(※ 에이전트 무한 도구 루프 방지 및 토큰 상한 로직은 `describe` JSON에서 보이지 않으므로 로컬 소스 코드(Agent Skill)에서 확인하세요.)"
-        ),
-        "how_to_fix_title": "Global 엔드포인트 지정 (데이터 레지던시 제약이 없는 경우)",
-        "gcloud_cmd": (
-            f"gcloud run services update {service_name} \\\n"
-            f"  --region={region} \\\n"
-            f"  --project={project_id} \\\n"
-            f"  --update-env-vars=\"GOOGLE_CLOUD_LOCATION=global\""
-        ),
-        "terraform_snippet": 'env {\n  name  = "GOOGLE_CLOUD_LOCATION"\n  value = "global"\n}',
-        "console_guide": f"Cloud Run 콘솔 > {service_name} > [변수 및 보안 비밀]에서 `GOOGLE_CLOUD_LOCATION` 값을 서비스의 레지던시·쿼터 정책에 맞게 설정하세요.",
     })
 
     verified_checks = [c for c in checks if c["status"] in ("GREEN", "AMBER", "RED")]
@@ -1086,15 +1673,17 @@ def _evaluate_cloud_run_service(
             "hardcoded_remote_urls": hardcoded_remote_urls,
         },
         "combined_runtime_fix_cmd": combined_gcloud,
+        "platform_guarantees": [],
         "stage1_skill_cmd": (
-            "# 배포 전 로컬 PC (Agent Skill): 15개 핵심 항목(Agent Identity/Registry, 루프 방지, Non-Root, OTel 프라이버시 등) 점검 및 패치\n"
-            "uv run prod-ready scan <내_로컬_에이전트_코드_폴더>"
+            "# 배포 전 로컬 PC (Agent Skill): 체크리스트 v3 Cloud Run 항목(Features · Optimize · Delivery & Eval · Observability · Security) 점검 및 패치\n"
+            "# 일반 플랫폼 Best Practice는 플랫폼 Skill 참고: https://github.com/google/skills/tree/main/skills/cloud\n"
+            "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target cloud_run"
         ),
         "checks": checks,
     }
 
 
-def _evaluate_agent_runtime_engine(
+def _evaluate_agent_runtime_engine_legacy(
     project_id: str,
     region: str,
     engine_id: str,
@@ -1135,60 +1724,29 @@ def _evaluate_agent_runtime_engine(
 
     otel_capture = env_map.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "")
     loc_val = env_map.get("GOOGLE_CLOUD_LOCATION", "")
-    is_global_loc = loc_val.lower() == "global"
     has_guardrail = env_map.get("MODEL_ARMOR_ENABLED", "").lower() == "true" or "MODEL_ARMOR_TEMPLATE_ID" in env_map
     min_inst = dep_spec.get("minInstances")
     max_inst = dep_spec.get("maxInstances")
 
+    ar_platform_guarantees = [
+        (
+            f"관리형 컨테이너 헬스체크 & 오토스케일링 (Managed Probes & Auto-Scaling): "
+            f"Agent Runtime({spec.get('agentFramework', 'google-adk')}) 플랫폼이 헬스 프로브·컨테이너 수명주기·오토스케일링을 자동 관리합니다"
+            + (f" (현재 minInstances={min_inst}, maxInstances={max_inst})" if (min_inst is not None or max_inst is not None) else "")
+            + "."
+        ),
+        (
+            f"[AR-F1 · AR-F2] 관리형 영속 세션 저장 · 관리형 장기 기억 저장 (VertexAiSessionService · VertexAiMemoryBankService): "
+            f"별도 Cloud SQL/Redis 없이 agentengine:// 기반 영속 세션 및 장기 메모리를 플랫폼이 기본 제공합니다 "
+            f"(현재 ADK_SESSION_SERVICE_URI={env_map.get('ADK_SESSION_SERVICE_URI', 'agentengine://')})."
+        ),
+        (
+            "제로 트러스트 IAM 인바운드 인증 (IAM-Only Inbound): "
+            "퍼블릭 무인증 웹 URL을 노출하지 않으며, Agent Platform IAM 권한이 있는 호출자만 허용합니다."
+        ),
+    ]
+
     checks = [
-        {
-            "id": "R1.1",
-            "domain": "1. 런타임 & 스케일링",
-            "check_type": "MANAGED_NATIVE",
-            "verification_scope": "RUNTIME_VERIFIED",
-            "title": "Agent Runtime 관리형 스케일링 & 헬스체크 (플랫폼 자동 제공)",
-            "status": "GREEN",
-            "current_state": (
-                f"Agent Runtime 관리형 컨테이너 ({spec.get('agentFramework', 'google-adk')})"
-                + (f" · minInstances={min_inst}, maxInstances={max_inst}" if (min_inst is not None or max_inst is not None) else "")
-            ),
-            "recommended_state": "플랫폼 기본 관리형 제공 (minInstances / maxInstances는 SLA·트래픽에 맞게 조정)",
-            "why_it_matters": "Agent Runtime은 인스턴스 오토스케일링과 컨테이너 헬스 프로브를 플랫폼이 자동으로 관리합니다.",
-            "how_to_fix_title": "✅ 플랫폼 기본 제공 (추가 조치 불필요)",
-            "gcloud_cmd": "# Agent Runtime 플랫폼이 자동으로 관리합니다.",
-            "terraform_snippet": "# Managed by Agent Runtime",
-            "console_guide": "조치 불필요 (필요 시 deploymentSpec의 minInstances/maxInstances만 트래픽에 맞춰 조정)",
-        },
-        {
-            "id": "R2.1",
-            "domain": "2. 세션 & 상태 영속성",
-            "check_type": "MANAGED_NATIVE",
-            "verification_scope": "RUNTIME_VERIFIED",
-            "title": "Managed Session Service & Memory Bank 영속 세션",
-            "status": "GREEN",
-            "current_state": f"ADK_SESSION_SERVICE_URI={env_map.get('ADK_SESSION_SERVICE_URI', 'agentengine://')}, Agent Runtime 내장 세션/메모리 지원",
-            "recommended_state": "agentengine:// 관리형 세션 및 Memory Bank 서비스",
-            "why_it_matters": "Agent Runtime은 별도의 Cloud SQL이나 Redis 구축 없이 플랫폼 내장 Session Service와 Memory Bank를 기본 제공합니다.",
-            "how_to_fix_title": "✅ 플랫폼 기본 제공 (추가 조치 불필요)",
-            "gcloud_cmd": "# Managed Session Service & Memory Bank가 플랫폼에 내장되어 있습니다.",
-            "terraform_snippet": "# Managed by Agent Runtime",
-            "console_guide": "조치 불필요",
-        },
-        {
-            "id": "R3.1",
-            "domain": "3. 네트워크 & 엣지 보안",
-            "check_type": "MANAGED_NATIVE",
-            "verification_scope": "RUNTIME_VERIFIED",
-            "title": "제로 트러스트 IAM 인바운드 인증 (퍼블릭 무인증 URL 미노출)",
-            "status": "GREEN",
-            "current_state": "Agent Platform IAM 인증 엔드포인트로만 호출 가능 (퍼블릭 무인증 노출 없음)",
-            "recommended_state": "Agent Platform IAM Policy 강제 인증",
-            "why_it_matters": "Agent Runtime은 공용 무인증 웹 URL을 노출하지 않고 IAM 권한이 있는 호출자만 허용합니다.",
-            "how_to_fix_title": "✅ 플랫폼 기본 제공 (추가 조치 불필요)",
-            "gcloud_cmd": "# Agent Platform IAM을 통해 인바운드가 보호됩니다.",
-            "terraform_snippet": "# IAM protected by default",
-            "console_guide": "조치 불필요",
-        },
         {
             "id": "R3.2",
             "domain": "3. 네트워크 & 엣지 보안",
@@ -1301,8 +1859,8 @@ def _evaluate_agent_runtime_engine(
             ),
             "how_to_fix_title": "Agent Gateway(DRY_RUN) 프로비저닝 및 Agent Runtime 연결",
             "gcloud_cmd": (
-                f"# [Step 1] 로컬 C4.4 하드닝으로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items C4.4\n\n"
+                f"# [Step 1] 로컬 AR-S3 조치로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-S3\n\n"
                 f"# [Step 2] Model Armor Floor Settings 정책 확인 (읽기 전용)\n"
                 f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n\n"
                 f"# [Step 3] Agent Gateway 연결 확인\n"
@@ -1315,7 +1873,7 @@ def _evaluate_agent_runtime_engine(
                 '  }\n'
                 '}'
             ),
-            "console_guide": "Agent Skill(`--target agent_runtime --items C4.4`)으로 `production_ready.tf`의 Agent Gateway(`iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
+            "console_guide": "Agent Skill(`--target agent_runtime --items AR-S3`)으로 `production_ready.tf`의 Agent Gateway(`iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
         },
         {
             "id": "R5.1",
@@ -1328,32 +1886,9 @@ def _evaluate_agent_runtime_engine(
             "recommended_state": "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = NO_CONTENT",
             "why_it_matters": f"현재 `{otel_capture or '미설정'}` 상태입니다. 프로덕션에서 고객 개인정보가 포함된 프롬프트 원문이 트레이스에 기록되지 않도록 `NO_CONTENT` 설정을 권장합니다.",
             "how_to_fix_title": "OTel 프라이버시 환경변수 NO_CONTENT 설정",
-            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --items C5.2",
+            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-OB1",
             "terraform_snippet": 'env {\n  name  = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"\n  value = "NO_CONTENT"\n}',
             "console_guide": "배포 설정에서 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` 값을 `NO_CONTENT`로 지정하세요.",
-        },
-        {
-            "id": "R6.1",
-            "domain": "6. FinOps 비용 & 쿼터 회복력",
-            "check_type": "RUNTIME_VERIFIED" if is_global_loc else ("ARCH_DECISION" if loc_val else "RUNTIME_RECOMMENDED"),
-            "verification_scope": "RUNTIME_VERIFIED" if (is_global_loc or not loc_val) else "ARCH_DECISION",
-            "title": "Gemini 엔드포인트 위치 (Global DSQ vs 데이터 레지던시)",
-            "status": "GREEN" if is_global_loc else ("REVIEW" if loc_val else "AMBER"),
-            "current_state": (
-                "GOOGLE_CLOUD_LOCATION=global 설정 확인됨 (Global Dynamic Shared Quota 활용)"
-                if is_global_loc
-                else (
-                    f"GOOGLE_CLOUD_LOCATION={loc_val} (단일 리전 고정 — 데이터 레지던시 규제 때문이라면 정상)"
-                    if loc_val
-                    else "GOOGLE_CLOUD_LOCATION 환경변수 미감지 (코드 기본값 확인 또는 global 지정 권장)"
-                )
-            ),
-            "recommended_state": "데이터 레지던시 제약이 없다면 GOOGLE_CLOUD_LOCATION=global + 로컬 코드 내 호출 상한 확인",
-            "why_it_matters": "데이터 레지던시 요건이 없다면 Global DSQ(`global`)로 429 쿼터 오류를 완화할 수 있습니다. 무한 루프 방지 로직은 로컬 소스 코드(Agent Skill)에서 확인하세요.",
-            "how_to_fix_title": "Global 엔드포인트 지정 및 코드 내 비용 가드 점검",
-            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --items C6.1,C6.2",
-            "terraform_snippet": 'env {\n  name  = "GOOGLE_CLOUD_LOCATION"\n  value = "global"\n}',
-            "console_guide": "데이터 레지던시·쿼터 정책에 맞춰 `GOOGLE_CLOUD_LOCATION`을 설정하고, 로컬 소스 코드에서 루프 상한 가드를 확인하세요.",
         },
     ]
 
@@ -1402,6 +1937,814 @@ def _evaluate_agent_runtime_engine(
             f"# ⚠️ 선택한 항목에 따라 UI에서 맞춤형 명령어가 동적으로 생성됩니다.\n"
             f"uvx google-agents-cli deploy --project={project_id} --region={region}"
         ),
-        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더>",
+        "platform_guarantees": ar_platform_guarantees,
+        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target agent_runtime  # 체크리스트 v3 Agent Runtime 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
         "checks": checks,
     }
+
+
+def _evaluate_gke_workload_legacy(
+    project_id: str,
+    region: str,
+    workload_name: str,
+    bundle: dict[str, Any],
+    now_str: str,
+) -> dict[str, Any]:
+    """Evaluates a GKE AI Agent workload bundle (GkeAgentBundle, kubectl List, Deployment, or GKE Cluster JSON)
+    in 100% Read-Only mode without arbitrary weighted scores.
+    """
+    cluster = bundle.get("cluster") or {}
+    ns_obj = bundle.get("namespace") or {}
+    deployment = bundle.get("deployment") or {}
+    pdb = bundle.get("pdb")
+    hpa = bundle.get("hpa")
+    netpols = bundle.get("networkPolicies") or ([] if bundle.get("networkPolicy") is None else [bundle["networkPolicy"]])
+    pod_monitoring = bundle.get("podMonitoring")
+    sandbox = bundle.get("sandbox")
+    substrate = bundle.get("substrate")
+    agent_gateways = bundle.get("agentGateways") or ([] if bundle.get("agentGateway") is None else [bundle["agentGateway"]])
+
+    has_cluster = bool(cluster)
+    has_deployment = bool(deployment)
+
+    # Cluster attributes
+    cluster_name = str(cluster.get("name") or workload_name)
+    master_version = str(cluster.get("currentMasterVersion") or "")
+    is_autopilot = bool(cluster.get("autopilot", {}).get("enabled")) if has_cluster else None
+    cluster_mode_label = (
+        "GKE Autopilot" if is_autopilot is True else ("GKE Standard" if is_autopilot is False else "클러스터 JSON 미포함 (K8s 매니페스트 기준)")
+    )
+    net_cfg = cluster.get("networkConfig") or {}
+    priv_cfg = cluster.get("privateClusterConfig") or {}
+    is_private_nodes = bool(
+        priv_cfg.get("enablePrivateNodes")
+        or net_cfg.get("defaultEnablePrivateNodes")
+        or (cluster.get("controlPlaneEndpointsConfig", {}).get("ipEndpointsConfig", {}).get("enabled") is False)
+    )
+    is_dataplane_v2 = (
+        str(net_cfg.get("datapathProvider", "")).upper() == "ADVANCED_DATAPATH"
+        or bool(is_autopilot)
+    )
+    workload_pool = str(cluster.get("workloadIdentityConfig", {}).get("workloadPool", ""))
+
+    # Deployment & Container attributes
+    dep_meta = deployment.get("metadata", {}) if isinstance(deployment, dict) else {}
+    dep_spec = deployment.get("spec", {}) if isinstance(deployment, dict) else {}
+    pod_template = dep_spec.get("template", {}) if isinstance(dep_spec, dict) else {}
+    pod_meta = pod_template.get("metadata", {}) if isinstance(pod_template, dict) else {}
+    pod_spec = pod_template.get("spec", {}) if isinstance(pod_template, dict) else {}
+    containers = pod_spec.get("containers", []) if isinstance(pod_spec, dict) else []
+    c0 = containers[0] if containers and isinstance(containers[0], dict) else {}
+
+    namespace_name = str(
+        dep_meta.get("namespace")
+        or ns_obj.get("metadata", {}).get("name")
+        or "default"
+    )
+    replicas = dep_spec.get("replicas")
+    runtime_class = str(pod_spec.get("runtimeClassName", ""))
+    ksa_name = str(pod_spec.get("serviceAccountName", ""))
+    automount_sa = pod_spec.get("automountServiceAccountToken")
+
+    res_req = c0.get("resources", {}).get("requests", {})
+    res_lim = c0.get("resources", {}).get("limits", {})
+    cpu_req = str(res_req.get("cpu", res_lim.get("cpu", "미지정")))
+    mem_req = str(res_req.get("memory", res_lim.get("memory", "미지정")))
+
+    env_list = c0.get("env", []) if isinstance(c0.get("env"), list) else []
+    env_map: dict[str, str] = {}
+    for e in env_list:
+        if isinstance(e, dict) and e.get("name"):
+            if "value" in e:
+                env_map[str(e["name"])] = str(e.get("value", ""))
+            elif "valueFrom" in e:
+                env_map[str(e["name"])] = "<Secret/ConfigMap>"
+
+    # Probes
+    startup_probe = c0.get("startupProbe") or {}
+    readiness_probe = c0.get("readinessProbe") or {}
+    liveness_probe = c0.get("livenessProbe") or {}
+    probes_present = [p for p in (startup_probe, readiness_probe, liveness_probe) if p]
+    uses_http_probe = any("httpGet" in p for p in probes_present)
+    uses_tcp_probe = any("tcpSocket" in p for p in probes_present) and not uses_http_probe
+    http_path = ""
+    for p in (readiness_probe, startup_probe, liveness_probe):
+        if isinstance(p, dict) and isinstance(p.get("httpGet"), dict):
+            http_path = str(p["httpGet"].get("path", "/"))
+            break
+
+    # Security context & Namespace PSS
+    pod_sc = pod_spec.get("securityContext") or {}
+    ctr_sc = c0.get("securityContext") or {}
+    run_as_non_root = bool(pod_sc.get("runAsNonRoot") or ctr_sc.get("runAsNonRoot"))
+    no_priv_esc = ctr_sc.get("allowPrivilegeEscalation") is False
+    drop_caps = [str(x).upper() for x in (ctr_sc.get("capabilities", {}).get("drop") or [])]
+    drops_all = "ALL" in drop_caps
+    seccomp_type = str(
+        (pod_sc.get("seccompProfile") or {}).get("type")
+        or (ctr_sc.get("seccompProfile") or {}).get("type")
+        or ""
+    )
+    has_hardened_sc = run_as_non_root and no_priv_esc and drops_all and seccomp_type == "RuntimeDefault"
+
+    ns_labels = (ns_obj.get("metadata", {}) or {}).get("labels", {}) if isinstance(ns_obj, dict) else {}
+    pss_enforce = str(ns_labels.get("pod-security.kubernetes.io/enforce", ""))
+    has_pss_restricted = pss_enforce == "restricted"
+    has_dedicated_ksa = bool(ksa_name and ksa_name != "default")
+
+    # Agent Identity & Registry labels
+    all_labels: dict[str, str] = {}
+    for src in (dep_meta.get("labels"), pod_meta.get("labels")):
+        if isinstance(src, dict):
+            all_labels.update({str(k): str(v) for k, v in src.items()})
+    all_annotations: dict[str, str] = {}
+    for src in (dep_meta.get("annotations"), pod_meta.get("annotations")):
+        if isinstance(src, dict):
+            all_annotations.update({str(k): str(v) for k, v in src.items()})
+    has_registry_label = (
+        all_labels.get("registry.gke.io/functional-type", "").upper() == "AGENT"
+        or all_annotations.get("registry.gke.io/functional-type", "").upper() == "AGENT"
+    )
+    spiffe_identity_type = (
+        all_annotations.get("iam.gke.io/spiffe-identity-type")
+        or all_annotations.get("iam.gke.io/identity")
+        or ""
+    )
+    has_spiffe_agent_identity = spiffe_identity_type.lower() in ("agent-identity", "agent_identity", "agent")
+
+    hardcoded_remote_urls = [
+        f"{k}={v}"
+        for k, v in env_map.items()
+        if any(tok in k.upper() for tok in ("MCP_SERVER", "MCP_URL", "A2A_", "REMOTE_AGENT"))
+        and v.startswith(("http://", "https://"))
+    ]
+
+    # NetworkPolicy structural analysis (do NOT confuse `ipBlock.except` with allowed CIDRs)
+    has_egress_netpol = False
+    allows_metadata_ip = False
+    blocks_metadata_ip = False
+    allows_nodelocal_dns = False
+    for np in netpols:
+        if not isinstance(np, dict):
+            continue
+        kind_np = str(np.get("kind", ""))
+        spec_np = np.get("spec") or {}
+        ptypes = [str(p) for p in (spec_np.get("policyTypes") or [])]
+        if kind_np == "FQDNNetworkPolicy" or "Egress" in ptypes or "egress" in spec_np:
+            has_egress_netpol = True
+            for rule in (spec_np.get("egress") or []):
+                if not isinstance(rule, dict):
+                    continue
+                for to_entry in (rule.get("to") or []):
+                    if not isinstance(to_entry, dict):
+                        continue
+                    ip_block = to_entry.get("ipBlock")
+                    if not isinstance(ip_block, dict):
+                        continue
+                    cidr = str(ip_block.get("cidr", ""))
+                    excepts = [str(x) for x in (ip_block.get("except") or [])]
+                    if cidr.startswith(("169.254.169.254", "169.254.169.252")):
+                        allows_metadata_ip = True
+                    if cidr.startswith("169.254.20.10"):
+                        allows_nodelocal_dns = True
+                    if any(ex.startswith("169.254.169.254") for ex in excepts):
+                        blocks_metadata_ip = True
+
+    # Execution pattern detection (Standard Pods vs Agent Sandbox vs Agent Substrate)
+    is_sandbox_pattern = bool(sandbox) or runtime_class.lower() in ("gvisor", "kata")
+    is_substrate_pattern = bool(substrate)
+    autopilot_substrate_conflict = (is_autopilot is True) and is_substrate_pattern
+    if is_substrate_pattern:
+        exec_pattern = "agent_substrate"
+        exec_pattern_label = "Agent Substrate on GKE (ate.dev/v1alpha1)"
+    elif is_sandbox_pattern:
+        exec_pattern = "agent_sandbox"
+        exec_pattern_label = "Agent Sandbox on GKE (샌드박스 격리)"
+    else:
+        exec_pattern = "standard_pods"
+        exec_pattern_label = "Standard GKE Pods (ADK Deployment)"
+
+    has_agent_gateway = bool(agent_gateways)
+
+    # Session persistence (require non-empty value so AGENT_ENGINE_SESSION_ID="" does not falsely pass)
+    session_env_keys = [
+        k for k, v in env_map.items()
+        if str(v).strip()
+        and any(
+            tok in k.upper()
+            for tok in (
+                "SESSION_SERVICE_URI",
+                "AGENT_ENGINE_SESSION",
+                "AGENT_ENGINE_ID",
+                "DATABASE_URL",
+                "REDIS_HOST",
+                "ALLOYDB",
+                "POSTGRES",
+            )
+        )
+    ]
+    has_persistent_session = bool(session_env_keys)
+
+    # Observability & Privacy
+    otel_capture = env_map.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "")
+    adk_capture_spans = env_map.get("ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", "").lower()
+    otel_privacy_ok = (otel_capture == "NO_CONTENT") and (adk_capture_spans != "true")
+    has_pod_monitoring = bool(pod_monitoring)
+
+    # FinOps / Gemini Location
+    loc_val = env_map.get("GOOGLE_CLOUD_LOCATION", "")
+
+    # R1.1 status (respect HPA minReplicas + check multi-zone topologySpreadConstraints)
+    has_pdb = bool(pdb)
+    has_hpa = bool(hpa)
+    hpa_min_replicas = ((hpa or {}).get("spec") or {}).get("minReplicas") if isinstance(hpa, dict) else None
+    effective_replicas = (
+        max(
+            int(replicas) if isinstance(replicas, int) else 0,
+            int(hpa_min_replicas) if isinstance(hpa_min_replicas, int) else 0,
+        )
+        or 1
+    )
+    topo_spreads = pod_spec.get("topologySpreadConstraints") or []
+    has_zone_spread = any(
+        isinstance(ts, dict) and str(ts.get("topologyKey", "")) == "topology.kubernetes.io/zone"
+        for ts in topo_spreads
+    )
+    grace_sec_raw = pod_spec.get("terminationGracePeriodSeconds")
+    grace_sec = int(grace_sec_raw) if isinstance(grace_sec_raw, int) else 30
+    has_pre_stop = bool(((c0.get("lifecycle") or {}).get("preStop")) if isinstance(c0, dict) else False)
+    has_graceful_drain = (grace_sec >= 60) and has_pre_stop
+
+    if has_deployment:
+        if effective_replicas >= 2 and has_pdb and has_hpa and has_zone_spread:
+            r11_status = "GREEN"
+        else:
+            r11_status = "AMBER"
+    else:
+        r11_status = "REVIEW"
+
+    r13_status = "GREEN" if has_graceful_drain else ("AMBER" if has_deployment else "REVIEW")
+
+    # R3.1 status
+    if (is_sandbox_pattern or is_substrate_pattern) and allows_metadata_ip:
+        r31_status = "RED"
+    elif not is_sandbox_pattern and not is_substrate_pattern and blocks_metadata_ip and not allows_metadata_ip:
+        # Standard WI Pod with 169.254.169.254 blocked via `except` breaks Workload Identity token minting
+        r31_status = "AMBER"
+    elif has_egress_netpol and (not has_cluster or (is_private_nodes and is_dataplane_v2)):
+        r31_status = "GREEN"
+    elif has_cluster and not is_private_nodes and not has_egress_netpol:
+        r31_status = "RED"
+    else:
+        r31_status = "AMBER"
+
+    # R4.1 status (cluster-only JSON cannot verify PSS/securityContext -> REVIEW, never False GREEN)
+    if has_deployment:
+        if has_hardened_sc and has_dedicated_ksa and (has_pss_restricted or not ns_obj):
+            r41_status = "GREEN" if has_pss_restricted else "AMBER"
+        elif not run_as_non_root or not drops_all or not no_priv_esc:
+            r41_status = "RED"
+        else:
+            r41_status = "AMBER"
+    else:
+        r41_status = "REVIEW" if workload_pool else "AMBER"
+
+    # GKE-S1 status (dedicated agent identity only; PSS / Non-Root are delegated to platform skills)
+    if has_deployment:
+        s1_status = "GREEN" if (has_dedicated_ksa or has_spiffe_agent_identity) else "RED"
+    else:
+        s1_status = "REVIEW" if workload_pool else "AMBER"
+
+    # R4.2 status
+    if not has_deployment:
+        r42_status = "REVIEW"
+    elif has_registry_label and not hardcoded_remote_urls:
+        r42_status = "GREEN"
+    else:
+        r42_status = "AMBER"
+
+    # R4.3 status
+    if autopilot_substrate_conflict:
+        r43_status = "RED"
+    elif has_agent_gateway or is_sandbox_pattern or is_substrate_pattern:
+        r43_status = "GREEN"
+    else:
+        r43_status = "AMBER"
+
+    # R5.1 status (unified OTel NO_CONTENT privacy check; no custom PodMonitoring CRD required)
+    if not has_deployment:
+        r51_status = "REVIEW"
+    else:
+        r51_status = "GREEN" if otel_privacy_ok else "AMBER"
+
+    checks = [
+        {
+            "id": "R1.1",
+            "domain": "1. 컴퓨트 & 탄력성",
+            "check_type": "RUNTIME_RECOMMENDED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "클러스터 모드 (Autopilot / Standard) & 가용성 (Replicas · 멀티존 분산 · PDB · HPA v2)",
+            "status": r11_status,
+            "current_state": (
+                f"{cluster_mode_label}"
+                + (f" ({master_version})" if master_version else "")
+                + (
+                    f" · replicas={replicas if replicas is not None else f'HPA 관리(min={hpa_min_replicas})' if hpa_min_replicas is not None else '미지정'}, "
+                    f"멀티존 분산(topologySpreadConstraints)={'설정됨' if has_zone_spread else '미설정'}, "
+                    f"PDB={'설정됨' if has_pdb else '미설정'}, HPA={'설정됨' if has_hpa else '미설정'}"
+                    if has_deployment
+                    else " · Deployment/PDB/HPA 매니페스트 미포함"
+                )
+            ),
+            "recommended_state": "기존 클러스터 모드(Autopilot/Standard) 유지 + replicas(또는 HPA minReplicas) >= 2 + topologySpreadConstraints(zone) + PDB(minAvailable: 1) + HPA v2",
+            "why_it_matters": (
+                "단일 레플리카이거나 PDB·멀티존 분산(`topologySpreadConstraints`)이 없는 GKE 워크로드는 "
+                "특정 가용 영역(Zone) 장애나 노드 업그레이드 시 서비스 전면 중단 위험이 있습니다. "
+                "기존 클러스터 모드(Autopilot vs Standard)는 유지한 채 Zone 분산 + PDB + HPA v2를 함께 구성하세요."
+            ),
+            "how_to_fix_title": "멀티존 분산(topologySpreadConstraints) · PDB · HPA v2 적용 (기존 클러스터 모드 유지)",
+            "gcloud_cmd": (
+                f"# 플랫폼 Skill 참고: gke-reliability · gke-productionize (https://github.com/google/skills/tree/main/skills/cloud)\n"
+                f"# [읽기 전용 확인] 현재 PDB / HPA 상태 조회\n"
+                f"kubectl get deploy,pdb,hpa -n {namespace_name}"
+            ),
+            "terraform_snippet": (
+                'topology_spread_constraint {\n'
+                '  max_skew           = 1\n'
+                '  topology_key       = "topology.kubernetes.io/zone"\n'
+                '  when_unsatisfiable = "ScheduleAnyway"\n'
+                '}\n'
+                'resource "kubernetes_pod_disruption_budget_v1" "agent_pdb" {\n'
+                '  metadata { name = "agent-pdb"; namespace = "' + namespace_name + '" }\n'
+                '  spec { min_available = "1" }\n'
+                '}'
+            ),
+            "console_guide": f"GKE 워크로드 콘솔 또는 `kubectl get deploy,pdb,hpa -n {namespace_name}`에서 멀티존 분산·PDB·HPA v2 적용 여부를 확인하세요.",
+        },
+        {
+            "id": "R1.2",
+            "domain": "1. 컴퓨트 & 탄력성",
+            "check_type": "ARCH_DECISION",
+            "verification_scope": "ARCH_DECISION",
+            "title": "Pod CPU / 메모리 리소스 Requests·Limits 사이징 (워크로드 기준 확인)",
+            "status": "REVIEW",
+            "current_state": (
+                f"requests/limits: CPU={cpu_req}, Memory={mem_req} ({exec_pattern_label})"
+                if has_deployment
+                else "Deployment 컨테이너 리소스 정보 없음 (클러스터 JSON만 입력됨)"
+            ),
+            "recommended_state": "트래픽·LLM 도구 메모리 프로파일에 맞춰 운영자가 직접 유지 또는 조정 (자동 상향 금지)",
+            "why_it_matters": (
+                "GKE Autopilot은 요청한 CPU/Memory에 비례해 과금되며, GKE Standard는 노드 풀 적재율에 직결됩니다. "
+                "OOMKill이나 CPU 스로틀링 로그가 없는 한 현재 사이징을 임의로 상향하지 말고 실측 기반으로 조정하세요."
+            ),
+            "how_to_fix_title": "실측 메모리·CPU 사용량 기반 유지 또는 선택적 조정",
+            "gcloud_cmd": f"# [읽기 전용 확인] 실제 Pod CPU/Memory 사용량 점검\nkubectl top pods -n {namespace_name}",
+            "terraform_snippet": "# 기존 containers.resources.requests / limits 값은 의도적으로 보존합니다.",
+            "console_guide": "Cloud Monitoring(GKE Workloads)에서 OOMKilled 여부와 CPU 요청 대비 사용률을 확인한 뒤 필요한 경우에만 조정하세요.",
+        },
+        {
+            "id": "R1.3",
+            "domain": "Optimize",
+            "check_type": "RUNTIME_RECOMMENDED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "무중단 종료 (긴 응답 보호 · `terminationGracePeriodSeconds` · `preStop`)",
+            "status": r13_status,
+            "current_state": (
+                f"terminationGracePeriodSeconds={grace_sec}s, preStop={'설정됨' if has_pre_stop else '미설정'}"
+                + (f" · readiness 프로브: HTTP GET({http_path or '/'})" if uses_http_probe else "")
+                if has_deployment
+                else "Deployment 매니페스트 미포함"
+            ),
+            "recommended_state": "terminationGracePeriodSeconds >= 최대 응답 시간(예: 120s) + preStop(sleep 10) + readiness 프로브로 종료 중 신규 요청 차단",
+            "why_it_matters": (
+                "에이전트 한 턴은 LLM 스트리밍과 도구 호출로 수십 초 이상 걸립니다. GKE 기본 종료 유예 시간(30초)과 `preStop` 훅이 없으면 "
+                "롤링 업데이트나 노드 업그레이드 중 진행 중인 SSE 스트리밍·장시간 A2A/MCP 도구 호출이 SIGKILL로 잘립니다. "
+                "`terminationGracePeriodSeconds`를 최대 응답 시간 이상으로 두고 `preStop`으로 진행 중인 응답을 마친 뒤 종료하세요. "
+                "(헬스 프로브 구성 자체는 일반 플랫폼 Best Practice이므로 gke-reliability 플랫폼 Skill을 참고하세요.)"
+            ),
+            "how_to_fix_title": "Graceful Termination(120s + preStop) 적용",
+            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-O1",
+            "terraform_snippet": (
+                'termination_grace_period_seconds = 120\n'
+                'container {\n'
+                '  lifecycle {\n'
+                '    pre_stop { exec { command = ["/bin/sh", "-c", "sleep 10"] } }\n'
+                '  }\n'
+                '}'
+            ),
+            "console_guide": "Deployment에 `terminationGracePeriodSeconds: 120`과 `lifecycle.preStop` 훅을 구성해 진행 중인 응답을 보호하세요.",
+        },
+        {
+            "id": "R2.1",
+            "domain": "2. 세션 & 상태 영속성",
+            "check_type": "RUNTIME_RECOMMENDED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "멀티턴 영속 세션 (`AGENT_ENGINE_SESSION_ID` / Cloud SQL / Redis)",
+            "status": "GREEN" if has_persistent_session else ("AMBER" if has_deployment else "REVIEW"),
+            "current_state": (
+                f"영속 세션 환경변수 감지됨: {', '.join(session_env_keys)}"
+                if has_persistent_session
+                else (
+                    "영속 세션 환경변수 미감지(또는 빈 값) — Pod 재시작·HPA 스케일아웃 시 인메모리 대화 문맥 유실 위험"
+                    if has_deployment
+                    else "Deployment 환경변수 미포함"
+                )
+            ),
+            "recommended_state": "Agent Platform Managed Sessions (`AGENT_ENGINE_SESSION_ID` + `GOOGLE_CLOUD_AGENT_ENGINE_LOCATION`) 또는 Cloud SQL/AlloyDB/Memorystore 세션 백엔드 연동",
+            "why_it_matters": (
+                "GKE Pod는 오토스케일·롤링 업데이트·노드 유지보수로 수시로 교체됩니다. "
+                "인메모리 세션에 의존하면 멀티턴 대화가 끊어지므로 외부 영속 세션 저장소를 연동해야 합니다."
+            ),
+            "how_to_fix_title": "외부 영속 세션 서비스 연동",
+            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-F1",
+            "terraform_snippet": (
+                'env { name = "AGENT_ENGINE_SESSION_ID"; value = var.agent_engine_session_id }\n'
+                'env { name = "GOOGLE_CLOUD_AGENT_ENGINE_LOCATION"; value = var.region }'
+            ),
+            "console_guide": "ADK `SessionService`를 Agent Platform Managed Sessions (`VertexAiSessionService`) 또는 Cloud SQL/AlloyDB 백엔드로 구성하세요.",
+        },
+        {
+            "id": "R3.1",
+            "domain": "3. 네트워크 & 엣지 보안",
+            "check_type": "RUNTIME_VERIFIED",
+            "verification_scope": "RUNTIME_VERIFIED",
+            "title": "Private Nodes & Dataplane V2 Default-Deny Egress `NetworkPolicy`",
+            "status": r31_status,
+            "current_state": (
+                f"Private Nodes={'활성' if is_private_nodes else ('미활성/미확인' if has_cluster else '클러스터 JSON 미포함')}, "
+                f"Dataplane V2={'활성' if is_dataplane_v2 else ('미확인' if has_cluster else '미확인')}, "
+                f"Egress NetworkPolicy={'설정됨' if has_egress_netpol else '미설정'}"
+                + (
+                    " (⚠️ Sandbox/Substrate에서 Metadata 169.254.169.254 허용 감지 — 즉시 차단 필요!)"
+                    if (is_sandbox_pattern or is_substrate_pattern) and allows_metadata_ip
+                    else (
+                        " (GKE Metadata 169.254.169.254 차단 확인)"
+                        if blocks_metadata_ip
+                        else (
+                            " (Workload Identity Metadata 169.254.169.254"
+                            + (" + NodeLocal DNSCache 169.254.20.10" if allows_nodelocal_dns else "")
+                            + " 허용 포함)"
+                            if allows_metadata_ip
+                            else ""
+                        )
+                    )
+                )
+            ),
+            "recommended_state": (
+                "Private Nodes + Dataplane V2 + Default-Deny Egress NetworkPolicy "
+                "(Standard WI Pod: NodeLocal DNS 169.254.20.10:53 + DPv2 Metadata 169.254.169.254:80,8080 + non-DPv2 169.254.169.252:987,988 허용 / "
+                "Sandbox·Substrate Pod: 169.254.169.254/32, 169.254.169.252/32 및 RFC 1918 차단)"
+            ),
+            "why_it_matters": (
+                "AI 에이전트 프롬프트 인젝션으로 인한 SSRF 및 데이터 유출을 막으려면 Default-Deny Egress `NetworkPolicy`가 필수입니다. "
+                "⚠️ 단, Standard Workload Identity Pod는 `169.254.20.10/32`(NodeLocal DNSCache), `169.254.169.254/32` TCP `80/8080`(DPv2 Metadata Server) & UDP/TCP `53`(Cloud DNS), "
+                "`169.254.169.252/32` TCP `987/988`(비-DPv2)을 허용해야 DNS·ADC 토큰 발급이 깨지지 않으며, "
+                "반대로 비신뢰 코드를 실행하는 Agent Sandbox/Substrate Pod는 `169.254.169.254/32`, `169.254.169.252/32`, 사설 IP(RFC 1918)를 완전 차단하고 `automountServiceAccountToken: false`를 적용해야 합니다."
+            ),
+            "how_to_fix_title": "Dataplane V2 Default-Deny Egress NetworkPolicy 적용",
+            "gcloud_cmd": (
+                f"# 플랫폼 Skill 참고: gke-networking · gke-workload-security (https://github.com/google/skills/tree/main/skills/cloud)\n"
+                f"# [읽기 전용 확인] 적용된 NetworkPolicy 조회\n"
+                f"kubectl get networkpolicy -n {namespace_name} -o yaml"
+            ),
+            "terraform_snippet": (
+                'resource "kubernetes_network_policy_v1" "agent_egress_policy" {\n'
+                '  spec {\n'
+                '    policy_types = ["Egress"]\n'
+                '    # Standard WI Pod: kube-system DNS(53,5353) + NodeLocal DNS(169.254.20.10:53) +\n'
+                '    #   DPv2 Metadata(169.254.169.254:80,8080) + non-DPv2(169.254.169.252:987,988) + HTTPS(443)\n'
+                '  }\n'
+                '}'
+            ),
+            "console_guide": f"`kubectl get networkpolicy -n {namespace_name}`에서 Default-Deny Egress 규칙과 Metadata Server 예외/차단 정책이 실행 패턴과 일치하는지 확인하세요.",
+        },
+        {
+            "id": "R4.1",
+            "domain": "Security",
+            "check_type": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "에이전트 전용 신원 · 최소 권한 (Agent Identity / Workload Identity 전용 KSA)",
+            "status": s1_status,
+            "current_state": (
+                f"KSA={ksa_name or 'default'}"
+                + (f", SPIFFE Agent Identity=`{spiffe_identity_type}`" if has_spiffe_agent_identity else "")
+                + (f", WorkloadPool={workload_pool}" if workload_pool else ", Workload Identity Pool 미확인")
+                if has_deployment
+                else f"Workload Identity Pool={workload_pool or '미활성'} (Deployment 매니페스트 미포함 — 전용 KSA 확인 필요)"
+            ),
+            "recommended_state": "Agent Identity(Preview)로 에이전트 고유 신원 부여, 사용할 수 없으면 Workload Identity로 전용 KSA↔서비스 계정 연결 + 필요한 최소 역할만 부여",
+            "why_it_matters": (
+                "에이전트는 스스로 판단해 도구·API를 호출하므로, 권한이 넓으면 프롬프트 인젝션 한 번으로도 피해가 커집니다. "
+                "Pod가 `default` KSA나 노드 기본 서비스 계정이 아닌 에이전트 전용 신원으로 실행되고 필요한 권한만 갖는지 확인하세요."
+            ),
+            "how_to_fix_title": "에이전트 전용 KSA + Workload Identity(또는 Agent Identity) 연결",
+            "gcloud_cmd": (
+                f"# [Step 1] 로컬 GKE 매니페스트에 전용 KSA + Workload Identity 바인딩 적용\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S1\n\n"
+                f"# [Step 2 · 읽기 전용 확인] Deployment의 serviceAccountName 확인\n"
+                f"kubectl get deploy -n {namespace_name} -o jsonpath='{{.items[*].spec.template.spec.serviceAccountName}}'"
+            ),
+            "terraform_snippet": (
+                'resource "kubernetes_service_account_v1" "agent_ksa" {\n'
+                '  metadata {\n'
+                '    name        = "agent-ksa"\n'
+                '    annotations = { "iam.gke.io/gcp-service-account" = google_service_account.agent_sa.email }\n'
+                '  }\n'
+                '}'
+            ),
+            "console_guide": f"`kubectl get deploy -n {namespace_name} -o yaml`에서 `serviceAccountName`이 에이전트 전용 KSA인지, 연결된 서비스 계정에 과도한 역할이 없는지 점검하세요.",
+        },
+        {
+            "id": "R4.1P",
+            "domain": "플랫폼 Skill 참조 권장",
+            "check_type": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "Pod Security Standards `restricted` · Non-Root `securityContext`",
+            "status": r41_status,
+            "current_state": (
+                f"PSS enforce={pss_enforce or '미설정'}, "
+                f"runAsNonRoot={run_as_non_root}, allowPrivilegeEscalation=false:{no_priv_esc}, drop ALL:{drops_all}, seccomp={seccomp_type or '미설정'}"
+                if has_deployment
+                else "Deployment/Namespace 매니페스트 미포함 — PSS·securityContext 확인 필요"
+            ),
+            "recommended_state": (
+                "Namespace `pod-security.kubernetes.io/enforce=restricted` + "
+                "`runAsNonRoot: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `seccompProfile: RuntimeDefault`"
+            ),
+            "why_it_matters": (
+                "일반 GKE 워크로드 보안 Best Practice로, 체크리스트 범위 밖의 참고 항목입니다. gke-workload-security 플랫폼 Skill을 참고하세요. "
+                "(⚠️ 기존 Pod가 거부되지 않도록 Non-Root `securityContext`를 먼저 배포한 뒤 Namespace PSS `restricted` 라벨을 부여하세요.)"
+            ),
+            "how_to_fix_title": "플랫폼 Skill(gke-workload-security) 참고",
+            "gcloud_cmd": (
+                f"# 플랫폼 Skill 참고: gke-workload-security (https://github.com/google/skills/tree/main/skills/cloud)\n"
+                f"# [읽기 전용 확인] Namespace PSS 라벨 확인\n"
+                f"kubectl get ns {namespace_name} --show-labels"
+            ),
+            "terraform_snippet": (
+                'security_context {\n'
+                '  run_as_non_root            = true\n'
+                '  allow_privilege_escalation = false\n'
+                '  capabilities { drop = ["ALL"] }\n'
+                '  seccomp_profile { type = "RuntimeDefault" }\n'
+                '}'
+            ),
+            "console_guide": f"`kubectl get ns {namespace_name} --show-labels`와 Deployment의 `securityContext`를 점검하세요.",
+        },
+        {
+            "id": "R4.2",
+            "domain": "4. 보안, 신원 & 거버넌스",
+            "check_type": "RUNTIME_RECOMMENDED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "GKE Agent Identity (SPIFFE) & Agent Registry (`registry.gke.io/functional-type: AGENT`)",
+            "status": r42_status,
+            "current_state": (
+                (
+                    f"Agent Registry 라벨 확인됨 (`registry.gke.io/functional-type=AGENT`"
+                    + (f", SPIFFE=`{spiffe_identity_type}`)" if has_spiffe_agent_identity else ", Pod SPIFFE annotation 미감지)")
+                    if has_registry_label
+                    else (
+                        "Deployment에 `registry.gke.io/functional-type: AGENT` 라벨 미설정 (Agent Registry 자동 등록 미활성)"
+                        if has_deployment
+                        else "Deployment 매니페스트 미포함 (Agent Registry 라벨 확인 필요)"
+                    )
+                )
+                + (
+                    f" · ⚠️ 정적 원격 URL 환경변수 감지({', '.join(hardcoded_remote_urls)}) → Agent Registry Lazy Discovery 전환 권장"
+                    if hardcoded_remote_urls
+                    else ""
+                )
+            ),
+            "recommended_state": (
+                "Deployment 라벨 `registry.gke.io/functional-type: AGENT` + Pod 어노테이션 `iam.gke.io/spiffe-identity-type: agent-identity` + "
+                "`agentregistry.googleapis.com` 활성화 + 원격 MCP/A2A URL은 Agent Registry 동적 조회"
+            ),
+            "why_it_matters": (
+                "GKE Deployment에 공식 라벨 `registry.gke.io/functional-type: \"AGENT\"`과 Pod 어노테이션 `iam.gke.io/spiffe-identity-type: \"agent-identity\"`를 부여하면 "
+                "Cloud Agent Registry와 SPIFFE 기반 GKE Agent Identity가 워크로드를 자동 식별하여 엔터프라이즈 거버넌스와 동적 MCP/A2A 검색(Lazy Discovery)을 지원합니다."
+            ),
+            "how_to_fix_title": "Agent Registry 공식 라벨·SPIFFE 어노테이션 추가 및 API 활성화",
+            "gcloud_cmd": (
+                f"# [Step 1] Agent Registry & App Hub API 활성화\n"
+                f"gcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project={project_id}\n\n"
+                f"# [Step 2] 로컬 GKE 코드에 Agent Registry 라벨 + SPIFFE 어노테이션 자동 추가\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S3\n\n"
+                f"# [Step 3 · 읽기 전용 확인] Agent Registry 등록 상태 조회\n"
+                f"gcloud agent-registry agents list --location={region} --project={project_id}"
+            ),
+            "terraform_snippet": (
+                '# Deployment metadata.labels (공식 자동 등록 라벨)\n'
+                'labels = { "registry.gke.io/functional-type" = "AGENT" }\n'
+                '# Pod template metadata.annotations (GKE Agent Identity SPIFFE)\n'
+                'annotations = { "iam.gke.io/spiffe-identity-type" = "agent-identity" }'
+            ),
+            "console_guide": "Deployment 라벨에 `registry.gke.io/functional-type: AGENT`, Pod 어노테이션에 `iam.gke.io/spiffe-identity-type: agent-identity`를 추가하고 Agent Registry 콘솔에서 자동 등록을 확인하세요.",
+        },
+        {
+            "id": "R4.3",
+            "domain": "Security",
+            "check_type": "RUNTIME_RECOMMENDED",
+            "verification_scope": "RUNTIME_VERIFIED",
+            "title": "Agent Gateway for GKE (외부 호출 통제 · Preview)",
+            "status": r43_status,
+            "current_state": (
+                f"실행 패턴: {exec_pattern_label}"
+                + (" · 🔴 호환 불가: GKE Autopilot에서는 Agent Substrate를 사용할 수 없습니다 (GKE Standard >= 1.37 전용)" if autopilot_substrate_conflict else "")
+                + (f" · Agent Gateway for GKE 리소스 {len(agent_gateways)}건 감지됨" if has_agent_gateway else " · Agent Gateway for GKE 리소스 미감지")
+                + (f" · automountServiceAccountToken={automount_sa}" if is_sandbox_pattern or is_substrate_pattern else "")
+            ),
+            "recommended_state": (
+                "MCP·외부 도구를 호출하는 에이전트: Agent Gateway for GKE(Preview, GKE >= 1.37.2-gke.1042000 Rapid, Standard Pods)로 외부 호출에 접근 정책 적용 / "
+                "AI 생성 코드를 실행한다면 GKE-S2 Agent Substrate on GKE 샌드박스(상시 실행 · 사이드카 · Arm · Autopilot이 필요하면 Agent Sandbox on GKE) 함께 검토"
+            ),
+            "why_it_matters": (
+                "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다.\n"
+                "• **Agent Gateway for GKE** (`networking.gke.io/v1`, Preview): Ingress(`Gateway` + `HTTPRoute` + `GCPAgentGateway` + `GCPAuthzPolicy` `enforcementLevel: L7` + `GCPExtensionBinding` Model Armor)와 "
+                "Egress(`networking.gke.io/dataplane-mode=ambient` + `GCPBackend` + `GCPEgressPolicy`)로 에이전트 트래픽을 중앙 통제합니다.\n"
+                "• **GKE-S2 · Agent Substrate on GKE** (`ate.dev/v1alpha1`): AI 생성 코드를 커널·네트워크 격리된 샌드박스에서 실행합니다 (GKE Standard >= 1.37 전용). "
+                "상시 실행 에이전트, 사이드카 등 전체 PodSpec, Arm 노드, **Autopilot**이 필요하면 **Agent Sandbox on GKE**를 사용합니다 (Agent Substrate는 GKE Standard 1.37 이상·x86 전용)."
+            ),
+            "how_to_fix_title": "Agent Gateway for GKE 매니페스트 생성 (AI 생성 코드 실행 시 GKE-S2 함께)",
+            "gcloud_cmd": (
+                f"# [Option A] Standard GKE Pods + Agent Gateway for GKE 매니페스트 생성\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S4\n"
+                f"# GKE >= 1.37.2-gke.1042000 Rapid + 필요한 API + Proxy-only Subnet 확인 후 적용:\n"
+                f"kubectl apply -f deployment/k8s/agent-gateway.yaml\n\n"
+                f"# [Option B] AI 생성 코드 실행: Agent Substrate on GKE (GKE Standard >= 1.37 전용)\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
+                f"  --params '{{\"gke_cluster_mode\":\"standard\",\"gke_execution_pattern\":\"agent_substrate\"}}'\n\n"
+                f"# [Option C] 상시 실행 에이전트 · 사이드카 · Arm 노드 · Autopilot이 필요할 때: Agent Sandbox on GKE\n"
+                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
+                f"  --params '{{\"gke_execution_pattern\":\"agent_sandbox\"}}'"
+            ),
+            "terraform_snippet": (
+                "# deployment/k8s/agent-gateway.yaml (Standard Pods >= 1.37.2-gke.1042000 Rapid:\n"
+                "#   GCPAgentGateway + GCPAuthzPolicy + GCPExtensionBinding + GCPBackend + GCPEgressPolicy)\n"
+                "# deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1 WorkerPool, Standard >= 1.37 only)\n"
+                "# deployment/k8s/agent-sandbox.yaml (extensions.agents.x-k8s.io/v1beta1, warmPoolRef)"
+            ),
+            "console_guide": "MCP·외부 도구 호출이 있으면 Agent Gateway for GKE를, AI 생성 코드를 실행하면 Agent Substrate on GKE(대안: Agent Sandbox on GKE)를 적용하세요.",
+        },
+        {
+            "id": "R5.1",
+            "domain": "5. 관측성 & 프라이버시",
+            "check_type": "RUNTIME_RECOMMENDED" if has_deployment else "ARCH_DECISION",
+            "verification_scope": "RUNTIME_VERIFIED" if has_deployment else "ARCH_DECISION",
+            "title": "OpenTelemetry GenAI 트레이싱 & 스팬 PII 차단 (`NO_CONTENT` · `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false`)",
+            "status": r51_status,
+            "current_state": (
+                f"OTEL_CAPTURE={otel_capture or '미설정'}, "
+                f"ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS={adk_capture_spans or '미설정'}"
+                if has_deployment
+                else "Deployment 환경변수 미포함"
+            ),
+            "recommended_state": "Cloud Trace 연동 + OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false",
+            "why_it_matters": (
+                "`agents-cli` 기본 GKE 템플릿은 `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=true`로 설정되어 고객 PII가 포함된 프롬프트 원문이 Cloud Trace에 평문 기록될 수 있습니다. "
+                "프로덕션에서는 `NO_CONTENT` + `false`로 전환하세요. (지연·오류율 알림 정책은 체크리스트 범위 밖이므로 gke-alert-configuration 플랫폼 Skill을 참고하세요.)"
+            ),
+            "how_to_fix_title": "OTel 프롬프트 미기록(NO_CONTENT) 적용",
+            "gcloud_cmd": (
+                "# 로컬 코드에 OTel NO_CONTENT 프라이버시 환경변수 적용\n"
+                "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-OB1"
+            ),
+            "terraform_snippet": (
+                'env { name = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"; value = "NO_CONTENT" }\n'
+                'env { name = "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS"; value = "false" }'
+            ),
+            "console_guide": "Deployment 환경변수에서 프롬프트 원문 캡처(`NO_CONTENT` + `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false`)를 비활성화하세요.",
+        },
+    ]
+
+
+    # GKE-S2 (conditional: AI-generated code execution) — emitted only when a sandbox/substrate pattern is detected
+    if is_sandbox_pattern or is_substrate_pattern:
+        if autopilot_substrate_conflict or allows_metadata_ip:
+            s2_status = "RED"
+        elif str(automount_sa).lower() == "false":
+            s2_status = "GREEN"
+        else:
+            s2_status = "AMBER"
+        checks.append({
+            "id": "R4.4",
+            "domain": "Security",
+            "check_type": "RUNTIME_VERIFIED",
+            "verification_scope": "RUNTIME_VERIFIED",
+            "title": "AI 생성 코드 격리 (Agent Substrate · Agent Sandbox)",
+            "status": s2_status,
+            "current_state": (
+                f"실행 패턴: {exec_pattern_label}, automountServiceAccountToken={automount_sa}"
+                + (" · 🔴 GKE Autopilot에서는 Agent Substrate를 사용할 수 없습니다 (GKE Standard >= 1.37 전용)" if autopilot_substrate_conflict else "")
+                + (" · 🔴 샌드박스 Pod에서 Metadata 169.254.169.254 허용 감지" if allows_metadata_ip else "")
+            ),
+            "recommended_state": (
+                "AI 생성 코드는 Agent Substrate on GKE 샌드박스에서 실행 (상시 실행 · 사이드카 · Arm · Autopilot이 필요하면 Agent Sandbox on GKE) + "
+                "Metadata 169.254.169.254/32 · 169.254.169.252/32 차단 + automountServiceAccountToken: false"
+            ),
+            "why_it_matters": (
+                "AI가 만든 코드는 신뢰할 수 없어, 에이전트 Pod 안에서 그대로 실행하면 자격증명 탈취나 노드 침해로 이어질 수 있습니다. "
+                "샌드박스에서 커널·네트워크 격리되어 실행되고 메타데이터 서버에 접근할 수 없는지 확인하세요."
+            ),
+            "how_to_fix_title": "Agent Substrate(또는 Agent Sandbox) 매니페스트 적용",
+            "gcloud_cmd": (
+                "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
+                "  --params '{\"gke_cluster_mode\":\"standard\",\"gke_execution_pattern\":\"agent_substrate\"}'"
+            ),
+            "terraform_snippet": "# deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1 WorkerPool) 또는 agent-sandbox.yaml",
+            "console_guide": "샌드박스 Pod의 NetworkPolicy가 메타데이터 서버를 차단하고 서비스 계정 토큰을 마운트하지 않는지 확인하세요.",
+        })
+
+    # GKE-O2 (conditional: idle conversational agents) — the "idle" condition cannot be read from JSON, so the
+    # check is emitted only when Agent Substrate is detected (suspend/resume capability in use).
+    if is_substrate_pattern:
+        checks.append({
+            "id": "R7.1",
+            "domain": "Optimize",
+            "check_type": "RUNTIME_VERIFIED",
+            "verification_scope": "RUNTIME_VERIFIED",
+            "title": "에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)",
+            "status": "AMBER" if autopilot_substrate_conflict else "GREEN",
+            "current_state": (
+                "Agent Substrate(ate.dev) 리소스 감지 — 유휴 에이전트 스냅샷 일시정지 · 요청 시 복원 가능"
+                + (" · 🟡 GKE Autopilot에서는 Agent Substrate를 사용할 수 없습니다 (GKE Standard >= 1.37 전용)" if autopilot_substrate_conflict else "")
+            ),
+            "recommended_state": "자주 일시정지·재개하는 상태 유지형 에이전트는 Agent Substrate on GKE(GKE Standard >= 1.37)에서 실행해 유휴 시 일시정지 · 요청 시 복원",
+            "why_it_matters": (
+                "대화형 에이전트는 대부분의 시간을 사용자 입력이나 도구 응답을 기다리며 보내므로, Pod를 계속 띄워 두면 "
+                "유휴 에이전트가 CPU·메모리를 점유합니다."
+            ),
+            "how_to_fix_title": "Agent Substrate 매니페스트 적용 (GKE Standard)",
+            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-O2 --conditions idle=true",
+            "terraform_snippet": "# deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1 WorkerPool · ActorTemplate)",
+            "console_guide": "GKE Standard 1.37 이상 클러스터에서 Agent Substrate 워커 풀이 동작하는지 확인하세요.",
+        })
+
+    verified_checks = [c for c in checks if c["status"] in ("GREEN", "AMBER", "RED")]
+    green_cnt = sum(1 for c in checks if c["status"] == "GREEN")
+    amber_cnt = sum(1 for c in checks if c["status"] == "AMBER")
+    red_cnt = sum(1 for c in checks if c["status"] == "RED")
+    review_cnt = sum(1 for c in checks if c["status"] == "REVIEW")
+
+    if red_cnt > 0:
+        verdict = f"🔴 객관적 위험 {red_cnt}건 발견 (우선 조치 권장)"
+    elif amber_cnt > 0:
+        verdict = f"🟡 검증 항목 양호 · 선택 권고 {amber_cnt}건 / 사용자 확인 {review_cnt}건"
+    elif review_cnt > 0:
+        verdict = f"🔵 JSON 검증 항목 모두 통과 · 아키텍처/코드 {review_cnt}건 확인 필요"
+    else:
+        verdict = "🟢 Production Ready (모든 항목 검증 완료)"
+
+    return {
+        "project_id": project_id,
+        "region": region,
+        "service_name": workload_name,
+        "resource_id": f"{namespace_name}/{workload_name}",
+        "runtime_type": "gke",
+        "runtime_label": "GKE",
+        "service_url": f"gke://{project_id}/{region}/{cluster_name}/{namespace_name}/{workload_name}",
+        "created_by": dep_meta.get("labels", {}).get("created-by", "gke"),
+        "service_account": ksa_name or "default",
+        "inspected_at": now_str,
+        "verdict": verdict,
+        "total_count": len(checks),
+        "green_count": green_cnt,
+        "amber_count": amber_cnt,
+        "red_count": red_cnt,
+        "review_count": review_cnt,
+        "verified_count": len(verified_checks),
+        "detected_config": {
+            "cluster_name": cluster_name,
+            "cluster_mode": "autopilot" if is_autopilot is True else ("standard" if is_autopilot is False else "unknown"),
+            "namespace": namespace_name,
+            "replicas": replicas if replicas is not None else 1,
+            "execution_pattern": exec_pattern,
+            "cpu": cpu_req,
+            "memory": mem_req,
+            "location": loc_val or "global",
+            "has_agent_gateway": has_agent_gateway,
+            "has_zone_spread": has_zone_spread,
+            "termination_grace_period_seconds": grace_sec,
+            "has_pre_stop": has_pre_stop,
+            "hardcoded_remote_urls": hardcoded_remote_urls,
+        },
+        "platform_guarantees": [],
+        "combined_runtime_fix_cmd": (
+            f"# ⚠️ 선택한 항목에 따라 UI에서 맞춤형 GKE 조치 명령어가 동적으로 생성됩니다.\n"
+            f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke"
+        ),
+        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target gke  # 체크리스트 v3 GKE 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
+        "checks": checks,
+    }
+
+
+def _evaluate_cloud_run_service(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    return _apply_checklist_v3(_evaluate_cloud_run_service_legacy(*args, **kwargs))
+
+
+def _evaluate_agent_runtime_engine(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    return _apply_checklist_v3(_evaluate_agent_runtime_engine_legacy(*args, **kwargs))
+
+
+def _evaluate_gke_workload(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    return _apply_checklist_v3(_evaluate_gke_workload_legacy(*args, **kwargs))

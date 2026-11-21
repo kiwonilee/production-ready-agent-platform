@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Production-Ready AI Agent Platform — 시스템 소개 장표 | Google Cloud</title>
+<meta name="description" content="Google Cloud AI 에이전트 프로덕션 전환 플랫폼 전체 소개 발표 장표: 필요성, Prototype vs Production Gap, 에이전트 특성 기반 체크리스트 v3(5개 카테고리), Agent Runtime · Cloud Run · GKE 환경별 특화 기능 및 장단점 비교" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500;700&family=Google+Sans+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" />
+<style>
+  /* =====================================================================
+     Google Material Presentation Theme (Google Sans · Google 4-Color · M3 Surfaces)
+     ===================================================================== */
+  :root {
+    --g-blue: #4285F4;
+    --g-red: #EA4335;
+    --g-yellow: #FBBC04;
+    --g-green: #34A853;
+    --g-bg: #F7F9FC;  /* shared portal surface token */
+
+    --blue: #1A73E8;   --blue-d: #174EA6;   --blue-50: #E8F0FE;   --blue-100: #D2E3FC;
+    --red: #D93025;    --red-d: #A50E0E;    --red-50: #FCE8E6;
+    --yellow: #F9AB00; --yellow-d: #B06000; --yellow-50: #FEF7E0;
+    --green: #188038;  --green-d: #137333;  --green-50: #E6F4EA;
+
+    --grey-900: #202124; --grey-800: #3C4043; --grey-700: #5F6368;
+    --grey-600: #80868B; --grey-300: #DADCE0; --grey-200: #E8EAED;
+    --grey-100: #F1F3F4; --grey-50: #F8F9FA;
+
+    --navy: #0D2B5E;
+    --ink: var(--grey-900);
+    --ink-sub: var(--grey-700);
+    --ink-faint: var(--grey-600);
+    --g4: linear-gradient(90deg, #4285F4 0 25%, #EA4335 25% 50%, #FBBC04 50% 75%, #34A853 75% 100%);
+    --g4v: linear-gradient(180deg, #4285F4 0 25%, #EA4335 25% 50%, #FBBC04 50% 75%, #34A853 75% 100%);
+    --elev-1: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+    --elev-2: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 2px 6px 2px rgba(60, 64, 67, .15);
+    --elev-3: 0 4px 8px 3px rgba(60, 64, 67, .15), 0 1px 3px rgba(60, 64, 67, .30);
+    --font: "Google Sans", "Google Sans Text", "Noto Sans KR", Roboto, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --font-text: "Google Sans Text", "Google Sans", "Noto Sans KR", Roboto, sans-serif;
+    --mono: "Google Sans Mono", "Roboto Mono", "SFMono-Regular", Consolas, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #202124; font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Navigation Drawer (Material dark) ---------- */
+  #hoverzone { position: fixed; top: 0; left: 0; bottom: 0; width: 16px; z-index: 940; }
+  #sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 288px;
+    background: #2D2E31; color: #E8EAED;
+    overflow-y: auto; transform: translateX(-288px);
+    transition: transform .2s cubic-bezier(.2, 0, 0, 1); z-index: 950; padding: 20px 12px 24px 0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+    display: flex; flex-direction: column;
+  }
+  #sidebar.show { transform: translateX(0); }
+  #sidebar .stitle {
+    font-size: 12px; font-weight: 500; color: #9AA0A6;
+    letter-spacing: .4px; padding: 6px 24px 10px;
+  }
+  #sidebar a.nav-slide {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px 10px 24px; font-size: 14px; color: #E8EAED;
+    text-decoration: none; cursor: pointer; line-height: 1.3;
+    border-radius: 0 999px 999px 0; margin: 1px 0;
+  }
+  #sidebar a.nav-slide:hover { background: rgba(232, 234, 237, .08); }
+  #sidebar a.nav-slide.active { background: rgba(138, 180, 248, .24); color: #8AB4F8; font-weight: 500; }
+  #sidebar .pagenum { flex: 0 0 22px; font-weight: 500; color: #9AA0A6; font-size: 12.5px; }
+  #sidebar a.nav-slide.active .pagenum { color: #8AB4F8; }
+  #sidebar .s-divider { height: 1px; background: #3C4043; margin: 14px 0 14px 24px; }
+  #sidebar .portal-links { padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 6px; }
+  #sidebar .portal-links a {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; border-radius: 10px; background: #35363A;
+    color: #E8EAED; font-size: 13px; font-weight: 500; text-decoration: none;
+  }
+  #sidebar .portal-links a span:last-child { color: #9AA0A6; font-family: var(--mono); font-size: 12px; }
+  #sidebar .portal-links a:hover { background: #3C4043; }
+
+  #pillbtn {
+    position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 945;
+    background: #2D2E31; border: 1px solid #5F6368; border-left: none;
+    color: #E8EAED; border-radius: 0 12px 12px 0;
+    padding: 14px 7px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: var(--font);
+    writing-mode: vertical-rl; letter-spacing: 1px; opacity: .7; transition: opacity .15s;
+  }
+  #pillbtn:hover { opacity: 1; }
+
+  /* ---------- Floating Controls (Material tonal buttons) ---------- */
+  .deck-ctrl-left { position: fixed; top: 12px; left: 16px; z-index: 945; display: flex; gap: 8px; }
+  .deck-ctrl-right { position: fixed; top: 12px; right: 16px; z-index: 945; display: flex; gap: 8px; }
+  .ctrl-btn {
+    background: rgba(60, 64, 67, .85); border: 1px solid rgba(232, 234, 237, .18);
+    color: #E8EAED; border-radius: 999px; padding: 6px 14px;
+    font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: var(--font);
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    opacity: .6; transition: opacity .15s, background .15s;
+  }
+  .ctrl-btn:hover { opacity: 1; background: #3C4043; }
+  .ctrl-btn.on { opacity: .9; color: #8AB4F8; border-color: rgba(138, 180, 248, .5); }
+
+  #dots {
+    position: fixed; bottom: 14px; left: 0; right: 0;
+    display: flex; justify-content: center; align-items: center; gap: 8px; z-index: 945; pointer-events: none;
+  }
+  #dots .dot {
+    pointer-events: auto; width: 8px; height: 8px; border-radius: 999px;
+    background: rgba(232, 234, 237, .35); cursor: pointer; transition: width .2s, background .2s;
+  }
+  #dots .dot:hover { background: rgba(232, 234, 237, .7); }
+  #dots .dot.active { width: 24px; background: #8AB4F8; }
+  #slideCounter {
+    pointer-events: auto; margin-left: 8px; padding: 2px 10px; border-radius: 999px;
+    background: rgba(60, 64, 67, .85); color: #E8EAED; font-size: 12px; font-weight: 500;
+  }
+
+  /* ---------- 16:9 Stage ---------- */
+  #main { padding: 0; }
+  #stage { padding: 0; display: flex; flex-direction: column; align-items: center; }
+  .wrap {
+    position: relative; width: 1600px; height: 900px; flex: 0 0 auto;
+    transform-origin: top center; overflow: hidden; background: #FFF;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .5); border-radius: 8px;
+  }
+  .slide {
+    width: 1600px; height: 900px; overflow: hidden;
+    background: #FFFFFF;
+    position: absolute; top: 0; left: 0; display: none;
+    word-break: keep-all; color: var(--ink);
+    transform-origin: 800px 2600px; will-change: transform, opacity;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .slide.active, .slide.leaving { display: block; }
+  .slide.leaving { z-index: 1; pointer-events: none; }
+  .slide.active { z-index: 2; }
+  /* Google 4-color segmented bar (bottom) + footer label */
+  .slide::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 5; background: var(--g4);
+  }
+  .slide::before {
+    content: "Google Cloud"; position: absolute; right: 64px; bottom: 16px; z-index: 4;
+    font-size: 25px; font-weight: 500; color: var(--grey-600); letter-spacing: .2px; white-space: nowrap;
+  }
+  #pageend::before { content: none; }
+  .slide > * { position: relative; z-index: 1; }
+
+  .rv { transition: opacity .4s cubic-bezier(.2, 0, 0, 1), translate .4s cubic-bezier(.2, 0, 0, 1); }
+  .rv.rv-hide { opacity: 0; translate: 0 10px; }
+  @media (prefers-reduced-motion: reduce) { .rv { transition: none; } }
+
+  /* ---------- Slide Header ---------- */
+  .corner { position: absolute; top: 40px; left: 0; width: 8px; height: 64px; z-index: 2; background: var(--g4v); }
+  .pageno {
+    position: absolute; top: 34px; left: 64px; z-index: 3;
+    font-size: 13px; font-weight: 700; color: var(--blue); letter-spacing: 1.5px;
+  }
+  .pageno::before { content: "SECTION "; color: var(--grey-600); font-weight: 500; }
+  .title {
+    position: absolute; top: 56px; left: 64px; right: 64px;
+    font-size: 38px; font-weight: 700; color: var(--navy); letter-spacing: -.4px; line-height: 1.15;
+  }
+  .title .tsub { font-size: 18px; font-weight: 400; color: var(--grey-600); margin-left: 10px; letter-spacing: 0; }
+  .logo {
+    position: absolute; top: 50px; right: 64px; display: flex; align-items: center; gap: 10px;
+    padding: 6px 14px 6px 10px; border-radius: 999px; background: var(--grey-50); border: 1px solid var(--grey-200);
+  }
+  .logo .gdots { display: inline-grid; grid-template-columns: 8px 8px; gap: 3px; }
+  .logo .gdots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+  .logo .gdots i:nth-child(1) { background: var(--g-blue); }
+  .logo .gdots i:nth-child(2) { background: var(--g-red); }
+  .logo .gdots i:nth-child(3) { background: var(--g-yellow); }
+  .logo .gdots i:nth-child(4) { background: var(--g-green); }
+  .logo .n { font-size: 15px; font-weight: 500; color: var(--grey-800); }
+  .logo .s { font-size: 13.5px; font-weight: 400; color: var(--grey-600); }
+
+  .headline {
+    position: absolute; top: 140px; transform: translateY(-50%); left: 64px; right: 64px;
+    font-size: 22px; font-weight: 400; line-height: 1.3; color: var(--grey-700); text-align: left;
+    padding-left: 18px; border-left: 4px solid var(--blue-100);
+  }
+  .headline .k, .headline b, .headline em, .headline strong {
+    font-size: 28px; font-weight: 500; font-style: normal; letter-spacing: -.2px;
+  }
+  .headline .k { color: var(--grey-900); }
+  .headline b { color: var(--blue); }
+  .headline em { color: var(--red); }
+  .headline strong { color: var(--green); }
+
+  .c-hi { color: var(--green); font-weight: 500; }
+  .c-em { color: var(--blue); font-weight: 500; }
+  .c-bad { color: var(--red); font-weight: 500; }
+  .c-amb { color: var(--yellow-d); font-weight: 500; }
+
+  code {
+    font-family: var(--mono); font-size: .86em; font-weight: 500;
+    background: var(--grey-100); color: var(--blue-d); padding: 1px 6px; border-radius: 4px;
+  }
+
+  /* ---------- Cover & Closing (Google brand shapes) ---------- */
+  #pagecover, #pageend { background: linear-gradient(180deg, #FFFFFF 0%, var(--g-bg) 100%); }
+  #pagecover { background: linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 62%, var(--g-bg) 100%); }
+  .cover-eyebrow { font-size: 18px; font-weight: 500; color: var(--blue); letter-spacing: .4px; margin: 0 0 18px 34px; }
+  .cover-accent { width: 10px; height: 74px; border-radius: 5px; background: var(--g4v); flex: 0 0 auto; }
+  #pagecover .cover-row { gap: 24px; }
+  #pagecover .cover-sub { margin-left: 34px; max-width: none; white-space: nowrap; font-size: 21px; letter-spacing: -.2px; }
+  .cover-seg { display: flex; gap: 8px; width: auto; height: auto; background: none; margin: 40px 0 0 34px; }
+  .cover-seg i { display: block; width: 44px; height: 8px; border-radius: 4px; }
+  .cover-seg i:nth-child(1) { background: var(--g-blue); }
+  .cover-seg i:nth-child(2) { background: var(--g-red); }
+  .cover-seg i:nth-child(3) { background: var(--g-yellow); }
+  .cover-seg i:nth-child(4) { background: var(--g-green); }
+  .cover-rings { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .cover-hero {
+    position: absolute; left: 120px; top: 420px; transform: translateY(-50%);
+    width: 1150px; display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+  }
+  .cover-kicker {
+    font-size: 15px; font-weight: 500; letter-spacing: .3px; color: var(--blue-d);
+    background: var(--blue-50); border-radius: 8px; padding: 7px 14px; margin-bottom: 26px;
+  }
+  .cover-row { display: flex; align-items: center; gap: 22px; }
+  .gmark { display: inline-grid; grid-template-columns: 26px 26px; gap: 8px; flex: 0 0 auto; }
+  .gmark i { width: 26px; height: 26px; border-radius: 50%; display: block; }
+  .gmark i:nth-child(1) { background: var(--g-blue); }
+  .gmark i:nth-child(2) { background: var(--g-red); }
+  .gmark i:nth-child(3) { background: var(--g-yellow); }
+  .gmark i:nth-child(4) { background: var(--g-green); }
+  .cover-brand { font-size: 56px; font-weight: 700; letter-spacing: -1px; line-height: 1.1; color: var(--navy); white-space: nowrap; }
+  .cover-sub { font-size: 24px; font-weight: 400; color: var(--grey-700); margin-top: 20px; line-height: 1.45; max-width: 980px; }
+  .cover-pills { display: flex; align-items: center; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+  .cover-pills span {
+    font-size: 15px; font-weight: 500; padding: 8px 16px; border-radius: 8px;
+    background: #FFF; color: var(--grey-800); border: 1px solid var(--grey-300);
+  }
+  .cover-pills span.ar { background: var(--blue-50); border-color: transparent; color: var(--blue-d); }
+  .cover-pills span.cr { background: var(--green-50); border-color: transparent; color: var(--green-d); }
+  .cover-pills span.gk { background: var(--yellow-50); border-color: transparent; color: var(--yellow-d); }
+  .cover-divider { width: 160px; height: 6px; margin: 34px 0 0; border-radius: 3px; background: var(--g4); }
+  .cover-meta {
+    position: absolute; left: 120px; bottom: 64px; display: flex; flex-direction: column; align-items: flex-start;
+  }
+  .cover-org1 { font-size: 20px; font-weight: 500; color: var(--grey-900); }
+  .cover-org2 { font-size: 15px; font-weight: 400; color: var(--grey-600); margin-top: 6px; }
+  .cover-org2 b { color: var(--blue); font-weight: 500; }
+
+  /* ---------- Agenda (Slide 01) ---------- */
+  .toccards { position: absolute; top: 140px; left: 64px; right: 64px; bottom: 64px; display: flex; gap: 24px; }
+  .toccard {
+    --c: var(--blue); --c50: var(--blue-50); --cd: var(--blue-d);
+    flex: 1; position: relative; background: #FFF; border-radius: 16px; border: 1px solid var(--grey-300);
+    padding: 30px 28px 26px; overflow: hidden; cursor: pointer;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .toccard::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--c); }
+  .toccard:hover { box-shadow: var(--elev-2); transform: translateY(-2px); }
+  .toccard.t2 { --c: var(--green); --c50: var(--green-50); --cd: var(--green-d); }
+  .toccard.t3 { --c: var(--red); --c50: var(--red-50); --cd: var(--red-d); }
+  .tocbadge { display: none; }
+  .tocnum {
+    width: 52px; height: 52px; border-radius: 50%; background: var(--c50); color: var(--cd);
+    display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 500; margin-bottom: 18px;
+  }
+  .tochead { text-align: left; }
+  .tocspark { display: none; }
+  .tocname { font-size: 26px; font-weight: 500; letter-spacing: -.2px; line-height: 1.2; color: var(--grey-900); }
+  .tocname .tocnamesub { display: block; font-size: 15px; font-weight: 400; color: var(--grey-600); margin-top: 6px; }
+  .tocrule { height: 1px; margin: 18px 0 14px; background: var(--grey-200); }
+  ul.toclist { margin: 0; padding: 0; list-style: none; }
+  ul.toclist li {
+    position: relative; padding: 11px 12px 11px 32px; margin-bottom: 2px;
+    font-size: 18px; color: var(--grey-800); border-radius: 8px; transition: background .12s;
+  }
+  ul.toclist li::before {
+    content: ""; position: absolute; left: 12px; top: 50%; margin-top: -4px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--c);
+  }
+  ul.toclist li[data-goto]:hover { background: var(--c50); color: var(--cd); }
+  .tocmsg {
+    position: absolute; left: 24px; right: 24px; bottom: 22px; border-radius: 12px;
+    padding: 14px 18px; font-size: 16.5px; line-height: 1.5; color: var(--grey-800); background: var(--grey-50); min-height: 100px;
+  }
+  .tocmsg .lb { display: block; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; color: var(--cd); }
+  .tocmsg b { color: var(--grey-900); font-weight: 500; }
+
+  /* ---------- Cards (Material outlined surface + tonal header) ---------- */
+  .cols { position: absolute; top: 196px; left: 64px; right: 64px; bottom: 60px; display: flex; gap: 24px; }
+  .cols.with-fnote { bottom: 128px; }
+  .col {
+    --c: var(--blue); --c50: var(--blue-50); --cd: var(--blue-d);
+    flex: 1 1 0; min-width: 0; position: relative; background: #FFF;
+    border: 1px solid var(--grey-300); border-radius: 16px; overflow: hidden;
+    display: flex; flex-direction: column; padding: 0;
+  }
+  .col.tealbox, .col.greenbox { --c: var(--green); --c50: var(--green-50); --cd: var(--green-d); }
+  .col.amberbox { --c: var(--yellow); --c50: var(--yellow-50); --cd: var(--yellow-d); }
+  .col.redbox { --c: var(--red); --c50: var(--red-50); --cd: var(--red-d); }
+  .col .ctab {
+    display: flex; align-items: center; gap: 10px; white-space: nowrap;
+    padding: 13px 22px; background: var(--c50); color: var(--cd);
+    font-size: 18px; font-weight: 500; border-bottom: 1px solid var(--grey-200);
+    box-shadow: inset 0 4px 0 var(--c);
+  }
+  .col .ctab::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
+  .col .body {
+    flex: 1; min-height: 0; overflow: hidden; padding: 18px 24px 18px 22px;
+    font-size: 16.5px; line-height: 1.5; color: var(--grey-800);
+    display: flex; flex-direction: column; justify-content: flex-start;
+  }
+  .col .body > .sec + .sec { margin-top: 22px; }
+  .col .body > .sec.pinb { margin-top: auto; padding-top: 14px; }
+
+  .sec { padding-left: 0; }
+  .sechead {
+    font-size: 19px; font-weight: 500; margin-bottom: 10px; color: var(--grey-900);
+    display: flex; align-items: center; gap: 10px; line-height: 1.3;
+  }
+  .sechead .dot { width: 4px; height: 20px; border-radius: 2px; background: var(--c, var(--blue)); flex: 0 0 auto; }
+
+  ul.blist { margin: 0; padding: 0; list-style: none; }
+  ul.blist li { position: relative; padding-left: 20px; margin-bottom: 8px; font-size: 18px; line-height: 1.45; color: var(--grey-800); }
+  ul.blist li::before {
+    content: ""; position: absolute; left: 3px; top: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--blue));
+  }
+  ul.blist li b { color: var(--grey-900); font-weight: 500; }
+  ul.blist.compact li { font-size: 16.5px; margin-bottom: 7px; line-height: 1.42; }
+  ul.blist.compact li::before { top: 9px; }
+  ul.blist.pro li, ul.blist.con li { padding-left: 28px; }
+  ul.blist.pro li::before, ul.blist.con li::before {
+    width: 18px; height: 18px; top: 3px; left: 0; border-radius: 50%; color: #FFF;
+    font-size: 13px; font-weight: 700; line-height: 18px; text-align: center;
+  }
+  ul.blist.pro li::before { content: "✓"; background: var(--green); }
+  ul.blist.con li::before { content: "!"; background: var(--yellow); color: var(--grey-900); }
+
+  /* KPI */
+  .kpi3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .kpi { background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 12px; padding: 14px 12px; text-align: left; }
+  .kpi .kv { font-size: 42px; font-weight: 500; line-height: 1; letter-spacing: -1px; }
+  .kpi .kl { font-size: 16px; font-weight: 500; color: var(--grey-900); margin-top: 8px; }
+  .kpi .kt { font-size: 13.5px; color: var(--grey-600); margin-top: 4px; line-height: 1.38; }
+  .kpi .kt b { color: var(--grey-800); font-weight: 500; }
+  .kpi.k1 .kv { color: var(--blue); }
+  .kpi.k2 .kv { color: var(--red); }
+  .kpi.k3 .kv { color: var(--green); }
+
+  /* Traits */
+  .trait2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .trait { --t: var(--blue); --t50: var(--blue-50); background: #FFF; border: 1px solid var(--grey-200); border-radius: 12px; padding: 14px 16px; }
+  .trait.t-red { --t: var(--red); --t50: var(--red-50); }
+  .trait.t-amb { --t: var(--yellow-d); --t50: var(--yellow-50); }
+  .trait.t-grn { --t: var(--green); --t50: var(--green-50); }
+  .trait .tk {
+    display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .6px;
+    color: var(--t); background: var(--t50); padding: 2px 8px; border-radius: 4px;
+  }
+  .trait .tt { font-size: 17.5px; font-weight: 500; color: var(--grey-900); margin-top: 8px; }
+  .trait .td { font-size: 14.5px; color: var(--grey-700); line-height: 1.45; margin-top: 4px; }
+
+  /* Steppers */
+  .flowsteps { display: flex; flex-direction: column; }
+  .fstep { display: flex; gap: 14px; align-items: flex-start; padding: 7px 0; position: relative; }
+  .fstep .fnum {
+    flex: 0 0 30px; height: 30px; border-radius: 50%; background: var(--blue); color: #FFF;
+    font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center;
+  }
+  .fstep.teal .fnum, .fstep.green .fnum { background: var(--green); }
+  .fstep.red .fnum { background: var(--red); }
+  .fstep .ftx { font-size: 18px; color: var(--grey-800); line-height: 1.38; padding-top: 2px; flex: 1; }
+  .fstep .ftx b { color: var(--grey-900); font-weight: 500; }
+  .fstep .ftx .sm { display: block; font-size: 15px; color: var(--grey-600); line-height: 1.4; margin-top: 2px; }
+  .fstep:not(:last-child)::before { content: ""; position: absolute; left: 14.5px; top: 39px; bottom: -3px; width: 1.5px; background: var(--grey-300); }
+
+  /* Domain layers */
+  .layers { display: flex; flex-direction: column; gap: 8px; }
+  .ly {
+    --l: var(--blue); --l50: var(--blue-50);
+    display: grid; grid-template-columns: 60px 1fr; align-items: center; gap: 14px;
+    background: #FFF; border: 1px solid var(--grey-200); border-radius: 12px; padding: 9px 14px 9px 10px;
+  }
+  .ly:nth-child(2) { --l: var(--red); --l50: var(--red-50); }
+  .ly:nth-child(3) { --l: var(--yellow-d); --l50: var(--yellow-50); }
+  .ly:nth-child(4) { --l: var(--green); --l50: var(--green-50); }
+  .ly:nth-child(5) { --l: var(--blue-d); --l50: var(--blue-100); }
+  .ly .lno { text-align: center; background: var(--l50); border-radius: 10px; padding: 6px 0; }
+  .ly .lno .a { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--l); opacity: .8; }
+  .ly .lno .b { display: block; font-size: 22px; font-weight: 500; line-height: 1.1; color: var(--l); }
+  .ly .lt { font-size: 17px; font-weight: 500; color: var(--grey-900); }
+  .ly .lt span { font-size: 13px; font-weight: 500; color: var(--l); margin-left: 8px; font-family: var(--mono); }
+  .ly .ld { font-size: 14px; color: var(--grey-700); line-height: 1.4; margin-top: 2px; }
+
+  /* Architecture stack */
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .stk-label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--grey-700); }
+  .stk-label .alpha { font-size: 12px; font-weight: 700; color: var(--green-d); background: var(--green-50); border-radius: 4px; padding: 2px 8px; }
+  .stk-quad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stk-sc {
+    --s: var(--blue); background: #FFF; border: 1px solid var(--grey-300); border-left: 4px solid var(--s);
+    border-radius: 10px; padding: 10px 12px; text-decoration: none; display: block; transition: box-shadow .15s;
+  }
+  .stk-sc:hover { box-shadow: var(--elev-1); }
+  .stk-sc.s1 { --s: var(--red); } .stk-sc.s2 { --s: var(--yellow); } .stk-sc.s3 { --s: var(--blue); } .stk-sc.s4 { --s: var(--green); }
+  .stk-sc .n { font-size: 11.5px; font-weight: 700; color: var(--grey-600); letter-spacing: .5px; }
+  .stk-sc .t { font-size: 16px; font-weight: 500; color: var(--grey-900); margin-top: 2px; }
+  .stk-sc .s { font-size: 13px; color: var(--grey-600); margin-top: 2px; line-height: 1.35; }
+  .stk-base { background: var(--blue); color: #FFF; border-radius: 10px; padding: 12px 16px; }
+  .stk-base .t { font-size: 17.5px; font-weight: 500; }
+  .stk-base .s { font-size: 13.5px; opacity: .92; margin-top: 2px; }
+  .stk-base code { background: rgba(255, 255, 255, .2); color: #FFF; }
+  .stk-plat { background: var(--grey-800); color: #E8EAED; border-radius: 10px; padding: 11px 16px; }
+  .stk-plat .t { font-size: 15.5px; font-weight: 500; color: #FFF; }
+  .stk-plat .s { font-size: 13px; color: #BDC1C6; margin-top: 2px; }
+  .stk-plat code { background: rgba(255, 255, 255, .14); color: #E8EAED; }
+
+  /* ---------- Mirror (Prototype vs Production) ---------- */
+  .mirror { position: absolute; top: 190px; left: 64px; right: 64px; display: flex; flex-direction: column; gap: 9px; }
+  .mrow { position: relative; display: grid; grid-template-columns: 1fr 270px 1fr; align-items: stretch; column-gap: 24px; }
+  .mrow::before {
+    content: ""; position: absolute; left: 6%; right: 6%; top: 50%; height: 1px; z-index: 0; border-top: 1.5px dashed var(--grey-300);
+  }
+  .mrow > * { position: relative; z-index: 1; }
+  .mhead::before { display: none; }
+  .mhead .hcw { width: 560px; display: flex; justify-content: center; }
+  .mhead .hcw.left { justify-self: end; } .mhead .hcw.right { justify-self: start; }
+  .mhead .hc {
+    justify-self: center; align-self: center; font-size: 16px; font-weight: 500;
+    border-radius: 8px; padding: 7px 18px; white-space: nowrap;
+  }
+  .mhead .hc small { font-size: 13px; font-weight: 400; margin-left: 6px; opacity: .85; }
+  .mhead .hc.proto { background: var(--red-50); color: var(--red-d); }
+  .mhead .hc.mid { background: var(--grey-100); color: var(--grey-800); }
+  .mhead .hc.prod { background: var(--green-50); color: var(--green-d); }
+  .mc {
+    background: #FFF; width: 560px; min-height: 66px; border-radius: 12px; border: 1px solid var(--grey-300);
+    padding: 9px 18px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .mc.left { justify-self: end; text-align: right; border-right: 4px solid var(--red); }
+  .mc.right { justify-self: start; text-align: left; border-left: 4px solid var(--green); }
+  .mc .m { font-size: 17px; font-weight: 500; line-height: 1.28; }
+  .mc .s { font-size: 13.5px; color: var(--grey-700); line-height: 1.38; margin-top: 2px; }
+  .mc.left .m { color: var(--red-d); } .mc.right .m { color: var(--green-d); }
+  .mrole {
+    align-self: center; background: var(--blue-50); color: var(--blue-d);
+    border-radius: 12px; text-align: center; padding: 8px 10px; border: 1px solid var(--blue-100);
+  }
+  .mrole .r { font-size: 16.5px; font-weight: 500; line-height: 1.2; }
+  .mrole .e { font-size: 11px; font-weight: 500; letter-spacing: .5px; opacity: .8; margin-top: 2px; }
+
+  /* ---------- 3-Runtime Comparison ---------- */
+  .cmp3 { position: absolute; top: 190px; left: 64px; right: 64px; bottom: 128px; display: flex; flex-direction: column; gap: 8px; }
+  .crow3 { display: grid; grid-template-columns: 190px 1fr 1fr 1fr; gap: 10px; flex: 1 1 0; min-height: 0; }
+  .crow3.ch { flex: 0 0 auto; }
+  .crow3.ch .hc {
+    text-align: center; font-size: 16.5px; font-weight: 500; color: #FFF;
+    border-radius: 10px; padding: 9px 14px; white-space: nowrap;
+  }
+  .crow3.ch .hc.ar { background: var(--blue); }
+  .crow3.ch .hc.cr { background: var(--green); }
+  .crow3.ch .hc.gk { background: var(--yellow); color: var(--grey-900); }
+  .crow3.ch .hc small { font-size: 12.5px; font-weight: 400; opacity: .9; margin-left: 5px; }
+  .cl3 {
+    background: var(--grey-50); color: var(--grey-900); border-radius: 10px; border: 1px solid var(--grey-200);
+    display: flex; flex-direction: column; justify-content: center; padding: 0 14px;
+  }
+  .cl3 .r { font-size: 16.5px; font-weight: 500; line-height: 1.2; }
+  .cl3 .e { font-size: 11px; font-weight: 500; color: var(--grey-600); letter-spacing: .4px; margin-top: 3px; }
+  .cc3 {
+    --cc: var(--blue); position: relative; background: #FFF; border-radius: 10px; border: 1px solid var(--grey-200);
+    border-top: 3px solid var(--cc); padding: 8px 14px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .cc3.cr { --cc: var(--green); } .cc3.gk { --cc: var(--yellow); }
+  .cc3 .m { font-size: 15px; font-weight: 500; color: var(--grey-900); line-height: 1.3; padding-right: 74px; }
+  .cc3 .s { font-size: 13px; color: var(--grey-700); line-height: 1.35; margin-top: 2px; }
+  .cc3.ar .m b { color: var(--blue-d); font-weight: 500; }
+  .cc3.cr .m b { color: var(--green-d); font-weight: 500; }
+  .cc3.gk .m b { color: var(--yellow-d); font-weight: 500; }
+  .cc3 .tg { position: absolute; top: 7px; right: 8px; font-size: 10.5px; font-weight: 500; border-radius: 4px; padding: 2px 6px; }
+  .cc3 .tg.auto { background: var(--green-50); color: var(--green-d); }
+  .cc3 .tg.plat { background: var(--blue-50); color: var(--blue-d); }
+  .cc3 .tg.adv { background: var(--grey-100); color: var(--grey-700); }
+  .cc3 .tg.must { background: var(--yellow-50); color: var(--yellow-d); }
+  .cc3 .tg.warn { background: var(--red-50); color: var(--red-d); }
+  /* v3 badges: conditional / Preview */
+  .bdg { display: inline-block; font-size: 10.5px; font-weight: 500; line-height: 1.5; border-radius: 4px; padding: 0 6px; margin-left: 4px; vertical-align: 2px; font-family: inherit; letter-spacing: 0; }
+  .bdg.cond { background: var(--yellow-50); color: var(--yellow-d); }
+  .bdg.prev { background: var(--blue-50); color: var(--blue-d); }
+  .bdg.plat { background: var(--grey-100); color: var(--grey-700); }
+
+  /* ---------- 3-Card Showcase (GKE patterns) ---------- */
+  .grid3 { position: absolute; top: 196px; left: 64px; right: 64px; bottom: 132px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .gcard {
+    --c: var(--blue); --c50: var(--blue-50); --cd: var(--blue-d);
+    position: relative; background: #FFF; border-radius: 16px; border: 1px solid var(--grey-300);
+    padding: 24px 22px 18px; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .gcard::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--c); }
+  .gcard.p2 { --c: var(--red); --c50: var(--red-50); --cd: var(--red-d); }
+  .gcard.p3 { --c: var(--green); --c50: var(--green-50); --cd: var(--green-d); }
+  .gcard-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .gcard-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .6px; padding: 3px 9px; border-radius: 4px; background: var(--c50); color: var(--cd); }
+  .gcard-mode { font-size: 12px; font-weight: 500; color: var(--grey-700); border: 1px solid var(--grey-300); padding: 2px 8px; border-radius: 4px; }
+  .gcard h3 { font-size: 22px; font-weight: 500; color: var(--grey-900); margin: 14px 0 4px; letter-spacing: -.2px; line-height: 1.25; }
+  .gcard .gsub { font-size: 14.5px; color: var(--grey-700); margin-bottom: 12px; line-height: 1.4; }
+  .gcard .grule { height: 1px; background: var(--grey-200); margin: 0 0 12px; }
+  .gcard .gbody { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; }
+  .gcard .gfoot { margin-top: auto; padding: 10px 12px; border-radius: 8px; background: var(--grey-50); font-size: 13.5px; color: var(--grey-700); line-height: 1.4; }
+  .gcard .gfoot b { color: var(--grey-900); font-weight: 500; }
+
+  /* ---------- Chips, Notes, Takes, Banner ---------- */
+  .svc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .svc span { font-size: 13.5px; font-weight: 500; border-radius: 8px; padding: 4px 10px; background: var(--blue-50); color: var(--blue-d); }
+  .svc span.teal, .svc span.grn { background: var(--green-50); color: var(--green-d); }
+  .svc span.amb { background: var(--yellow-50); color: var(--yellow-d); }
+  .svc span.red { background: var(--red-50); color: var(--red-d); }
+
+  .note {
+    background: var(--yellow-50); border-radius: 10px; padding: 11px 14px 11px 16px;
+    font-size: 15.5px; color: #5F3F00; margin-top: 10px; line-height: 1.48; border-left: 4px solid var(--yellow);
+  }
+  .note.blue { background: var(--blue-50); color: #0B3B85; border-left-color: var(--blue); }
+  .note.green { background: var(--green-50); color: #0D4F23; border-left-color: var(--green); }
+  .note b { font-weight: 500; color: inherit; }
+
+  .takes { display: flex; flex-direction: column; gap: 12px; }
+  .takes .tk {
+    --t: var(--blue); display: grid; grid-template-columns: 150px 1fr; gap: 16px; align-items: center;
+    background: #FFF; border: 1px solid var(--grey-200); border-radius: 12px; padding: 12px 16px 12px 12px;
+  }
+  .takes .tk.cr { --t: var(--green); }
+  .takes .tk.gk { --t: var(--yellow); }
+  .takes .tk .tkw {
+    background: var(--t); color: #FFF; border-radius: 10px; text-align: center; padding: 12px 8px;
+    font-size: 17.5px; font-weight: 500; line-height: 1.2;
+  }
+  .takes .tk.gk .tkw { color: var(--grey-900); }
+  .takes .tk .tkw small { display: block; font-size: 10.5px; font-weight: 500; letter-spacing: .8px; opacity: .9; margin-top: 4px; }
+  .takes .tk .tkd { font-size: 16px; color: var(--grey-800); line-height: 1.48; }
+  .takes .tk .tkd b { color: var(--grey-900); font-weight: 500; }
+
+  .fnote {
+    position: absolute; left: 64px; right: 64px; bottom: 56px;
+    display: flex; align-items: center; gap: 14px; background: var(--grey-50);
+    border: 1px solid var(--grey-200); border-radius: 12px;
+    padding: 12px 20px; font-size: 16.5px; color: var(--grey-800); line-height: 1.45;
+  }
+  .fnote svg { flex: 0 0 24px; }
+  .fnote b { color: var(--grey-900); font-weight: 500; }
+  .fnote strong { color: var(--blue); font-weight: 500; }
+  .fnote .more { margin-left: auto; flex: 0 0 auto; }
+
+  .more {
+    display: inline-flex; align-items: center; gap: 6px; height: 32px;
+    font-size: 13.5px; font-weight: 500; color: var(--blue); background: #FFF;
+    border: 1px solid var(--grey-300); border-radius: 8px; padding: 0 12px 0 8px;
+    white-space: nowrap; cursor: pointer; transition: background .15s, box-shadow .15s;
+  }
+  .more::before {
+    content: "+"; display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%; background: var(--blue); color: #FFF; font-size: 14px; font-weight: 500; line-height: 1;
+  }
+  .more:hover { background: var(--blue-50); box-shadow: var(--elev-1); }
+  .morewrap { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .portal-cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .pbtn {
+    display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 20px;
+    border-radius: 999px; font-size: 15px; font-weight: 500; text-decoration: none; color: #FFF;
+    box-shadow: var(--elev-1); transition: box-shadow .15s, filter .15s;
+  }
+  .pbtn:hover { box-shadow: var(--elev-2); filter: brightness(1.05); }
+  .pbtn.b { background: var(--blue); }
+  .pbtn.g { background: var(--green); }
+  .pbtn.a { background: var(--yellow); color: var(--grey-900); }
+  .pbtn.d { background: var(--grey-800); }
+
+  /* ---------- Material Dialog ---------- */
+  .dmodal { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; }
+  .dmodal[hidden] { display: none; }
+  .dmodal .dm-back { position: absolute; inset: 0; background: rgba(32, 33, 36, .55); }
+  .dmodal .dm-panel {
+    position: relative; width: 1180px; max-height: 780px; background: #FFF; border-radius: 24px;
+    box-shadow: var(--elev-3); display: flex; flex-direction: column; overflow: hidden;
+  }
+  .dmodal .dm-x {
+    position: absolute; top: 16px; right: 18px; width: 40px; height: 40px; border: 0; border-radius: 50%;
+    background: transparent; color: var(--grey-700); font-size: 18px; cursor: pointer; font-family: var(--font);
+  }
+  .dmodal .dm-x:hover { background: var(--grey-100); }
+  .dm-head { padding: 24px 72px 16px 32px; border-bottom: 1px solid var(--grey-200); }
+  .dm-head .dm-k { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--blue); }
+  .dm-head .dm-title { font-size: 24px; font-weight: 500; color: var(--grey-900); margin-top: 4px; }
+  .dm-head .dm-sub { font-size: 14px; color: var(--grey-600); margin-top: 4px; }
+  .dm-body { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; padding: 20px 32px 26px; }
+  .dm-body.single { grid-template-columns: 1fr; }
+  .dm-body h4 { font-size: 15px; font-weight: 500; color: var(--grey-900); margin: 0 0 10px; }
+  .dm-body table.mini { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .dm-body table.mini th { text-align: left; color: var(--grey-700); font-weight: 500; padding: 8px; border-bottom: 1px solid var(--grey-300); font-size: 12.5px; background: var(--grey-50); }
+  .dm-body table.mini td { padding: 7px 8px; border-bottom: 1px solid var(--grey-200); color: var(--grey-800); line-height: 1.42; vertical-align: top; }
+  .codebox {
+    background: #202124; color: #E8EAED; border-radius: 12px; padding: 14px 16px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.6; white-space: pre; overflow-x: auto; margin-bottom: 12px;
+  }
+  .codebox .cm { color: #9AA0A6; } .codebox .kw { color: #8AB4F8; } .codebox .st { color: #81C995; }
+  .codebox .nm { color: #FDD663; } .codebox .bad { color: #F28B82; }
+  .dm-note { font-size: 13.5px; color: var(--grey-800); background: var(--blue-50); border-radius: 10px; padding: 10px 14px; line-height: 1.5; }
+  .dm-note b { color: var(--grey-900); font-weight: 500; }
+
+  /* ---------- Closing ---------- */
+  #pageend .end-hero {
+    position: absolute; left: 120px; top: 400px; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+  }
+  #pageend .end-title { font-size: 84px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin-top: 24px; color: var(--navy); }
+  #pageend .end-sub { font-size: 22px; font-weight: 400; color: var(--grey-700); margin-top: 12px; }
+  #pageend .end-links { position: absolute; left: 120px; bottom: 90px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  @media print {
+    #sidebar, #hoverzone, #pillbtn, .deck-ctrl-left, .deck-ctrl-right, #dots, #detailModal { display: none !important; }
+    #stage { padding: 0; height: auto !important; margin-top: 0 !important; display: block; }
+    .rv.rv-hide { opacity: 1 !important; translate: none !important; }
+    html, body { height: auto; overflow: visible; background: #FFF; }
+    .wrap { transform: none !important; width: auto; height: auto; overflow: visible; box-shadow: none; background: none; border-radius: 0; }
+    .slide { position: relative !important; transform: none !important; opacity: 1 !important; page-break-after: always; break-after: page; display: block !important; }
+    @page { size: 1600px 900px; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hoverzone"></div>
+<button id="pillbtn" type="button">목차</button>
+
+<div class="deck-ctrl-left">
+  <a href="/" class="ctrl-btn">← 메인 포털</a>
+</div>
+
+<div class="deck-ctrl-right">
+  <button id="stepModeBtn" class="ctrl-btn on" type="button" title="클릭/화살표로 단계별 등장 여부 전환">단계 등장: ON</button>
+  <button id="fsBtn" class="ctrl-btn" type="button" title="전체 화면 발표 모드">전체화면</button>
+  <button id="printbtn" class="ctrl-btn" type="button" title="16:9 슬라이드 PDF 저장">인쇄 / PDF</button>
+</div>
+
+<div id="dots"></div>
+
+<!-- ==================== SLIDE-OUT TOC SIDEBAR ==================== -->
+<nav id="sidebar" aria-label="발표 목차">
+  <div class="stitle">Presentation Deck (13 Slides)</div>
+  <a href="#pagecover" class="nav-slide active" data-p="pagecover"><span class="pagenum">00</span>표지 · Platform Overview</a>
+  <a href="#page1" class="nav-slide" data-p="page1"><span class="pagenum">01</span>목차 (Agenda)</a>
+  <a href="#page2" class="nav-slide" data-p="page2"><span class="pagenum">02</span>왜 Production-Readiness인가?</a>
+  <a href="#page3" class="nav-slide" data-p="page3"><span class="pagenum">03</span>Prototype vs. Production Gap</a>
+  <a href="#page4" class="nav-slide" data-p="page4"><span class="pagenum">04</span>전체 시스템 &amp; 4단계 웹 포털</a>
+  <a href="#page5" class="nav-slide" data-p="page5"><span class="pagenum">05</span>체크리스트 v3 · 5개 카테고리</a>
+  <a href="#page6" class="nav-slide" data-p="page6"><span class="pagenum">06</span>환경별 체크리스트 항목 차이</a>
+  <a href="#page7" class="nav-slide" data-p="page7"><span class="pagenum">07</span>특화 기능 ① Agent Runtime · Cloud Run</a>
+  <a href="#page8" class="nav-slide" data-p="page8"><span class="pagenum">08</span>특화 기능 ② GKE 3대 아키텍처</a>
+  <a href="#page9" class="nav-slide" data-p="page9"><span class="pagenum">09</span>3대 런타임 6대 아키텍처 축 비교</a>
+  <a href="#page10" class="nav-slide" data-p="page10"><span class="pagenum">10</span>Agent 배포 관점 환경별 장단점</a>
+  <a href="#page11" class="nav-slide" data-p="page11"><span class="pagenum">11</span>런타임 선택 기준 &amp; 도입 로드맵</a>
+  <a href="#pageend" class="nav-slide" data-p="pageend"><span class="pagenum">··</span>마무리 · 포털 바로가기</a>
+
+  <div class="s-divider"></div>
+  <div class="stitle">Web Portal 바로가기</div>
+  <div class="portal-links">
+    <a href="/"><span>🏠 메인 홈</span><span>/</span></a>
+    <a href="/checklist"><span>📋 체크리스트 v3</span><span>/checklist</span></a>
+    <a href="/lab"><span>🛠️ 핸즈온 실습 가이드</span><span>/lab</span></a>
+    <a href="/workbench"><span>🩺 런타임 라이브 진단</span><span>/workbench</span></a>
+  </div>
+</nav>
+
+<div id="main">
+<div id="stage">
+<div class="wrap">
+
+  <!-- ======================= 00 : COVER ======================= -->
+  <section class="slide active" id="pagecover">
+    <svg class="cover-rings" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M1288 184 L1288 72 A112 112 0 0 1 1400 184 Z" fill="#4285F4"/><circle cx="1476.0" cy="128.0" r="56.0" fill="#D2E3FC"/><rect x="1288" y="202" width="112" height="112" rx="26" fill="#FBBC04"/><path d="M1420 202 A56.0 56.0 0 0 1 1420 314 Z" transform="translate(56.0 0)" fill="#EA4335"/><circle cx="1344.0" cy="388.0" r="56.0" fill="#34A853"/><path d="M1532 332 L1532 444 A112 112 0 0 1 1420 332 Z" fill="#1A73E8"/><rect x="1288" y="495.6" width="112" height="44.800000000000004" rx="22.400000000000002" fill="#FAD2CF"/><rect x="1420" y="462" width="112" height="112" rx="26" fill="#CEEAD6"/><path d="M1288 592 A56.0 56.0 0 0 1 1288 704 Z" transform="translate(56.0 0)" fill="#FEEFC3"/><circle cx="1476.0" cy="648.0" r="56.0" fill="#EA4335"/></svg>
+    <div class="cover-hero">
+      <div class="cover-eyebrow">AI Agent Production-Readiness</div>
+      <div class="cover-row">
+        <span class="cover-accent" aria-hidden="true"></span>
+        <div class="cover-brand">Production-Ready AI Agent Platform</div>
+      </div>
+      <div class="cover-sub">로컬 프로토타입에서 엔터프라이즈 상용 운영까지 — 에이전트 특성 기반 체크리스트 v3 진단 · 패치 · 라이브 감사 체계</div>
+      <div class="cover-divider cover-seg" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <!-- ======================= 01 : 목차 ======================= -->
+  <section class="slide" id="page1">
+    <div class="corner"></div>
+    <div class="pageno">01</div>
+    <div class="title">목차 <span class="tsub">System Overview Presentation</span></div>
+
+    <div class="toccards">
+      <div class="toccard t1 rvbox" data-goto="page2">
+        <div class="tocbadge"></div><div class="tocnum">1</div>
+        <div class="tochead">
+          <div class="tocname">배경 &amp; 시스템 개요<span class="tocnamesub">Why &amp; Architecture</span></div>
+        </div>
+        <div class="tocrule c1"></div>
+        <ul class="toclist">
+          <li data-goto="page2">02 · 왜 Production-Readiness가 필요한가?</li>
+          <li data-goto="page3">03 · Prototype vs. Production (2단계 Gap)</li>
+          <li data-goto="page4">04 · 전체 시스템 아키텍처 &amp; 4단계 웹 포털</li>
+        </ul>
+        <div class="tocmsg c1"><span class="lb">KEY MESSAGE</span>로컬 데모와 초기 스캐폴딩 뒤에 숨은 <b>상용 장애 지점</b>을 자동화 시스템으로 해소</div>
+      </div>
+
+      <div class="toccard t2 rvbox" data-goto="page5">
+        <div class="tocbadge"></div><div class="tocnum">2</div>
+        <div class="tochead">
+          <div class="tocname">점검 체계 &amp; 환경별 특화<span class="tocnamesub">Checklist v3 &amp; Runtime Capabilities</span></div>
+        </div>
+        <div class="tocrule c2"></div>
+        <ul class="toclist">
+          <li data-goto="page5">05 · 무엇을 검사하는가? (에이전트 특성 기반 5개 카테고리)</li>
+          <li data-goto="page6">06 · 환경별 체크리스트 항목 차이 (조건부 · Preview)</li>
+          <li data-goto="page7">07 · Agent 특화 기능 ① Agent Runtime · Cloud Run</li>
+          <li data-goto="page8">08 · Agent 특화 기능 ② GKE 3대 실행 아키텍처</li>
+        </ul>
+        <div class="tocmsg c2"><span class="lb">KEY MESSAGE</span><b>에이전트 특성 항목만</b> 점검하고, 일반 플랫폼 Best Practice는 <b>플랫폼 Skill</b>에 위임</div>
+      </div>
+
+      <div class="toccard t3 rvbox" data-goto="page9">
+        <div class="tocbadge"></div><div class="tocnum">3</div>
+        <div class="tochead">
+          <div class="tocname">비교 · 장단점 &amp; 선택 전략<span class="tocnamesub">Trade-offs &amp; Roadmap</span></div>
+        </div>
+        <div class="tocrule c3"></div>
+        <ul class="toclist">
+          <li data-goto="page9">09 · 3대 런타임 6대 아키텍처 축 비교표</li>
+          <li data-goto="page10">10 · Agent 배포 관점 환경별 장단점 종합</li>
+          <li data-goto="page11">11 · 선택 기준 (Decision Framework) &amp; 로드맵</li>
+        </ul>
+        <div class="tocmsg c3"><span class="lb">KEY MESSAGE</span>워크로드 성격(세션·비용·격리·GPU)에 맞춰 <b>최적 런타임을 선택하고 즉시 프로덕션화</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 02 : 왜 필요한가? ======================= -->
+  <section class="slide" id="page2">
+    <div class="corner"></div>
+    <div class="pageno">02</div>
+    <div class="title">왜 Production-Readiness가 필요한가? <span class="tsub">Why AI Agents Break Standard Web Ops</span></div>
+
+    <div class="headline"><span class="k">로컬 데모의 성공</span>은 <em>상용 운영의 20%</em>에 불과 — <strong>AI Agent 고유 실행 특성</strong>이 기존 운영 기준을 무너뜨림</div>
+
+    <div class="cols">
+      <div class="col left redbox">
+        <div class="ctab"><span>AI 에이전트가 기존 웹 API와 다른 4가지 이유</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>전통적 Stateless REST API 가정이 깨지는 지점</div>
+            <div class="trait2x2">
+              <div class="trait">
+                <div class="tk">TRAIT 01 · LONG-RUNNING</div>
+                <div class="tt">초장기 스트리밍 &amp; 다중 도구 호출</div>
+                <div class="td">1회 요청이 30~180초간 ReAct 루프·SSE 스트림을 유지 → 롤링 업데이트·기본 타임아웃 시 대화 즉각 끊김</div>
+              </div>
+              <div class="trait t-grn">
+                <div class="tk">TRAIT 02 · STATEFUL</div>
+                <div class="tt">멀티턴 상태 &amp; 아티팩트 의존</div>
+                <div class="td">인메모리 세션으로 배포하면 컨테이너 2개 스케일아웃·재시작 순간 직전 맥락과 생성 파일이 통째로 증발</div>
+              </div>
+              <div class="trait t-amb">
+                <div class="tk">TRAIT 03 · NON-DETERMINISTIC</div>
+                <div class="tt">비결정적 품질 회귀 (Eval 부재)</div>
+                <div class="td">프롬프트 한 줄 수정해도 단위 테스트는 통과하지만 환각·도구 오호출 급증 → CI/CD 내 자동 평가 게이트 필수</div>
+              </div>
+              <div class="trait t-red">
+                <div class="tk">TRAIT 04 · AUTONOMOUS RISK</div>
+                <div class="tt">자율 도구 실행 &amp; PII 노출 위험</div>
+                <div class="td">외부 API·코드 실행 권한이 과도하거나 트레이스 스팬에 고객 프롬프트 원문이 평문 적재되면 대형 보안 사고로 직결</div>
+              </div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="note"><b>현장 통증</b> — 개발팀은 ADK 로직에 집중하고 싶지만, 보안·네트워크·관측성·CI/CD 평가 설정은 런타임(Agent Runtime · Cloud Run · GKE)마다 완전히 달라 상용 전환에 수 주가 지연됨</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right">
+        <div class="ctab"><span>본 플랫폼이 해결하는 미션 &amp; 핵심 지표</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>표준화 · 자동화 · 무침습(Zero Over-Reach) 설계</div>
+            <div class="kpi3">
+              <div class="kpi k1"><div class="kv">5</div><div class="kl">체크리스트 카테고리</div><div class="kt">Features · Optimize<br><b>Delivery &amp; Eval · Obs · Security</b></div></div>
+              <div class="kpi k3"><div class="kv">3</div><div class="kl">런타임별 항목 세트</div><div class="kt">Cloud Run · Agent Runtime<br><b>GKE 에이전트 특성 항목</b></div></div>
+              <div class="kpi k2"><div class="kv">100%</div><div class="kl">기존 사이징 보존</div><div class="kt">CPU · RAM · 클러스터 모드<br><b>임의 변경 Zero 보장</b></div></div>
+            </div>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>ADK · agents-cli 이후의 "마지막 마일" 완성</div>
+            <ul class="blist">
+              <li><b>정적 스캔 → 자동 코드/IaC 패치</b>: 영속 세션 · Eval Gate · 프롬프트 미기록 · 에이전트 신원 등 <b>에이전트 특성 항목</b>만 인플레이스 패치</li>
+              <li><b>배포 후 라이브 감사 (Zero-IAM)</b>: 운영 환경에 IAM 권한을 주지 않고 JSON 붙여넣기만으로 실제 드리프트·설정 누락 검증</li>
+              <li><b>공식 Google Cloud 규격 100% 정렬</b>: <code>google-agents-cli</code> v1.5.0 · Agent Identity(SPIFFE) · Agent Gateway · OTel <code>NO_CONTENT</code></li>
+            </ul>
+          </div>
+          <div class="sec pinb">
+            <div class="note blue">핵심 목표 — <b>"누구나 로컬 데모 이후 15분 내에 엔터프라이즈 프로덕션 기준을 진단·적용·증적화"</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 03 : PROTOTYPE vs PRODUCTION ======================= -->
+  <section class="slide" id="page3">
+    <div class="corner"></div>
+    <div class="pageno">03</div>
+    <div class="title">Prototype vs. Production — 2단계 Gap 분석 <span class="tsub">Mode A &amp; Mode B → Enterprise Ready</span></div>
+
+    <div class="headline"><span class="k">로컬 프로토타입(Mode A)</span>뿐 아니라 <em>초기 스캐폴딩(Mode B)</em>에도 <strong>6대 핵심 상용 Gap</strong> 존재</div>
+
+    <div class="mirror">
+      <div class="mrow mhead">
+        <div class="hcw left"><div class="hc proto">Prototype<small>Mode A (adk create) · Mode B (agents-cli 초기)</small></div></div>
+        <div class="hc mid">에이전트 특성 → 필요한 조치</div>
+        <div class="hcw right"><div class="hc prod">Production-Ready<small>체크리스트 v3 적용 상태</small></div></div>
+      </div>
+
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">InMemorySessionService (휘발성)</div><div class="s">컨테이너 재시작 · 스케일아웃 시 대화 맥락 즉시 유실, 세션을 넘는 사용자 기억 없음</div></div>
+        <div class="mrole"><div class="r">대화 상태 → 관리형 영속 세션 저장</div><div class="e">FEATURES · F1 · F2</div></div>
+        <div class="mc right"><div class="m">VertexAiSessionService + Memory Bank</div><div class="s">멀티턴이면 영속 세션 · 장기 기억이 필요하면 Memory Bank (둘 다 조건부)</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">긴 응답 중 강제 종료</div><div class="s">롤링 배포 · 스케일인 때 진행 중인 SSE 스트림 절단</div></div>
+        <div class="mrole"><div class="r">긴 스트리밍 응답 → 무중단 종료</div><div class="e">OPTIMIZE · GKE-O1</div></div>
+        <div class="mc right"><div class="m">terminationGracePeriodSeconds + preStop (GKE)</div><div class="s">롤링 배포 · 스케일인 때 진행 중인 응답을 끝까지 보내고 종료</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">유휴 Pod의 자원 점유</div><div class="s">사용자 입력·도구 응답을 기다리는 동안에도 CPU·메모리를 계속 점유</div></div>
+        <div class="mrole"><div class="r">긴 유휴 시간 → 일시정지 · 복원</div><div class="e">OPTIMIZE · GKE-O2</div></div>
+        <div class="mc right"><div class="m">Agent Substrate on GKE 스냅샷 일시정지 · 복원</div><div class="s">자주 일시정지·재개하는 상태 유지형 에이전트일 때 (조건부 · GKE Standard &ge; 1.37)</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">CI/CD 내 품질 평가 단계 공백</div><div class="s">agents-cli eval은 저점수여도 exit 0 반환 → 품질이 떨어진 프롬프트가 Prod 배포</div></div>
+        <div class="mrole"><div class="r">비결정적 출력 → 평가 게이트</div><div class="e">DELIVERY &amp; EVAL · D1 · D2</div></div>
+        <div class="mc right"><div class="m">tests/eval/ + agent-eval-gate 자동 차단</div><div class="s">Staging 평가 점수 임계치 미달 시 exit 1로 승격 차단</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">트레이스 미연동 · 프롬프트 원문 기록</div><div class="s">장애 시 추론·도구 호출 흐름 추적 불가 · Cloud Trace에 고객 민감 정보 노출</div></div>
+        <div class="mrole"><div class="r">프롬프트·응답 → 트레이스 미기록</div><div class="e">OBSERVABILITY · OB1</div></div>
+        <div class="mc right"><div class="m">Cloud Trace 연동 + OTel <code>NO_CONTENT</code></div><div class="s">스팬은 남기고 프롬프트·응답 원문은 기록하지 않음</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">공유 SA · 공개 엔드포인트 · 하드코딩 MCP URL</div><div class="s">프롬프트 인젝션 한 번으로 피해 확대 · 어떤 에이전트가 무엇을 호출하는지 파악 불가</div></div>
+        <div class="mrole"><div class="r">자율 도구 호출 → 전용 신원 · Registry · Gateway</div><div class="e">SECURITY · S1 ~ S4</div></div>
+        <div class="mc right"><div class="m">Agent Identity · Agent Registry · Agent Gateway</div><div class="s">전용 신원·최소 권한 · Registry 등록(Preview) · 외부 호출 통제(Preview · 조건부)</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">AI 생성 코드를 에이전트 Pod에서 그대로 실행</div><div class="s">자격증명 탈취 · 노드 침해로 이어질 수 있음</div></div>
+        <div class="mrole"><div class="r">AI 생성 코드 → 샌드박스 격리</div><div class="e">SECURITY · GKE-S2</div></div>
+        <div class="mc right"><div class="m">Agent Substrate on GKE (대안: Agent Sandbox)</div><div class="s">커널·네트워크 격리 샌드박스에서 실행 (AI 생성 코드를 실행할 때만 · 조건부)</div></div>
+      </div>
+      <div class="mrow rvbox">
+        <div class="mc left"><div class="m">정적 API 키·PAT로 사용자 대신 외부 시스템 호출</div><div class="s">모든 사용자가 같은 권한으로 Jira·GitHub 등에 접근 · 키 유출 시 피해 확대</div></div>
+        <div class="mrole"><div class="r">사용자 대신 행동 → 사용자 위임 인증</div><div class="e">SECURITY · AR-S5 · CR-S6 · GKE-S5</div></div>
+        <div class="mc right"><div class="m">Agent Identity auth manager (3-legged OAuth)</div><div class="s">auth provider로 받은 사용자 위임 토큰을 도구·MCP 호출에 사용 — <code>google-adk[agent-identity]</code> (Preview · 조건부)</div></div>
+      </div>
+    </div>
+
+    <div class="fnote rvbox">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1A73E8" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <div><b>핵심 인사이트:</b> <code>agents-cli scaffold</code>로 배포 골격을 만들어도 <b>영속 세션·Eval 승격 차단·프롬프트 미기록·에이전트 신원</b>은 자동 적용되지 않음 → 본 플랫폼이 <strong>에이전트 특성 항목</strong>을 채우고, 프로브·네트워크 같은 일반 플랫폼 BP는 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener">플랫폼 Skill</a> 참조를 권장</div>
+      <span class="more" data-detail="code-diff" tabindex="0">Before / After 핵심 코드</span>
+    </div>
+  </section>
+
+  <!-- ======================= 04 : 전체 시스템 아키텍처 ======================= -->
+  <section class="slide" id="page4">
+    <div class="corner"></div>
+    <div class="pageno">04</div>
+    <div class="title">전체 시스템 아키텍처 &amp; 통합 웹 포털 <span class="tsub">End-to-End 2-Stage Platform</span></div>
+
+    <div class="headline"><span class="k">배포 전 코드·IaC 자동 강화(Stage 1)</span> + <strong>배포 후 Zero-IAM 라이브 감사(Stage 2)</strong> 이중 안전망</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>End-to-End 4단계 자동화 라이프사이클</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>개발부터 운영 검증까지 끊김 없는 흐름</div>
+            <div class="flowsteps">
+              <div class="fstep"><div class="fnum">1</div><div class="ftx"><b>Scanning (정적 정밀 진단)</b><span class="sm">로컬 레포지토리의 Python · Dockerfile · Terraform · K8s YAML · Cloud Build를 체크리스트 v3 5개 카테고리 기준으로 자동 스캔</span></div></div>
+              <div class="fstep teal"><div class="fnum">2</div><div class="ftx"><b>Apply &amp; Verify (인플레이스 패치 · 재검증)</b><span class="sm">Unified Diff 미리보기 후 필요한 패치만 멱등(Idempotent) 적용 → 100% GREEN 확인 및 증적 리포트(MD/HTML) 출력</span></div></div>
+              <div class="fstep green"><div class="fnum">3</div><div class="ftx"><b>Deploy &amp; Eval Gate (배포 · 품질 승격 차단)</b><span class="sm"><code>terraform apply</code> + <code>agents-cli deploy</code> + Staging <code>agent-eval-gate</code> 통과 시에만 Prod 승격</span></div></div>
+              <div class="fstep red"><div class="fnum">4</div><div class="ftx"><b>Runtime Audit (Stage 2 무권한 라이브 진단)</b><span class="sm"><code>gcloud</code>/<code>kubectl</code> 조회 JSON만 웹에 붙여넣어 실제 배포 환경의 드리프트 검증 + 즉시 복붙 조치 커맨드 생성</span></div></div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="note green"><b>Zero Over-Reaching Mutations 원칙</b> — CPU·메모리·Concurrency·<code>min_instances</code>·GKE 클러스터 모드·인그레스 정책은 부하 테스트(Locust) 없이 임의 변경하지 않고 기존 값을 보존</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>4단계 통합 웹 포털 &amp; 실행 인터페이스</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>역할별 원스톱 포털 구조 (Cloud Run 호스팅)</div>
+            <div class="stack">
+              <div class="stk-label"><span class="alpha">WEB PORTAL</span>브라우저 기반 4단계 통합 여정 (현재 포털에서 상호 연동)</div>
+              <div class="stk-quad">
+                <a class="stk-sc s1" href="/deck"><div class="n">01 · OVERVIEW DECK (/deck)</div><div class="t">시스템 소개 발표 장표</div><div class="s">아키텍처 · Gap · 런타임 비교 · 의사결정</div></a>
+                <a class="stk-sc s2" href="/checklist"><div class="n">02 · CHECKLIST (/checklist)</div><div class="t">환경별 체크리스트 단일표</div><div class="s">CR · AR · GKE 에이전트 특성 항목 · 조건부/Preview 표시</div></a>
+                <a class="stk-sc s3" href="/lab"><div class="n">03 · HANDS-ON LAB (/lab)</div><div class="t">Step 0~10 실전 코드랩</div><div class="s">3개 트랙 맞춤형 복붙 명령어 · 실습 체크</div></a>
+                <a class="stk-sc s4" href="/workbench"><div class="n">04 · WORKBENCH (/workbench)</div><div class="t">Zero-IAM 런타임 진단</div><div class="s">라이브 JSON 붙여넣기 → v3 항목 위자드</div></a>
+              </div>
+              <div class="stk-base"><div class="t">agent-production-readiness 엔진 (CLI · AgentSkills.io)</div><div class="s">Antigravity / Gemini CLI 채팅 설치 1줄 · <code>prod_ready.py</code> (scan / diff / apply / report)</div></div>
+              <div class="stk-plat"><div class="t">Target Infrastructure: Agent Runtime · Cloud Run · GKE</div><div class="s">Terraform (<code>single-project/</code> 지원) · Kubernetes CRDs · Cloud Build CI/CD · Cloud Trace/Monitoring</div></div>
+            </div>
+            <div class="morewrap"><span class="more" data-detail="workflow" tabindex="0">Antigravity Skill &amp; 실행 방식</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 05 : 체크리스트 v3 · 5개 카테고리 ======================= -->
+  <section class="slide" id="page5">
+    <div class="corner"></div>
+    <div class="pageno">05</div>
+    <div class="title">무엇을 검사하는가? — 에이전트 특성 기반 체크리스트 <span class="tsub">Checklist v3 · 5 Categories</span></div>
+
+    <div class="headline"><span class="k">에이전트이기 때문에 생기는 위험</span>만 골라 <strong>5개 카테고리</strong>로 점검 — 일반 플랫폼 BP는 <em>플랫폼 Skill</em>에 위임</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>에이전트 특성 → 체크리스트 카테고리</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>"에이전트의 X 특성 때문에 Y가 필요하다"로 설명되는 항목만 포함</div>
+            <div class="layers">
+              <div class="ly"><div class="lno"><span class="a">CAT</span><span class="b">F</span></div><div><div class="lt">Features · 대화 상태 → 관리형 영속 세션 저장<span>F1 · F2</span></div><div class="ld">멀티턴이면 <code>VertexAiSessionService</code> 영속 세션<span class="bdg cond">조건부</span> · 세션을 넘어 사용자를 기억해야 하면 Memory Bank<span class="bdg cond">조건부</span></div></div></div>
+              <div class="ly"><div class="lno"><span class="a">CAT</span><span class="b">O</span></div><div><div class="lt">Optimize · 긴 응답 · 긴 유휴 시간<span>GKE-O1 · GKE-O2</span></div><div class="ld">GKE는 <code>terminationGracePeriodSeconds</code> ≥ 최대 응답 시간 + <code>preStop</code>으로 긴 응답 보호 · 자주 일시정지·재개하는 상태 유지형 에이전트는 Agent Substrate로 일시정지 · 복원<span class="bdg cond">조건부</span></div></div></div>
+              <div class="ly"><div class="lno"><span class="a">CAT</span><span class="b">D</span></div><div><div class="lt">Delivery &amp; Eval · 비결정적 출력 → 파이프라인 · 평가 게이트<span>D1 · D2</span></div><div class="ld">공식 <code>tests/eval/</code> + Staging <code>agent-eval-gate</code> — 평가 점수가 기준에 못 미치면 Prod 승격 차단</div></div></div>
+              <div class="ly"><div class="lno"><span class="a">CAT</span><span class="b">OB</span></div><div><div class="lt">Observability · 프롬프트 원문 → 트레이스 미기록<span>OB1</span></div><div class="ld">Cloud Trace로 추론·도구 호출 흐름을 추적하되 OTel <code>NO_CONTENT</code>로 프롬프트·응답 원문은 기록하지 않음</div></div></div>
+              <div class="ly"><div class="lno"><span class="a">CAT</span><span class="b">S</span></div><div><div class="lt">Security · 자율 도구 호출 · 사용자 대신 행동 → 전용 신원 · Registry · Gateway · 위임 인증<span>S1 ~ S6</span></div><div class="ld">에이전트 전용 신원·최소 권한 · Agent Registry<span class="bdg prev">Preview</span> · Agent Gateway<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span> · Cloud Run 인증된 호출만 · GKE AI 생성 코드 격리(Agent Substrate)<span class="bdg cond">조건부</span> · 사용자 대신 행동 → 사용자 위임 인증(Agent Identity auth manager)<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span></div></div></div>
+            </div>
+            <div class="morewrap"><span class="more" data-detail="eval-gate" tabindex="0">평가 게이트(D2) 코드 상세</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>판정 방식 · 배지 · 플랫폼 Skill 위임</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>임의 가중치 점수 배제 → 명확한 RAG 판정</div>
+            <ul class="blist compact">
+              <li><b style="color:#1E8E3E;">🟢 Production Ready</b> — 적용 대상 항목 중 <code>RED = 0</code> &amp; <code>AMBER = 0</code></li>
+              <li><b style="color:#D97706;">🟡 Ready with Follow-ups</b> — <code>RED = 0</code>, 보완 권고(<code>AMBER</code>) 잔존</li>
+              <li><b style="color:#C5221F;">🔴 Not Production Ready</b> — 필수 항목 미충족(<code>RED &ge; 1</code>)</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>조건부 · Preview 배지</div>
+            <ul class="blist compact">
+              <li><span class="bdg cond">조건부</span> 에이전트 성격에 따라 적용 — 멀티턴 대화 · 장기 기억 · AI 생성 코드 실행 · MCP·외부 도구 호출. 해당하지 않으면 판정에서 제외</li>
+              <li><span class="bdg prev">Preview</span> 기준을 만족하면 체크리스트에 넣고 점검·안내는 하되, <b>Production Ready 판정은 막지 않음</b> (정식 출시 시 일반 항목으로 전환)</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>일반 플랫폼 Best Practice는 플랫폼 Skill로</div>
+            <ul class="blist compact">
+              <li>헬스 프로브 · PDB · Non-Root · PSS · NetworkPolicy · 시크릿 버전 고정 · Direct VPC/PSC-I · Terraform IaC · 알림 · CPU 부스트는 <b>체크리스트에서 제외</b></li>
+              <li><a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener"><code>google/skills</code> · cloud 플랫폼 Skill</a>을 함께 참조하도록 <b>강력 권장</b> — Stage 2 진단에서도 "플랫폼 Skill 참조 권장" 그룹(점수 미반영)으로 표시</li>
+            </ul>
+            <div class="morewrap"><span class="more" data-detail="stage2" tabindex="0">Stage 2 라이브 진단 → v3 매핑 상세</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 06 : 환경별 검사 항목 차이 ======================= -->
+  <section class="slide" id="page6">
+    <div class="corner"></div>
+    <div class="pageno">06</div>
+    <div class="title">검사 항목은 환경별로 어떻게 다른가? <span class="tsub">Same 5 Categories · Runtime-Native Items</span></div>
+
+    <div class="headline"><span class="k">같은 5개 카테고리</span>를 쓰되, <strong>런타임이 이미 제공하는 것은 빼고</strong> 환경별 항목 세트로 점검</div>
+
+    <div class="cmp3">
+      <div class="crow3 ch">
+        <div></div>
+        <div class="hc ar">🛡️ Agent Runtime<small>AR-*</small></div>
+        <div class="hc cr">⚡ Cloud Run<small>CR-*</small></div>
+        <div class="hc gk">☸️ GKE<small>GKE-*</small></div>
+      </div>
+      <div style="margin:-4px 0 8px;font-size:12px;color:#5F6368;text-align:right;">Agent Runtime (Fully Managed · 에이전트 기능 내장) ⟷ GKE (제어권 · 유연성 · 운영 책임 최대)</div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">Features</div><div class="e">대화 상태 → 관리형 영속 세션 저장</div></div>
+        <div class="cc3 ar"><span class="tg plat">조건부</span><div class="m"><b>AR-F1</b> 관리형 영속 세션 저장 · <b>AR-F2</b> 관리형 장기 기억 저장</div><div class="s">Agent Runtime 관리형 세션 사용 확인<span class="bdg cond">조건부</span> · 장기 기억이 필요하면 Memory Bank<span class="bdg cond">조건부</span></div></div>
+        <div class="cc3 cr"><span class="tg must">조건부</span><div class="m"><b>CR-F1</b> 관리형 영속 세션 저장 · <b>CR-F2</b> 관리형 장기 기억 저장</div><div class="s"><code>InMemorySessionService</code> → <code>VertexAiSessionService</code> (재시작·스케일아웃 후에도 대화 유지)</div></div>
+        <div class="cc3 gk"><span class="tg must">조건부</span><div class="m"><b>GKE-F1</b> 관리형 영속 세션 저장 · <b>GKE-F2</b> 관리형 장기 기억 저장</div><div class="s">Pod 교체(오토스케일·롤링 업데이트)에도 대화 유지 · Agent Platform 세션 연동</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">Optimize</div><div class="e">긴 스트리밍 응답 → 무중단 종료</div></div>
+        <div class="cc3 ar"><span class="tg plat">해당 항목 없음</span><div class="m">— Optimize 항목 없음</div><div class="s">최소/최대 인스턴스 · 동시성은 권고 사항으로 안내</div></div>
+        <div class="cc3 cr"><span class="tg plat">해당 항목 없음</span><div class="m">— Optimize 항목 없음</div><div class="s">CPU 부스트 · 요청 타임아웃 · 최소 인스턴스는 권고 사항으로 안내</div></div>
+        <div class="cc3 gk"><span class="tg must">긴 응답 보호</span><div class="m"><b>GKE-O1</b> 무중단 종료 · <b>GKE-O2</b> 유휴 일시정지 · 복원</div><div class="s"><code>terminationGracePeriodSeconds</code> ≥ 최대 응답 시간 + <code>preStop</code> · 유휴 에이전트는 Agent Substrate 스냅샷 (조건부)</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">Delivery &amp; Eval</div><div class="e">비결정적 출력 → 평가 게이트</div></div>
+        <div class="cc3 ar"><span class="tg auto">공통</span><div class="m"><b>AR-D1</b> CI/CD 파이프라인 · <b>AR-D2</b> 평가 게이트</div><div class="s">agents-cli 파이프라인 + <code>tests/eval/</code> · <code>agent-eval-gate</code> · 점수 미달 시 승격 차단</div></div>
+        <div class="cc3 cr"><span class="tg auto">공통</span><div class="m"><b>CR-D1</b> CI/CD 파이프라인 · <b>CR-D2</b> 평가 게이트</div><div class="s">동일 적용 · 프롬프트 변경도 평가를 통과해야 배포</div></div>
+        <div class="cc3 gk"><span class="tg auto">공통</span><div class="m"><b>GKE-D1</b> CI/CD 파이프라인 · <b>GKE-D2</b> 평가 게이트</div><div class="s">동일 적용</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">Observability</div><div class="e">프롬프트 원문 → 미기록</div></div>
+        <div class="cc3 ar"><span class="tg plat">OTel 내장</span><div class="m"><b>AR-OB1</b> 프롬프트 미기록</div><div class="s">트레이스 수집은 플랫폼 내장 · <code>NO_CONTENT</code>만 점검</div></div>
+        <div class="cc3 cr"><span class="tg auto">트레이스</span><div class="m"><b>CR-OB1</b> Cloud Trace · 프롬프트 미기록</div><div class="s">Cloud Trace 연동 + <code>NO_CONTENT</code></div></div>
+        <div class="cc3 gk"><span class="tg auto">트레이스</span><div class="m"><b>GKE-OB1</b> Cloud Trace · 프롬프트 미기록</div><div class="s">Cloud Trace 연동 + <code>NO_CONTENT</code> · <code>ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false</code></div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">Security</div><div class="e">자율 도구 호출 → 신원 · 통제</div></div>
+        <div class="cc3 ar"><span class="tg warn">신원 · 통제</span><div class="m"><b>AR-S1</b> 전용 신원 · <b>AR-S2</b> Registry · <b>AR-S3</b> Agent Gateway · <b>AR-S4</b> Code Execution · <b>AR-S5</b> 사용자 위임 인증</div><div class="s">Agent Identity · Registry 등록<span class="bdg prev">Preview</span> · 외부 호출 통제<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span> · 사용자 위임 인증<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span></div></div>
+        <div class="cc3 cr"><span class="tg warn">신원 · 통제</span><div class="m"><b>CR-S1</b> 인증된 호출만 · <b>CR-S2</b> 전용 신원 · <b>CR-S3</b> Registry · <b>CR-S4</b> Agent Gateway · <b>CR-S5</b> sandboxes · <b>CR-S6</b> 사용자 위임 인증</div><div class="s">Agent Registry<span class="bdg prev">Preview</span> · Agent Gateway for Cloud Run<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span> · 사용자 위임 인증<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span></div></div>
+        <div class="cc3 gk"><span class="tg warn">신원 · 격리</span><div class="m"><b>GKE-S1</b> 전용 신원 · <b>GKE-S2</b> Agent Substrate · <b>GKE-S3</b> Registry · <b>GKE-S4</b> Agent Gateway · <b>GKE-S5</b> 사용자 위임 인증</div><div class="s">AI 생성 코드 격리<span class="bdg cond">조건부</span> (대안: Agent Sandbox) · Registry<span class="bdg prev">Preview</span> · Agent Gateway for GKE<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span> · 사용자 위임 인증<span class="bdg prev">Preview</span><span class="bdg cond">조건부</span></div></div>
+      </div>
+    </div>
+
+    <div class="fnote rvbox">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#0B8F81" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <div><b>플랫폼 Skill 위임:</b> 헬스 프로브 · PDB · Non-Root · PSS · NetworkPolicy · 시크릿 버전 고정 · Direct VPC/PSC-I · Terraform IaC · 알림 · CPU 부스트는 체크리스트에 넣지 않습니다. <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener"><strong>google/skills 플랫폼 Skill</strong></a>을 함께 참조하세요.</div>
+      <span class="more" data-detail="matrix" tabindex="0">카테고리 × 런타임 전체 항목</span>
+    </div>
+  </section>
+
+  <!-- ======================= 07 : 환경별 Agent 특화 기능 ① ======================= -->
+  <section class="slide" id="page7">
+    <div class="corner"></div>
+    <div class="pageno">07</div>
+    <div class="title">환경별 Agent 특화 기능 ① — Agent Runtime &amp; Cloud Run <span class="tsub">Managed vs. Serverless</span></div>
+
+    <div class="headline"><span class="k">에이전트 전용 관리형(Agent Runtime)</span> vs. <strong>유연한 서버리스 컨테이너(Cloud Run)</strong></div>
+
+    <div class="cols with-fnote">
+      <div class="col left">
+        <div class="ctab"><span>🛡️ Agent Runtime — 에이전트 전용 특화 기능</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>AI 에이전트를 위해 플랫폼에 기본 내장된 역량</div>
+            <ul class="blist compact">
+              <li><b>Sub-second 초고속 응답</b> — Always-on 기반 관리형 워커로 콜드스타트 지연을 1초 미만으로 최소화</li>
+              <li><b>Managed Sessions &amp; Memory Bank 내장</b> — DB 구축·운영 없이 <code>VertexAiSessionService</code> 멀티턴 영속 세션 및 장기 기억(365일) 기본 제공</li>
+              <li><b>Built-in OpenTelemetry &amp; ADK Auth</b> — <code>ENABLE_TELEMETRY</code> 기반 Cloud Trace 파이프라인 및 ADK 도구 인증 기본 통합</li>
+              <li><b>네이티브 아웃바운드 Agent Gateway (<code>AR-S3</code>)</b> — <code>google_network_services_agent_gateway</code>(<code>AGENT_TO_ANYWHERE</code>) + UAP V2 정책(<code>DRY_RUN</code>→<code>ENFORCED</code>)으로 에이전트 외부 호출 중앙 통제</li>
+              <li><b>전용 SPIFFE Agent Identity &amp; Registry</b> — <code>spec.identity_type="AGENT_IDENTITY"</code>로 에이전트 고유 신원(<code>AR-S1</code>) · Agent Registry 등록(<code>AR-S2</code>)</li>
+            </ul>
+          </div>
+          <div class="sec pinb">
+            <div class="svc"><span>ReasoningEngine</span><span class="teal">Managed Sessions</span><span class="teal">Memory Bank</span><span>AGENT_TO_ANYWHERE AGW</span><span>PSC Interface</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right greenbox">
+        <div class="ctab"><span>⚡ Cloud Run — 서버리스 에이전트 특화 기능</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>컨테이너 자유도와 비용 효율을 극대화하는 역량</div>
+            <ul class="blist compact">
+              <li><b>Scale-to-Zero &amp; Pay-per-Use</b> — 트래픽이 없을 때 인스턴스 0으로 축소되어 유휴 비용 제로(불규칙·버스트 워크로드 최적)</li>
+              <li><b>Agent Gateway for Cloud Run (<code>CR-S4</code> · Preview)</b> — MCP·외부 도구 호출에 접근 정책을 적용해 에이전트의 외부 호출을 중앙 통제</li>
+              <li><b>Agent / MCP 서버 자동 분기 등록 (<code>CR-S3</code>)</b> — 일반 에이전트는 <code>FUNCTIONAL_TYPE_AGENT</code> + SPIFFE, FastMCP 서버는 <code>FUNCTIONAL_TYPE_MCP_SERVER</code> + 전용 SA로 Agent Registry 자동 등록</li>
+              <li><b>커스텀 컨테이너 · 사이드카 · Worker Pool/Job</b> — 사내 특수 바이너리·프록시 사이드카 탑재 및 비동기 워커/배치 에이전트까지 단일 플랫폼으로 수용</li>
+              <li><b>Direct VPC Egress 저지연 사내망 연동</b> — VPC Connector 없이 기존 서브넷에 직접 연결해 Cloud SQL/AlloyDB/사내 API 호출 비용·지연 절감</li>
+            </ul>
+          </div>
+          <div class="sec pinb">
+            <div class="svc"><span class="grn">Scale-to-Zero</span><span class="grn">Agent Gateway (Preview)</span><span class="grn">Direct VPC Egress</span><span>MCP Server 분기</span><span>Service / WorkerPool / Job</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fnote rvbox">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1A73E8" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <div><b>공통 거버넌스 축:</b> 두 환경 모두 <strong>Agent Identity(SPIFFE ID)</strong>와 <strong>Agent Registry 자동 등록</strong> 및 ADK <code>AgentRegistry</code> Lazy Discovery로 하드코딩 MCP/A2A URL을 제거합니다.</div>
+      <span class="more" data-detail="identity" tabindex="0">Agent Identity &amp; Registry 상세</span>
+    </div>
+  </section>
+
+  <!-- ======================= 08 : 환경별 Agent 특화 기능 ② (GKE) ======================= -->
+  <section class="slide" id="page8">
+    <div class="corner"></div>
+    <div class="pageno">08</div>
+    <div class="title">환경별 Agent 특화 기능 ② — GKE 3대 에이전트 아키텍처 <span class="tsub">Enterprise Kubernetes</span></div>
+
+    <div class="headline"><span class="k">GKE</span>는 일반 서빙을 넘어 <strong>Gateway · 비신뢰 코드 격리 · 초고밀도 · 자체 GPU/TPU 추론</strong>까지 지원</div>
+
+    <div class="grid3">
+      <div class="gcard p1 rvbox">
+        <div class="gcard-head">
+          <span class="gcard-kicker">PATTERN 01 · DEFAULT</span>
+          <span class="gcard-mode">Autopilot · Standard</span>
+        </div>
+        <h3>Standard GKE Pods<br/>+ Agent Gateway for GKE</h3>
+        <div class="gsub">일반 멀티턴·도구 호출 ADK 에이전트 표준</div>
+        <div class="grule"></div>
+        <div class="gbody fitbody">
+          <ul class="blist compact">
+            <li><b>Ingress 중앙 통제</b> — <code>Gateway</code> · <code>HTTPRoute</code> · <code>GCPAgentGateway</code> · <code>GCPAuthzPolicy</code>(L7) · <code>GCPExtensionBinding</code>(Model Armor)</li>
+            <li><b>Egress 중앙 통제</b> — <code>Ambient</code> 메시 + <code>GCPBackend</code> + <code>GCPEgressPolicy</code> → Secure Web Proxy(SWP) 연동</li>
+            <li><b>긴 응답 무중단 종료 (<code>GKE-O1</code>)</b> — <code>terminationGracePeriodSeconds</code> ≥ 최대 응답 시간 + <code>preStop</code> (멀티존·PDB·HPA는 플랫폼 Skill 참고)</li>
+          </ul>
+          <div class="gfoot"><b>요건:</b> GKE &ge; <code>1.37.2-gke.1042000</code> Rapid (<code>us-central1</code> / <code>europe-west1</code>)</div>
+        </div>
+      </div>
+
+      <div class="gcard p2 rvbox">
+        <div class="gcard-head">
+          <span class="gcard-kicker">PATTERN 02 · ISOLATION (대안)</span>
+          <span class="gcard-mode">Autopilot · Standard</span>
+        </div>
+        <h3>Agent Sandbox on GKE</h3>
+        <div class="gsub">AI 생성 비신뢰 코드 · 셸 · 브라우저 실행 격리</div>
+        <div class="grule"></div>
+        <div class="gbody fitbody">
+          <ul class="blist compact">
+            <li><b>전용 오픈소스 CRD</b> — <code>extensions.agents.x-k8s.io/v1beta1</code> (<code>SandboxTemplate</code> · <code>SandboxWarmPool</code> · <code>SandboxClaim</code>)</li>
+            <li><b>커널 격리 + 고속 기동</b> — 샌드박스 격리 + WarmPool + <b>GKE Pod Snapshots</b>(<code>PodSnapshotPolicy</code>)로 밀리초급 복원나 Autopilot이 필요할 때 <code>GKE-S2</code> 대안</li>
+            <li><b>Zero-Metadata SSRF 차단</b> — <code>169.254.169.254/32</code> 완전 차단 + <code>automountServiceAccountToken: false</code></li>
+          </ul>
+          <div class="gfoot"><b>적합:</b> Coding Agent · 데이터 분석 코드 실행기 · Computer-Use 브라우저 에이전트</div>
+        </div>
+      </div>
+
+      <div class="gcard p3 rvbox">
+        <div class="gcard-head">
+          <span class="gcard-kicker">PATTERN 03 · GKE-S2 기본</span>
+          <span class="gcard-mode">Standard &ge; 1.37 전용</span>
+        </div>
+        <h3>Agent Substrate on GKE</h3>
+        <div class="gsub">AI 생성 코드 격리 실행(GKE-S2) · 유휴 에이전트 일시정지 · 복원(GKE-O2)</div>
+        <div class="grule"></div>
+        <div class="gbody fitbody">
+          <ul class="blist compact">
+            <li><b>10× 고밀도 · &lt;500ms 복원</b> — 유휴 에이전트의 <b>RAM+디스크 상태 전체를 GCS/Filestore에 스냅샷</b> 후 0.5초 미만 재개</li>
+            <li><b>전용 컨트롤 플레인</b> — <code>ate.dev/v1alpha1</code> <code>WorkerPool</code> CRD + <code>kubectl ate</code> <code>ActorTemplate</code></li>
+            <li><b>내장 Egress Gateway</b> — suspend 시 열린 소켓 제약 대응 + Zero-Metadata DPv2 <code>NetworkPolicy</code></li>
+          </ul>
+          <div class="gfoot"><b>제약:</b> GKE Standard &ge; 1.37 전용 (Autopilot · Extended · E2 미지원)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fnote rvbox">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#D97706" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <div><b>+ 자체 LLM 추론 통합:</b> GPU/TPU 노드풀과 <b>GKE Inference Gateway</b>(<code>InferencePool v1 + InferenceObjective</code>)로 vLLM · Gemma 등 오픈 모델과 에이전트를 동일 VPC 내에서 저지연 통합 운영</div>
+      <span class="more" data-detail="gke-security" tabindex="0">GKE 패턴별 보안 불변식</span>
+    </div>
+  </section>
+
+  <!-- ======================= 09 : 3대 런타임 6대 축 비교표 ======================= -->
+  <section class="slide" id="page9">
+    <div class="corner"></div>
+    <div class="pageno">09</div>
+    <div class="title">3대 런타임 핵심 비교표 <span class="tsub">Agent Runtime vs. Cloud Run vs. GKE</span></div>
+
+    <div class="headline"><span class="k">6대 아키텍처 핵심 축</span>으로 본 <strong>Google Cloud 에이전트 배포 환경 비교</strong></div>
+
+    <div class="cmp3">
+      <div class="crow3 ch">
+        <div></div>
+        <div class="hc ar">🛡️ Agent Runtime</div>
+        <div class="hc cr">⚡ Cloud Run</div>
+        <div class="hc gk">☸️ GKE (Autopilot / Standard)</div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">실행 · 콜드스타트</div><div class="e">LATENCY &amp; SCALE</div></div>
+        <div class="cc3 ar"><span class="tg auto">Sub-second</span><div class="m"><b>1초 미만 즉각 응답</b></div><div class="s">관리형 상시 워커 · 헬스체크/스케일링 자동화</div></div>
+        <div class="cc3 cr"><span class="tg plat">Scale-to-Zero</span><div class="m"><b>요청 기반 자동 스케일</b></div><div class="s">0→1 부팅 수 초 (<code>startup_cpu_boost</code>/min_instances로 완화)</div></div>
+        <div class="cc3 gk"><span class="tg must">패턴 선택</span><div class="m"><b>상시 Pod · WarmPool · &lt;500ms</b></div><div class="s">HPA v2 멀티존 상시 대기, Sandbox/Substrate 초고속 복원</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">비용 · 과금 모델</div><div class="e">COST MODEL</div></div>
+        <div class="cc3 ar"><span class="tg warn">Always-on</span><div class="m"><b>vCPU · RAM 시간 비례 과금</b></div><div class="s">유휴 상태 유지 비용 발생 · 상시 트래픽에 유리</div></div>
+        <div class="cc3 cr"><span class="tg auto">비용 최적</span><div class="m"><b>Pay-per-Use (유휴 비용 0)</b></div><div class="s">불규칙·간헐적 트래픽 및 파일럿/사내 툴에 압도적 경제성</div></div>
+        <div class="cc3 gk"><span class="tg plat">규모의 경제</span><div class="m"><b>Pod(Autopilot) / 노드풀(Std)</b></div><div class="s">다수 에이전트 집적 · Substrate 10× 고밀도 시 단가 절감</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">세션 · 장기 기억</div><div class="e">STATE &amp; MEMORY</div></div>
+        <div class="cc3 ar"><span class="tg auto">기본 내장</span><div class="m"><b>Managed Sessions · Memory Bank</b></div><div class="s">별도 DB 없이 365일 대화 이력·장기 기억 즉시 활용</div></div>
+        <div class="cc3 cr"><span class="tg must">외부 연동</span><div class="m"><b>기본 휘발 → Managed Session 연동</b></div><div class="s"><code>AGENT_ENGINE_SESSION_ID</code> 또는 Cloud SQL/Firestore 연결</div></div>
+        <div class="cc3 gk"><span class="tg must">외부 + 볼륨</span><div class="m"><b>Managed Session / DB + Filestore</b></div><div class="s">ADK 세션 연동 + Substrate 워크스페이스 영속 볼륨 지원</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">네트워크 · Gateway</div><div class="e">NETWORK &amp; AGW</div></div>
+        <div class="cc3 ar"><span class="tg auto">네이티브 AGW</span><div class="m"><b>PSC-I + AGENT_TO_ANYWHERE</b></div><div class="s">UAP V2 중앙 아웃바운드 정책 기본 통합 (커스텀 망 제약)</div></div>
+        <div class="cc3 cr"><span class="tg auto">AGW Preview</span><div class="m"><b>Direct VPC + Agent Gateway for Cloud Run</b></div><div class="s">저지연 직접 VPC 연결 · 외부 호출은 Agent Gateway(Preview)로 통제</div></div>
+        <div class="cc3 gk"><span class="tg must">풀 제로트러스트</span><div class="m"><b>DPv2 Default-Deny + AGW for GKE</b></div><div class="s">Ingress(L7/Model Armor) + Egress(Ambient/SWP) 완벽 통제</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">격리 · 보안 통제</div><div class="e">SECURITY</div></div>
+        <div class="cc3 ar"><span class="tg plat">관리형 격리</span><div class="m"><b>Non-Root + SPIFFE + BYOC CA</b></div><div class="s">인프라 패치 부담 없음 · 커널/노드 레벨 직접 제어 불가</div></div>
+        <div class="cc3 cr"><span class="tg auto">Gen2 VM</span><div class="m"><b>Gen2 샌드박스 + Agent/MCP SPIFFE</b></div><div class="s">마이크로VM 기반 강한 격리 · 별도 K8s 보안 정책 불필요</div></div>
+        <div class="cc3 gk"><span class="tg must">다계층 보안</span><div class="m"><b>Agent Substrate · Agent Sandbox</b></div><div class="s">AI 생성 코드 격리 실행부터 네임스페이스 멀티테넌시까지 통제</div></div>
+      </div>
+
+      <div class="crow3 rvbox">
+        <div class="cl3"><div class="r">커스텀 · 자체 LLM</div><div class="e">EXTENSIBILITY</div></div>
+        <div class="cc3 ar"><span class="tg adv">제어 최소화</span><div class="m"><b>ADK 코드 중심 · 인프라 추상화</b></div><div class="s">사이드카·커스텀 OS·자체 GPU 모델 서빙 제약</div></div>
+        <div class="cc3 cr"><span class="tg auto">높은 유연성</span><div class="m"><b>커스텀 컨테이너 · 사이드카 · GPU</b></div><div class="s">FastMCP 서버·사내 바이너리·비동기 Worker 자유 구성</div></div>
+        <div class="cc3 gk"><span class="tg auto">최고 확장성</span><div class="m"><b>GPU/TPU Inference Gateway 통합</b></div><div class="s">오픈 웨이트 모델(vLLM/Gemma) · 서비스 메시 · 커스텀 CRD</div></div>
+      </div>
+    </div>
+
+    <div class="fnote rvbox">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1A73E8" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <div><b>핵심 요약:</b> 어느 환경이 "절대적 정답"인 것이 아니라 <strong>운영 편의(Agent Runtime) · 비용 효율/유연성(Cloud Run) · 풀 통제/격리/GPU(GKE)</strong> 사이의 전략적 선택입니다.</div>
+    </div>
+  </section>
+
+  <!-- ======================= 10 : 환경별 장단점 종합 ======================= -->
+  <section class="slide" id="page10">
+    <div class="corner"></div>
+    <div class="pageno">10</div>
+    <div class="title">Agent 배포 관점 환경별 장단점 종합 <span class="tsub">Pros &amp; Cons Analysis</span></div>
+
+    <div class="headline"><span class="k">3대 런타임의 강점과 트레이드오프</span>를 명확히 이해해야 <strong>운영 실패와 과잉 설계</strong>를 방지</div>
+
+    <div class="cols">
+      <!-- Agent Runtime -->
+      <div class="col">
+        <div class="ctab"><span>🛡️ Agent Runtime</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>장점 (Pros)</div>
+            <ul class="blist compact pro">
+              <li><b>가장 낮은 운영 부담</b> — 헬스체크·관리형 세션·OTel 수집을 플랫폼이 기본 제공</li>
+              <li><b>1초 미만 응답성</b> — 대화형 UX에서 콜드스타트 체감 지연 최소화</li>
+              <li><b>네이티브 Agent Gateway</b> — UAP V2 기반 아웃바운드 거버넌스 즉시 결합</li>
+              <li><b>장기 멀티턴·메모리 최적</b> — Memory Bank와 가장 매끄러운 통합</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>단점 · 고려사항 (Cons)</div>
+            <ul class="blist compact con">
+              <li><b>Always-on 과금</b> — 간헐적 트래픽에서도 유휴 인스턴스 비용 발생</li>
+              <li><b>인프라 제어 한계</b> — 커스텀 네트워크 토폴로지·사이드카·컨테이너 OS 제어 제한</li>
+              <li><b>사내망 구성 복잡도</b> — PSC Network Attachment(/28 PGA 서브넷) 사전 설계 필요</li>
+            </ul>
+          </div>
+          <div class="sec pinb">
+            <div class="note blue"><b>한 줄 평가</b> — DevOps 인력이 적고 <b>장기 대화·메모리 중심 에이전트</b>를 가장 빠르게 상용화할 때 최적</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cloud Run -->
+      <div class="col greenbox">
+        <div class="ctab"><span>⚡ Cloud Run</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>장점 (Pros)</div>
+            <ul class="blist compact pro">
+              <li><b>Scale-to-Zero 압도적 비용 효율</b> — 트래픽 없을 때 과금 0원, 예측 가능한 종량제</li>
+              <li><b>컨테이너 · MCP 서버 최적</b> — 사이드카·커스텀 바이너리 자유 구성 및 MCP 자동 분기</li>
+              <li><b>간편한 사내망 연동</b> — Direct VPC Egress로 기존 서브넷에 저지연 직접 연결</li>
+              <li><b>검증된 GA 보안 스택</b> — Gen2 + IAP + SWP + Cloud Armor로 빠른 엔터프라이즈 인가</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>단점 · 고려사항 (Cons)</div>
+            <ul class="blist compact con">
+              <li><b>세션 외부 연동 필수</b> — 기본 인메모리 휘발성이므로 Managed Session/DB 구성 필요</li>
+              <li><b>콜드스타트 관리</b> — 0→1 기동 지연(<code>startup_cpu_boost</code> 또는 <code>min_instances</code> 보완)</li>
+              <li><b>Agent Gateway는 Preview</b> — Agent Gateway for Cloud Run 정식 출시 전까지는 DRY_RUN으로 정책을 검증하며 도입</li>
+            </ul>
+          </div>
+          <div class="sec pinb">
+            <div class="note green"><b>한 줄 평가</b> — <b>비용 최적화 · 경량/Stateless 에이전트 · MCP 도구 서버</b> 호스팅의 표준 선택지</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GKE -->
+      <div class="col amberbox">
+        <div class="ctab"><span>☸️ GKE</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>장점 (Pros)</div>
+            <ul class="blist compact pro">
+              <li><b>최강의 아키텍처 자유도</b> — Agent Gateway for GKE · Sandbox · Substrate 3대 특화 패턴</li>
+              <li><b>AI 생성 코드 격리 &amp; 고밀도</b> — Agent Substrate 샌드박스(대안: Agent Sandbox) 및 0.5초 미만 RAM 스냅샷 복원</li>
+              <li><b>자체 GPU/TPU 모델 통합</b> — Inference Gateway로 오픈 모델과 에이전트 동일 VPC 서빙</li>
+              <li><b>기존 K8s 표준 흡수</b> — 사내 GitOps · 서비스 메시 · 멀티테넌시 거버넌스 그대로 적용</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>단점 · 고려사항 (Cons)</div>
+            <ul class="blist compact con">
+              <li><b>운영·학습 곡선 가장 높음</b> — 멀티존·PDB·HPA·PSS·NetworkPolicy 같은 플랫폼 운영과 클러스터 수명 관리 (플랫폼 Skill 참고)</li>
+              <li><b>초기 프로비저닝 시간</b> — 클러스터·서브넷·CRD 준비에 15~20분 이상 소요</li>
+              <li><b>버전/모드 제약 관리</b> — AGW(Rapid &ge; 1.37.2), Substrate(Standard &ge; 1.37 전용) 조건 준수</li>
+            </ul>
+          </div>
+          <div class="sec pinb">
+            <div class="note"><b>한 줄 평가</b> — <b>대규모 엔터프라이즈 표준 · 코드 실행 샌드박스 · 자체 GPU LLM</b> 환경의 최종 플랫폼</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= 11 : 선택 기준 & 도입 로드맵 ======================= -->
+  <section class="slide" id="page11">
+    <div class="corner"></div>
+    <div class="pageno">11</div>
+    <div class="title">선택 기준 (Decision Framework) &amp; 도입 로드맵 <span class="tsub">How to Choose &amp; Start</span></div>
+
+    <div class="headline"><span class="k">워크로드 특성</span>에 맞는 런타임을 고르고, <strong>동일한 체크리스트 v3 파이프라인</strong>으로 즉시 상용화</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>런타임 선택 Decision Framework</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>어떤 워크로드에 어떤 환경을 선택할 것인가?</div>
+            <div class="takes">
+              <div class="tk">
+                <div class="tkw">Agent Runtime<small>MANAGED FIRST</small></div>
+                <div class="tkd"><b>장기 멀티턴 대화 · 개인화 기억(Memory Bank)</b>이 핵심이고, 세션 DB·인프라 운영을 최소화하며 <b>1초 미만 응답</b>과 네이티브 Agent Gateway가 필요할 때</div>
+              </div>
+              <div class="tk cr">
+                <div class="tkw">Cloud Run<small>SERVERLESS FLEX</small></div>
+                <div class="tkd"><b>불규칙 트래픽(Scale-to-Zero)</b> 비용 절감이 최우선이거나, <b>커스텀 컨테이너 · 사이드카 · FastMCP 도구 서버</b> 및 빠른 HTTPS 상용 배포가 필요할 때</div>
+              </div>
+              <div class="tk gk">
+                <div class="tkw">GKE<small>K8S ENTERPRISE</small></div>
+                <div class="tkd"><b>기존 GKE 표준·VPC 거버넌스</b> 통합, <b>비신뢰 코드 격리(Agent Sandbox)</b>, <b>수천 개 고밀도 에이전트(Substrate)</b>, 또는 <b>자체 GPU/TPU 오픈 모델</b>을 함께 운영할 때</div>
+              </div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="note blue"><b>하이브리드 권장 패턴</b> — 에이전트 본체는 <b>Agent Runtime</b> 또는 <b>GKE</b>에, 독립 도구 <b>MCP 서버</b>는 <b>Cloud Run</b>(<code>FUNCTIONAL_TYPE_MCP_SERVER</code>)에 배치하고 <b>Agent Registry</b>로 연결</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>지금 바로 시작하는 4단계 도입 로드맵</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>통합 웹 포털 &amp; Antigravity Skill 실행 순서</div>
+            <div class="flowsteps">
+              <div class="fstep"><div class="fnum">1</div><div class="ftx"><b>체크리스트 &amp; 조건 확정</b><span class="sm"><code>/checklist</code>에서 타겟 런타임(CR·AR·GKE)과 조건(멀티턴 · 장기 기억 · AI 생성 코드 · 외부 도구) 확정</span></div></div>
+              <div class="fstep teal"><div class="fnum">2</div><div class="ftx"><b>Antigravity Skill 1줄 설치 &amp; 정적 스캔</b><span class="sm">로컬 ADK / <code>agents-cli</code> 프로젝트에서 에이전트 특성 항목 갭 진단 및 Diff 미리보기 · 플랫폼 BP는 플랫폼 Skill 병행</span></div></div>
+              <div class="fstep green"><div class="fnum">3</div><div class="ftx"><b>인플레이스 자동 패치 &amp; Eval Gate 배포</b><span class="sm"><code>/lab</code> Step 0~7 따라 Terraform + <code>agents-cli deploy</code> + Staging <code>agent-eval-gate</code> 연동</span></div></div>
+              <div class="fstep red"><div class="fnum">4</div><div class="ftx"><b>Stage 2 라이브 감사 &amp; 증적 리포트 발행</b><span class="sm"><code>/workbench</code>에 운영 리소스 JSON 붙여넣기 → 100% GREEN 검증 후 <code>READINESS_REPORT.md</code> 보관</span></div></div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="portal-cta-row">
+              <a href="/checklist" class="pbtn a">📋 02 · 체크리스트 열기 →</a>
+              <a href="/lab" class="pbtn b">🛠️ 03 · 실습 가이드 →</a>
+              <a href="/workbench" class="pbtn g">🩺 04 · 런타임 진단 →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= END : 마무리 ======================= -->
+  <section class="slide" id="pageend">
+    <svg class="cover-rings" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="1600" cy="900" r="330" fill="#4285F4"/><circle cx="1290" cy="815" r="62" fill="#FBBC04"/><rect x="1405" y="455" width="132" height="132" rx="28" fill="#34A853" transform="rotate(14 1471 521)"/><circle cx="1490" cy="150" r="48" fill="#EA4335"/><path d="M1600 0 H1340 A260 260 0 0 0 1600 260 Z" fill="#E8F0FE"/><circle cx="1370" cy="300" r="14" fill="#4285F4"/></svg>
+    <div class="end-hero">
+      <span class="gmark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <div class="end-title">감사합니다</div>
+      <div class="end-sub">From Local Prototype to Enterprise Production-Ready AI Agents</div>
+      <div class="cover-divider"></div>
+    </div>
+    <div class="end-links">
+      <a href="/" class="pbtn d">🏠 메인 포털 (/)</a>
+      <a href="/checklist" class="pbtn a">📋 02 · 체크리스트 v3</a>
+      <a href="/lab" class="pbtn b">🛠️ 03 · 핸즈온 실습 Lab</a>
+      <a href="/workbench" class="pbtn g">🩺 04 · 런타임 라이브 진단</a>
+    </div>
+  </section>
+
+  <!-- ==================== INTERACTIVE DETAIL MODAL ==================== -->
+  <div class="dmodal" id="detailModal" hidden role="dialog" aria-modal="true" aria-label="상세 설명">
+    <div class="dm-back"></div>
+    <div class="dm-panel">
+      <button type="button" class="dm-x" aria-label="닫기">✕</button>
+      <div class="dm-content"></div>
+    </div>
+  </div>
+
+  <!-- ==================== DETAIL TEMPLATES ==================== -->
+  <template id="detail-code-diff">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 03</div>
+      <div class="dm-title">Prototype vs. Production 핵심 코드 변화 (Before / After)</div>
+      <div class="dm-sub">관리형 영속 세션 저장(CR-F1) · 프롬프트 미기록(CR-OB1) · 에이전트 전용 신원(CR-S2) · Agent Registry(CR-S3) 자동 패치 예시</div>
+    </div>
+    <div class="dm-body">
+      <div>
+        <h4>Before — 로컬 프로토타입 / 초기 스캐폴딩</h4>
+        <div class="codebox"><span class="cm"># app/app_utils/services.py (휘발성 인메모리)</span>
+<span class="bad">session_service = InMemorySessionService()</span>
+
+<span class="cm"># deployment/terraform/service.tf</span>
+resource "google_cloud_run_v2_service" "app" {
+  template {
+    <span class="bad">service_account = google_service_account.app_sa.email</span>
+    <span class="cm"># OTel NO_CONTENT 없음 · Agent Identity 없음</span>
+    <span class="cm"># Agent Registry 미등록</span>
+  }
+}</div>
+        <div class="dm-note">컨테이너 재시작 시 세션이 증발하고, Cloud Trace 스팬에 고객 프롬프트가 평문 노출되며, 공유 SA에 <code>roles/storage.admin</code>이 부여된 상태입니다.</div>
+      </div>
+      <div>
+        <h4>After — 체크리스트 v3 자동 패치 결과</h4>
+        <div class="codebox"><span class="cm"># app/app_utils/services.py (영속 Managed Sessions)</span>
+<span class="st">session_service = VertexAiSessionService(
+    project=project, location=location,
+    agent_engine_id=os.environ["AGENT_ENGINE_SESSION_ID"],
+)</span>
+
+<span class="cm"># deployment/terraform/service.tf (google-beta)</span>
+functional_type = <span class="st">"FUNCTIONAL_TYPE_AGENT"</span>
+template {
+  workload_identity_config {
+    identity_type = <span class="st">"IDENTITY_TYPE_AGENT_IDENTITY"</span>
+  }
+  containers {
+    env { name = <span class="st">"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"</span>; value = <span class="st">"NO_CONTENT"</span> }
+    env { name = <span class="st">"ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS"</span>; value = <span class="st">"false"</span> }
+  }
+}</div>
+      </div>
+    </div>
+  </template>
+
+  <template id="detail-workflow">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 04</div>
+      <div class="dm-title">Antigravity / Gemini CLI Skill &amp; 3가지 실행 채널</div>
+      <div class="dm-sub">개발자 워크플로에 자연스럽게 녹아드는 3가지 사용 방식</div>
+    </div>
+    <div class="dm-body">
+      <div>
+        <h4>1. Antigravity / Gemini CLI 채팅 설치 (가장 추천)</h4>
+        <div class="codebox"><span class="cm"># AgentSkills.io 표준 단독 스킬 1줄 설치</span>
+rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
+curl -fsSL <span class="st">"https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz"</span> \
+  | tar -xz -C ~/.gemini/skills/ --strip-components=2 \
+    production-ready-agent-platform-main/skills/agent-production-readiness</div>
+        <h4 style="margin-top:16px;">2. CLI 직접 실행 (로컬 / CI 검증)</h4>
+        <div class="codebox">uv run prod-ready scan  ./my-agent --target auto
+uv run prod-ready diff  ./my-agent --items ALL
+uv run prod-ready apply ./my-agent --items ALL
+uv run prod-ready report ./my-agent -o READINESS_REPORT.md</div>
+      </div>
+      <div>
+        <h4>3. 4단계 통합 웹 포털 &amp; 스캐폴딩 자동 인식</h4>
+        <table class="mini">
+          <tr><th>프로젝트 형태</th><th>자동 감지 동작</th></tr>
+          <tr><td><b>Mode A</b><br/><code>adk create</code></td><td>순수 Python 프로토타입 감지 → <code>Dockerfile</code> · <code>deployment/terraform/</code> · <code>tests/eval/</code> 생성 (CI/CD 파이프라인은 <code>agents-cli scaffold enhance --cicd-runner google_cloud_build</code>로 생성)</td></tr>
+          <tr><td><b>Mode B</b><br/><code>agents-cli</code> v1.5+</td><td><code>deployment/terraform/single-project/</code> 자동 탐지 → 기존 사이징/모드 보존하며 누락된 항목만 외과적 인플레이스 패치</td></tr>
+          <tr><td><b>MCP Server</b><br/><code>FastMCP</code></td><td>MCP 서버 워크로드 자동 감지 → Cloud Run <code>FUNCTIONAL_TYPE_MCP_SERVER</code> + 전용 SA 자동 분기</td></tr>
+        </table>
+        <div class="dm-note" style="margin-top:12px;"><b>100% 멱등성(Idempotency)</b> — 패치 완료 후 재실행 시 변경 Diff가 <code>0건</code>이며, 32개 자동화 테스트가 매 변경마다 회귀를 검증합니다.</div>
+      </div>
+    </div>
+  </template>
+
+  <template id="detail-eval-gate">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 05</div>
+      <div class="dm-title">D1 · D2 — agents-cli CI/CD 파이프라인 (D1) &amp; 평가 데이터셋 · 평가 게이트 (D2)</div>
+      <div class="dm-sub">agents-cli가 만든 .cloudbuild/staging.yaml에 넣는 품질 게이트 — agents-cli eval run의 exit 0 함정 차단 (CI/CD 인프라 <code>agents-cli infra cicd</code>는 직접 수행)</div>
+    </div>
+    <div class="dm-body">
+      <div>
+        <h4>자동 보장되는 공식 평가 자산 (<code>tests/eval/</code>)</h4>
+        <table class="mini">
+          <tr><th>파일</th><th>역할</th></tr>
+          <tr><td><code>tests/eval/eval_config.yaml</code></td><td><code>metrics_to_run</code> (내장 환각/안전성 + <code>custom_response_quality</code>) 선언</td></tr>
+          <tr><td><code>tests/eval/response_quality.py</code></td><td>도메인 특화 LLM-as-a-Judge 루브릭 (1~5 척도)</td></tr>
+          <tr><td><code>tests/eval/datasets/basic-dataset.json</code></td><td>회귀 검증용 Golden 질문·도구 호출 기대치 케이스</td></tr>
+        </table>
+        <div class="dm-note" style="margin-top:12px;"><b>왜 게이트 스크립트가 필수인가?</b><br/><code>agents-cli eval run</code>은 평가 점수가 기준 미달이어도 리포트 생성에 성공하면 <code>exit code 0</code>을 반환합니다. 따라서 Cloud Build가 <code>results_*.json</code>을 직접 파싱해 <code>sys.exit(1)</code>로 프로덕션 트리거를 차단해야 합니다.</div>
+      </div>
+      <div>
+        <h4>.cloudbuild/staging.yaml 주입 스텝 (<code>id: agent-eval-gate</code>)</h4>
+        <div class="codebox"><span class="cm"># trigger-prod-deployment 직전 자동 실행</span>
+- id: <span class="st">agent-eval-gate</span>
+  name: <span class="st">'python:3.11-slim'</span>
+  entrypoint: <span class="st">'bash'</span>
+  args:
+    - <span class="st">'-c'</span>
+    - |
+      uvx google-agents-cli eval run \
+        --config tests/eval/eval_config.yaml \
+        --dataset tests/eval/datasets/basic-dataset.json
+      python3 -c <span class="st">"
+      import glob, json, sys
+      files = sorted(glob.glob('artifacts/grade_results/results_*.json'))
+      avg = parse_avg_score(files[-1])
+      if avg &lt; float('${_EVAL_THRESHOLD:-3.5}'):
+          print(f'BLOCKED: score {avg:.2f} &lt; threshold'); sys.exit(1)
+      "</span></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="detail-stage2">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 05</div>
+      <div class="dm-title">Stage 2 Zero-IAM 라이브 진단 — 체크리스트 v3 매핑</div>
+      <div class="dm-sub">gcloud / kubectl JSON 붙여넣기만으로 실제 배포 설정을 v3 ID로 판정하고, 일반 플랫폼 점검은 점수에서 분리합니다</div>
+    </div>
+    <div class="dm-body single">
+      <table class="mini">
+        <tr><th>구분</th><th>Agent Runtime</th><th>Cloud Run</th><th>GKE</th></tr>
+        <tr><td><b>체크리스트 v3 항목</b><br/>점수 · 판정 반영</td><td><i>AR-F1 관리형 영속 세션 저장은 플랫폼 기본 제공 영역으로 표시</i><br/><code>AR-OB1</code> 프롬프트 미기록<br/><code>AR-S1</code> 에이전트 전용 신원 · 최소 권한<br/><code>AR-S2</code> Agent Registry 등록<span class="bdg prev">Preview</span><br/><code>AR-S3</code> Agent Gateway (외부 호출 통제)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span></td><td><code>CR-F1</code> 관리형 영속 세션 저장 (VertexAiSessionService)<span class="bdg cond">조건부</span><br/><code>CR-OB1</code> Cloud Trace · 프롬프트 미기록<br/><code>CR-S1</code> 인증된 호출만 허용<br/><code>CR-S2</code> 에이전트 전용 신원 · 최소 권한<br/><code>CR-S3</code> Agent Registry 등록<span class="bdg prev">Preview</span><br/><code>CR-S4</code> Agent Gateway (외부 호출 통제)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span></td><td><code>GKE-F1</code> 관리형 영속 세션 저장 (VertexAiSessionService)<span class="bdg cond">조건부</span><br/><code>GKE-O1</code> 무중단 종료 (긴 응답 보호)<br/><code>GKE-O2</code> 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)<span class="bdg cond">조건부</span><br/><code>GKE-OB1</code> Cloud Trace · 프롬프트 미기록<br/><code>GKE-S1</code> 에이전트 전용 신원 · 최소 권한<br/><code>GKE-S3</code> Agent Registry 등록<span class="bdg prev">Preview</span><br/><code>GKE-S4</code> Agent Gateway for GKE (외부 호출 통제)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span><br/><code>GKE-S5</code> 사용자 위임 인증 (Agent Identity auth manager)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span></td></tr>
+        <tr><td><b>플랫폼 Skill 참조 권장</b><br/>정보성 · 점수 미반영</td><td>PSC Interface (사설 연결)</td><td>스케일링·CPU 할당 · 사이징 · 헬스 프로브 · Direct VPC Egress</td><td>멀티존·PDB·HPA · Pod 리소스 사이징 · Private Nodes·NetworkPolicy · PSS·Non-Root</td></tr>
+      </table>
+      <div class="dm-note" style="margin-top:12px;"><span class="bdg prev">Preview</span> 항목은 점검·안내는 하지만 Production Ready 판정을 막지 않습니다. 일반 플랫폼 점검은 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener">google/skills 플랫폼 Skill</a>을 함께 참조하세요.</div>
+    </div>
+  </template>
+
+  <template id="detail-matrix">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 06</div>
+      <div class="dm-title">체크리스트 v3 — 카테고리 × 런타임 항목 매트릭스</div>
+      <div class="dm-sub">Check · Best Practice · Reference 상세와 조건별 필터는 <a href="/checklist">/checklist</a> 페이지에서 확인할 수 있습니다</div>
+    </div>
+    <div class="dm-body">
+      <div>
+        <h4>에이전트 특성 항목</h4>
+        <table class="mini">
+          <tr><th>카테고리</th><th>Agent Runtime</th><th>Cloud Run</th><th>GKE</th></tr>
+          <tr><td><b>Features</b><br/>에이전트 기능</td><td><code>AR-F1</code> 관리형 영속 세션 저장 (VertexAiSessionService)<span class="bdg cond">조건부</span><br/><code>AR-F2</code> 관리형 장기 기억 저장 (VertexAiMemoryBankService)<span class="bdg cond">조건부</span></td><td><code>CR-F1</code> 관리형 영속 세션 저장 (VertexAiSessionService)<span class="bdg cond">조건부</span><br/><code>CR-F2</code> 관리형 장기 기억 저장 (VertexAiMemoryBankService)<span class="bdg cond">조건부</span></td><td><code>GKE-F1</code> 관리형 영속 세션 저장 (VertexAiSessionService)<span class="bdg cond">조건부</span><br/><code>GKE-F2</code> 관리형 장기 기억 저장 (VertexAiMemoryBankService)<span class="bdg cond">조건부</span></td></tr><tr><td><b>Optimize</b><br/>런타임 최적화</td><td>— <i>(해당 항목 없음)</i></td><td>— <i>(해당 항목 없음)</i></td><td><code>GKE-O1</code> 무중단 종료 (긴 응답 보호)<br/><code>GKE-O2</code> 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)<span class="bdg cond">조건부</span></td></tr><tr><td><b>Delivery &amp; Eval</b><br/>배포 · 품질 평가</td><td><code>AR-D1</code> CI/CD 파이프라인 (agents-cli)<br/><code>AR-D2</code> 평가 데이터셋 · 평가 게이트</td><td><code>CR-D1</code> CI/CD 파이프라인 (agents-cli)<br/><code>CR-D2</code> 평가 데이터셋 · 평가 게이트</td><td><code>GKE-D1</code> CI/CD 파이프라인 (agents-cli)<br/><code>GKE-D2</code> 평가 데이터셋 · 평가 게이트</td></tr><tr><td><b>Observability</b><br/>관측성</td><td><code>AR-OB1</code> 프롬프트 미기록</td><td><code>CR-OB1</code> Cloud Trace · 프롬프트 미기록</td><td><code>GKE-OB1</code> Cloud Trace · 프롬프트 미기록</td></tr><tr><td><b>Security</b><br/>보안</td><td><code>AR-S1</code> 에이전트 전용 신원 · 최소 권한<br/><code>AR-S2</code> Agent Registry 등록<span class="bdg prev">Preview</span><br/><code>AR-S3</code> Agent Gateway (외부 호출 통제)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span><br/><code>AR-S4</code> AI 생성 코드 격리 (Code Execution)<span class="bdg cond">조건부</span><br/><code>AR-S5</code> 사용자 위임 인증 (Agent Identity auth manager)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span></td><td><code>CR-S1</code> 인증된 호출만 허용<br/><code>CR-S2</code> 에이전트 전용 신원 · 최소 권한<br/><code>CR-S3</code> Agent Registry 등록<span class="bdg prev">Preview</span><br/><code>CR-S4</code> Agent Gateway (외부 호출 통제)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span><br/><code>CR-S5</code> AI 생성 코드 격리 (Cloud Run sandboxes)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span><br/><code>CR-S6</code> 사용자 위임 인증 (Agent Identity auth manager)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span></td><td><code>GKE-S1</code> 에이전트 전용 신원 · 최소 권한<br/><code>GKE-S2</code> AI 생성 코드 격리 (Agent Substrate · Agent Sandbox)<span class="bdg cond">조건부</span><br/><code>GKE-S3</code> Agent Registry 등록<span class="bdg prev">Preview</span><br/><code>GKE-S4</code> Agent Gateway for GKE (외부 호출 통제)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span><br/><code>GKE-S5</code> 사용자 위임 인증 (Agent Identity auth manager)<span class="bdg cond">조건부</span><span class="bdg prev">Preview</span></td></tr>
+        </table>
+      </div>
+      <div>
+        <h4>플랫폼 Skill로 위임된 일반 Best Practice</h4>
+        <table class="mini">
+          <tr><th>Best Practice</th><th>참조 플랫폼 Skill</th></tr>
+          <tr><td>헬스 프로브 (startup·liveness)</td><td><code>cloud-run-basics · gke-reliability</code></td></tr><tr><td>멀티존 · PodDisruptionBudget</td><td><code>gke-reliability · gke-productionize</code></td></tr><tr><td>Terraform IaC · 드리프트 방지</td><td><code>google-cicd-terraform</code></td></tr><tr><td>지연·오류율 알림 정책</td><td><code>cloud-run-alert-configuration · agent-platform-alert-configuration · gke-alert-configuration</code></td></tr><tr><td>Secret Manager 버전 고정</td><td><code>cloud-run-basics</code></td></tr><tr><td>Non-Root 컨테이너</td><td><code>cloud-run-basics · gke-workload-security</code></td></tr><tr><td>Direct VPC Egress · PSC Interface (사설 연결)</td><td><code>cloud-run-basics · google-cloud-waf-security</code></td></tr><tr><td>Private Nodes · NetworkPolicy</td><td><code>gke-networking · gke-workload-security</code></td></tr><tr><td>Pod Security Standards</td><td><code>gke-workload-security</code></td></tr><tr><td>서비스 계정 키(JSON) 미사용 · Workload Identity Federation</td><td><code>gke-workload-identity · iam-helper-for-policy-management</code></td></tr>
+        </table>
+        <div class="dm-note" style="margin-top:12px;">체크리스트는 에이전트 특성 항목만 다룹니다. 위 항목은 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener">google/skills · cloud</a>의 플랫폼 Skill을 함께 참조하세요.</div>
+      </div>
+    </div>
+  </template>
+
+  <template id="detail-identity">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 07</div>
+      <div class="dm-title">Agent Identity (SPIFFE ID) · Agent Registry 자동 등록 &amp; Lazy Discovery</div>
+      <div class="dm-sub">공유 Service Account 한계를 넘어 에이전트별 암호화 신원(mTLS)과 중앙 거버넌스 확립</div>
+    </div>
+    <div class="dm-body">
+      <div>
+        <h4>환경별 Terraform / K8s 선언 방식</h4>
+        <table class="mini">
+          <tr><th>런타임</th><th>신원 · 레지스트리 선언</th></tr>
+          <tr><td><b>Agent Runtime</b></td><td><code>spec.identity_type = "AGENT_IDENTITY"</code><br/>IAM 바인딩: <code>spec[0].effective_identity</code> 직접 참조</td></tr>
+          <tr><td><b>Cloud Run (Agent)</b></td><td><code>functional_type = "FUNCTIONAL_TYPE_AGENT"</code><br/><code>identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"</code> (SA와 상호배타)</td></tr>
+          <tr><td><b>Cloud Run (MCP)</b></td><td><code>functional_type = "FUNCTIONAL_TYPE_MCP_SERVER"</code><br/>전용 최소 권한 Service Account 유지 (자동 분기)</td></tr>
+          <tr><td><b>GKE</b></td><td>Deployment 라벨 <code>registry.gke.io/functional-type: AGENT</code><br/>Pod 어노테이션 <code>iam.gke.io/spiffe-identity-type: agent-identity</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <h4>하드코딩 MCP/A2A URL 탐지 → Lazy Discovery 전환</h4>
+        <div class="codebox"><span class="cm"># ❌ Scanner가 Registry 항목(CR-S3 · AR-S2 · GKE-S3)에서 AMBER로 탐지하는 하드코딩 패턴</span>
+<span class="bad">mcp_tools = McpToolset(url="https://currency-mcp-uc.a.run.app/mcp")</span>
+
+<span class="cm"># ✅ ADK AgentRegistry Lazy Discovery (Registry 항목 GREEN)</span>
+<span class="kw">from</span> google.adk.integrations.agent_registry <span class="kw">import</span> AgentRegistry
+
+registry = AgentRegistry(
+    project_id=os.environ[<span class="st">"GOOGLE_CLOUD_PROJECT"</span>],
+    location=<span class="st">"us-central1"</span>,
+)
+mcp_tools = registry.get_mcp_toolset(
+    mcp_server_name=os.environ[<span class="st">"BILLING_MCP_REGISTRY_NAME"</span>]
+)</div>
+        <div class="dm-note">모든 환경에서 <code>apis.tf</code>에 <code>agentregistry.googleapis.com</code>과 <code>apphub.googleapis.com</code>을 자동 활성화합니다.</div>
+      </div>
+    </div>
+  </template>
+
+  <template id="detail-gke-security">
+    <div class="dm-head">
+      <div class="dm-k">DETAIL · SLIDE 08</div>
+      <div class="dm-title">GKE 3대 실행 패턴별 보안 · 메타데이터 서버 불변식 (GKE-S2 · GKE-S4)</div>
+      <div class="dm-sub">Standard Pods와 Agent Sandbox/Substrate는 메타데이터 서버(169.254.169.254) 정책이 정반대입니다</div>
+    </div>
+    <div class="dm-body single">
+      <table class="mini">
+        <tr><th>보안 축</th><th>1. Standard GKE Pods</th><th>2. Agent Sandbox on GKE</th><th>3. Agent Substrate on GKE</th></tr>
+        <tr><td><b>Metadata Server<br/>(<code>169.254.169.254</code>)</b></td><td><b style="color:#137333;">반드시 허용 (TCP 80, 8080)</b><br/>Workload Identity 토큰 발급 및 Cloud DNS 필수 경로 (차단 시 WI 장애)</td><td><b style="color:#C5221F;">반드시 차단 (SSRF 방어)</b><br/><code>169.254.169.254/32</code> · <code>169.254.169.252/32</code> · RFC1918 전부 차단 + <code>automountServiceAccountToken: false</code></td><td><b style="color:#C5221F;">반드시 차단 (SSRF 방어)</b><br/>Sandbox와 동일 Zero-Metadata 정책 적용 (NodeLocal DNS <code>169.254.20.10:53</code>만 허용)</td></tr>
+        <tr><td><b>Agent Gateway for GKE</b></td><td>✅ 공식 지원 (Ingress + Ambient Egress)<br/>GKE &ge; <code>1.37.2-gke.1042000</code> Rapid</td><td>❌ 미지원 → Zero-Metadata DPv2 <code>NetworkPolicy</code> + SWP 조합</td><td>❌ 미지원 (suspend 시 소켓 비유지) → Substrate 내장 Egress Gateway 사용</td></tr>
+        <tr><td><b>클러스터 모드 호환성</b></td><td>Autopilot (기본) · Standard 모두 지원</td><td>Autopilot · Standard 모두 지원</td><td><b>GKE Standard &ge; 1.37 전용</b><br/>(Autopilot 배포 시 Stage 2 검사기가 즉시 🔴 RED 충돌 경고)</td></tr>
+      </table>
+    </div>
+  </template>
+
+</div>
+</div>
+</div>
+
+<script>
+(function () {
+  var sidebar = document.getElementById('sidebar');
+  var hoverzone = document.getElementById('hoverzone');
+  var pillbtn = document.getElementById('pillbtn');
+  var dotsWrap = document.getElementById('dots');
+  var stepModeBtn = document.getElementById('stepModeBtn');
+  var fsBtn = document.getElementById('fsBtn');
+
+  function showSidebar() { sidebar.classList.add('show'); }
+  function hideSidebar() { sidebar.classList.remove('show'); }
+
+  hoverzone.addEventListener('mouseenter', showSidebar);
+  pillbtn.addEventListener('mouseenter', showSidebar);
+  sidebar.addEventListener('mouseleave', hideSidebar);
+  pillbtn.addEventListener('click', function () {
+    sidebar.classList.contains('show') ? hideSidebar() : showSidebar();
+  });
+
+  var links = sidebar.querySelectorAll('a.nav-slide');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+
+  /* Bottom dot pagination + slide counter */
+  slides.forEach(function (s, i) {
+    var d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.dataset.p = s.id;
+    d.title = (i < 10 ? '0' + i : '' + i) + ' · ' + s.id;
+    dotsWrap.appendChild(d);
+  });
+  var counter = document.createElement('span');
+  counter.id = 'slideCounter';
+  counter.textContent = '01 / ' + slides.length;
+  dotsWrap.appendChild(counter);
+  var dots = Array.prototype.slice.call(dotsWrap.querySelectorAll('.dot'));
+
+  /* Auto-fit boxes so content never clips vertically */
+  var FIT_MIN = 0.55;
+  function fitBoxes(root) {
+    (root || document).querySelectorAll('.col .body, .fitbody').forEach(function (b) {
+      var kids = Array.prototype.slice.call(b.children);
+      var set = function (z) { kids.forEach(function (k) { k.style.zoom = z === 1 ? '' : z; }); };
+      var fits = function () { return b.scrollHeight <= b.clientHeight + 2; };
+      set(1);
+      if (!b.clientHeight || fits()) { delete b.dataset.fit; return; }
+      var lo = FIT_MIN, hi = 1;
+      for (var i = 0; i < 12; i++) {
+        var mid = (lo + hi) / 2;
+        set(mid);
+        if (fits()) lo = mid; else hi = mid;
+      }
+      set(lo);
+      b.dataset.fit = lo.toFixed(3);
+    });
+  }
+  window.fitSlideBoxes = fitBoxes;
+
+  /* Orbit Transition & Step Reveal */
+  var ORBIT_DEG = 8, ORBIT_MS = 640, EASE = 'cubic-bezier(.65,0,.35,1)';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var busy = false;
+  var stepRevealEnabled = true;
+
+  function revealOrder(slide) {
+    var list = [];
+    var hl = slide.querySelector('.headline');
+    if (hl) list.push(hl);
+    slide.querySelectorAll('.cols > .col, .rvbox').forEach(function (box) {
+      list.push(box);
+    });
+    return list;
+  }
+
+  var stepItems = [], stepPos = 0;
+  function enterSteps(slide, built) {
+    stepItems = revealOrder(slide);
+    var showAll = built || !stepRevealEnabled;
+    stepItems.forEach(function (el) {
+      el.classList.add('rv');
+      el.classList.toggle('rv-hide', !showAll);
+    });
+    stepPos = showAll ? stepItems.length : 0;
+  }
+  function stepForward() {
+    if (!stepRevealEnabled || stepPos >= stepItems.length) return false;
+    stepItems[stepPos++].classList.remove('rv-hide');
+    return true;
+  }
+  function stepBack() {
+    if (!stepRevealEnabled || stepPos <= 0) return false;
+    stepItems[--stepPos].classList.add('rv-hide');
+    return true;
+  }
+  function revealAllSteps() {
+    stepItems.forEach(function (el) { el.classList.remove('rv-hide'); });
+    stepPos = stepItems.length;
+  }
+  window.revealAllSteps = revealAllSteps;
+
+  stepModeBtn.addEventListener('click', function () {
+    stepRevealEnabled = !stepRevealEnabled;
+    stepModeBtn.classList.toggle('on', stepRevealEnabled);
+    stepModeBtn.textContent = stepRevealEnabled ? '단계 등장: ON' : '단계 등장: OFF';
+    if (!stepRevealEnabled) revealAllSteps();
+  });
+
+  fsBtn.addEventListener('click', function () {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen && document.exitFullscreen();
+    }
+  });
+
+  /* Interactive Detail Modal */
+  var dmodal = document.getElementById('detailModal');
+  var dmContent = dmodal.querySelector('.dm-content');
+  var dmPanel = dmodal.querySelector('.dm-panel');
+  var dmReturnFocus = null;
+  function detailOpen() { return dmodal && !dmodal.hidden; }
+  function openDetail(key, opener) {
+    var tpl = document.getElementById('detail-' + key);
+    if (!tpl) return;
+    dmContent.innerHTML = '';
+    dmContent.appendChild(tpl.content.cloneNode(true));
+    var t = dmContent.querySelector('.dm-title');
+    dmodal.setAttribute('aria-label', t ? t.textContent : '상세 설명');
+    dmReturnFocus = opener || document.activeElement;
+    dmodal.hidden = false;
+    if (!reduceMotion && dmPanel.animate) {
+      dmodal.querySelector('.dm-back').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+      dmPanel.animate([{ opacity: 0, transform: 'translateY(10px) scale(.985)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.25,.6,.3,1)' });
+    }
+    dmodal.querySelector('.dm-x').focus();
+  }
+  function closeDetail() {
+    if (!detailOpen()) return;
+    dmodal.hidden = true;
+    dmContent.innerHTML = '';
+    if (dmReturnFocus && dmReturnFocus.focus) dmReturnFocus.focus();
+    dmReturnFocus = null;
+  }
+  dmodal.querySelector('.dm-back').addEventListener('click', closeDetail);
+  dmodal.querySelector('.dm-x').addEventListener('click', closeDetail);
+  document.addEventListener('click', function (e) {
+    var n = e.target.closest && e.target.closest('[data-detail]');
+    if (n && !detailOpen()) { e.preventDefault(); e.stopPropagation(); openDetail(n.getAttribute('data-detail'), n); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (detailOpen()) {
+      if (e.key === 'Escape') { e.preventDefault(); closeDetail(); }
+      e.stopImmediatePropagation();
+      return;
+    }
+    var t = document.activeElement;
+    if ((e.key === 'Enter' || e.key === ' ') && t && t.closest && t.closest('[data-detail]')) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      var n = t.closest('[data-detail]'); openDetail(n.getAttribute('data-detail'), n);
+    }
+  }, true);
+  window.addEventListener('wheel', function (e) { if (detailOpen()) e.stopImmediatePropagation(); }, { capture: true, passive: true });
+
+  function setNav(id) {
+    links.forEach(function (a) { a.classList.toggle('active', a.dataset.p === id); });
+    dots.forEach(function (d) { d.classList.toggle('active', d.dataset.p === id); });
+    var idx = slides.findIndex(function (s) { return s.id === id; });
+    if (idx >= 0) {
+      var num = (idx + 1) < 10 ? '0' + (idx + 1) : '' + (idx + 1);
+      counter.textContent = num + ' / ' + slides.length;
+    }
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', '#' + id);
+    }
+  }
+
+  function showPage(id, built) {
+    hideSidebar();
+    closeDetail();
+    var from = document.querySelector('.slide.active');
+    var to = document.getElementById(id);
+    if (!to || to === from || busy) return;
+    setNav(id);
+
+    if (!from || reduceMotion || !to.animate) {
+      if (from) from.classList.remove('active');
+      to.classList.add('active');
+      fitBoxes(to);
+      enterSteps(to, !!built);
+      return;
+    }
+
+    var dir = slides.indexOf(to) > slides.indexOf(from) ? 1 : -1;
+    var deg = ORBIT_DEG * dir;
+    busy = true;
+    from.classList.remove('active'); from.classList.add('leaving');
+    to.classList.add('active');
+    fitBoxes(to);
+    enterSteps(to, !!built);
+
+    var opt = { duration: ORBIT_MS, easing: EASE };
+    var anims = [
+      from.animate([{ transform: 'rotate(0deg)', opacity: 1 }, { transform: 'rotate(' + (-deg) + 'deg)', opacity: 0 }], opt),
+      to.animate([{ transform: 'rotate(' + deg + 'deg)', opacity: 0 }, { transform: 'rotate(0deg)', opacity: 1 }], opt)
+    ];
+    Promise.all(anims.map(function (a) { return a.finished; })).catch(function () {}).then(function () {
+      from.classList.remove('leaving');
+      busy = false;
+    });
+  }
+  window.showPage = showPage;
+
+  links.forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); showPage(a.dataset.p, !stepRevealEnabled); });
+  });
+  dots.forEach(function (d) {
+    d.addEventListener('click', function () { showPage(d.dataset.p, !stepRevealEnabled); });
+  });
+  document.querySelectorAll('[data-goto]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.stopPropagation(); showPage(el.dataset.goto, !stepRevealEnabled); });
+  });
+
+  function currentIndex() {
+    var active = document.querySelector('.slide.active');
+    return active ? slides.indexOf(active) : 0;
+  }
+  function goNext() {
+    if (busy) return;
+    if (stepForward()) return;
+    var i = currentIndex();
+    if (i < slides.length - 1) showPage(slides[i + 1].id);
+  }
+  function goPrev() {
+    if (busy) return;
+    if (stepBack()) return;
+    var i = currentIndex();
+    if (i > 0) showPage(slides[i - 1].id, true);
+  }
+
+  document.querySelector('.wrap').addEventListener('click', function (e) {
+    if (e.target.closest('a, button, input, textarea, select, [data-goto], [data-detail], .dmodal')) return;
+    var sel = window.getSelection && window.getSelection();
+    if (sel && String(sel).length) return;
+    goNext();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); goNext(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goPrev(); }
+    else if (e.key === 'Home') { e.preventDefault(); showPage(slides[0].id); }
+    else if (e.key === 'End') { e.preventDefault(); showPage(slides[slides.length - 1].id, true); }
+  });
+
+  var wheelLock = false;
+  window.addEventListener('wheel', function (e) {
+    if (wheelLock) { e.preventDefault(); return; }
+    if (Math.abs(e.deltaY) < 14) return;
+    e.preventDefault();
+    wheelLock = true;
+    if (e.deltaY > 0) goNext(); else goPrev();
+    setTimeout(function () { wheelLock = false; }, ORBIT_MS + 60);
+  }, { passive: false });
+
+  function fit() {
+    var wrap = document.querySelector('.wrap');
+    var s = Math.min((window.innerWidth - 40) / 1600, (window.innerHeight - 54) / 900);
+    wrap.style.transform = 'scale(' + s + ')';
+    document.getElementById('stage').style.height = (900 * s) + 'px';
+    document.getElementById('stage').style.marginTop = Math.max((window.innerHeight - 900 * s) / 2 - 4, 18) + 'px';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  document.getElementById('printbtn').onclick = function () { window.print(); };
+
+  /* Init from URL hash or query (?slide=6&step=off) */
+  (function initDeck() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('step') === 'off') {
+      stepRevealEnabled = false;
+      stepModeBtn.classList.remove('on');
+      stepModeBtn.textContent = '단계 등장: OFF';
+    }
+    var targetId = '';
+    if (window.location.hash && document.getElementById(window.location.hash.slice(1))) {
+      targetId = window.location.hash.slice(1);
+    } else if (params.get('slide')) {
+      var cand = 'page' + params.get('slide');
+      if (document.getElementById(cand)) targetId = cand;
+    }
+    if (targetId && targetId !== 'pagecover') {
+      document.getElementById('pagecover').classList.remove('active');
+      var t = document.getElementById(targetId);
+      t.classList.add('active');
+      setNav(targetId);
+      enterSteps(t, !stepRevealEnabled);
+      fitBoxes(t);
+    } else {
+      setNav('pagecover');
+      enterSteps(document.getElementById('pagecover'), true);
+      fitBoxes(document.getElementById('pagecover'));
+    }
+  })();
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { fitBoxes(document.querySelector('.slide.active')); });
+  }
+  window.addEventListener('beforeprint', function () { fitBoxes(document); });
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,14 @@
-"""Static Scanner & Compliance Gate Engine for the 7-Domain, 15-Item Production-Readiness Checklist (v2.1)."""
+"""Static Scanner & Compliance Gate for the Production-Readiness Checklist v3.
+
+- Items come from ``catalog_v3.json`` via :mod:`prod_ready.checklist` (per-target ids such as ``CR-F1``).
+- Conditional items are scored only when their workload condition is detected in code
+  (multi-turn sessions, long-term memory, AI code execution, MCP/external tools, tools called on behalf of
+  users with credentials); otherwise ``NA``.
+- Preview items are reported but never block the overall Production Ready verdict.
+- General platform best practices are delegated to platform skills (google/skills) and are not scored.
+- Gemini call retry · endpoint is ADK optimization (agent code): out of scope, never scored.
+- Categories with no item for the target (e.g. Optimize on Cloud Run / Agent Runtime) are omitted from domains.
+"""
 
 from __future__ import annotations
 
@@ -8,11 +18,18 @@ from pathlib import Path
 from typing import Any, Literal
 
 from prod_ready.checklist import (
-    CHECKLIST_ITEMS,
+    CATALOG_VERSION,
+    CATEGORY_BY_CODE,
+    CATEGORY_ORDER,
+    CONDITIONS,
     ChecklistItemSpec,
     CustomFieldSpec,
     RAGStatus,
     TargetType,
+    advisories_for,
+    delegated_bps,
+    get_items_for_target,
+    platform_skills_for,
     resolve_item_ids,
 )
 
@@ -38,6 +55,21 @@ class ItemScanResult:
     agent_runtime_desc: str
     gke_desc: str
     custom_fields: list[CustomFieldSpec]
+    # ---- v3 fields ----
+    category: str = ""
+    category_name: str = ""
+    grade: str = "required"
+    condition: str | None = None
+    condition_label: str = ""
+    condition_met: bool | None = None
+    preview: bool = False
+    new: bool = False
+    check: str = ""
+    best_practice: str = ""
+    references: list[dict[str, str]] = field(default_factory=list)
+    legacy_ids: list[str] = field(default_factory=list)
+    blocking: bool = True
+    auto_patch: bool = True
 
 
 @dataclass
@@ -48,6 +80,16 @@ class DomainSummary:
     green_count: int
     amber_count: int
     red_count: int
+    na_count: int = 0
+
+
+@dataclass
+class ConditionResult:
+    key: str
+    label: str
+    met: bool
+    source: str  # "auto" | "override"
+    evidence: str
 
 
 @dataclass
@@ -66,6 +108,15 @@ class ProjectScanReport:
     items: list[ItemScanResult]
     skipped_item_ids: list[str] = field(default_factory=list)
     advisories: list[str] = field(default_factory=list)
+    platform_guarantees: list[str] = field(default_factory=list)  # kept empty for API compatibility (v3)
+    # ---- v3 fields ----
+    catalog_version: str = CATALOG_VERSION
+    na_count: int = 0
+    preview_open_count: int = 0
+    blocking_open_ids: list[str] = field(default_factory=list)
+    conditions: list[ConditionResult] = field(default_factory=list)
+    platform_skills: list[dict[str, str]] = field(default_factory=list)
+    delegated_bps: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -214,10 +265,17 @@ def detect_project_mode_and_target(
         mode = "agents_cli_single"
 
     service_txt = _read_text(tf_service)
-    if target_override in ("cloud_run", "agent_runtime"):
+    manifest_txt = _read_text(project_dir / "agents-cli-manifest.yaml")
+    if target_override in ("cloud_run", "agent_runtime", "gke"):
         target: TargetType = target_override  # type: ignore[assignment]
     elif "google_vertex_ai_reasoning_engine" in service_txt:
         target = "agent_runtime"
+    elif (
+        "google_container_cluster" in service_txt
+        or "kubernetes_deployment_v1" in service_txt
+        or bool(re.search(r"deployment_target:\s*['\"]?gke['\"]?", manifest_txt))
+    ):
+        target = "gke"
     else:
         target = "cloud_run"
 
@@ -231,206 +289,6 @@ def detect_project_mode_and_target(
                 break
 
     return mode, target, project_name
-
-
-def _collect_sizing_advisories(
-    target: TargetType,
-    service_tf: str,
-    mcp_a2a: McpA2aProfile | None = None,
-) -> list[str]:
-    """Produces Architecture & Governance REVIEW advisories for sizing, ingress topology, and session options."""
-    advisories: list[str] = []
-    if target == "cloud_run":
-        advisories.append(
-            "[REVIEW · 컴퓨트 사이징] CPU/Memory/Concurrency/min_instances는 임의 상향 패치하지 않고 사용자 설정을 보존합니다. "
-            "tests/load_test/(Locust) 부하 테스트로 P95 지연 및 OOM 여부를 관측한 뒤 직접 조정하세요."
-        )
-        advisories.append(
-            "[참고 · 인바운드 & 인증 아키텍처] 인바운드 노출 및 인증 방식(자체 OAuth/JWT + 공개 URL vs 서버 간 IAM Invoker 인증 vs 사내 IAP vs 앞단 GCLB + Cloud Armor WAF)은 "
-            "호출 주체와 조직 네트워크 정책에 따라 선택하세요 (스킬이 기본 URL이나 인그레스를 강제 잠그지 않습니다)."
-        )
-        advisories.append(
-            "[참고 · Cloud Run Agent Gateway 단계적 도입 (C4.4)] Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 "
-            "Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다."
-        )
-    else:
-        advisories.append(
-            "[REVIEW · 컴퓨트 사이징] Agent Runtime의 cpu/memory/container_concurrency/min_instances는 임의 상향하지 않습니다. "
-            "tests/load_test/ 부하 테스트 결과에 맞춰 deployment_spec을 직접 조정하세요."
-        )
-        advisories.append(
-            "[참고 · Agent Gateway 단계적 전환 (DRY_RUN → ENFORCED)] C4.4 기본값은 HTTP 498 차단을 방지하기 위해 iamEnforcementMode=DRY_RUN으로 생성됩니다. "
-            "필수 플랫폼 API 및 MCP/A2A 대상을 Agent Registry와 UAP V2 정책에 Allowlist한 뒤 ENFORCED로 전환하세요."
-        )
-    advisories.append(
-        "[참고 · 세션/메모리 옵션] D2는 운영 부담이 없는 Agent Platform Managed Session & Memory Bank를 기본 적용합니다. "
-        "(폐쇄망 DB 강제·서브밀리초 캐시 등 특수 요건 시 Self-Hosted Cloud SQL / Memorystore Redis 자체 구축 옵션도 선택 가능합니다.)"
-    )
-    advisories.append(
-        "[참고 · AI 보안 거버넌스 (Model Armor / 도구 SSRF·IDOR)] 프롬프트 인젝션·PII 입출력 필터링과 도구 정책 통제는 "
-        "개별 에이전트 코드에 일괄 강제하기보다 조직 거버넌스 요건에 맞춰 앞단 Agent Gateway + Model Armor Floor Settings로 중앙 통제하거나, "
-        "필요한 워크로드에서만 선택적으로 ADK ModelArmorPlugin / before_tool_callback을 적용하세요."
-    )
-    advisories.append(
-        "[참고 · 상용 SLA / 429 쿼터 전략 (DSQ vs Provisioned Throughput)] Standard PayGo(Global DSQ)는 별도 처리량 SLA를 보장하지 않으며, "
-        "대화형 에이전트에서 무리한 재시도 상향은 Retry Storm과 동시성 고갈을 유발합니다. "
-        "상용 SLA가 필요한 핵심 워크로드는 Provisioned Throughput(GSU + Shared spillover) 또는 Priority PayGo를, 비동기·배치 평가는 Flex PayGo / Batch API를 검토하세요."
-    )
-    if mcp_a2a is not None:
-        if mcp_a2a.is_mcp_server:
-            advisories.append(
-                "[참고 · Cloud Run MCP Server 자동 등록 (Agent Registry)] MCP Server 워크로드로 자동 감지되어 "
-                "functional_type = \"FUNCTIONAL_TYPE_MCP_SERVER\"를 적용하며 전용 서비스 계정을 유지합니다(IDENTITY_TYPE_AGENT_IDENTITY 불필요). "
-                "배포 후 Streamable HTTP(/mcp) 엔드포인트와 `gcloud beta agent-registry mcp-servers list` 등록 상태를 확인하세요 (references/agent-registry-mcp-a2a.md)."
-            )
-        if (mcp_a2a.hardcoded_mcp_urls or mcp_a2a.hardcoded_a2a_urls) and not mcp_a2a.uses_agent_registry:
-            detected_preview = ", ".join((mcp_a2a.hardcoded_mcp_urls + mcp_a2a.hardcoded_a2a_urls)[:3])
-            advisories.append(
-                f"[REVIEW · MCP/A2A Agent Registry Lazy Discovery & Tool-Level RBAC] 원격 MCP/A2A 정적 URL 하드코딩({detected_preview})이 감지되었습니다. "
-                "google.adk.integrations.agent_registry.AgentRegistry의 get_mcp_toolset() / get_remote_a2a_agent()로 전환하면 엔드포인트 자동 해석·GCP 인증·"
-                "gcp.mcp.server.destination.id 텔레메트리가 통합되며, Agent Gateway의 UAP V2 CEL(iap.googleapis.com/mcp.toolName, iap.googleapis.com/mcp.tool.isReadOnly)로 "
-                "도구 단위 최소 권한 통제가 가능합니다 (references/agent-registry-mcp-a2a.md)."
-            )
-        elif mcp_a2a.uses_agent_registry:
-            advisories.append(
-                "[참고 · MCP/A2A Agent Registry 거버넌스] ADK AgentRegistry Lazy Discovery 연동이 확인되었습니다. "
-                "외부 비-GCP MCP 서버는 `gcloud agent-registry services create` 또는 Terraform `google_agent_registry_service`(toolspec.json 최대 10KB)로 등록하고, "
-                "Agent Gateway(AGENT_TO_ANYWHERE)에서는 `iap.googleapis.com/mcp.toolName` / `mcp.tool.isReadOnly` CEL 정책을 DRY_RUN 검증 후 ENFORCED로 전환하세요 (references/agent-registry-mcp-a2a.md)."
-            )
-    return advisories
-
-
-def scan_project(
-    project_dir: str | Path,
-    target_override: str = "auto",
-    selected_items: list[str] | None = None,
-) -> ProjectScanReport:
-    """Evaluates active checklist items (all 15 by default, or tailored subset) against the local project."""
-    root = Path(project_dir).resolve()
-    mode, target, project_name = detect_project_mode_and_target(root, target_override)
-
-    active_ids = set(resolve_item_ids(selected_items))
-    skipped_item_ids = [spec.id for spec in CHECKLIST_ITEMS if spec.id not in active_ids]
-
-    tf_dir = root / resolve_terraform_rel_dir(root)
-    service_tf = _read_text(tf_dir / "service.tf")
-    variables_tf = _read_text(tf_dir / "variables.tf")
-    apis_tf = _read_text(tf_dir / "apis.tf")
-    prod_ready_tf = _read_text(tf_dir / "production_ready.tf")
-    alerts_tf = _read_text(tf_dir / "alerts.tf")
-    dockerfile = _read_text(root / "Dockerfile")
-    pyproject_toml = _read_text(root / "pyproject.toml")
-    agent_py = _read_text(root / "app" / "agent.py")
-    fast_api_py = _read_text(root / "app" / "fast_api_app.py")
-    services_py = _read_text(root / "app" / "app_utils" / "services.py")
-    cost_guard_py = _read_text(root / "app" / "app_utils" / "cost_guard_plugin.py")
-    staging_yaml = _read_text(root / ".cloudbuild" / "staging.yaml")
-    eval_config = _read_text(root / "tests" / "eval" / "eval_config.yaml")
-    eval_dataset = _read_text(root / "tests" / "eval" / "datasets" / "smoke_dataset.json") or _read_text(
-        root / "tests" / "eval" / "golden_dataset.json"
-    )
-
-    has_tf = bool(service_tf)
-    mcp_a2a = detect_mcp_a2a_profile(root, service_tf)
-
-    results: list[ItemScanResult] = []
-    for spec in CHECKLIST_ITEMS:
-        if spec.id not in active_ids:
-            continue
-        status, managed, evidence = _evaluate_item(
-            spec=spec,
-            target=target,
-            has_tf=has_tf,
-            service_tf=service_tf,
-            variables_tf=variables_tf,
-            apis_tf=apis_tf,
-            prod_ready_tf=prod_ready_tf,
-            alerts_tf=alerts_tf,
-            dockerfile=dockerfile,
-            pyproject_toml=pyproject_toml,
-            agent_py=agent_py,
-            fast_api_py=fast_api_py,
-            services_py=services_py,
-            cost_guard_py=cost_guard_py,
-            staging_yaml=staging_yaml,
-            eval_config=eval_config,
-            eval_dataset=eval_dataset,
-            mcp_a2a=mcp_a2a,
-        )
-        remediation = (
-            spec.agent_runtime_desc if target == "agent_runtime" else spec.cloud_run_desc
-        )
-        results.append(
-            ItemScanResult(
-                id=spec.id,
-                code_alias=spec.code_alias,
-                domain_id=spec.domain_id,
-                domain_name=spec.domain_name,
-                title=spec.title,
-                severity=spec.severity,
-                status=status,
-                managed_by_platform=managed,
-                evidence=evidence,
-                remediation=remediation,
-                target_files=spec.target_files,
-                why_it_matters=spec.why_it_matters,
-                verify_cmd=spec.verify_cmd,
-                cloud_run_desc=spec.cloud_run_desc,
-                agent_runtime_desc=spec.agent_runtime_desc,
-                gke_desc=spec.gke_desc,
-                custom_fields=spec.custom_fields,
-            )
-        )
-
-    # Compute Domain Compliance Summaries & Overall Gate Verdict
-    domain_map: dict[str, list[ItemScanResult]] = {}
-    for r in results:
-        domain_map.setdefault(r.domain_id, []).append(r)
-
-    domain_summaries: list[DomainSummary] = []
-    for d_id, d_items in domain_map.items():
-        d_name = d_items[0].domain_name
-        domain_summaries.append(
-            DomainSummary(
-                domain_id=d_id,
-                domain_name=d_name,
-                total_count=len(d_items),
-                green_count=sum(1 for i in d_items if i.status == "GREEN"),
-                amber_count=sum(1 for i in d_items if i.status == "AMBER"),
-                red_count=sum(1 for i in d_items if i.status == "RED"),
-            )
-        )
-
-    total_count = len(results)
-    green_count = sum(1 for r in results if r.status == "GREEN")
-    amber_count = sum(1 for r in results if r.status == "AMBER")
-    red_count = sum(1 for r in results if r.status == "RED")
-    managed_count = sum(1 for r in results if r.managed_by_platform)
-
-    if total_count > 0 and red_count == 0 and amber_count == 0:
-        verdict = "🟢 Production Ready"
-    elif total_count > 0 and red_count == 0:
-        verdict = "🟡 Ready with Follow-ups"
-    else:
-        verdict = "🔴 Not Production Ready"
-
-    return ProjectScanReport(
-        project_dir=str(root),
-        project_name=project_name,
-        project_mode=mode,
-        deployment_target=target,
-        verdict=verdict,
-        total_count=total_count,
-        green_count=green_count,
-        amber_count=amber_count,
-        red_count=red_count,
-        managed_native_count=managed_count,
-        domains=domain_summaries,
-        items=results,
-        skipped_item_ids=skipped_item_ids,
-        advisories=_collect_sizing_advisories(target, service_tf, mcp_a2a),
-    )
-
 
 def _has_otel_to_cloud_enabled(fast_api_py: str) -> bool:
     """Checks whether fast_api_app.py actively enables otel_to_cloud on Cloud Run."""
@@ -463,487 +321,837 @@ def _has_adk_otel_gcp_extras(pyproject_toml: str) -> bool:
     return False
 
 
-def _evaluate_item(
-    *,
-    spec: ChecklistItemSpec,
-    target: TargetType,
-    has_tf: bool,
-    service_tf: str,
-    variables_tf: str,
-    apis_tf: str,
-    prod_ready_tf: str,
-    alerts_tf: str,
-    dockerfile: str,
-    pyproject_toml: str = "",
-    agent_py: str,
-    fast_api_py: str,
-    services_py: str,
-    cost_guard_py: str,
-    staging_yaml: str,
-    eval_config: str,
-    eval_dataset: str,
-    mcp_a2a: McpA2aProfile | None = None,
-) -> tuple[RAGStatus, bool, str]:
-    cid = spec.id
 
-    # Agent Runtime natively managed items (4 items: C1.1, C1.2, C2.1, C5.1)
-    if target == "agent_runtime" and spec.agent_runtime_mode == "MANAGED_NATIVE":
-        if has_tf and "google_vertex_ai_reasoning_engine" in service_tf:
-            return (
-                "GREEN",
-                True,
-                "Managed natively by Agent Runtime (google_vertex_ai_reasoning_engine.app)",
-            )
-        return (
-            "RED",
+# ---------------------------------------------------------------------------
+# Project context & workload condition detection
+# ---------------------------------------------------------------------------
+
+
+def _collect_app_python(project_dir: Path) -> str:
+    """Concatenates app/**/*.py and top-level *.py (comments stripped)."""
+    sources: list[str] = []
+    seen: set[Path] = set()
+    app_dir = project_dir / "app"
+    if app_dir.is_dir():
+        for py_file in sorted(app_dir.rglob("*.py")):
+            if "__pycache__" in py_file.parts:
+                continue
+            seen.add(py_file)
+            sources.append(_strip_py_comments(_read_text(py_file)))
+    for py_file in sorted(project_dir.glob("*.py")):
+        if py_file not in seen:
+            sources.append(_strip_py_comments(_read_text(py_file)))
+    return "\n".join(sources)
+
+
+@dataclass
+class _Ctx:
+    root: Path
+    target: TargetType
+    has_tf: bool
+    service_tf: str
+    variables_tf: str
+    apis_tf: str
+    iam_tf: str
+    prod_ready_tf: str
+    all_tf: str
+    dockerfile: str
+    pyproject_toml: str
+    agent_py: str
+    fast_api_py: str
+    services_py: str
+    agent_engine_app_py: str
+    app_py: str
+    deploy_scripts: str
+    k8s_yaml: str
+    k8s_agent_gateway_yaml: str
+    k8s_agent_sandbox_yaml: str
+    k8s_agent_substrate_yaml: str
+    mcp_a2a: McpA2aProfile
+    env_files: str = ""
+
+
+def _build_ctx(root: Path, target: TargetType) -> _Ctx:
+    tf_dir = root / resolve_terraform_rel_dir(root)
+    service_tf = _read_text(tf_dir / "service.tf")
+    all_tf_parts: list[str] = []
+    for d in {tf_dir, root / "deployment" / "terraform"}:
+        if d.is_dir():
+            for tf in sorted(d.glob("*.tf")):
+                all_tf_parts.append(_read_text(tf))
+    deploy_parts: list[str] = [_read_text(root / "Makefile")]
+    for pattern in (".cloudbuild/*.yaml", ".github/workflows/*.yaml", ".github/workflows/*.yml", "*.sh", "scripts/*.sh", "deployment/*.sh"):
+        for f in sorted(root.glob(pattern)):
+            deploy_parts.append(_read_text(f))
+    k8s_dir = root / "deployment" / "k8s"
+    k8s_parts = [_read_text(f) for f in sorted(k8s_dir.glob("*.y*ml"))] if k8s_dir.is_dir() else []
+    return _Ctx(
+        root=root,
+        target=target,
+        has_tf=bool(service_tf),
+        service_tf=service_tf,
+        variables_tf=_read_text(tf_dir / "variables.tf"),
+        apis_tf=_read_text(tf_dir / "apis.tf"),
+        iam_tf=_read_text(tf_dir / "iam.tf"),
+        prod_ready_tf=_read_text(tf_dir / "production_ready.tf"),
+        all_tf="\n".join(all_tf_parts),
+        dockerfile=_read_text(root / "Dockerfile"),
+        pyproject_toml=_read_text(root / "pyproject.toml"),
+        agent_py=_read_text(root / "app" / "agent.py"),
+        fast_api_py=_read_text(root / "app" / "fast_api_app.py"),
+        services_py=_read_text(root / "app" / "app_utils" / "services.py"),
+        agent_engine_app_py=_read_text(root / "app" / "agent_engine_app.py"),
+        app_py=_collect_app_python(root),
+        deploy_scripts="\n".join(deploy_parts),
+        k8s_yaml="\n".join(k8s_parts),
+        k8s_agent_gateway_yaml=_read_text(k8s_dir / "agent-gateway.yaml"),
+        k8s_agent_sandbox_yaml=_read_text(k8s_dir / "agent-sandbox.yaml"),
+        k8s_agent_substrate_yaml=_read_text(k8s_dir / "agent-substrate.yaml"),
+        mcp_a2a=detect_mcp_a2a_profile(root, service_tf),
+        env_files="\n".join(
+            _read_text(f) for pat in (".env", ".env.*", "app/.env") for f in sorted(root.glob(pat)) if f.is_file()
+        ),
+    )
+
+
+_CONV_RE = re.compile(
+    r"SessionService\b|get_session_service|session_service_uri|SESSION_SERVICE_URI|get_fast_api_app|"
+    r"\bAdkApp\s*\(|\bRunner\s*\(|from\s+google\.adk\b|\bLlmAgent\s*\(|\bAgent\s*\("
+)
+_MEMORY_RE = re.compile(
+    r"MemoryService\b|memory_service|load_memory|PreloadMemoryTool|LoadMemoryTool|add_session_to_memory|MemoryBank|memory_bank"
+)
+_CODE_RE = re.compile(
+    r"code_executor\s*=|\w*CodeExecutor\b|subprocess\.(?:run|Popen|call|check_output|check_call)\s*\(|\bos\.system\s*\("
+)
+_TOOLS_RE = re.compile(
+    r"McpToolset|MCPToolset|MCPTool\b|StreamableHTTPConnectionParams|SseConnectionParams|StdioConnectionParams|"
+    r"RemoteA2aAgent|AgentRegistry\s*\(|OpenAPIToolset|APIHubToolset|ApplicationIntegrationToolset|"
+    r"\brequests\.(?:get|post|put|patch|delete|request)\s*\(|\bhttpx\.|\baiohttp\b|urllib\.request"
+)
+
+# ---- delegated: tools / MCP servers called on behalf of users (credential-bearing external calls) ----
+# Google model keys (Gemini / AI Studio) are not external-tool credentials.
+_NON_TOOL_SECRET_ENV = frozenset({"GOOGLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY"})
+_SECRET_ENV_RE = re.compile(
+    r"\b(?:GITHUB_PAT|GH_TOKEN|[A-Z][A-Z0-9_]*_(?:TOKEN|API_KEY|APIKEY|PAT|ACCESS_KEY|SECRET_KEY|CLIENT_SECRET))\b"
+)
+_HARDCODED_TOKEN_RE = re.compile(
+    r"""["'](?:ghp_|gho_|github_pat_|glpat-|xox[bp]-|sk-|ATATT)[A-Za-z0-9_\-]{8,}["']"""
+)
+_AUTH_HEADER_RE = re.compile(
+    r"""\bheaders\s*=|["']Authorization["']|["'](?:X-API-Key|x-api-key|PRIVATE-TOKEN|Api-Key)["']|\bBearer\b|"""
+    r"""\bauth_credential\s*=|\bauth_scheme\s*=|\bheader_provider\s*="""
+)
+_AUTH_MANAGER_CODE_RE = re.compile(
+    r"google\.adk\.integrations\.agent_identity|\bGcpAuthProvider(?:Scheme)?\b|/authProviders/|"
+    r"agentidentity\.googleapis\.com|\bauth_manager\b|\bAuthManager\b"
+)
+
+
+def _tool_secret_envs(ctx: _Ctx) -> list[str]:
+    """Non-Google secret-like env var names referenced by app code, Terraform env or .env files."""
+    src = "\n".join((ctx.app_py, ctx.service_tf, ctx.k8s_yaml, ctx.env_files))
+    names: list[str] = []
+    for m in _SECRET_ENV_RE.finditer(src):
+        name = m.group(0)
+        if name not in _NON_TOOL_SECRET_ENV and name not in names:
+            names.append(name)
+    return names
+
+
+def _has_adk_agent_identity_extra(pyproject_toml: str) -> bool:
+    for m in re.finditer(r'["\']google-adk\[([^\]]+)\]', pyproject_toml or ""):
+        extras = {e.strip().lower() for e in m.group(1).split(",")}
+        if "agent-identity" in extras or "agent_identity" in extras or "all" in extras:
+            return True
+    return False
+
+
+def _auth_manager_code_hit(ctx: _Ctx) -> str:
+    return _first_match(_AUTH_MANAGER_CODE_RE, _strip_py_comments(ctx.app_py))
+
+
+def _static_secret_in_tool_headers(ctx: _Ctx) -> str:
+    """Returns evidence when static API keys / PATs are wired into tool / MCP auth headers (else '')."""
+    code = _strip_py_comments(ctx.app_py)
+    if not _AUTH_HEADER_RE.search(code):
+        return ""
+    literal = _HARDCODED_TOKEN_RE.search(code)
+    if literal:
+        return "코드에 하드코딩된 토큰 리터럴"
+    for m in _SECRET_ENV_RE.finditer(code):
+        if m.group(0) not in _NON_TOOL_SECRET_ENV:
+            return f"환경변수 `{m.group(0)}`"
+    return ""
+
+
+def _first_match(regex: re.Pattern[str], text: str) -> str:
+    m = regex.search(text)
+    return m.group(0).strip() if m else ""
+
+
+def detect_workload_conditions(
+    project_dir: str | Path,
+    overrides: dict[str, bool] | None = None,
+    ctx: _Ctx | None = None,
+) -> dict[str, ConditionResult]:
+    """Auto-detects v3 workload conditions (conv / memory / code / tools / idle / delegated) from application code.
+
+    ``overrides`` (e.g. ``{"memory": True}``) take precedence over auto-detection.
+    """
+    root = Path(project_dir).resolve()
+    if ctx is None:
+        _, target, _ = detect_project_mode_and_target(root)
+        ctx = _build_ctx(root, target)
+    code = ctx.app_py
+    profile = ctx.mcp_a2a
+
+    detected: dict[str, tuple[bool, str]] = {}
+    hit = _first_match(_CONV_RE, code)
+    detected["conv"] = (bool(hit), f"코드에서 `{hit}` 감지" if hit else "세션·ADK 에이전트 코드 미감지")
+    hit = _first_match(_MEMORY_RE, code)
+    detected["memory"] = (bool(hit), f"코드에서 `{hit}` 감지" if hit else "메모리 서비스·도구 사용 미감지")
+    hit = _first_match(_CODE_RE, code)
+    detected["code"] = (bool(hit), f"코드에서 `{hit}` 감지" if hit else "코드 실행 도구 미감지")
+    hit = _first_match(_TOOLS_RE, code)
+    remote_urls = profile.hardcoded_mcp_urls + profile.hardcoded_a2a_urls
+    if not hit and remote_urls:
+        hit = remote_urls[0]
+    if not hit and profile.uses_agent_registry:
+        hit = "AgentRegistry"
+    detected["tools"] = (bool(hit), f"`{hit}` 감지" if hit else "MCP·외부 API·원격 에이전트 호출 미감지")
+    # idle: "mostly waiting for user input / tool responses" cannot be inferred from code. It is met only when
+    # Agent Substrate is already in use (the user opted into suspend/resume) or the user says so (override).
+    if _has_agent_substrate(ctx):
+        detected["idle"] = (True, "Agent Substrate(ate.dev WorkerPool/ActorTemplate) 사용 감지 — 유휴 일시정지·복원 대상")
+    else:
+        detected["idle"] = (
             False,
-            "deployment/terraform/service.tf (google_vertex_ai_reasoning_engine.app) 미생성",
+            "코드로 판단 불가 — 사용자 입력·도구 응답 대기 시간이 대부분이면 조건 지정 "
+            "(`--conditions idle=true`, Agent Skill은 사용자에게 질문)",
         )
-
-    # C1.1: IaC resource primitive mapping + lifecycle.ignore_changes (Cloud Run)
-    if cid == "C1.1":
-        if has_tf and "google_cloud_run_v2_service" in service_tf:
-            return ("GREEN", False, "deployment/terraform/service.tf: google_cloud_run_v2_service.app 및 lifecycle 확인됨")
-        return ("RED", False, "deployment/terraform/service.tf 미생성 (프로토타입 상태)")
-
-    # C1.2: Health probes & Startup CPU Boost (Cloud Run; NO forced resource upsizing!)
-    if cid == "C1.2":
-        if not has_tf:
-            return ("AMBER", False, "deployment/terraform/service.tf 미생성")
-        has_probes = "startup_probe" in service_tf and "liveness_probe" in service_tf
-        has_boost = bool(re.search(r"startup_cpu_boost\s*=\s*true", service_tf))
-        if has_probes and has_boost:
-            return ("GREEN", False, "service.tf: startup_probe · liveness_probe · startup_cpu_boost=true 구성됨")
-        if has_probes:
-            return ("AMBER", False, "service.tf: 헬스 프로브는 있으나 startup_cpu_boost=true 누락")
-        return ("AMBER", False, "service.tf: 컨테이너 startup_probe / liveness_probe 미구성")
-
-    # C2.1: Persistent Multi-Turn Session Store (Default: Agent Platform Managed Sessions)
-    if cid == "C2.1":
-        has_managed_code = "VertexAiSessionService" in services_py
-        has_session_env = '"AGENT_ENGINE_SESSION_ID"' in service_tf
-        has_legacy_ae_env = '"GOOGLE_CLOUD_AGENT_ENGINE_ID"' in service_tf
-        has_managed_tf = (
-            has_session_env
-            or has_legacy_ae_env
-            or '"ADK_SESSION_SERVICE_URI"' in service_tf
-        )
-        has_hardened_self_sql = (
-            "google_sql_database_instance" in service_tf
-            and 'availability_type = "REGIONAL"' in service_tf
-            and "point_in_time_recovery_enabled = true" in service_tf
-            and "postgresql+asyncpg" in services_py
-        )
-        if has_managed_code and has_managed_tf:
-            if has_session_env:
-                return (
-                    "GREEN",
-                    False,
-                    "Agent Platform Managed Session Service (VertexAiSessionService + AGENT_ENGINE_SESSION_ID) 연동 완료 — Cloud Run OTel 리소스 감지 보존",
-                )
-            return (
-                "GREEN",
-                False,
-                "Agent Platform Managed Session Service (VertexAiSessionService) 연동 완료 (참고: Cloud Run OTel 리소스 충돌 방지를 위해 AGENT_ENGINE_SESSION_ID 사용 권장)",
-            )
-        if has_hardened_self_sql:
-            return (
-                "GREEN",
-                False,
-                "Self-Hosted Cloud SQL REGIONAL HA + PITR 감지됨 (운영 부담이 적은 Managed Sessions 전환도 옵션으로 가능)",
-            )
-        if has_managed_code or "postgresql+asyncpg" in services_py:
-            return (
-                "AMBER",
-                False,
-                "services.py 또는 service.tf의 Managed Session (AGENT_ENGINE_SESSION_ID) 설정이 일부 누락됨",
-            )
-        return (
-            "RED",
+    # delegated: external tools / MCP servers called with credentials (on behalf of users). Detected from
+    # auth manager usage, credential-bearing tool configs (auth headers / auth_scheme) or secret-like env vars.
+    am_hit = _auth_manager_code_hit(ctx)
+    secret_envs = _tool_secret_envs(ctx)
+    if am_hit:
+        detected["delegated"] = (True, f"Agent Identity auth manager 사용 감지 (`{am_hit}`)")
+    elif secret_envs:
+        detected["delegated"] = (True, f"외부 도구 자격 증명 환경변수 감지 ({', '.join(secret_envs[:3])})")
+    elif detected["tools"][0] and _AUTH_HEADER_RE.search(code):
+        detected["delegated"] = (True, "인증 헤더를 붙여 외부 도구·MCP 호출 감지")
+    else:
+        detected["delegated"] = (
             False,
-            "InMemorySessionService 사용 중 (스케일아웃·재시작 시 대화 증발 — Agent Platform Managed Sessions 연동 필요)",
+            "코드로 판단 불가 — 사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하면 조건 지정 "
+            "(`--conditions delegated=true`, Agent Skill은 사용자에게 질문)",
         )
 
-    # C2.2: Cross-Session Memory Bank (VertexAiMemoryBankService)
-    if cid == "C2.2":
-        has_mem_svc = "VertexAiMemoryBankService" in services_py and "MEMORY_SERVICE_URI" in services_py
-        has_mem_hook = "add_session_to_memory" in agent_py or "auto_save_session_to_memory" in agent_py
-        if has_mem_svc and has_mem_hook:
-            return (
-                "GREEN",
-                False,
-                "Agent Platform Memory Bank (VertexAiMemoryBankService + after_agent_callback 자동 저장) 연동 완료",
+    results: dict[str, ConditionResult] = {}
+    for key, label in CONDITIONS.items():
+        met, evidence = detected.get(key, (False, "미감지"))
+        source = "auto"
+        if overrides and key in overrides and overrides[key] is not None:
+            met = bool(overrides[key])
+            source = "override"
+            evidence = f"사용자 지정 ({'해당' if met else '해당 없음'})"
+        results[key] = ConditionResult(key=key, label=label, met=met, source=source, evidence=evidence)
+    return results
+
+
+def _collect_advisories(target: TargetType, mcp_a2a: McpA2aProfile | None = None) -> list[str]:
+    """Catalog advisories (value / architecture / paid options) + context-aware MCP/A2A notes."""
+    advisories = [f"[권고 · {a['title']}] {a['when']}" for a in advisories_for(target)]
+    if mcp_a2a is not None:
+        if mcp_a2a.is_mcp_server:
+            advisories.append(
+                "[참고 · MCP 서버 워크로드] MCP 서버로 감지되었습니다. Agent Registry 등록 시 에이전트 대신 MCP 서버 유형"
+                "(Cloud Run: `FUNCTIONAL_TYPE_MCP_SERVER`)으로 배포하세요 (references/agent-registry-mcp-a2a.md)."
             )
-        if has_mem_svc:
-            return (
-                "AMBER",
-                False,
-                "services.py에 VertexAiMemoryBankService는 있으나 agent.py의 자동 저장 콜백(after_agent_callback) 누락",
+        remote = mcp_a2a.hardcoded_mcp_urls + mcp_a2a.hardcoded_a2a_urls
+        if remote and not mcp_a2a.uses_agent_registry:
+            advisories.append(
+                f"[참고 · MCP/A2A 엔드포인트 하드코딩] 원격 MCP/A2A URL 하드코딩({', '.join(remote[:3])})이 감지되었습니다. "
+                "ADK `AgentRegistry`의 `get_mcp_toolset()` / `get_remote_a2a_agent()`로 전환하면 엔드포인트 해석·인증이 통합됩니다 "
+                "(references/agent-registry-mcp-a2a.md)."
             )
-        return (
-            "RED",
-            False,
-            "Agent Platform Memory Bank (VertexAiMemoryBankService) 미연동 (세션 간 장기 기억 불가)",
+    return advisories
+
+
+# ---------------------------------------------------------------------------
+# Scan entry point
+# ---------------------------------------------------------------------------
+
+
+def scan_project(
+    project_dir: str | Path,
+    target_override: str = "auto",
+    selected_items: list[str] | None = None,
+    conditions: dict[str, bool] | None = None,
+) -> ProjectScanReport:
+    """Evaluates the v3 checklist items for the detected/selected target runtime."""
+    root = Path(project_dir).resolve()
+    mode, target, project_name = detect_project_mode_and_target(root, target_override)
+
+    target_specs = get_items_for_target(target)
+    active_ids = set(resolve_item_ids(selected_items, target=target))
+    skipped_item_ids = [spec.id for spec in target_specs if spec.id not in active_ids]
+
+    ctx = _build_ctx(root, target)
+    cond_results = detect_workload_conditions(root, overrides=conditions, ctx=ctx)
+
+    results: list[ItemScanResult] = []
+    for spec in target_specs:
+        if spec.id not in active_ids:
+            continue
+        condition_met: bool | None = None
+        if spec.grade == "conditional" and spec.condition:
+            cres = cond_results.get(spec.condition)
+            condition_met = bool(cres and cres.met)
+        if condition_met is False:
+            cres = cond_results.get(spec.condition or "")
+            status: RAGStatus = "NA"
+            managed = False
+            evidence = f"N/A — 조건 '{spec.condition_label}' 해당 없음 ({cres.evidence if cres else '미감지'})"
+        else:
+            status, managed, evidence = _evaluate_item(spec=spec, ctx=ctx)
+            if spec.preview:
+                evidence = f"[Preview] {evidence}"
+        results.append(
+            ItemScanResult(
+                id=spec.id,
+                code_alias=spec.code_alias,
+                domain_id=spec.domain_id,
+                domain_name=spec.domain_name,
+                title=spec.title,
+                severity=spec.severity,
+                status=status,
+                managed_by_platform=managed,
+                evidence=evidence,
+                remediation=spec.best_practice,
+                target_files=spec.target_files_for(target),
+                why_it_matters=spec.check,
+                verify_cmd=spec.verify_cmd,
+                cloud_run_desc=spec.best_practice if target == "cloud_run" else "",
+                agent_runtime_desc=spec.best_practice if target == "agent_runtime" else "",
+                gke_desc=spec.best_practice if target == "gke" else "",
+                custom_fields=spec.custom_fields_for(target),
+                category=spec.category,
+                category_name=spec.category_name,
+                grade=spec.grade,
+                condition=spec.condition,
+                condition_label=spec.condition_label,
+                condition_met=condition_met,
+                preview=spec.preview,
+                new=spec.new,
+                check=spec.check,
+                best_practice=spec.best_practice,
+                references=spec.references_list,
+                legacy_ids=list(spec.legacy_ids),
+                blocking=(status != "NA" and not spec.preview),
+                auto_patch=spec.auto_patch,
+            )
         )
 
-    # C3.1: Private network egress (Direct VPC Egress on Cloud Run / PSC-I on Agent Runtime)
-    if cid == "C3.1":
-        if target == "cloud_run":
-            if "vpc_access" in service_tf:
-                return (
-                    "GREEN",
-                    False,
-                    "Cloud Run Direct VPC Egress (vpc_access) 사내망 아웃바운드 연결 완료",
-                )
-            return (
-                "RED",
-                False,
-                "service.tf에 vpc_access (Direct VPC Egress) 미구성 (사내망 프라이빗 DB/API 접근 불가)",
+    # Category summaries (F · O · D · OB · S) — N/A items excluded from totals
+    domain_summaries: list[DomainSummary] = []
+    for code in CATEGORY_ORDER:
+        c_items = [r for r in results if r.category == code]
+        if not c_items:
+            continue
+        scored = [r for r in c_items if r.status != "NA"]
+        cat = CATEGORY_BY_CODE.get(code, {})
+        domain_summaries.append(
+            DomainSummary(
+                domain_id=code,
+                domain_name=f"{cat.get('name', code)} ({cat.get('sub', '')})" if cat.get("sub") else cat.get("name", code),
+                total_count=len(scored),
+                green_count=sum(1 for i in scored if i.status == "GREEN"),
+                amber_count=sum(1 for i in scored if i.status == "AMBER"),
+                red_count=sum(1 for i in scored if i.status == "RED"),
+                na_count=len(c_items) - len(scored),
             )
-        else:
-            has_na = "google_compute_network_attachment" in prod_ready_tf
-            has_wired = "psc_interface_config" in service_tf
-            if has_wired and (has_na or "network_attachment" in service_tf):
-                return (
-                    "GREEN",
-                    False,
-                    "Agent Runtime PSC Interface (service.tf psc_interface_config) 사내망 연결 완료",
-                )
-            if has_na and not has_wired:
-                return (
-                    "AMBER",
-                    False,
-                    "PSC Network Attachment는 있으나 service.tf의 psc_interface_config에 연결되지 않음",
-                )
-            return ("RED", False, "Agent Runtime 사설망 Egress (psc_interface_config) 미구성")
-
-    # C4.1: Least-privilege SA & Secret Manager version pinning (NO forced deletion_protection=true)
-    if cid == "C4.1":
-        has_least_priv = bool(
-            variables_tf
-            and "roles/storage.admin" not in variables_tf
-            and "roles/storage.objectUser" in variables_tf
         )
-        if target == "cloud_run":
-            has_pinned_sec = not re.search(r'version\s*=\s*"latest"', service_tf) and has_tf
-            if has_least_priv and has_pinned_sec:
-                return (
-                    "GREEN",
-                    False,
-                    "Cloud Run: roles/storage.objectUser 최소 권한 및 Secret 버전 고정 완료",
-                )
-            return (
-                "RED",
-                False,
-                "variables.tf 과도한 권한(roles/storage.admin) 또는 Secret version='latest' 사용 중",
-            )
-        else:
-            has_no_sql_bloat = "roles/cloudsql.client" not in variables_tf
-            if has_least_priv and has_no_sql_bloat:
-                return (
-                    "GREEN",
-                    False,
-                    "Agent Runtime: roles/storage.objectUser 최소 권한 적용 (불필요한 Cloud SQL 권한 제거됨)",
-                )
-            if has_least_priv:
-                return (
-                    "AMBER",
-                    False,
-                    "storage.objectUser는 적용되었으나 Agent Runtime에 불필요한 roles/cloudsql.client가 남아 있음",
-                )
-            return ("RED", False, "variables.tf: 과도한 권한(roles/storage.admin) 부여 상태")
 
-    # C4.2: Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (BOTH Cloud Run & Agent Runtime)
-    # Context-aware: supports Cloud Run MCP Servers (FUNCTIONAL_TYPE_MCP_SERVER) and flags hardcoded MCP/A2A URLs when AgentRegistry is unused.
-    if cid == "C4.2":
-        profile = mcp_a2a or McpA2aProfile()
-        has_registry_api = (
-            "agentregistry.googleapis.com" in apis_tf
-            or "agentregistry.googleapis.com" in prod_ready_tf
-        )
-        hardcoded_urls = profile.hardcoded_mcp_urls + profile.hardcoded_a2a_urls
-        has_unmanaged_remote = bool(hardcoded_urls) and not profile.uses_agent_registry
+    scored_all = [r for r in results if r.status != "NA"]
+    blocking = [r for r in scored_all if r.blocking]
+    total_count = len(scored_all)
+    green_count = sum(1 for r in scored_all if r.status == "GREEN")
+    amber_count = sum(1 for r in scored_all if r.status == "AMBER")
+    red_count = sum(1 for r in scored_all if r.status == "RED")
+    managed_count = sum(1 for r in scored_all if r.managed_by_platform)
+    blocking_open = [r.id for r in blocking if r.status != "GREEN"]
+    preview_open = sum(1 for r in scored_all if r.preview and r.status != "GREEN")
 
-        if target == "cloud_run":
-            if profile.is_mcp_server:
-                has_mcp_func = bool(
-                    re.search(r'functional_type\s*=\s*"FUNCTIONAL_TYPE_MCP_SERVER"', service_tf)
-                )
-                if has_mcp_func and has_registry_api:
-                    base_status: RAGStatus = "GREEN"
-                    base_evidence = (
-                        "Cloud Run MCP Server 감지: FUNCTIONAL_TYPE_MCP_SERVER 및 agentregistry.googleapis.com 자동 등록 구성 완료 "
-                        "(MCP 서버는 전용 SA 유지 가능)"
-                    )
-                elif has_mcp_func or has_registry_api:
-                    base_status = "AMBER"
-                    base_evidence = (
-                        "Cloud Run MCP Server 감지: functional_type = \"FUNCTIONAL_TYPE_MCP_SERVER\" 또는 "
-                        "agentregistry.googleapis.com API 활성화 일부 누락"
-                    )
-                else:
-                    base_status = "RED"
-                    base_evidence = (
-                        "Cloud Run MCP Server 감지됨 — functional_type = \"FUNCTIONAL_TYPE_MCP_SERVER\" 및 "
-                        "agentregistry.googleapis.com 자동 등록 미구성"
-                    )
-            else:
-                has_func = bool(re.search(r'functional_type\s*=\s*"FUNCTIONAL_TYPE_AGENT"', service_tf))
-                has_id = bool(re.search(r'identity_type\s*=\s*"IDENTITY_TYPE_AGENT_IDENTITY"', service_tf))
-                if has_func and has_id and has_registry_api:
-                    base_status = "GREEN"
-                    base_evidence = (
-                        "Cloud Run: FUNCTIONAL_TYPE_AGENT + IDENTITY_TYPE_AGENT_IDENTITY 및 agentregistry.googleapis.com 자동 등록 구성 완료"
-                    )
-                elif has_func or has_id or has_registry_api:
-                    base_status = "AMBER"
-                    base_evidence = (
-                        "Cloud Run Agent Identity(IDENTITY_TYPE_AGENT_IDENTITY) 또는 agentregistry.googleapis.com API 활성화 일부 누락"
-                    )
-                else:
-                    base_status = "RED"
-                    base_evidence = (
-                        "Cloud Run Agent Identity(SPIFFE) 및 Agent Registry 자동 등록(functional_type=FUNCTIONAL_TYPE_AGENT) 미구성"
-                    )
-        else:
-            has_ar_id = bool(re.search(r'identity_type\s*=\s*"AGENT_IDENTITY"', service_tf))
-            if has_ar_id and has_registry_api:
-                base_status = "GREEN"
-                base_evidence = (
-                    'Agent Runtime: spec.identity_type = "AGENT_IDENTITY" (SPIFFE ID) 및 agentregistry.googleapis.com 자동 등록 구성 완료'
-                )
-            elif has_ar_id or has_registry_api:
-                base_status = "AMBER"
-                base_evidence = (
-                    'Agent Runtime spec.identity_type = "AGENT_IDENTITY" 또는 agentregistry.googleapis.com 활성화 일부 누락'
-                )
-            else:
-                base_status = "RED"
-                base_evidence = (
-                    'Agent Runtime Agent Identity(identity_type = "AGENT_IDENTITY") 및 Agent Registry API 미구성'
-                )
+    if blocking and not blocking_open:
+        verdict = "🟢 Production Ready"
+    elif blocking and not any(r.status == "RED" for r in blocking):
+        verdict = "🟡 Ready with Follow-ups"
+    elif not blocking:
+        verdict = "🟡 Ready with Follow-ups" if results else "🔴 Not Production Ready"
+    else:
+        verdict = "🔴 Not Production Ready"
 
-        if has_unmanaged_remote:
-            url_preview = ", ".join(hardcoded_urls[:3])
-            final_status: RAGStatus = "AMBER" if base_status == "GREEN" else base_status
-            return (
-                final_status,
-                False,
-                (
-                    f"{base_evidence} | ⚠️ 원격 MCP/A2A 정적 URL 하드코딩 감지({url_preview}) — "
-                    "google.adk.integrations.agent_registry.AgentRegistry (get_mcp_toolset / get_remote_a2a_agent) Lazy Discovery 전환 권장 "
-                    "(references/agent-registry-mcp-a2a.md 참고)"
-                ),
-            )
-        if base_status == "GREEN" and profile.uses_agent_registry:
-            return (
-                "GREEN",
-                False,
-                f"{base_evidence} + ADK AgentRegistry Lazy Discovery 연동 확인됨",
-            )
-        return (base_status, False, base_evidence)
+    return ProjectScanReport(
+        project_dir=str(root),
+        project_name=project_name,
+        project_mode=mode,
+        deployment_target=target,
+        verdict=verdict,
+        total_count=total_count,
+        green_count=green_count,
+        amber_count=amber_count,
+        red_count=red_count,
+        managed_native_count=managed_count,
+        domains=domain_summaries,
+        items=results,
+        skipped_item_ids=skipped_item_ids,
+        advisories=_collect_advisories(target, ctx.mcp_a2a),
+        platform_guarantees=[],
+        na_count=len(results) - total_count,
+        preview_open_count=preview_open,
+        blocking_open_ids=blocking_open,
+        conditions=list(cond_results.values()),
+        platform_skills=platform_skills_for(target),
+        delegated_bps=delegated_bps(),
+    )
 
-    # C4.3: Container non-root hardening & Gen2 sandbox
-    if cid == "C4.3":
-        has_non_root = "USER 10001" in dockerfile or "USER appuser" in dockerfile
-        if target == "cloud_run":
-            has_gen2 = "EXECUTION_ENVIRONMENT_GEN2" in service_tf
-            if has_non_root and has_gen2:
-                return ("GREEN", False, "Dockerfile Non-root(UID 10001) 및 Cloud Run EXECUTION_ENVIRONMENT_GEN2 적용됨")
-            if has_non_root:
-                return ("AMBER", False, "Dockerfile Non-root는 적용되었으나 EXECUTION_ENVIRONMENT_GEN2 미지정")
-            return ("RED", False, "Dockerfile이 root(UID 0) 계정으로 실행됨")
-        else:
-            if has_non_root:
-                return ("GREEN", False, "Agent Runtime: Dockerfile Non-root(UID 10001) 하드닝 완료")
-            return ("RED", False, "Dockerfile이 root(UID 0) 계정으로 실행됨")
 
-    # C4.4: Agent Gateway Centralized Governance (Active on Agent Runtime ONLY; Staged-Adoption Comment/Advisory on Cloud Run)
-    if cid == "C4.4":
-        if target == "cloud_run":
-            has_cr_note = "C4.4 Advisory" in service_tf or "Self-Managed AGW" in service_tf
-            if has_cr_note:
-                return (
-                    "GREEN",
-                    False,
-                    "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다. (service.tf 아키텍처 주석 반영 완료)",
-                )
-            return (
-                "AMBER",
-                False,
-                "Cloud Run은 Direct VPC Egress + SWP/VPC-SC + IAP + Model Armor라는 검증된 GA 인프라 보안 위에 Agent Identity / Registry / Self-Managed AGW를 단계적으로 얹는 접근이 가장 현실적입니다. (service.tf에 단계적 도입 주석 반영 필요 · 강제 인프라 미생성)",
-            )
-        else:
-            has_agw_res = (
-                "google_network_services_agent_gateway" in prod_ready_tf
-                and "google_network_security_authz_policy" in prod_ready_tf
-            )
-            has_agw_wired = "agent_gateway_config" in service_tf
-            has_ca_bundle = "AGENT_GATEWAY_ROOT_CERTIFICATES" in dockerfile
-            if has_agw_res and has_agw_wired and has_ca_bundle:
-                return (
-                    "GREEN",
-                    False,
-                    "Agent Runtime: Agent Gateway(AGENT_TO_ANYWHERE) + UAP V2 AuthzPolicy + agent_gateway_config + Dockerfile CA 신뢰 구성 완료",
-                )
-            if has_agw_res or has_agw_wired:
-                return (
-                    "AMBER",
-                    False,
-                    "Agent Gateway 리소스·service.tf 바인딩·Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES 중 일부 구성 누락",
-                )
-            return (
-                "RED",
-                False,
-                "Agent Runtime: 아웃바운드 Agent Gateway(AGENT_TO_ANYWHERE + UAP V2 DRY_RUN) 및 BYOC CA 신뢰 미구성",
-            )
+# ---------------------------------------------------------------------------
+# Per-item evaluators (v3)
+# ---------------------------------------------------------------------------
 
-    # C5.1: OpenTelemetry GenAI distributed tracing (Cloud Run)
-    if cid == "C5.1":
-        has_otel_tf = "OTEL_SEMCONV_STABILITY_OPT_IN" in service_tf
-        has_otel_code = _has_otel_to_cloud_enabled(fast_api_py)
-        has_otel_deps = _has_adk_otel_gcp_extras(pyproject_toml)
-        if has_otel_tf and has_otel_code and has_otel_deps:
-            return ("GREEN", False, "service.tf · fast_api_app.py · pyproject.toml: OpenTelemetry GenAI 분산 트레이싱(Cloud Trace) 활성화됨")
-        if has_otel_tf and has_otel_code and not has_otel_deps:
-            return (
-                "AMBER",
-                False,
-                "service.tf와 fast_api_app.py는 설정되었으나 pyproject.toml에 google-adk[gcp,otel-gcp] extra 누락 — OTLP/GenAI 스팬 전송 불가",
-            )
-        if has_otel_code:
-            return ("AMBER", False, "fast_api_app.py에 otel_to_cloud=True는 있으나 Terraform OTel 환경변수 누락")
-        if has_otel_tf:
-            return ("AMBER", False, "service.tf에 OTel 환경변수는 있으나 fast_api_app.py의 otel_to_cloud=True 미활성화")
-        return ("RED", False, "OpenTelemetry 분산 트레이싱 미구성")
+Eval = tuple[RAGStatus, bool, str]
 
-    # C5.2: Trace Span Privacy (NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false)
-    if cid == "C5.2":
-        has_no_content = bool(re.search(r'value\s*=\s*"NO_CONTENT"', service_tf))
-        has_adk_span_off = "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" in service_tf and bool(
-            re.search(r'value\s*=\s*"false"', service_tf)
-        )
+
+def _eval_session_store(ctx: _Ctx) -> Eval:
+    """CR-F1 / GKE-F1: VertexAiSessionService instead of InMemorySessionService."""
+    has_managed_code = "VertexAiSessionService" in ctx.services_py or bool(
+        re.search(r"session_service_uri\s*=\s*[\"']agentengine://", ctx.app_py)
+    )
+    has_session_env = '"AGENT_ENGINE_SESSION_ID"' in ctx.service_tf
+    has_managed_tf = (
+        has_session_env
+        or '"GOOGLE_CLOUD_AGENT_ENGINE_ID"' in ctx.service_tf
+        or '"ADK_SESSION_SERVICE_URI"' in ctx.service_tf
+    )
+    if has_managed_code and has_managed_tf:
+        note = "" if has_session_env else " (참고: AGENT_ENGINE_SESSION_ID 사용 권장)"
+        return ("GREEN", False, f"VertexAiSessionService 연동 및 Agent Platform 인스턴스 ID 환경변수 구성 완료{note}")
+    if has_managed_code or has_managed_tf:
+        return ("AMBER", False, "services.py(VertexAiSessionService) 또는 service.tf(AGENT_ENGINE_SESSION_ID) 설정 일부 누락")
+    return ("RED", False, "InMemorySessionService 사용 중 — 재시작·스케일아웃 시 대화 맥락 소실")
+
+
+def _eval_ar_session(ctx: _Ctx) -> Eval:
+    """AR-F1: Agent Runtime binds VertexAiSessionService by default unless the app forces InMemory."""
+    forced = "InMemorySessionService" in (ctx.agent_engine_app_py + "\n" + _strip_py_comments(ctx.agent_py))
+    if forced:
+        return ("RED", False, "agent_engine_app.py/agent.py에서 InMemorySessionService를 강제 — 관리형 영속 세션 저장 대신 인메모리 세션 사용")
+    return ("GREEN", False, "Agent Runtime 기본 관리형 영속 세션 저장(VertexAiSessionService) 사용 (InMemory 강제 없음)")
+
+
+def _eval_memory_bank(ctx: _Ctx) -> Eval:
+    """CR-F2 / GKE-F2: VertexAiMemoryBankService for cross-session memory."""
+    has_bank = "VertexAiMemoryBankService" in ctx.app_py or bool(
+        re.search(r"memory_service_uri\s*=\s*[\"']agentengine://", ctx.app_py)
+    )
+    if has_bank:
+        return ("GREEN", False, "VertexAiMemoryBankService(Memory Bank)로 세션 간 기억 관리 구성 완료")
+    if "InMemoryMemoryService" in ctx.app_py:
+        return ("RED", False, "InMemoryMemoryService 사용 중 — 재시작 시 장기 기억 소실 (Memory Bank 연결 필요)")
+    return ("RED", False, "메모리 사용이 감지되었으나 Memory Bank(VertexAiMemoryBankService) 미연결")
+
+
+def _eval_ar_memory(ctx: _Ctx) -> Eval:
+    """AR-F2: Agent Runtime connects Memory Bank by default unless the app forces InMemoryMemoryService."""
+    if "InMemoryMemoryService" in ctx.app_py:
+        return ("RED", False, "InMemoryMemoryService 강제 사용 — Memory Bank(VertexAiMemoryBankService)로 전환 필요")
+    if "VertexAiMemoryBankService" in ctx.app_py:
+        return ("GREEN", False, "VertexAiMemoryBankService(Memory Bank) 명시 연결 확인")
+    return ("GREEN", False, "Agent Runtime 기본 Memory Bank(VertexAiMemoryBankService) 연결 사용 (InMemory 강제 없음)")
+
+
+def _eval_gke_drain(ctx: _Ctx) -> Eval:
+    """GKE-O1: terminationGracePeriodSeconds >= response time + preStop + readiness probe."""
+    if not ctx.has_tf and not ctx.k8s_yaml:
+        return ("RED", False, "GKE service.tf / Kubernetes 매니페스트 없음")
+    src = ctx.service_tf + "\n" + ctx.k8s_yaml
+    m = re.search(r"termination_grace_period_seconds\s*=\s*(\d+)", src) or re.search(
+        r"terminationGracePeriodSeconds:\s*(\d+)", src
+    )
+    grace = int(m.group(1)) if m else 0
+    has_grace = grace >= 60
+    has_pre_stop = bool(re.search(r"\bpre_stop\b|\bpreStop:", src))
+    has_readiness = bool(re.search(r"\breadiness_probe\b|\breadinessProbe:", src))
+    if has_grace and has_pre_stop and has_readiness:
+        return ("GREEN", False, f"terminationGracePeriodSeconds={grace}s · preStop · readiness 프로브 구성 완료")
+    missing: list[str] = []
+    if not has_grace:
+        missing.append(f"terminationGracePeriodSeconds >= 60 (현재 {grace or '기본 30'}s)")
+    if not has_pre_stop:
+        missing.append("preStop")
+    if not has_readiness:
+        missing.append("readiness 프로브")
+    status: RAGStatus = "AMBER" if (has_grace or has_pre_stop or has_readiness) else "RED"
+    return (status, False, f"무중단 종료 설정 누락: {', '.join(missing)}")
+
+
+def _pipeline_state(ctx: _Ctx) -> tuple[bool, str]:
+    cb_staging = _read_text(ctx.root / ".cloudbuild" / "staging.yaml")
+    gh_staging = _read_text(ctx.root / ".github" / "workflows" / "staging.yaml")
+    return bool(cb_staging or gh_staging), cb_staging + "\n" + gh_staging
+
+
+_SCAFFOLD_HINT = "`agents-cli scaffold enhance . --cicd-runner google_cloud_build`"
+
+
+def _eval_cicd_pipeline(ctx: _Ctx) -> Eval:
+    """*-D1: an agents-cli generated CI/CD pipeline exists (guidance only — never generated by the engine)."""
+    has_cicd, _ = _pipeline_state(ctx)
+    if has_cicd:
+        return ("GREEN", False, "agents-cli CI/CD 파이프라인 확인 (.cloudbuild/staging.yaml 또는 .github/workflows/staging.yaml)")
+    return (
+        "RED",
+        False,
+        f"CI/CD 파이프라인 없음 — {_SCAFFOLD_HINT}로 생성 (엔진은 파이프라인을 만들지 않음 · "
+        "`agents-cli infra cicd`는 운영 환경 구성이라 직접 수행)",
+    )
+
+
+def _eval_eval_gate(ctx: _Ctx) -> Eval:
+    """*-D2: eval dataset/config exists AND the staging pipeline compares the agents-cli eval score to a threshold."""
+    eval_dir = ctx.root / "tests" / "eval"
+    has_eval_config = (eval_dir / "eval_config.yaml").is_file() or (eval_dir / "eval_config.json").is_file()
+    datasets_dir = eval_dir / "datasets"
+    has_eval_dataset = datasets_dir.is_dir() and any(datasets_dir.glob("*.json"))
+    has_cicd, staging_txt = _pipeline_state(ctx)
+    has_eval_gate = bool(
+        "agent-eval-gate" in staging_txt
+        or "agent_eval_gate" in staging_txt
+        or ("eval" in staging_txt and "grade_results" in staging_txt)
+    )
+    if has_eval_config and has_eval_dataset and has_eval_gate:
+        return ("GREEN", False, "tests/eval/ 평가 데이터셋·설정 및 staging 단계 평가 점수 게이트(기준 미달 시 중단) 확인")
+    if not (has_eval_config or has_eval_dataset or has_eval_gate):
+        return ("RED", False, "평가 데이터셋(tests/eval/)과 파이프라인 평가 게이트 모두 없음")
+    missing: list[str] = []
+    if not has_eval_config:
+        missing.append("tests/eval/eval_config.yaml")
+    if not has_eval_dataset:
+        missing.append("tests/eval/datasets/*.json")
+    if not has_eval_gate:
+        missing.append("staging 평가 점수 게이트" + ("" if has_cicd else " (파이프라인 없음 — D1 먼저)"))
+    return ("AMBER", False, f"평가 데이터셋 · 평가 게이트 일부 누락: {', '.join(missing)}")
+
+
+def _eval_trace_privacy(ctx: _Ctx) -> Eval:
+    """*-OB1: Cloud Trace export (otel_to_cloud) + GenAI message content capture disabled."""
+    stf = ctx.service_tf
+    has_no_content = bool(
+        re.search(r'name\s*=\s*"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"\s*\n[ \t]*value\s*=\s*"NO_CONTENT"', stf)
+        or re.search(r'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT\s*=\s*"NO_CONTENT"', stf)
+        or re.search(r'value\s*=\s*"NO_CONTENT"', stf)
+    )
+    has_adk_span_off = bool(
+        re.search(r'name\s*=\s*"ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS"\s*\n[ \t]*value\s*=\s*"false"', stf)
+        or re.search(r'ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS\s*=\s*"false"', stf)
+    )
+    if ctx.target == "agent_runtime":
         if has_no_content and has_adk_span_off:
-            return ("GREEN", False, "NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 트레이스 프라이버시 가드 완료")
-        if has_no_content:
-            return (
-                "AMBER",
-                False,
-                "OTEL NO_CONTENT는 설정되었으나 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 누락",
-            )
-        return ("RED", False, "Cloud Trace 스팬 본문 노출 차단(NO_CONTENT) 미구성")
+            return ("GREEN", False, "NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false — 프롬프트 미기록 구성 완료")
+        if has_no_content or has_adk_span_off:
+            return ("AMBER", False, "NO_CONTENT 또는 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 중 일부 누락")
+        return ("RED", False, "GenAI 메시지 본문 수집 차단(NO_CONTENT) 미구성")
 
-    # C5.3: Target-Specific SRE Golden Signal Alert Policies (alerts.tf)
-    if cid == "C5.3":
-        if not alerts_tf or "google_monitoring_alert_policy" not in alerts_tf:
-            return ("RED", False, "deployment/terraform/alerts.tf 없음 (프로덕션 지연·5xx 에러율 알람 전무)")
-        if target == "agent_runtime":
-            if "ReasoningEngine" in alerts_tf and "cloud_run_revision" not in alerts_tf:
-                return (
-                    "GREEN",
-                    False,
-                    "alerts.tf: Agent Runtime (ReasoningEngine) 전용 P95 지연 및 PromQL 5xx 에러율 알럿 구성 완료",
-                )
-            return (
-                "AMBER",
-                False,
-                "alerts.tf가 Agent Runtime이 아닌 cloud_run_revision 메트릭을 참조 중 (타겟 불일치)",
-            )
+    has_otel_tf = "OTEL_SEMCONV_STABILITY_OPT_IN" in stf
+    has_otel_code = _has_otel_to_cloud_enabled(ctx.fast_api_py)
+    has_otel_deps = _has_adk_otel_gcp_extras(ctx.pyproject_toml)
+    has_metric_writer = (not ctx.variables_tf) or ("roles/monitoring.metricWriter" in ctx.variables_tf)
+    if has_otel_tf and has_otel_code and has_otel_deps and has_no_content and has_adk_span_off and has_metric_writer:
+        return ("GREEN", False, "Cloud Trace 내보내기(otel_to_cloud=True · google-adk[gcp,otel-gcp]) + NO_CONTENT 프롬프트 미기록 구성 완료")
+    if has_otel_tf or has_otel_code or has_no_content:
+        missing: list[str] = []
+        if not has_otel_tf:
+            missing.append("service.tf OTEL_SEMCONV_STABILITY_OPT_IN")
+        if not has_otel_code:
+            missing.append("fast_api_app.py otel_to_cloud=True")
+        if not has_otel_deps:
+            missing.append("pyproject.toml google-adk[gcp,otel-gcp]")
+        if not has_no_content or not has_adk_span_off:
+            missing.append("NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false")
+        if not has_metric_writer:
+            missing.append("variables.tf roles/monitoring.metricWriter")
+        return ("AMBER", False, f"Cloud Trace / 프롬프트 미기록 설정 일부 누락: {', '.join(missing)}")
+    return ("RED", False, "Cloud Trace 내보내기 및 프롬프트 미기록(NO_CONTENT) 미구성")
+
+
+_PUBLIC_INVOKER_RE = re.compile(
+    r'members?\s*=\s*\[?[^\n\]]*"allUsers"|invoker_iam_disabled\s*=\s*true', re.MULTILINE
+)
+_ALLOW_UNAUTH_RE = re.compile(r"(?<!no-)--allow-unauthenticated\b")
+
+
+def _eval_cr_authn(ctx: _Ctx) -> Eval:
+    """CR-S1: Cloud Run requires IAM authentication (no allUsers invoker / --allow-unauthenticated)."""
+    public_tf = bool(_PUBLIC_INVOKER_RE.search(ctx.all_tf))
+    public_cli = bool(_ALLOW_UNAUTH_RE.search(ctx.deploy_scripts))
+    if public_tf or public_cli:
+        where = []
+        if public_tf:
+            where.append("Terraform allUsers invoker / invoker_iam_disabled = true")
+        if public_cli:
+            where.append("배포 스크립트 --allow-unauthenticated")
+        return ("RED", False, f"인증 없는 공개 호출 허용: {', '.join(where)}")
+    if "--no-allow-unauthenticated" in ctx.deploy_scripts:
+        return ("GREEN", False, "배포 스크립트 --no-allow-unauthenticated 명시 · Terraform allUsers invoker 없음 (IAM 인증 필수)")
+    if ctx.has_tf:
+        return ("GREEN", False, "Terraform에 allUsers invoker / invoker_iam_disabled 없음 — Cloud Run IAM 인증 필수 (기본값)")
+    return ("AMBER", False, "배포 설정(service.tf / 배포 스크립트) 없음 — `--no-allow-unauthenticated` 또는 IAM invoker 바인딩 확인 필요")
+
+
+_OVER_PRIV_RE = re.compile(r'"roles/(?:storage\.admin|editor|owner)"')
+
+
+def _eval_identity(ctx: _Ctx) -> Eval:
+    """CR-S2 / AR-S1 / GKE-S1: dedicated agent identity (Agent Identity or dedicated SA) + least privilege."""
+    if not ctx.has_tf:
+        return ("RED", False, "service.tf 없음 — 에이전트 전용 신원·최소 권한 확인 불가")
+    role_src = ctx.variables_tf + "\n" + ctx.iam_tf
+    over_priv = _OVER_PRIV_RE.search(role_src)
+    if ctx.target == "cloud_run":
+        has_agent_identity = bool(re.search(r'identity_type\s*=\s*"IDENTITY_TYPE_AGENT_IDENTITY"', ctx.service_tf))
+        has_dedicated_sa = bool(re.search(r"^\s*service_account\s*=", ctx.service_tf, flags=re.MULTILINE))
+        ident = "Agent Identity" if has_agent_identity else ("전용 서비스 계정" if has_dedicated_sa else "")
+    elif ctx.target == "agent_runtime":
+        has_agent_identity = bool(re.search(r'identity_type\s*=\s*"AGENT_IDENTITY"', ctx.service_tf))
+        has_dedicated_sa = bool(re.search(r"^\s*service_account\s*=", ctx.service_tf, flags=re.MULTILINE))
+        ident = "Agent Identity" if has_agent_identity else ("전용 서비스 계정" if has_dedicated_sa else "")
+    else:
+        has_agent_identity = "iam.gke.io/spiffe-identity-type" in ctx.service_tf
+        has_wi = "roles/iam.workloadIdentityUser" in (ctx.service_tf + ctx.iam_tf) and "iam.gke.io/gcp-service-account" in ctx.service_tf
+        ident = "Agent Identity" if has_agent_identity else ("Workload Identity 전용 서비스 계정" if has_wi else "")
+    if over_priv:
+        return ("RED", False, f"과도한 역할 부여: {over_priv.group(0)} — 필요한 최소 역할(예: roles/storage.objectUser)로 축소 필요")
+    if not ident:
+        return ("AMBER", False, "에이전트 전용 신원(Agent Identity / 전용 서비스 계정 / Workload Identity) 미지정 — 기본 서비스 계정 사용 위험")
+    if ctx.target == "agent_runtime" and '"roles/cloudsql.client"' in role_src:
+        return ("AMBER", False, f"{ident} 사용 중이나 불필요한 roles/cloudsql.client가 남아 있음")
+    return ("GREEN", False, f"{ident} + 최소 권한 역할 구성 확인")
+
+
+def _eval_registry(ctx: _Ctx) -> Eval:
+    """CR-S3 / AR-S2 / GKE-S3 (Preview): Agent Registry registration."""
+    profile = ctx.mcp_a2a
+    has_registry_api = "agentregistry.googleapis.com" in (ctx.apis_tf + ctx.prod_ready_tf + ctx.service_tf)
+    if ctx.target == "cloud_run":
+        func = "FUNCTIONAL_TYPE_MCP_SERVER" if profile.is_mcp_server else "FUNCTIONAL_TYPE_AGENT"
+        has_func = bool(re.search(rf'functional_type\s*=\s*"{func}"', ctx.service_tf))
+        if has_func and has_registry_api:
+            status: RAGStatus = "GREEN"
+            evidence = f"{func} + agentregistry.googleapis.com — Agent Registry 자동 등록 구성 완료"
+        elif has_func or has_registry_api:
+            status, evidence = "AMBER", f"functional_type = \"{func}\" 또는 agentregistry.googleapis.com 활성화 일부 누락"
         else:
-            has_ratio = "condition_prometheus_query_language" in alerts_tf
-            if "cloud_run_revision" in alerts_tf and has_ratio:
-                return (
-                    "GREEN",
-                    False,
-                    "alerts.tf: Cloud Run P95 지연 및 PromQL 5xx 에러율(>2%) 알럿 구성 완료",
-                )
-            return (
-                "AMBER",
-                False,
-                "alerts.tf의 5xx 에러 알람이 비율(PromQL)이 아닌 절대 속도로 설정됨 — 업그레이드 필요",
-            )
+            status, evidence = "RED", f"Agent Registry 자동 등록(functional_type = \"{func}\") 미구성"
+    elif ctx.target == "gke":
+        has_label = "registry.gke.io/functional-type" in ctx.service_tf or "registry.gke.io/functional-type" in ctx.k8s_yaml
+        has_apphub = "apphub.googleapis.com" in (ctx.apis_tf + ctx.prod_ready_tf)
+        if has_label and has_registry_api and has_apphub:
+            status, evidence = "GREEN", 'Deployment registry.gke.io/functional-type="AGENT" + agentregistry/apphub API — 자동 등록 구성 완료'
+        elif has_label or has_registry_api:
+            missing = []
+            if not has_label:
+                missing.append('registry.gke.io/functional-type="AGENT"')
+            if not (has_registry_api and has_apphub):
+                missing.append("agentregistry/apphub API")
+            status, evidence = "AMBER", f"Agent Registry 등록 일부 누락: {', '.join(missing)}"
+        else:
+            status, evidence = "RED", 'Agent Registry 자동 등록(registry.gke.io/functional-type="AGENT") 미구성'
+    else:
+        if has_registry_api:
+            status, evidence = "GREEN", "agentregistry.googleapis.com 활성화 — Agent Registry 등록 구성 완료"
+        elif re.search(r'identity_type\s*=\s*"AGENT_IDENTITY"', ctx.service_tf):
+            status, evidence = "AMBER", "Agent Identity는 있으나 agentregistry.googleapis.com 미활성화"
+        else:
+            status, evidence = "RED", "Agent Registry 등록(agentregistry.googleapis.com) 미구성"
 
-    # C6.1: Per-turn Loop Cap (with invocation reset + opt-in max_output_tokens; Thinking-model safe!)
-    if cid == "C6.1":
-        has_cost_plugin = bool(
-            cost_guard_py
-            and "CostTokenGuardrailPlugin" in agent_py
-            and "invocation_id" in cost_guard_py
+    remote = profile.hardcoded_mcp_urls + profile.hardcoded_a2a_urls
+    if remote and not profile.uses_agent_registry:
+        status = "AMBER" if status == "GREEN" else status
+        evidence += (
+            f" | ⚠️ 원격 MCP/A2A URL 하드코딩({', '.join(remote[:3])}) — AgentRegistry(get_mcp_toolset / get_remote_a2a_agent) 전환 권장"
         )
-        if has_cost_plugin:
-            return (
-                "GREEN",
-                False,
-                "CostTokenGuardrailPlugin (invocation_id 턴별 리셋 + 선택적 max_output_tokens 캡) 장착 완료",
-            )
-        if cost_guard_py or "CostTokenGuardrailPlugin" in agent_py:
-            return (
-                "AMBER",
-                False,
-                "CostTokenGuardrailPlugin 일부 설정(invocation_id 턴별 리셋) 보강 필요",
-            )
-        return ("RED", False, "단일 턴 무한 도구 루프 차단 플러그인(CostTokenGuardrailPlugin) 미장착")
+    elif status == "GREEN" and profile.uses_agent_registry:
+        evidence += " + ADK AgentRegistry 연동 확인"
+    return (status, False, evidence)
 
-    # C6.2: Gemini API 429 (DSQ) resilience — Global endpoint + Fail-Fast HttpRetryOptions (accepts attempts >= 3!)
-    if cid == "C6.2":
-        has_retry = (
-            "HttpRetryOptions" in agent_py
-            and "attempts=0" not in agent_py
-            and "attempts=1" not in agent_py
+
+def _eval_gateway(ctx: _Ctx) -> Eval:
+    """CR-S4 / AR-S3 / GKE-S4 (Preview): Agent Gateway egress policy."""
+    if ctx.target == "cloud_run":
+        if re.search(r"agent_gateway", ctx.all_tf):
+            return ("GREEN", False, "Agent Gateway for Cloud Run 연결 구성 확인")
+        return ("RED", False, "Agent Gateway for Cloud Run 미구성 (자동 패치 없음 — references 가이드에 따라 수동 구성)")
+    if ctx.target == "gke":
+        if "GCPAgentGateway" in ctx.k8s_agent_gateway_yaml or "GCPAgentGateway" in ctx.k8s_yaml:
+            return ("GREEN", False, "Agent Gateway for GKE (GCPAgentGateway · GCPAuthzPolicy · GCPEgressPolicy) 매니페스트 구성 완료")
+        if ctx.k8s_agent_sandbox_yaml or ctx.k8s_agent_substrate_yaml:
+            return ("AMBER", False, "Agent Sandbox/Substrate 사용 중 — Agent Gateway for GKE는 표준 Pod 전용이므로 표준 Pod 경로에 별도 구성 필요")
+        return ("RED", False, "Agent Gateway for GKE 매니페스트(deployment/k8s/agent-gateway.yaml) 미구성")
+    has_agw_res = (
+        "google_network_services_agent_gateway" in ctx.prod_ready_tf
+        and "google_network_security_authz_policy" in ctx.prod_ready_tf
+    )
+    has_agw_wired = "agent_gateway_config" in ctx.service_tf
+    has_ca_bundle = "AGENT_GATEWAY_ROOT_CERTIFICATES" in ctx.dockerfile
+    if has_agw_res and has_agw_wired and has_ca_bundle:
+        return ("GREEN", False, "Agent Gateway(AGENT_TO_ANYWHERE) + 접근 정책 + agent_gateway_config + Dockerfile CA 신뢰 구성 완료")
+    if has_agw_res or has_agw_wired:
+        return ("AMBER", False, "Agent Gateway 리소스·service.tf 바인딩·Dockerfile CA 신뢰 중 일부 누락")
+    return ("RED", False, "Agent Gateway(AGENT_TO_ANYWHERE · 시험 모드 DRY_RUN) 미구성")
+
+
+_CR_SANDBOX_RE = re.compile(r"sandbox[-_]launcher|sandboxLauncher|run\.googleapis\.com/sandbox", re.IGNORECASE)
+_AR_CODE_EXEC_RE = re.compile(
+    r"AgentEngineSandboxCodeExecutor|sandboxes\.(?:create|execute_code)|execute_code\s*\(|sandbox_environment|"
+    r"code_execution_environment|SandboxEnvironment",
+)
+
+
+def _code_exec_kind(ctx: _Ctx) -> str:
+    """Classifies how AI-generated code is executed: 'model' (BuiltInCodeExecutor only) or 'local'."""
+    code = _strip_py_comments(ctx.app_py)
+    local = re.search(
+        r"UnsafeLocalCodeExecutor|ContainerCodeExecutor|subprocess\.(?:run|Popen|call|check_output|check_call)\s*\(|\bos\.system\s*\(",
+        code,
+    )
+    if local:
+        return "local"
+    return "model" if "BuiltInCodeExecutor" in code else "local"
+
+
+def _eval_cr_sandbox(ctx: _Ctx) -> Eval:
+    """CR-S5 (Preview, conditional code): AI-generated code runs in Cloud Run sandboxes (--sandbox-launcher)."""
+    src = "\n".join((ctx.service_tf, ctx.deploy_scripts, ctx.app_py))
+    if _CR_SANDBOX_RE.search(src):
+        return ("GREEN", False, "Cloud Run sandbox(--sandbox-launcher) 구성 확인 — AI 생성 코드가 샌드박스에서 격리 실행")
+    if _code_exec_kind(ctx) == "model":
+        return ("AMBER", False, "BuiltInCodeExecutor(모델 측 실행)만 감지 — 컨테이너에서 코드를 실행한다면 Cloud Run sandbox(--sandbox-launcher) 사용")
+    return ("RED", False, "AI 생성 코드 실행이 감지되었으나 Cloud Run sandbox(--sandbox-launcher) 미구성 — 컨테이너에서 직접 실행")
+
+
+def _eval_ar_code_execution(ctx: _Ctx) -> Eval:
+    """AR-S4 (conditional code): AI-generated code runs in Agent Platform Code Execution (managed sandbox)."""
+    if _AR_CODE_EXEC_RE.search(_strip_py_comments(ctx.app_py)):
+        return ("GREEN", False, "Agent Platform Code Execution(관리형 샌드박스)에서 AI 생성 코드 실행 확인")
+    if _code_exec_kind(ctx) == "model":
+        return ("AMBER", False, "BuiltInCodeExecutor(모델 측 실행)만 감지 — 런타임에서 코드를 실행한다면 Agent Platform Code Execution 사용")
+    return ("RED", False, "AI 생성 코드 실행이 감지되었으나 Agent Platform Code Execution 미사용 — Agent Runtime 컨테이너에서 직접 실행")
+
+
+def _has_agent_substrate(ctx: _Ctx) -> bool:
+    src = ctx.k8s_agent_substrate_yaml + "\n" + ctx.k8s_yaml
+    return bool(re.search(r"ate\.dev/v1alpha1|kind:\s*WorkerPool|kind:\s*ActorTemplate", src))
+
+
+def _eval_gke_idle_suspend(ctx: _Ctx) -> Eval:
+    """GKE-O2: idle conversational agents run on Agent Substrate (snapshot suspend · fast resume)."""
+    autopilot = bool(re.search(r"\benable_autopilot\s*=\s*true\b", ctx.service_tf))
+    if _has_agent_substrate(ctx):
+        if autopilot:
+            return ("AMBER", False, "Agent Substrate 매니페스트가 있으나 클러스터가 Autopilot — Agent Substrate는 GKE Standard 1.37 이상 필요")
+        return ("GREEN", False, "Agent Substrate on GKE(ate.dev WorkerPool) 사용 — 유휴 에이전트 스냅샷 일시정지 · 요청 시 복원")
+    if "SandboxTemplate" in (ctx.k8s_agent_sandbox_yaml + ctx.k8s_yaml):
+        if re.search(r"kind:\s*PodSnapshot(Policy|ManualTrigger)|PodSnapshotStorageConfig", ctx.k8s_agent_sandbox_yaml + ctx.k8s_yaml):
+            return ("GREEN", False, "Agent Sandbox + GKE Pod snapshot 구성 — Sandbox Suspended 전환 전 상태 저장 · 복원(약 3~5초)")
+        return ("AMBER", False, "Agent Sandbox만 구성 — 일시정지 전에 Pod snapshot(PodSnapshotPolicy)으로 상태 저장 필요, 또는 Agent Substrate on GKE 사용(권장)")
+    return ("RED", False, "자주 일시정지·재개하는 상태 유지형 에이전트이나 Agent Substrate 미사용 — 유휴 Pod가 CPU·메모리 계속 점유")
+
+
+def _eval_gke_code_sandbox(ctx: _Ctx) -> Eval:
+    """GKE-S2: AI-generated code runs in Agent Substrate (or Agent Sandbox) on GKE."""
+    autopilot = bool(re.search(r"\benable_autopilot\s*=\s*true\b", ctx.service_tf))
+    has_substrate = bool(re.search(r"kind:\s*WorkerPool|ActorTemplate", ctx.k8s_agent_substrate_yaml + ctx.k8s_yaml))
+    has_sandbox = "SandboxTemplate" in (ctx.k8s_agent_sandbox_yaml + ctx.k8s_yaml)
+    if has_substrate and autopilot:
+        return ("AMBER", False, "Agent Substrate 매니페스트가 있으나 현재 클러스터가 Autopilot — Autopilot은 Agent Sandbox on GKE 사용")
+    if has_substrate:
+        return ("GREEN", False, "Agent Substrate on GKE 샌드박스에서 AI 생성 코드 실행 (ate.dev WorkerPool)")
+    if has_sandbox:
+        return ("GREEN", False, "Agent Sandbox on GKE(SandboxTemplate)에서 AI 생성 코드 실행")
+    if re.search(r'runtime_class_name\s*=\s*"gvisor"|runtimeClassName:\s*gvisor', ctx.service_tf + ctx.k8s_yaml):
+        return ("AMBER", False, "gVisor만 적용 — AI 생성 코드는 Agent Substrate / Agent Sandbox on GKE로 격리 권장")
+    return ("RED", False, "AI 생성 코드 실행이 감지되었으나 Agent Substrate / Agent Sandbox 격리 미구성")
+
+
+def _eval_delegated_auth(ctx: _Ctx) -> Eval:
+    """AR-S5 / CR-S6 / GKE-S5 (Preview, conditional delegated): user-delegated OAuth via Agent Identity auth manager."""
+    static = _static_secret_in_tool_headers(ctx)
+    if static:
+        return (
+            "RED",
+            False,
+            f"외부 도구·MCP 인증 헤더에 정적 자격 증명 사용 ({static}) — 모든 사용자가 같은 권한으로 호출 · "
+            "Agent Identity auth manager의 사용자 위임 OAuth 토큰으로 전환",
         )
-        has_loc = "GOOGLE_CLOUD_LOCATION" in service_tf
-        if has_retry and has_loc:
-            return (
-                "GREEN",
-                False,
-                "agent.py: HttpRetryOptions(지수 백오프 Fail-Fast) 및 service.tf GOOGLE_CLOUD_LOCATION 구성 확인됨",
-            )
-        if has_retry:
-            return (
-                "AMBER",
-                False,
-                "agent.py에 HttpRetryOptions는 있으나 service.tf에 GOOGLE_CLOUD_LOCATION(기본 global DSQ) 미설정",
-            )
-        if has_loc:
-            return (
-                "AMBER",
-                False,
-                "service.tf에 GOOGLE_CLOUD_LOCATION은 있으나 agent.py에 HttpRetryOptions 지수 백오프 재시도 누락",
-            )
-        return ("RED", False, "LLM API 429 재시도 옵션(HttpRetryOptions) 및 GOOGLE_CLOUD_LOCATION 미설정")
+    has_extra = _has_adk_agent_identity_extra(ctx.pyproject_toml)
+    am_hit = _auth_manager_code_hit(ctx)
+    if has_extra and am_hit:
+        return ("GREEN", False, f"google-adk[agent-identity] + auth manager auth provider 연동 확인 (`{am_hit}`) — 사용자 위임 토큰 사용")
+    if am_hit:
+        return ("AMBER", False, f"auth manager 코드(`{am_hit}`)는 있으나 pyproject.toml에 `google-adk[agent-identity]` extra 누락")
+    if has_extra:
+        return ("AMBER", False, "`google-adk[agent-identity]` extra는 있으나 도구에 auth provider(GcpAuthProviderScheme) 연결 미감지")
+    return (
+        "AMBER",
+        False,
+        "사용자 대신 외부 도구를 호출하지만 Agent Identity auth manager 미사용 — auth provider(3-legged OAuth) 구성 후 "
+        "`google-adk[agent-identity]`로 도구·MCP 호출에 사용자 위임 토큰 연결",
+    )
 
-    # C7.1: Automated Agent Quality Evaluation (CI/CD-aware: only wires .cloudbuild/staging.yaml if CI/CD exists)
-    if cid == "C7.1":
-        if staging_yaml:
-            has_eval_cmd = "agents-cli eval run" in staging_yaml or "google-agents-cli eval run" in staging_yaml
-            has_bad_flags = "--eval-dataset" in staging_yaml or "--threshold" in staging_yaml
-            if has_eval_cmd and not has_bad_flags and (eval_config or eval_dataset):
-                return (
-                    "GREEN",
-                    False,
-                    ".cloudbuild/staging.yaml: 공식 agents-cli eval run 품질 게이트 및 평가 데이터셋/설정 확인됨",
-                )
-            if has_eval_cmd and has_bad_flags:
-                return (
-                    "AMBER",
-                    False,
-                    ".cloudbuild/staging.yaml에 미지원 플래그(--eval-dataset/--threshold) 사용 — 공식 --dataset/--metrics 수정 필요",
-                )
-            return ("RED", False, ".cloudbuild/staging.yaml에 agents-cli eval run 품질 게이트 누락")
 
-        # No CI/CD pipeline (.cloudbuild/staging.yaml absent): evaluate standalone eval config & dataset only
-        if eval_config and eval_dataset:
-            return (
-                "GREEN",
-                False,
-                "CI/CD 미구축 프로젝트: tests/eval/eval_config.yaml 및 스모크 데이터셋 구성 완료 (배포 전 agents-cli eval run 실행 가능)",
-            )
-        if eval_config or eval_dataset:
-            return (
-                "AMBER",
-                False,
-                "CI/CD 미구축 프로젝트: tests/eval/eval_config.yaml 또는 평가 데이터셋 일부 누락",
-            )
-        return ("RED", False, "에이전트 품질 평가 설정(tests/eval/eval_config.yaml) 및 평가 데이터셋 미구성")
+_EVALUATORS: dict[str, Any] = {
+    "CR-F1": _eval_session_store,
+    "GKE-F1": _eval_session_store,
+    "AR-F1": _eval_ar_session,
+    "CR-F2": _eval_memory_bank,
+    "GKE-F2": _eval_memory_bank,
+    "AR-F2": _eval_ar_memory,
+    "GKE-O1": _eval_gke_drain,
+    "GKE-O2": _eval_gke_idle_suspend,
+    "CR-D1": _eval_cicd_pipeline,
+    "CR-D2": _eval_eval_gate,
+    "AR-D1": _eval_cicd_pipeline,
+    "AR-D2": _eval_eval_gate,
+    "GKE-D1": _eval_cicd_pipeline,
+    "GKE-D2": _eval_eval_gate,
+    "CR-OB1": _eval_trace_privacy,
+    "AR-OB1": _eval_trace_privacy,
+    "GKE-OB1": _eval_trace_privacy,
+    "CR-S1": _eval_cr_authn,
+    "CR-S2": _eval_identity,
+    "AR-S1": _eval_identity,
+    "GKE-S1": _eval_identity,
+    "CR-S3": _eval_registry,
+    "AR-S2": _eval_registry,
+    "GKE-S3": _eval_registry,
+    "CR-S4": _eval_gateway,
+    "AR-S3": _eval_gateway,
+    "GKE-S4": _eval_gateway,
+    "GKE-S2": _eval_gke_code_sandbox,
+    "CR-S5": _eval_cr_sandbox,
+    "AR-S4": _eval_ar_code_execution,
+    "AR-S5": _eval_delegated_auth,
+    "CR-S6": _eval_delegated_auth,
+    "GKE-S5": _eval_delegated_auth,
+}
 
-    return ("AMBER", False, "점검 필요")
+
+def _evaluate_item(*, spec: ChecklistItemSpec, ctx: _Ctx) -> Eval:
+    """Dispatches a v3 item to its evaluator, returning (status, managed_by_platform, evidence)."""
+    fn = _EVALUATORS.get(spec.id)
+    if fn is None:
+        return ("AMBER", False, "점검 필요 (평가 로직 미정의)")
+    return fn(ctx)

@@ -7,7 +7,7 @@
 - Preview items are reported but never block the overall Production Ready verdict.
 - General platform best practices are delegated to platform skills (google/skills) and are not scored.
 - Gemini call retry · endpoint is ADK optimization (agent code): out of scope, never scored.
-- Categories with no item for the target (e.g. Optimize on Cloud Run / Agent Runtime) are omitted from domains.
+- Categories with no item for the target (e.g. Runtime Lifecycle on Cloud Run / Agent Runtime) are omitted from domains.
 """
 
 from __future__ import annotations
@@ -988,15 +988,56 @@ def _eval_registry(ctx: _Ctx) -> Eval:
     return (status, False, evidence)
 
 
+def _collect_agw_configs(root: Path) -> str:
+    """Reads optional Agent Gateway / Model Armor / IAP policy YAML/JSON files in the repo."""
+    parts: list[str] = []
+    for pat in (
+        "agw-*.y*ml",
+        "model-armor*.y*ml",
+        "sgp-policy*.y*ml",
+        "iap-policy*.json",
+        "deployment/agent-gateway/*.y*ml",
+        "deployment/agent-gateway/*.json",
+        "deployment/gateway/*.y*ml",
+    ):
+        for f in sorted(root.glob(pat)):
+            if f.is_file():
+                parts.append(_read_text(f))
+    return "\n".join(parts)
+
+
 def _eval_gateway(ctx: _Ctx) -> Eval:
     """CR-S4 / AR-S3 / GKE-S4 (Preview): Agent Gateway egress policy."""
     if ctx.target == "cloud_run":
-        if re.search(r"agent_gateway", ctx.all_tf):
-            return ("GREEN", False, "Agent Gateway for Cloud Run 연결 구성 확인")
-        return ("RED", False, "Agent Gateway for Cloud Run 미구성 (자동 패치 없음 — references 가이드에 따라 수동 구성)")
+        cr_agw_src = "\n".join((ctx.all_tf, _collect_agw_configs(ctx.root)))
+        has_gw = bool(re.search(r"agent_gateway|agent-gateways|AGENT_TO_ANYWHERE", cr_agw_src))
+        has_pol = bool(
+            re.search(
+                r"authz_policy|AuthzPolicy|authz_extension|AuthzExtension|iap\.egressor|model_armor|modelarmor|piAndJailbreakFilterSettings",
+                cr_agw_src,
+            )
+        )
+        if has_gw and has_pol:
+            return ("GREEN", False, "Agent Gateway for Cloud Run + 접근 정책(AuthzPolicy · IAP/Model Armor) 구성 확인")
+        if has_gw:
+            return (
+                "AMBER",
+                False,
+                "Agent Gateway 리소스만 감지되고 AuthzPolicy(IAP V2 DRY_RUN) · roles/iap.egressor CEL · Model Armor 정책이 누락됨 — 단순 게이트웨이 생성만으로는 외부 호출이 통제되지 않음",
+            )
+        return (
+            "RED",
+            False,
+            "Agent Gateway for Cloud Run 미구성 (자동 패치 없음 — references/agent-registry-mcp-a2a.md §6 가이드에 따라 신원·Registry·PSC/DNS·IAP V2 DRY_RUN·Model Armor 세트로 구성)",
+        )
     if ctx.target == "gke":
-        if "GCPAgentGateway" in ctx.k8s_agent_gateway_yaml or "GCPAgentGateway" in ctx.k8s_yaml:
-            return ("GREEN", False, "Agent Gateway for GKE (GCPAgentGateway · GCPAuthzPolicy · GCPEgressPolicy) 매니페스트 구성 완료")
+        gke_src = ctx.k8s_agent_gateway_yaml + "\n" + ctx.k8s_yaml
+        has_crd_gw = "GCPAgentGateway" in gke_src
+        has_crd_pol = "GCPAuthzPolicy" in gke_src or "GCPEgressPolicy" in gke_src
+        if has_crd_gw and has_crd_pol:
+            return ("GREEN", False, "Agent Gateway for GKE (GCPAgentGateway · GCPAuthzPolicy/GCPEgressPolicy · Model Armor 바인딩) 매니페스트 구성 완료")
+        if has_crd_gw:
+            return ("AMBER", False, "GCPAgentGateway만 감지되고 GCPAuthzPolicy · GCPEgressPolicy · Model Armor 바인딩이 누락됨")
         if ctx.k8s_agent_sandbox_yaml or ctx.k8s_agent_substrate_yaml:
             return ("AMBER", False, "Agent Sandbox/Substrate 사용 중 — Agent Gateway for GKE는 표준 Pod 전용이므로 표준 Pod 경로에 별도 구성 필요")
         return ("RED", False, "Agent Gateway for GKE 매니페스트(deployment/k8s/agent-gateway.yaml) 미구성")
@@ -1007,9 +1048,13 @@ def _eval_gateway(ctx: _Ctx) -> Eval:
     has_agw_wired = "agent_gateway_config" in ctx.service_tf
     has_ca_bundle = "AGENT_GATEWAY_ROOT_CERTIFICATES" in ctx.dockerfile
     if has_agw_res and has_agw_wired and has_ca_bundle:
-        return ("GREEN", False, "Agent Gateway(AGENT_TO_ANYWHERE) + 접근 정책 + agent_gateway_config + Dockerfile CA 신뢰 구성 완료")
+        return (
+            "GREEN",
+            False,
+            "Agent Gateway(AGENT_TO_ANYWHERE · DRY_RUN) + AuthzPolicy + agent_gateway_config + Dockerfile CA 신뢰 구성 완료 (ENFORCED 전환 전 roles/iap.egressor CEL · Model Armor 템플릿 확인)",
+        )
     if has_agw_res or has_agw_wired:
-        return ("AMBER", False, "Agent Gateway 리소스·service.tf 바인딩·Dockerfile CA 신뢰 중 일부 누락")
+        return ("AMBER", False, "Agent Gateway 리소스·AuthzPolicy·service.tf 바인딩·Dockerfile CA 신뢰 중 일부 누락")
     return ("RED", False, "Agent Gateway(AGENT_TO_ANYWHERE · 시험 모드 DRY_RUN) 미구성")
 
 

@@ -16,6 +16,7 @@ if _SKILL_SCRIPTS_DIR.is_dir() and str(_SKILL_SCRIPTS_DIR) not in sys.path:
 
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from prod_ready.checklist import CustomParams
@@ -78,6 +79,10 @@ def create_workbench_app(project_dir: str | Path) -> FastAPI:
     samples_parent = root.parent if root.parent.name == "samples" else (root / "samples")
     app.state.samples_parent = samples_parent if samples_parent.is_dir() else None
 
+    icons_dir = STATIC_DIR / "icons"
+    if icons_dir.is_dir():
+        app.mount("/static/icons", StaticFiles(directory=str(icons_dir)), name="icons")
+
     @app.get("/", response_class=HTMLResponse)
     @app.get("/workbench", response_class=HTMLResponse)
     async def index() -> HTMLResponse:
@@ -88,6 +93,16 @@ def create_workbench_app(project_dir: str | Path) -> FastAPI:
     async def hands_on_lab() -> HTMLResponse:
         lab_file = STATIC_DIR / "hands-on-lab.html"
         return HTMLResponse(lab_file.read_text(encoding="utf-8"))
+
+    @app.get("/adk-lab", response_class=HTMLResponse)
+    async def adk_build_lab() -> HTMLResponse:
+        adk_lab_file = STATIC_DIR / "adk-lab.html"
+        return HTMLResponse(adk_lab_file.read_text(encoding="utf-8"))
+
+    @app.get("/guide", response_class=HTMLResponse)
+    async def skill_guide() -> HTMLResponse:
+        guide_file = STATIC_DIR / "guide.html"
+        return HTMLResponse(guide_file.read_text(encoding="utf-8"))
 
     @app.get("/checklist", response_class=HTMLResponse)
     async def checklist_reference() -> HTMLResponse:

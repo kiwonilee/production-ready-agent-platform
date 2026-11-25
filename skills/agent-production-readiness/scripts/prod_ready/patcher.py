@@ -2664,6 +2664,8 @@ resource "google_project_service" "agent_gateway_apis" {
   for_each = toset([
     "networkservices.googleapis.com",
     "networksecurity.googleapis.com",
+    "serviceextensions.googleapis.com",
+    "modelarmor.googleapis.com",
     "iap.googleapis.com",
   ])
   project            = var.project_id
@@ -2733,6 +2735,32 @@ resource "google_network_security_authz_policy" "iap_request_authz_policy" {
     google_network_services_authz_extension.iap_request_authz_ext,
   ]
 }
+
+# ------------------------------------------------------------------------------
+# [AR-S3 Follow-up 1] MCP Tool-Level RBAC (roles/iap.egressor + CEL)
+# Agent Gateway is NOT a plain L7 ALB: after auditing DRY_RUN logs, grant the
+# Agent SPIFFE Identity explicit tool-level egress permissions before promoting
+# var.agent_gateway_enforcement_mode = "ENFORCED" (otherwise HTTP 498 occurs).
+# ------------------------------------------------------------------------------
+# resource "google_project_iam_member" "agent_mcp_tool_egress" {
+#   project = var.project_id
+#   role    = "roles/iap.egressor"
+#   member  = "principal://agents.global.org-${var.org_id}.system.id.goog/resources/aiplatform/projects/${var.project_number}/locations/${var.region}/reasoningEngines/${google_vertex_ai_reasoning_engine.app.name}"
+#   condition {
+#     title       = "allow_readonly_or_allowlisted_mcp_tools"
+#     description = "Restrict agent egress to read-only MCP tools or explicit allowlist"
+#     expression  = "iap.googleapis.com/mcp.tool.isReadOnly == true || iap.googleapis.com/mcp.toolName in ['get_exchange_rate', 'lookup_invoice']"
+#   }
+# }
+#
+# ------------------------------------------------------------------------------
+# [AR-S3 Follow-up 2] Model Armor (CONTENT_AUTHZ) & Ingress (CLIENT_TO_AGENT)
+# - Model Armor: create a template with BOTH piAndJailbreakFilterSettings and
+#   sdpFilterSettings (filterEnforcement: ENFORCE) and attach via Service
+#   Extensions / Floor Settings (see references/agent-registry-mcp-a2a.md §5.3).
+# - Ingress Protection: for external clients calling the agent, add a separate
+#   CLIENT_TO_AGENT gateway + grant callers roles/iap.httpsResourceAccessor.
+# ------------------------------------------------------------------------------
 ''')
 
     record(rel, "\n".join(blocks).rstrip() + "\n", applied_items)

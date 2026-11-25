@@ -39,11 +39,11 @@ PLATFORM_GROUP_LABEL = "플랫폼 Skill 참조 권장"
 _CATALOG_REL = Path("skills") / "agent-production-readiness" / "scripts" / "prod_ready" / "catalog_v3.json"
 
 _FALLBACK_CATEGORIES = [
-    {"code": "F", "name": "Features", "sub": "에이전트 기능"},
-    {"code": "O", "name": "Optimize", "sub": "런타임 최적화"},
-    {"code": "D", "name": "Delivery & Eval", "sub": "배포 · 품질 평가"},
+    {"code": "F", "name": "State & Memory", "sub": "세션 · 장기 기억"},
+    {"code": "O", "name": "Runtime Lifecycle", "sub": "런타임 수명주기 · 안정성"},
+    {"code": "D", "name": "CI/CD & Evaluation", "sub": "배포 파이프라인 · 품질 평가"},
     {"code": "OB", "name": "Observability", "sub": "관측성"},
-    {"code": "S", "name": "Security", "sub": "보안"},
+    {"code": "S", "name": "Security & Governance", "sub": "보안 · 신원 · 거버넌스"},
 ]
 _FALLBACK_CONDITIONS = {
     "conv": "멀티턴 대화",
@@ -228,7 +228,7 @@ def _apply_checklist_v3(result: dict[str, Any]) -> dict[str, Any]:
     elif review_cnt > 0:
         verdict = f"🔵 JSON 검증 항목 모두 통과 · 아키텍처/코드 {review_cnt}건 확인 필요{preview_note}"
     else:
-        verdict = f"🟢 Production Ready (체크리스트 v3 항목 검증 완료){preview_note}"
+        verdict = f"🟢 Production Ready (프로덕션 체크리스트 항목 검증 완료){preview_note}"
 
     result.update(
         {
@@ -1548,29 +1548,34 @@ def _evaluate_cloud_run_service_legacy(
         "status": r43_status,
         "current_state": r43_current,
         "recommended_state": (
-            "MCP·외부 도구를 호출하는 에이전트: Agent Gateway for Cloud Run(Preview)으로 외부 호출에 접근 정책 적용 "
-            "(초기에는 DRY_RUN으로 로그 검증 후 강제) / 외부 도구 호출이 없으면 해당 없음"
+            "MCP·외부 도구를 호출하는 에이전트: Agent Identity(CR-S2) · Agent Registry(CR-S3) · PSC/DNS(*.run.app) · "
+            "Agent Gateway for Cloud Run(IAP V2 DRY_RUN→ENFORCED + roles/iap.egressor CEL) · Model Armor(piAndJailbreak·sdp)를 한 세트로 구성 / 외부 도구 호출이 없으면 해당 없음"
         ),
         "why_it_matters": (
-            "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다. "
-            "Agent Gateway for Cloud Run(Preview)을 거치게 하면 MCP·A2A·외부 API 호출에 중앙 접근 정책과 Model Armor 검사를 "
-            "코드 변경 없이 적용할 수 있습니다. `describe` JSON만으로는 게이트웨이 정책 내용까지 확인할 수 없으므로 아래 읽기 전용 명령으로 함께 확인하세요."
+            "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 단순 ALB·방화벽이나 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다. "
+            "Agent Gateway는 게이트웨이 리소스만 만들어서 끝나지 않고 ① Agent Identity + Registry 등록 ② PSC Network Attachment(private_ip_google_access=true)·Cloud DNS ③ IAP V2 AuthzPolicy(DRY_RUN→ENFORCED) + roles/iap.egressor CEL ④ Model Armor 필터가 함께 연결되어야 동작합니다. "
+            "(⚠️ Egress 검증은 curl이 아닌 Python 런타임 SDK로 수행하세요.)"
         ),
-        "how_to_fix_title": "Agent Gateway for Cloud Run 구성 확인 (MCP·외부 도구 호출 시)",
+        "how_to_fix_title": "Agent Gateway for Cloud Run 구성 확인 (단순 게이트웨이 생성 X — 5단계 세트 구성)",
         "gcloud_cmd": (
-            f"# [Step 1 · 읽기 전용 확인] 프로젝트의 Agent Gateway 목록 조회\n"
-            f"gcloud beta network-services agent-gateways list --location={region} --project={project_id}\n\n"
-            f"# [Step 2] 로컬 코드에 CR-S4(Agent Gateway) 구성 생성\n"
-            f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target cloud_run --items CR-S4\n\n"
-            f"# [선택] 프로젝트 단위 Model Armor Floor Settings 확인\n"
-            f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\""
+            f"# [Step 1 · 읽기 전용 확인] 프로젝트의 Agent Gateway 및 AuthzPolicy 목록 조회\n"
+            f"gcloud beta network-services agent-gateways list --location={region} --project={project_id}\n"
+            f"gcloud beta network-security authz-policies list --location={region} --project={project_id}\n\n"
+            f"# [Step 2] 필수 API 활성화 (modelarmor.googleapis.com 포함)\n"
+            f"gcloud services enable compute.googleapis.com networkservices.googleapis.com networksecurity.googleapis.com \\\n"
+            f"  modelarmor.googleapis.com iap.googleapis.com agentregistry.googleapis.com serviceextensions.googleapis.com --project={project_id}\n\n"
+            f"# [Step 3] 프로젝트 단위 Model Armor Floor Settings 확인\n"
+            f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n\n"
+            f"# [참고] 상세 YAML/CEL/Python SDK 검증 레시피: skills/agent-production-readiness/references/agent-registry-mcp-a2a.md (§6)"
         ),
         "terraform_snippet": (
-            "# Agent Gateway for Cloud Run (Preview)\n"
-            "# MCP·외부 도구 호출을 게이트웨이로 보내고, 초기에는 DRY_RUN으로 정책을 검증한 뒤 강제합니다.\n"
-            "# 자세한 리소스 정의는 CR-S4 패치 결과(production_ready.tf)를 참고하세요."
+            "# Agent Gateway for Cloud Run (CR-S4 · Preview — 수동 구성)\n"
+            "# 1) CR-S2 Agent Identity + CR-S3 Agent Registry 등록\n"
+            "# 2) PSC Network Attachment (private_ip_google_access = true) + DNS peering (*.run.app)\n"
+            "# 3) agw-egress-config.yaml (AGENT_TO_ANYWHERE) + AuthzExtension/AuthzPolicy (IAP V2 DRY_RUN -> ENFORCED)\n"
+            "# 4) roles/iap.egressor CEL 도구 허용 목록 + Model Armor (piAndJailbreak + sdp)"
         ),
-        "console_guide": "MCP·외부 도구를 호출하는 에이전트라면 Agent Gateway for Cloud Run(Preview)으로 외부 호출을 통제하세요. 외부 도구 호출이 없으면 이 항목은 해당 없습니다.",
+        "console_guide": "Agent Gateway는 ALB처럼 리소스만 생성해 끝나지 않습니다. Agent Identity · Registry · PSC/DNS · IAP V2(DRY_RUN→ENFORCED) · roles/iap.egressor CEL · Model Armor를 함께 구성하세요. (상세 가이드: /guide 및 references/agent-registry-mcp-a2a.md §6)",
     })
 
     # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT)
@@ -1675,7 +1680,7 @@ def _evaluate_cloud_run_service_legacy(
         "combined_runtime_fix_cmd": combined_gcloud,
         "platform_guarantees": [],
         "stage1_skill_cmd": (
-            "# 배포 전 로컬 PC (Agent Skill): 체크리스트 v3 Cloud Run 항목(Features · Optimize · Delivery & Eval · Observability · Security) 점검 및 패치\n"
+            "# 배포 전 로컬 PC (Agent Skill): 프로덕션 체크리스트 Cloud Run 항목(State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance) 점검 및 패치\n"
             "# 일반 플랫폼 Best Practice는 플랫폼 Skill 참고: https://github.com/google/skills/tree/main/skills/cloud\n"
             "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target cloud_run"
         ),
@@ -1804,7 +1809,7 @@ def _evaluate_agent_runtime_engine_legacy(
                 (
                     f"spec.identityType=AGENT_IDENTITY 확인됨 ({sa_email or 'SPIFFE ID 발급 및 Agent Registry 자동 등록'})"
                     if has_agent_identity
-                    else f"spec.identityType={identity_type or 'SERVICE_ACCOUNT/미설정'} — 에이전트 전용 SPIFFE ID 미활성화"
+                    else f"Agent Registry 자동 등록 미확인 (spec.identityType={identity_type or 'SERVICE_ACCOUNT/미설정'} · gcloud agent-registry agents list로 등록 여부 확인 필요)"
                 )
                 + ar_r42_lazy_suffix
             ),
@@ -1848,21 +1853,21 @@ def _evaluate_agent_runtime_engine_legacy(
                 )
             ),
             "recommended_state": (
-                "google_network_services_agent_gateway + UAP/IAP V2 (초기 iamEnforcementMode=DRY_RUN으로 HTTP 498 차단 방지) + "
-                "BYOC Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES 주입"
+                "Agent Identity(AR-S1) + Agent Registry(AR-S2) + google_network_services_agent_gateway(AGENT_TO_ANYWHERE) + "
+                "AuthzPolicy(IAP V2 DRY_RUN→ENFORCED · roles/iap.egressor CEL) + Model Armor + Dockerfile AGENT_GATEWAY_ROOT_CERTIFICATES 주입"
             ),
             "why_it_matters": (
-                "Agent Runtime의 `agentGatewayConfig`에 Agent Gateway를 연결하면 MCP·A2A·LLM 아웃바운드 호출에 대해 "
-                "중앙 정책(UAP/IAP V2)과 Model Armor Floor Settings 검사를 코드 변경 없이 일괄 강제할 수 있습니다. "
-                "(⚠️ 중요: 신규 Agent Gateway 연결 시 반드시 `iamEnforcementMode=DRY_RUN`으로 시작해 HTTP 498 차단을 방지하고, "
-                "로그 검증 후 `ENFORCED`로 승격하세요. 커스텀 컨테이너는 `Dockerfile`에 `AGENT_GATEWAY_ROOT_CERTIFICATES` 주입이 필요합니다.)"
+                "Agent Gateway는 단순 L7 프록시가 아니라 Agent Identity · Agent Registry · IAP V2 정책(roles/iap.egressor CEL) · Model Armor 검사 · TLS CA 신뢰가 한 세트로 동작합니다. "
+                "(⚠️ 중요: 반드시 `iamEnforcementMode=DRY_RUN`으로 시작해 HTTP 498 차단을 방지하고 로그 검증 후 `ENFORCED`로 승격하세요. "
+                "커스텀 컨테이너는 `Dockerfile`에 `AGENT_GATEWAY_ROOT_CERTIFICATES` 주입이 필수이며, Egress 검증은 curl이 아닌 Python 런타임 SDK로 수행합니다.)"
             ),
             "how_to_fix_title": "Agent Gateway(DRY_RUN) 프로비저닝 및 Agent Runtime 연결",
             "gcloud_cmd": (
                 f"# [Step 1] 로컬 AR-S3 조치로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-S3\n\n"
-                f"# [Step 2] Model Armor Floor Settings 정책 확인 (읽기 전용)\n"
-                f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n\n"
+                f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-S3\n\n"
+                f"# [Step 2] Model Armor Floor Settings 및 AuthzPolicy 확인 (읽기 전용)\n"
+                f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n"
+                f"gcloud beta network-security authz-policies list --location={region} --project={project_id}\n\n"
                 f"# [Step 3] Agent Gateway 연결 확인\n"
                 f"gcloud beta network-services agent-gateways list --location={region} --project={project_id}"
             ),
@@ -1938,7 +1943,7 @@ def _evaluate_agent_runtime_engine_legacy(
             f"uvx google-agents-cli deploy --project={project_id} --region={region}"
         ),
         "platform_guarantees": ar_platform_guarantees,
-        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target agent_runtime  # 체크리스트 v3 Agent Runtime 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
+        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target agent_runtime  # 프로덕션 체크리스트 Agent Runtime 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
         "checks": checks,
     }
 
@@ -2733,7 +2738,7 @@ def _evaluate_gke_workload_legacy(
             f"# ⚠️ 선택한 항목에 따라 UI에서 맞춤형 GKE 조치 명령어가 동적으로 생성됩니다.\n"
             f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke"
         ),
-        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target gke  # 체크리스트 v3 GKE 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
+        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target gke  # 프로덕션 체크리스트 GKE 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
         "checks": checks,
     }
 

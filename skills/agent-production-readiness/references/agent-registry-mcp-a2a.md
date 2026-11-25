@@ -259,4 +259,61 @@ resource "google_project_iam_member" "agent_mcp_readonly_egress" {
 | **Resource Quotas** | Max **5,000** Agent Registry resources per gateway; max **4** custom `AuthzPolicy` resources per gateway | Consolidate rules into clean policy groups instead of one `AuthzPolicy` per tool |
 | **`network_attachment` is `ForceNew`** | Changing PSC Network Attachment on an existing Agent Gateway destroys & recreates the gateway | Plan subnet/VPC attachment before initial `terraform apply` |
 | **No Private / Self-Signed CA on Egress** | Agent Gateway egress does not natively trust private/self-signed upstream certificates | Terminate upstream MCP/A2A endpoints with public-CA TLS certificates (e.g., Google-managed certs on Cloud Run / GCLB) |
-| **Cloud Run** | Managed `agent_gateway_config` binding is specific to Agent Runtime | On Cloud Run, use **Agent Gateway for Cloud Run** (`CR-S4`, Preview — [docs](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/cloud-run-overview)) together with Agent Identity (`CR-S2`) and Agent Registry (`CR-S3`). Where Agent Gateway is unavailable, Secure Web Proxy / Model Armor are advisories (not checklist items) |
+| **Cloud Run** | Managed `agent_gateway_config` binding is specific to Agent Runtime | On Cloud Run, use **Agent Gateway for Cloud Run** (`CR-S4`, Preview — see §6 below and [docs](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/cloud-run-overview)) together with Agent Identity (`CR-S2`) and Agent Registry (`CR-S3`). Where Agent Gateway is unavailable, Secure Web Proxy / Model Armor are advisories (not checklist items) |
+
+### 5.3 Dual-Layer Governance: Ingress (`CLIENT_TO_AGENT`) vs. Egress (`AGENT_TO_ANYWHERE`) + Model Armor & SGP
+
+Agent Gateway is **not** a plain L7 load balancer (ALB). Production deployments require coordinating **both traffic directions** and **both authorization & content-inspection layers**:
+
+| Layer | Pattern / Resource | What It Enforces | Verification Rule |
+| :--- | :--- | :--- | :--- |
+| **Ingress** | `governedAccessPath: CLIENT_TO_AGENT` (`HTTP`, `MCP`) + `AuthzExtension` / `AuthzPolicy` + `roles/iap.httpsResourceAccessor` | Authenticates external callers via OAuth 2.0 / IAP before requests reach the agent | Unauthenticated `POST` must return **HTTP 403**; valid OAuth Bearer token returns **HTTP 200** |
+| **Egress** | `governedAccessPath: AGENT_TO_ANYWHERE` (`MCP`) + `registries` + `roles/iap.egressor` (CEL) | Restricts which MCP tools / A2A agents / external hosts the agent SPIFFE identity may invoke | Start with `iamEnforcementMode: DRY_RUN`, audit logs, then switch to `ENFORCED`. **Verify with Python runtime SDK (NOT `curl`)** because Egress relies on runtime SDK JWT lifecycle |
+| **Content Guardrail** | **Model Armor** (`modelarmor.googleapis.com`) — always include BOTH `piAndJailbreakFilterSettings` and `sdpFilterSettings` (`filterEnforcement: ENFORCE`) | Blocks prompt injection, jailbreaks, and PII leakage across prompts/tool payloads | Test with a prompt-injection payload and verify block/sanitize response |
+| **Semantic Policy (Optional)** | **Semantic Governance Policy (SGP)** (`sgpEnforcementMode: ENFORCE` on `authzExtensions`) | Enforces natural-language business constraints (e.g., blocking high-value transactions or sensitive PII) on Egress | Validate via controlled test tool calls in Staging before Prod |
+
+---
+
+## 6. Agent Gateway for Cloud Run End-to-End Recipe (`CR-S4`, 🅿️ Preview)
+
+Because `CR-S4` is Preview and involves VPC/PSC + DNS + Policy bindings outside a single `service.tf` block, `prod_ready.py` does not auto-patch it. Follow this complete end-to-end chain (creating the gateway resource alone will NOT enforce policies and `prod_ready.py scan` will flag it **`🟡 AMBER`**):
+
+1. **Enable Required APIs (8 APIs — include `modelarmor.googleapis.com`!)**:
+   ```bash
+   gcloud services enable \
+     compute.googleapis.com networkservices.googleapis.com networksecurity.googleapis.com \
+     modelarmor.googleapis.com iap.googleapis.com agentregistry.googleapis.com \
+     serviceextensions.googleapis.com aiplatform.googleapis.com \
+     --project=PROJECT_ID
+   ```
+2. **Pre-requisites (`CR-S2` · `CR-S3` · Subnet)**:
+   - Provision **Agent Identity** (`CR-S2`) and register the Cloud Run agent + downstream MCP servers in **Agent Registry** (`CR-S3`, `FUNCTIONAL_TYPE_AGENT` / `FUNCTIONAL_TYPE_MCP_SERVER`).
+   - Any VPC subnet hosting the **PSC Network Attachment** for Egress MUST have `private_ip_google_access = true` (disabling it blocks Google-managed endpoints).
+3. **Import Egress Agent Gateway (`agw-egress-config.yaml`)**:
+   ```yaml
+   # agw-egress-config.yaml
+   protocols: [MCP]
+   googleManaged:
+     governedAccessPath: AGENT_TO_ANYWHERE
+   networkConfig:
+     egress:
+       networkAttachment: projects/PROJECT_ID/regions/REGION/networkAttachments/PSC_ATTACHMENT
+   registries:
+     - //agentregistry.googleapis.com/projects/PROJECT_ID/locations/REGION
+   dnsPeeringConfig:
+     domains:
+       - run.app.
+   ```
+   ```bash
+   gcloud beta network-services agent-gateways import my-cr-egress-gw \
+     --location=REGION --source=agw-egress-config.yaml --project=PROJECT_ID
+   ```
+4. **Attach IAP V2 `AuthzExtension` (`DRY_RUN` first) + `AuthzPolicy` + `roles/iap.egressor` CEL**:
+   - Import `agw-authz-extension.yaml` (`service: iap.googleapis.com`, `iapPolicyVersion: V2`, `iamEnforcementMode: DRY_RUN`) via `gcloud beta service-extensions authz-extensions import`.
+   - Import `agw-authz-policy.yaml` (`policyProfile: REQUEST_AUTHZ`, `action: CUSTOM`, targeting the gateway) via `gcloud beta network-security authz-policies import`.
+   - Grant the Cloud Run agent's Agent Identity `roles/iap.egressor` with a CEL condition (e.g., `iap.googleapis.com/mcp.tool.isReadOnly == true || iap.googleapis.com/mcp.toolName in [...]`).
+5. **Attach Model Armor Guardrails (`model-armor-config.yaml`)**:
+   - Configure BOTH `piAndJailbreakFilterSettings` and `sdpFilterSettings` (`filterEnforcement: ENFORCE`), attach to the gateway/floor settings, and verify blocking behavior.
+6. **Verify via Runtime SDK (NOT `curl`) & Promote `DRY_RUN` → `ENFORCED`**:
+   - Send MCP JSON-RPC `tools/call` requests through the deployed Cloud Run agent (Python SDK) to validate allowed vs. denied tools in Cloud Logging, then promote `iamEnforcementMode` from `DRY_RUN` to `ENFORCED`.
+   - Store the YAML/Terraform policy files in `deployment/agent-gateway/` (or `deployment/terraform/`) so `prod_ready.py scan` verifies both Gateway + Policy (`🟢 GREEN`).

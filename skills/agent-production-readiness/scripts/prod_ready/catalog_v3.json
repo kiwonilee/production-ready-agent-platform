@@ -4,20 +4,20 @@
     {
       "code": "F",
       "slug": "features",
-      "name": "Features",
-      "sub": "에이전트 기능"
+      "name": "State & Memory",
+      "sub": "세션 · 장기 기억"
     },
     {
       "code": "O",
       "slug": "optimize",
-      "name": "Optimize",
-      "sub": "런타임 최적화"
+      "name": "Runtime Lifecycle",
+      "sub": "런타임 수명주기 · 안정성"
     },
     {
       "code": "D",
       "slug": "delivery",
-      "name": "Delivery & Eval",
-      "sub": "배포 · 품질 평가"
+      "name": "CI/CD & Evaluation",
+      "sub": "배포 파이프라인 · 품질 평가"
     },
     {
       "code": "OB",
@@ -28,8 +28,8 @@
     {
       "code": "S",
       "slug": "security",
-      "name": "Security",
-      "sub": "보안"
+      "name": "Security & Governance",
+      "sub": "보안 · 신원 · 거버넌스"
     }
   ],
   "conditions": {
@@ -162,7 +162,12 @@
         "title": "Agent Registry 등록",
         "check": "팀마다 에이전트·MCP 서버를 만들면 조직은 어떤 에이전트가 무엇을 호출하는지 파악하기 어려워집니다. 에이전트가 Agent Registry에 등록되어 있는지 확인합니다.",
         "best_practice": "Agent Registry에 에이전트를 등록해 조직 단위로 가시성과 거버넌스를 확보합니다.",
-        "references": [],
+        "references": [
+          {
+            "label": "Agent Registry overview",
+            "url": "https://docs.cloud.google.com/agent-registry/overview"
+          }
+        ],
         "grade": "required",
         "condition": null,
         "preview": true,
@@ -172,12 +177,16 @@
         "id": "AR-S3",
         "category": "S",
         "title": "Agent Gateway (외부 호출 통제)",
-        "check": "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다. MCP·외부 도구 호출이 Agent Gateway를 거쳐 정책으로 통제되는지 확인합니다.",
-        "best_practice": "Agent Gateway를 연결해 에이전트의 외부 호출에 접근 정책을 적용하고, 정책은 시험 모드로 검증한 뒤 강제 모드로 전환합니다.",
+        "check": "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰나 단순 방화벽·ALB만으로는 외부 호출을 통제할 수 없습니다. Agent Gateway(`AGENT_TO_ANYWHERE`)가 Agent Identity · Agent Registry · IAP V2 정책(`roles/iap.egressor` CEL) · Model Armor 검사 · 컨테이너 TLS CA 신뢰까지 한 세트로 연결되어 있는지 확인합니다.",
+        "best_practice": "단순 게이트웨이 생성으로 끝나지 않습니다. ① Agent Identity(`AR-S1`)·Agent Registry(`AR-S2`)를 먼저 연결하고, ② `AGENT_TO_ANYWHERE` 게이트웨이에 `AuthzExtension`/`AuthzPolicy`(IAP V2, 반드시 `DRY_RUN` 시작 → 로그 검증 후 `ENFORCED` 전환해 HTTP 498 방지)와 MCP 도구별 `roles/iap.egressor` CEL 정책·Model Armor(`piAndJailbreak`·`sdp`) 검사를 부착하며, ③ `service.tf`의 `agent_gateway_config` 바인딩과 `Dockerfile`의 `AGENT_GATEWAY_ROOT_CERTIFICATES` CA 신뢰까지 함께 구성합니다. (외부 클라이언트 인바운드 보호 시 `CLIENT_TO_AGENT` + `roles/iap.httpsResourceAccessor` 별도 구성)",
         "references": [
           {
             "label": "Agent Gateway",
             "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/agent-gateway-overview"
+          },
+          {
+            "label": "Model Armor",
+            "url": "https://cloud.google.com/security-command-center/docs/model-armor-overview"
           }
         ],
         "grade": "conditional",
@@ -385,12 +394,16 @@
         "id": "CR-S4",
         "category": "S",
         "title": "Agent Gateway (외부 호출 통제)",
-        "check": "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다. MCP·외부 도구 호출이 Agent Gateway를 거쳐 정책으로 통제되는지 확인합니다.",
-        "best_practice": "Agent Gateway for Cloud Run으로 에이전트의 외부 호출에 접근 정책을 적용합니다.",
+        "check": "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰나 단순 방화벽·ALB만으로는 외부 호출을 통제할 수 없습니다. Agent Gateway for Cloud Run이 Agent Identity · Agent Registry · PSC/VPC DNS 라우팅 · IAP V2 정책(`DRY_RUN`→`ENFORCED`) · Model Armor 검사와 함께 구성되어 외부 호출을 통제하는지 확인합니다.",
+        "best_practice": "단순 리소스 생성으로 끝나지 않습니다. ① Agent Identity(`CR-S2`)와 Agent Registry(`CR-S3`)에 Cloud Run 에이전트·MCP 대상을 등록하고, ② PSC Network Attachment(`private_ip_google_access=true`) + Cloud DNS(`*.run.app` 등)로 Egress 경로를 연결하며, ③ `AuthzExtension`/`AuthzPolicy`(IAP V2 `DRY_RUN`→`ENFORCED`, `roles/iap.egressor` CEL)와 Model Armor 필터(`piAndJailbreak`·`sdp`)를 적용한 뒤 `curl`이 아닌 런타임 SDK(Python)로 정책 동작을 검증합니다.",
         "references": [
           {
             "label": "Agent Gateway for Cloud Run",
             "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/cloud-run-overview"
+          },
+          {
+            "label": "Model Armor",
+            "url": "https://cloud.google.com/security-command-center/docs/model-armor-overview"
           }
         ],
         "grade": "conditional",
@@ -637,7 +650,16 @@
         "title": "Agent Registry 등록",
         "check": "팀마다 에이전트·MCP 서버를 만들면 조직은 어떤 에이전트가 무엇을 호출하는지 파악하기 어려워집니다. 에이전트 워크로드가 Agent Registry에 등록되어 있는지 확인합니다.",
         "best_practice": "Deployment에 에이전트 유형 레이블을 지정해 Agent Registry에 자동 등록합니다.",
-        "references": [],
+        "references": [
+          {
+            "label": "Agent Registry overview",
+            "url": "https://docs.cloud.google.com/agent-registry/overview"
+          },
+          {
+            "label": "About Agent Identity for GKE",
+            "url": "https://docs.cloud.google.com/kubernetes-engine/security/about-agent-identity"
+          }
+        ],
         "grade": "required",
         "condition": null,
         "preview": true,
@@ -647,12 +669,16 @@
         "id": "GKE-S4",
         "category": "S",
         "title": "Agent Gateway for GKE (외부 호출 통제)",
-        "check": "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 코드 리뷰만으로는 외부 호출을 통제할 수 없습니다. MCP·외부 도구 호출이 Agent Gateway를 거쳐 정책으로 통제되는지 확인합니다.",
-        "best_practice": "Agent Gateway for GKE로 에이전트의 외부 호출에 접근 정책을 적용합니다.",
+        "check": "에이전트가 무엇을 호출할지는 LLM이 실행 시점에 정하므로, 일반 Ingress·Gateway만으로는 MCP·외부 도구 호출을 통제할 수 없습니다. Agent Gateway for GKE(Standard Pod 전용 · Rapid 1.37.2+ · Ambient · Dataplane V2 · Fleet · Proxy-only subnet)가 Ingress/Egress CRD 정책 및 Model Armor 바인딩과 함께 구성되어 있는지 확인합니다.",
+        "best_practice": "일반 Gateway 생성으로 끝나지 않습니다. Standard Pod 환경(Agent Sandbox·Substrate 미지원)에서 ① Ingress는 `Gateway` + `HTTPRoute` + `GCPAgentGateway` + `GCPAuthzPolicy`(L7 MCP `tools/list`·`tools/call` RBAC) + `GCPExtensionBinding`(Model Armor, 반드시 `GCPAgentGateway` 타겟)을 구성하고, ② Egress는 네임스페이스 `networking.gke.io/dataplane-mode=ambient` 라벨 + `GCPBackend`(SWP) + `GCPEgressPolicy`(클러스터 CIDR 제외) + 컨트롤 플레인 IAP/Model Armor `ExtensionBinding`을 함께 구성합니다.",
         "references": [
           {
-            "label": "Agent Gateway",
-            "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/agent-gateway-overview"
+            "label": "Agent Gateway for GKE",
+            "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/gke-overview"
+          },
+          {
+            "label": "Model Armor",
+            "url": "https://cloud.google.com/security-command-center/docs/model-armor-overview"
           }
         ],
         "grade": "conditional",

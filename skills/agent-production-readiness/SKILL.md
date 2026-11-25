@@ -47,17 +47,17 @@ Values (instance counts, timeouts, sizing), architecture choices, paid optional 
 
 ## Checklist v3 Items
 
-ID format: `<target>-<category><n>` — target `AR` · `CR` · `GKE`; category `F` Features · `O` Optimize · `D` Delivery & Eval · `OB` Observability · `S` Security. ⚙️ = conditional, 🅿️ = Preview.
+ID format: `<target>-<category><n>` — target `AR` · `CR` · `GKE`; category `F` State & Memory · `O` Runtime Lifecycle · `D` CI/CD & Evaluation · `OB` Observability · `S` Security & Governance. ⚙️ = conditional, 🅿️ = Preview.
 
 | Category | 🛡️ Agent Runtime | ⚡ Cloud Run | ☸️ GKE |
 | :--- | :--- | :--- | :--- |
-| Features | `AR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `AR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `CR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `CR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `GKE-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `GKE-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ |
-| Optimize | — | — | `GKE-O1` 무중단 종료 (긴 응답 보호) · `GKE-O2` 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) ⚙️ |
-| Delivery & Eval | `AR-D1` CI/CD 파이프라인 (agents-cli) · `AR-D2` 평가 데이터셋 · 평가 게이트 | `CR-D1` CI/CD 파이프라인 (agents-cli) · `CR-D2` 평가 데이터셋 · 평가 게이트 | `GKE-D1` CI/CD 파이프라인 (agents-cli) · `GKE-D2` 평가 데이터셋 · 평가 게이트 |
+| State & Memory | `AR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `AR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `CR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `CR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `GKE-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `GKE-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ |
+| Runtime Lifecycle | — | — | `GKE-O1` 무중단 종료 (긴 응답 보호) · `GKE-O2` 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) ⚙️ |
+| CI/CD & Evaluation | `AR-D1` CI/CD 파이프라인 (agents-cli) · `AR-D2` 평가 데이터셋 · 평가 게이트 | `CR-D1` CI/CD 파이프라인 (agents-cli) · `CR-D2` 평가 데이터셋 · 평가 게이트 | `GKE-D1` CI/CD 파이프라인 (agents-cli) · `GKE-D2` 평가 데이터셋 · 평가 게이트 |
 | Observability | `AR-OB1` 프롬프트 미기록 | `CR-OB1` Cloud Trace · 프롬프트 미기록 | `GKE-OB1` Cloud Trace · 프롬프트 미기록 |
-| Security | `AR-S1` 에이전트 전용 신원 · 최소 권한 · `AR-S2` Agent Registry 등록 🅿️ · `AR-S3` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `AR-S4` AI 생성 코드 격리 (Code Execution) ⚙️ · `AR-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ | `CR-S1` 인증된 호출만 허용 · `CR-S2` 에이전트 전용 신원 · 최소 권한 · `CR-S3` Agent Registry 등록 🅿️ · `CR-S4` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `CR-S5` AI 생성 코드 격리 (Cloud Run sandboxes) ⚙️🅿️ · `CR-S6` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ | `GKE-S1` 에이전트 전용 신원 · 최소 권한 · `GKE-S2` AI 생성 코드 격리 (Agent Substrate · Agent Sandbox) ⚙️ · `GKE-S3` Agent Registry 등록 🅿️ · `GKE-S4` Agent Gateway for GKE (외부 호출 통제) ⚙️🅿️ · `GKE-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ |
+| Security & Governance | `AR-S1` 에이전트 전용 신원 · 최소 권한 · `AR-S2` Agent Registry 등록 🅿️ · `AR-S3` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `AR-S4` AI 생성 코드 격리 (Code Execution) ⚙️ · `AR-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ | `CR-S1` 인증된 호출만 허용 · `CR-S2` 에이전트 전용 신원 · 최소 권한 · `CR-S3` Agent Registry 등록 🅿️ · `CR-S4` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `CR-S5` AI 생성 코드 격리 (Cloud Run sandboxes) ⚙️🅿️ · `CR-S6` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ | `GKE-S1` 에이전트 전용 신원 · 최소 권한 · `GKE-S2` AI 생성 코드 격리 (Agent Substrate · Agent Sandbox) ⚙️ · `GKE-S3` Agent Registry 등록 🅿️ · `GKE-S4` Agent Gateway for GKE (외부 호출 통제) ⚙️🅿️ · `GKE-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ |
 
-Targets are listed Agent Runtime → Cloud Run → GKE (fully managed ↔ most control / ops responsibility). Agent Runtime and Cloud Run currently have no Optimize item; reports skip empty categories. `CR-S5` / `AR-S4` (AI-generated code isolation) are guidance-only: the engine checks them but never auto-patches (enable `--sandbox-launcher` / route the code executor to Agent Platform Code Execution yourself). Item counts: Agent Runtime 10 · Cloud Run 11 · GKE 12 (33 total).
+Targets are listed Agent Runtime → Cloud Run → GKE (fully managed ↔ most control / ops responsibility). Agent Runtime and Cloud Run currently have no Runtime Lifecycle item; reports skip empty categories. `CR-S5` / `AR-S4` (AI-generated code isolation) are guidance-only: the engine checks them but never auto-patches (enable `--sandbox-launcher` / route the code executor to Agent Platform Code Execution yourself). Item counts: Agent Runtime 10 · Cloud Run 11 · GKE 12 (33 total).
 
 **`idle` condition (`GKE-O2`)** cannot be detected from code: it counts as met only when Agent Substrate (`ate.dev/v1alpha1` `WorkerPool` / `ActorTemplate`) is already used. Otherwise ask the user ("사용자 입력·도구 응답을 기다리는 시간이 대부분인가?"); if yes, pass `--conditions idle=true` to `scan` / `report` / `apply`, or select `--items GKE-O2` explicitly. `GKE-O2` reuses the `GKE-S2` Agent Substrate manifest and needs GKE Standard >= 1.37 (the engine never changes an existing Autopilot cluster, so it stays 🟡 there).
 
@@ -125,7 +125,7 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target>
 
 Present in Korean, in this order:
 1. **Gate verdict** and detected conditions.
-2. Items grouped by the 5 categories (Features · Optimize · Delivery & Eval · Observability · Security): ID, title, status (`🟢`/`🟡`/`🔴`/`⚪ N/A`), and for non-green items the catalog **Check** and **Best Practice** text with reference links. Mark Preview items with 🅿️ and state that they do not block the verdict.
+2. Items grouped by the 5 categories (State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance): ID, title, status (`🟢`/`🟡`/`🔴`/`⚪ N/A`), and for non-green items the catalog **Check** and **Best Practice** text with reference links. Mark Preview items with 🅿️ and state that they do not block the verdict.
 3. **Platform skill recommendation** for the target (table above) — always include it.
 4. **Advisories** relevant to the user's situation (optional).
 

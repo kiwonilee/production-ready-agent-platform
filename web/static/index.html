@@ -358,7 +358,7 @@
         </svg>
         <span class="brand-divider" aria-hidden="true"></span>
         <div class="brand-title-wrap">
-          <span class="brand-title">AI Agent Production-Readiness Workbench</span>
+          <span class="brand-title">Production Ready Agent Platform</span>
         </div>
       </div>
 
@@ -372,6 +372,9 @@
         </a>
         <a href="/checklist" class="btn-subtle inline-flex items-center justify-center rounded-[10px] h-9 px-3.5 text-[13px] font-bold text-[#0F172A] bg-[#EEF2F7] hover:bg-[#E2E8F0] transition">
           <span>02 · 체크리스트 ↗</span>
+        </a>
+        <a href="/guide" class="topbar-badge-hide btn-subtle inline-flex items-center justify-center rounded-[10px] h-9 px-3.5 text-[13px] font-bold text-[#0F172A] bg-[#EEF2F7] hover:bg-[#E2E8F0] transition">
+          <span>Skill 가이드 ↗</span>
         </a>
         <a href="/lab" class="g-btn-blue topbar-cta">
           <span>03 · 실습 가이드 ↗</span>
@@ -393,19 +396,25 @@
               <span class="h-2 w-2 rounded-full bg-[#FBBC04]"></span>
               <span class="h-2 w-2 rounded-full bg-[#34A853]"></span>
             </span>
-            <span>ENTERPRISE AI AGENT PRODUCTION-READINESS PLATFORM · Checklist v3</span>
+            <span>ENTERPRISE AI AGENT PRODUCTION-READINESS PLATFORM</span>
           </div>
           <h1 class="m-0 text-[28px] md:text-[32px] font-bold tracking-[-0.03em] text-[#0F172A] leading-[1.25]">
-            Google Cloud AI 에이전트 프로덕션 준비도 통합 포털
+            Google Cloud · AI 에이전트 프로덕션 준비 포털
           </h1>
           <p class="m-0 text-[15.5px] leading-[1.65] text-[#475569]">
             전체 시스템 아키텍처와 런타임 3종 비교·장단점 발표 슬라이드(<strong>01 소개 장표</strong>)부터, 에이전트 특성에 맞춘 환경별 5개 범주 점검 기준(<strong>02 체크리스트</strong>), 엔드투엔드 코드랩 실습(<strong>03 Hands-On Lab</strong>), 배포 후 설정 JSON 감사(<strong>04 런타임 진단 위자드</strong>)까지 한 곳에서 이어지는 <strong>4단계 여정</strong>으로 구성되어 있습니다.
           </p>
         </div>
-        <a href="/api/skill/download" class="inline-flex items-center gap-2 rounded-xl bg-[#F4F7FB] hover:bg-[#E8F0FE] border border-[#4285F4]/25 px-4 py-2.5 text-[13px] font-bold text-[#1967D2] transition">
-          <span class="material-symbols-outlined text-[18px]">download</span>
-          <span>Antigravity Skill 다운로드 (.tar.gz)</span>
-        </a>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <a href="/guide" class="no-underline inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4285F4] to-[#1A73E8] hover:from-[#1A73E8] hover:to-[#1557B0] px-4 py-2.5 text-[13px] font-bold text-white shadow-sm transition">
+            <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+            <span>Agent Skill 사용 가이드 · 프롬프트 (/guide) ↗</span>
+          </a>
+          <a href="https://github.com/kiwonilee/production-ready-agent-platform" target="_blank" rel="noopener noreferrer" class="no-underline inline-flex items-center gap-2 rounded-xl bg-[#F4F7FB] hover:bg-[#E8F0FE] border border-[#4285F4]/25 px-4 py-2.5 text-[13px] font-bold text-[#1967D2] transition">
+            <span class="material-symbols-outlined text-[18px]">code</span>
+            <span>GitHub 저장소 (최신 Skill) ↗</span>
+          </a>
+        </div>
       </div>
     </div>
 
@@ -421,7 +430,7 @@
             <span class="inline-flex items-center rounded-full bg-[#FCE8E6] px-2.5 py-1 font-mono text-[11.5px] font-bold text-[#C5221F]">01 · OVERVIEW DECK</span>
           </div>
           <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#C5221F] transition">
-            시스템 소개 발표 장표 (13 Slides)
+            시스템 소개 발표 장표
           </h2>
           <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
             도입 필요성과 <strong>Prototype vs. Production</strong> 차이부터 환경별 검사 항목·특화 기능·<strong>Agent Runtime · Cloud Run · GKE 장단점 비교</strong>까지 발표용 16:9 슬라이드로 제공합니다.
@@ -454,7 +463,7 @@
             환경별 프로덕션 체크리스트
           </h2>
           <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
-            <strong>Agent Runtime · Cloud Run · GKE</strong> 환경별로 <strong>에이전트 특성에서 나온 항목만</strong> 5개 범주(<code>Features · Optimize · Delivery &amp; Eval · Observability · Security</code>)로 정리했습니다. 일반 플랫폼 Best Practice는 <strong>플랫폼 Skill</strong>(<code>google/skills</code> · cloud)을 함께 참조하세요.
+            <strong>Agent Runtime · Cloud Run · GKE</strong> 환경별로 <strong>에이전트 특성에서 나온 항목만</strong> 5개 범주(<code>State &amp; Memory · Runtime Lifecycle · CI/CD &amp; Evaluation · Observability · Security &amp; Governance</code>)로 정리했습니다. 일반 플랫폼 Best Practice는 <strong>플랫폼 Skill</strong>(<code>google/skills</code> · cloud)을 함께 참조하세요.
           </p>
           <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
             <li class="flex items-center gap-2"><span class="text-[#D97706] font-bold">•</span><span>항목별 Check · Best Practice · 참고 문서</span></li>
@@ -471,8 +480,8 @@
         </div>
       </a>
 
-      <!-- Card 03: Hands-On Lab (/lab) -->
-      <a href="/lab" class="card-surface g-accent-blue p-6 flex flex-col justify-between no-underline group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(66,133,244,0.16)] transition duration-200">
+      <!-- Card 03: Hands-On Lab (/lab) + Optional ADK Build Lab (/adk-lab) -->
+      <div onclick="if(!event.target.closest('a')) window.location.href='/lab'" role="region" aria-label="실습 가이드 (Hands-On Lab)" class="card-surface g-accent-blue p-6 flex flex-col justify-between cursor-pointer group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(66,133,244,0.16)] transition duration-200">
         <div>
           <div class="flex items-center justify-between gap-2 mb-4">
             <div class="h-11 w-11 rounded-2xl bg-[#E8F0FE] border border-[#4285F4]/25 flex items-center justify-center text-[#1967D2]">
@@ -480,26 +489,34 @@
             </div>
             <span class="inline-flex items-center rounded-full bg-[#E8F0FE] px-2.5 py-1 font-mono text-[11.5px] font-bold text-[#1967D2]">03 · HANDS-ON LAB</span>
           </div>
-          <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#1A73E8] transition">
-            실습 가이드 (Hands-On Lab)
-          </h2>
+          <a href="/lab" class="no-underline block">
+            <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A] group-hover:text-[#1A73E8] transition">
+              실습 가이드 (Hands-On Lab)
+            </h2>
+          </a>
           <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
-            ADK 프로토타입 생성부터 배포 대상 설정, 정적 진단, 자동 패치 적용, 클라우드 배포, 라이브 점검까지 따라 하는 <strong>Step 0 ~ Step 10 코드랩</strong>입니다.
+            ADK 기반 Agent 스캐폴딩부터 정적 진단, 자동 패치 적용, 클라우드 배포, 라이브 점검까지 따라 하는 <strong>Step 0 ~ Step 9 코드랩</strong>입니다.
           </p>
           <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
             <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Agent Runtime · Cloud Run · GKE 3대 트랙 선택</span></li>
             <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Antigravity CLI 프롬프트 원클릭 복사 &amp; 진행률 저장</span></li>
             <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Terraform + <code>agents-cli deploy</code> 배포 명령어</span></li>
           </ul>
+          <div class="mt-3.5 pt-3 border-t border-dashed border-[#4285F4]/20">
+            <a href="/adk-lab" onclick="event.stopPropagation()" class="no-underline inline-flex items-center justify-between gap-2 w-full rounded-xl bg-[#FEF7E0]/85 hover:bg-[#FEF7E0] border border-[#FBBC04]/45 px-3 py-2 text-[12.5px] font-bold text-[#9A5300] transition">
+              <span>✨ Optional · ADK Agent 만들기 ↗</span>
+              <span class="font-mono text-[11px] opacity-80">/adk-lab</span>
+            </a>
+          </div>
         </div>
-        <div class="mt-5 pt-3.5 border-t border-[#4285F4]/12 flex items-center justify-between">
+        <div class="mt-4 pt-3.5 border-t border-[#4285F4]/12 flex items-center justify-between">
           <span class="font-mono text-[12px] font-bold text-[#64748B]">/lab</span>
-          <span class="g-btn-blue inline-flex items-center gap-1 rounded-xl px-3.5 py-2 text-[13px] font-bold">
+          <a href="/lab" class="no-underline g-btn-blue inline-flex items-center gap-1 rounded-xl px-3.5 py-2 text-[13px] font-bold">
             <span>실습 가이드 시작</span>
             <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-          </span>
+          </a>
         </div>
-      </a>
+      </div>
 
       <!-- Card 04: Runtime Diagnosis Workbench (/workbench or inline openInputView) -->
       <div onclick="openInputView('step-01-select')" role="button" tabindex="0" class="card-surface g-accent-green p-6 flex flex-col justify-between cursor-pointer group hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(52,168,83,0.16)] transition duration-200">
@@ -610,7 +627,7 @@
             배포된 에이전트 설정 JSON 기반 단계별 위자드 점검 및 최종 리포트 생성
           </h1>
           <p class="mt-2.5 mb-0 text-[14.5px] leading-[1.65] text-[#475569]">
-            Agent Runtime, Cloud Run, 또는 GKE(Autopilot/Standard · Agent Sandbox · Agent Substrate)의 설정 JSON을 붙여넣으면, <strong>JSON으로 검증된 항목</strong>과 <strong>아키텍처·부하테스트 의도를 확인해야 할 항목</strong>을 위자드 형태로 하나씩 점검한 뒤 최종 프로덕션 준비도 리포트와 맞춤형 실행 명령어를 완성해 드립니다.
+            Agent Runtime, Cloud Run, 또는 GKE(Autopilot/Standard · Agent Sandbox · Agent Substrate)의 설정 JSON을 붙여넣으면, <strong>JSON으로 검증된 항목</strong>과 <strong>아키텍처·운영 의도를 확인해야 할 항목</strong>을 위자드 형태로 하나씩 점검한 뒤 최종 프로덕션 준비도 리포트와 맞춤형 실행 명령어를 완성해 드립니다.
           </p>
 
           <!-- Compact Zero-IAM Notice Strip (Inside Hero Card so Top Aligns with Sidebar & Lab) -->
@@ -620,8 +637,9 @@
 
           <!-- Checklist v3 Scope Notice: agent-characteristic items only + platform skills -->
           <div class="mt-3 rounded-[14px] bg-[#E8F0FE]/60 border border-[#4285F4]/25 border-l-4 border-l-[#4285F4] px-4 py-3 text-[13.8px] leading-[1.6] text-[#174EA6]">
-            <strong>체크리스트 v3 점검 범위:</strong> 이 위자드는 <strong>에이전트 특성에서 나온 항목</strong>(세션 · 장기 기억 · 평가 게이트 · 트레이스 · 에이전트 신원 · Agent Registry · Agent Gateway · 사용자 위임 인증 등)만 점수에 반영합니다.
-            헬스 프로브 · PDB · Non-Root · 사설 연결 · Terraform IaC · 알림 정책 같은 일반 플랫폼 Best Practice는 <strong>플랫폼 Skill 참조 권장</strong>으로 따로 안내하며, 프로덕션 전에 함께 점검하실 것을 강력히 권장합니다.
+            <strong>프로덕션 체크리스트 런타임 점검 범위:</strong> 이 위자드는 배포된 런타임 JSON에서 확인할 수 있는 <strong>에이전트 특성 항목</strong>(Agent Runtime 4 · Cloud Run 6 · GKE 6)만 점수에 반영합니다.
+            CI/CD 파이프라인 · 평가 게이트(<code>*-D1/D2</code>) · 장기 기억(<code>*-F2</code>) · AI 생성 코드 격리 · 사용자 위임 인증 등 <strong>로컬 코드 영역</strong>은 <a href="/guide" class="font-bold text-[#1967D2] underline">Agent Skill 사용 가이드 (/guide) ↗</a>에서 점검하세요.
+            헬스 프로브 · PDB · Non-Root · 사설 연결 · Terraform IaC · 알림 정책 같은 일반 플랫폼 Best Practice는 <strong>플랫폼 Skill 참조 권장</strong>으로 따로 안내합니다.
             <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener" class="font-bold text-[#1967D2] underline">google/skills · cloud 플랫폼 Skill 보기 ↗</a>
           </div>
 
@@ -657,16 +675,19 @@
             <!-- Segmented Runtime Selector -->
             <div class="inline-flex items-center gap-1 rounded-xl bg-[#EAEFF6] p-1">
               <button id="rtBtnAr" onclick="setRuntimeMode('agent_runtime')"
-                class="h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#1967D2] shadow-sm transition">
-                🧠 Agent Runtime
+                class="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#1967D2] shadow-sm transition">
+                <img src="/static/icons/agent-runtime.png" alt="Agent Runtime" class="h-4 w-4 object-contain" width="16" height="16">
+                <span>Agent Runtime</span>
               </button>
               <button id="rtBtnCr" onclick="setRuntimeMode('cloud_run')"
-                class="h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition">
-                ☁️ Cloud Run
+                class="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition">
+                <img src="/static/icons/cloud-run.png" alt="Cloud Run" class="h-4 w-4 object-contain" width="16" height="16">
+                <span>Cloud Run</span>
               </button>
               <button id="rtBtnGke" onclick="setRuntimeMode('gke')"
-                class="h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition">
-                ☸️ GKE
+                class="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition">
+                <img src="/static/icons/gke.png" alt="GKE" class="h-4 w-4 object-contain" width="16" height="16">
+                <span>GKE</span>
               </button>
             </div>
           </div>
@@ -677,7 +698,7 @@
               <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl bg-[#F4F7FB] border border-[#4285F4]/12 p-4">
                 <div>
                   <label class="block text-[13px] font-semibold text-[#475569] mb-1">GCP Project ID</label>
-                  <input id="cmdProjectInput" type="text" value="geap-sandbox-kwlee" oninput="updateCommandBox()"
+                  <input id="cmdProjectInput" type="text" value="" placeholder="YOUR_PROJECT_ID" oninput="updateCommandBox()"
                     class="w-full rounded-lg bg-white px-3 py-2 font-mono text-[14px] font-semibold text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:ring-2 focus:ring-[#4285F4]/20 focus:outline-none" />
                 </div>
                 <div>
@@ -727,15 +748,15 @@
             <div class="flex flex-wrap items-center gap-2">
               <button onclick="loadSampleJson('agent_runtime')"
                 class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E8F0FE] hover:bg-[#D2E3FC] border border-[#4285F4]/25 px-3 text-[12.5px] font-bold text-[#1967D2] transition">
-                <span>샘플 채우기: Agent Runtime (Graph Workflow)</span>
+                <img src="/static/icons/agent-runtime.png" alt="Agent Runtime" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플 채우기: Agent Runtime (Graph Workflow)</span>
               </button>
               <button onclick="loadSampleJson('cloud_run')"
                 class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E6F4EA] hover:bg-[#CEEAD6] border border-[#34A853]/25 px-3 text-[12.5px] font-bold text-[#137333] transition">
-                <span>샘플 채우기: Cloud Run (currency-agent)</span>
+                <img src="/static/icons/cloud-run.png" alt="Cloud Run" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플 채우기: Cloud Run (currency-agent)</span>
               </button>
               <button onclick="loadSampleJson('gke')"
                 class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#FEF7E0] hover:bg-[#FEEFC3] border border-[#FBBC04]/40 px-3 text-[12.5px] font-bold text-[#B06000] transition">
-                <span>샘플 채우기: GKE (gke-enterprise-agent)</span>
+                <img src="/static/icons/gke.png" alt="GKE" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플 채우기: GKE (gke-enterprise-agent)</span>
               </button>
             </div>
           </div>
@@ -806,21 +827,21 @@
       const btnGke = document.getElementById("rtBtnGke");
       const svcLabel = document.getElementById("cmdServiceLabel");
       const svcInput = document.getElementById("cmdServiceInput");
-      const inactiveCls = "h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition";
+      const inactiveCls = "inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-semibold text-[#475569] hover:text-[#0F172A] transition";
       btnCr.className = inactiveCls;
       btnAr.className = inactiveCls;
       if (btnGke) btnGke.className = inactiveCls;
 
       if (mode === "cloud_run") {
-        btnCr.className = "h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#137333] shadow-sm transition";
+        btnCr.className = "inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#137333] shadow-sm transition";
         svcLabel.textContent = "Cloud Run 서비스명";
         if (!svcInput.value || svcInput.value === "gke-enterprise-agent" || svcInput.value === "agent-prod") svcInput.value = "currency-agent";
       } else if (mode === "gke") {
-        if (btnGke) btnGke.className = "h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#B06000] shadow-sm transition";
+        if (btnGke) btnGke.className = "inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#B06000] shadow-sm transition";
         svcLabel.textContent = "GKE Namespace (예: gke-enterprise-agent)";
         if (!svcInput.value || svcInput.value === "currency-agent") svcInput.value = "gke-enterprise-agent";
       } else {
-        btnAr.className = "h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#1967D2] shadow-sm transition";
+        btnAr.className = "inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-[13px] font-bold bg-white text-[#1967D2] shadow-sm transition";
         svcLabel.textContent = "Engine ID (비우면 전체 목록)";
         if (svcInput.value === "currency-agent" || svcInput.value === "gke-enterprise-agent" || svcInput.value === "agent-prod") svcInput.value = "";
       }
@@ -1099,11 +1120,11 @@
     const PLATFORM_GROUP_LABEL = "플랫폼 Skill 참조 권장";
     const CHECKLIST_CATEGORY_ORDER = ["F", "O", "D", "OB", "S"];
     const CHECKLIST_CATEGORIES = {
-      F: { name: "Features", sub: "에이전트 기능" },
-      O: { name: "Optimize", sub: "런타임 최적화" },
-      D: { name: "Delivery & Eval", sub: "배포 · 품질 평가" },
+      F: { name: "State & Memory", sub: "세션 · 장기 기억" },
+      O: { name: "Runtime Lifecycle", sub: "런타임 수명주기 · 안정성" },
+      D: { name: "CI/CD & Evaluation", sub: "배포 파이프라인 · 품질 평가" },
       OB: { name: "Observability", sub: "관측성" },
-      S: { name: "Security", sub: "보안" },
+      S: { name: "Security & Governance", sub: "보안 · 신원 · 거버넌스" },
     };
     const CONDITION_LABELS = {
       conv: "멀티턴 대화",
@@ -1413,11 +1434,23 @@
       }
 
       if (kind === "idle_suspend") {
-        if (isGreen) return verifiedOnly(c, "Agent Substrate에서 유휴 에이전트 일시정지 · 복원", "JSON 검증 통과 (유휴 일시정지 · 복원)");
+        if (isGreen) return verifiedOnly(c, "Agent Substrate 또는 Agent Sandbox(Pod snapshot)에서 유휴 에이전트 일시정지 · 복원", "JSON 검증 통과 (유휴 일시정지 · 복원)");
         return [
-          wizOpt("apply_fix", "fix", "🛠️ Agent Substrate 적용", "유휴 에이전트를 Agent Substrate on GKE에서 스냅샷 일시정지 · 요청 시 복원", "Agent Substrate 일시정지 · 복원", "GKE Standard 1.37 이상이 필요합니다. 로컬 Agent Skill로 Agent Substrate 매니페스트를 생성합니다."),
+          wizOpt("apply_fix", "fix", "🛠️ 일시정지 · 복원 적용", "유휴 에이전트를 Agent Substrate on GKE(기본 권장) 또는 Agent Sandbox + Pod snapshot(gVisor)으로 일시정지 · 복원", "유휴 일시정지 · 복원 적용", "GKE Standard 1.37 이상(x86)이면 Agent Substrate(복원 1초 이내), Autopilot·사이드카·Arm이 필요하면 Agent Sandbox + Pod snapshot(gVisor, 복원 약 3~5초)을 사용합니다."),
           wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — 유휴 시간이 길지 않은 에이전트", "조건 미해당 (유휴 시간 짧음)", "사용자 입력·도구 응답 대기 시간이 길지 않아 이 조건부 항목은 해당하지 않습니다."),
-          deferOpt("클러스터 모드(Standard) · 버전 요건 확인 후 추후 결정", "추후 확인 (유휴 일시정지 · 복원)"),
+          deferOpt("클러스터 모드(Standard/Autopilot) · 버전 요건 확인 후 추후 결정", "추후 확인 (유휴 일시정지 · 복원)"),
+        ];
+      }
+
+      if (kind === "code_isolation") {
+        if (isGreen) return verifiedOnly(c, "AI 생성 코드가 관리형 샌드박스에서 격리 실행됨", "JSON 검증 통과 (코드 격리)");
+        const guideDesc = rt === "cloud_run"
+          ? "Cloud Run 서비스에 --sandbox-launcher(2세대 실행 환경)를 켜고 코드 실행 도구를 Cloud Run sandbox로 연결합니다. (안내 전용)"
+          : "에이전트의 코드 실행을 Agent Platform Code Execution(관리형 샌드박스)에 맡깁니다. (안내 전용)";
+        return [
+          wizOpt("apply_fix", "fix", "🛠️ 코드 격리 안내", rt === "cloud_run" ? "Cloud Run sandboxes(--sandbox-launcher)로 AI 생성 코드 격리" : "Agent Platform Code Execution 샌드박스로 AI 생성 코드 격리", "AI 생성 코드 격리 (안내)", guideDesc + previewNote),
+          wizOpt("keep_ok", "ok", "🟢 조건 미해당", "조치 불필요 — AI가 만든 코드·셸을 실행하지 않음", "조건 미해당 (코드 실행 없음)", "코드 실행 도구가 없는 에이전트라 이 조건부 항목은 해당하지 않습니다."),
+          deferOpt("코드 실행 도구 사용 여부 확인 후 추후 결정", "추후 확인 (코드 격리)"),
         ];
       }
 
@@ -1576,8 +1609,9 @@
           if (checks.some(c => itemKind(c) === "gateway")) notes.push("# Agent Gateway for Cloud Run(Preview) 정책은 시험 모드로 검증한 뒤 강제 모드로 전환하세요.");
           blocks.push(
             `# [로컬 코드 반영] 세션/Memory Bank 서비스 · Cloud Trace · 평가 게이트 등 코드 영역\n` +
+            `# (또는 코딩 에이전트에서: "agent-production-readiness 스킬로 ${uniq.join(", ")} 항목을 적용해줘" · 가이드: /guide)\n` +
             (notes.length ? notes.join("\n") + "\n" : "") +
-            `uv run prod-ready apply ${localDir} --target cloud_run --items ${uniq.join(",")}`
+            `python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply ${localDir} --target cloud_run --items ${uniq.join(",")}`
           );
         }
         return blocks.join("\n\n");
@@ -1615,7 +1649,7 @@
           } else if (kind === "idle_suspend") {
             skillItems.push(c.id);
             if (!k8sManifests.includes("deployment/k8s/agent-substrate.yaml")) k8sManifests.push("deployment/k8s/agent-substrate.yaml");
-            if (isAutopilot) notes.push("# ⚠️ 유휴 일시정지 · 복원(GKE-O2)은 Agent Substrate 기능이라 GKE Standard >= 1.37 클러스터가 필요합니다.");
+            if (isAutopilot) notes.push("# ⚠️ 현재 클러스터는 Autopilot입니다. Agent Substrate는 GKE Standard >= 1.37(x86) 전용이며, Autopilot에서는 Agent Sandbox + Pod snapshot(gVisor)을 사용하세요.");
           } else if (kind === "delegated_auth") {
             preCmds.push(delegatedAuthGuide(c));
           } else if (kind) {
@@ -1632,10 +1666,11 @@
         if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
         const uniqItems = [...new Set(skillItems)];
         if (uniqItems.length > 0) {
-          let applyLine = `uv run prod-ready apply ${localDir} --target gke --items ${uniqItems.join(",")}`;
+          let applyLine = `python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply ${localDir} --target gke --items ${uniqItems.join(",")}`;
           if (substrateParams) applyLine += ` \\\n  --params ${substrateParams}`;
           blocks.push(
             `# [선택한 항목: ${ids.join(", ")}] 로컬 GKE 매니페스트 · ADK 코드 반영 (namespace: ${ns})\n` +
+            `# (또는 코딩 에이전트에서: "agent-production-readiness 스킬로 ${uniqItems.join(", ")} 항목을 적용해줘" · 가이드: /guide)\n` +
             (notes.length ? [...new Set(notes)].join("\n") + "\n" : "") +
             applyLine + "\n\n" +
             `# [Terraform 반영] 변경된 매니페스트를 클러스터에 적용\n` +
@@ -1695,9 +1730,11 @@
       }
       if (preCmds.length > 0) blocks.push(preCmds.join("\n\n"));
       if (localItems.length > 0) {
+        const uniqAr = [...new Set(localItems)];
         blocks.push(
           `# [로컬 코드 반영] 세션 · Memory Bank · 평가 게이트 · Agent Gateway 등 코드 영역\n` +
-          `uv run prod-ready apply ${localDir} --target agent_runtime --items ${[...new Set(localItems)].join(",")}`
+          `# (또는 코딩 에이전트에서: "agent-production-readiness 스킬로 ${uniqAr.join(", ")} 항목을 적용해줘" · 가이드: /guide)\n` +
+          `python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply ${localDir} --target agent_runtime --items ${uniqAr.join(",")}`
         );
       }
       if (deployFlags.length > 0 || envPairs.length > 0) {
@@ -2190,7 +2227,7 @@
         `- **GCP 프로젝트 / 리전**: \`${d.project_id}\` / \`${d.region}\`\n` +
         `- **${saLabel}**: \`${d.service_account || "default"}\`\n` +
         `- **진단 일시**: ${d.inspected_at}\n` +
-        `- **체크리스트**: Checklist v3 (에이전트 특성 항목 · Preview 항목은 판정을 막지 않음)\n` +
+        `- **체크리스트**: 프로덕션 체크리스트 (에이전트 특성 항목 · Preview 항목은 판정을 막지 않음)\n` +
         `- **최종 요약**: 🟢 적합/의도 확인 **${okCount}건** · 🛠️ 조치 명령어 반영 **${fixCount}건** · 📋 추후 확인/미응답 **${deferCount}건**\n\n` +
         `---\n\n` +
         guaranteesMd +
@@ -2389,8 +2426,13 @@
             <div class="rounded-2xl bg-[#FEF7E0]/80 border border-[#FBBC04]/30 border-l-4 border-l-[#FBBC04] p-5">
               <div class="font-mono text-[12px] font-bold text-[#B06000]">📋 추후 확인 / 미응답</div>
               <div class="mt-1 font-mono text-3xl font-extrabold text-[#B06000] tabular-nums">${pendingCount} <span class="text-[15px] font-bold">건</span></div>
-              <div class="mt-1 text-[12.5px] text-[#9A5300]/85">부하테스트·코드 확인 등 후속 과제</div>
+              <div class="mt-1 text-[12.5px] text-[#9A5300]/85">코드 확인 · 정책 검토 등 후속 과제</div>
             </div>
+          </div>
+
+          <div class="rounded-xl bg-[#F4F7FB] border border-[#4285F4]/18 px-4 py-3 text-[13px] leading-[1.6] text-[#334155]">
+            💡 <strong>로컬 코드 영역 추가 점검:</strong> CI/CD 파이프라인 · 평가 게이트(<code>*-D1/D2</code>) · 장기 기억(<code>*-F2</code>) · AI 생성 코드 격리 · 사용자 위임 인증처럼 배포 후 JSON만으로 보이지 않는 항목은
+            <a href="/guide" class="font-bold text-[#1967D2] underline">Agent Skill 사용 가이드 (/guide) ↗</a>의 프롬프트로 로컬 프로젝트에서 함께 점검하세요.
           </div>
 
           <!-- Tailored Combined Execution Command -->

@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADK 기반 AI Agent 만들기 (Optional) · Day-1 Build Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #F7F9FC;
+      --surface: #FFFFFF;
+      --surface-muted: #F4F7FB;
+      --surface-subtle: #EAEFF6;
+      --ink: #0F172A;
+      --ink-muted: #475569;
+      --ink-faint: #64748B;
+      --g-blue: #4285F4;
+      --g-red: #EA4335;
+      --g-yellow: #FBBC04;
+      --g-green: #34A853;
+      --navy: #1967D2;
+      --primary: #1A73E8;
+      --primary-hover: #1557B0;
+      --accent: #1A73E8;
+      --green: #137333;
+      --green-bg: #E6F4EA;
+      --amber: #B06000;
+      --amber-bg: #FEF7E0;
+      --red: #C5221F;
+      --red-bg: #FCE8E6;
+      --purple: #6D28D9;
+      --purple-bg: #F3E8FF;
+      --border: rgba(66, 133, 244, 0.14);
+      --code-bg: #0F172A;
+      --code-head: #1E293B;
+      --shadow: 0 12px 34px rgba(15, 23, 42, 0.055);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 9px;
+      --font-sans: 'Google Sans', 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'Google Sans Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      font-family: var(--font-sans);
+      background-color: #F7F9FC;
+      background-image:
+        radial-gradient(circle at 10% 8%, rgba(66, 133, 244, 0.12), transparent 34%),
+        radial-gradient(circle at 90% 6%, rgba(52, 168, 83, 0.11), transparent 34%),
+        radial-gradient(circle at 52% 26%, rgba(251, 188, 4, 0.09), transparent 40%),
+        radial-gradient(circle at 78% 68%, rgba(234, 67, 53, 0.05), transparent 36%),
+        radial-gradient(rgba(15, 23, 42, 0.055) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+      background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+      color: var(--ink);
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { margin: 0; min-height: 100vh; line-height: 1.65; }
+    code, pre, kbd, .mono { font-family: var(--font-mono); }
+
+    /* Inline code pill */
+    p code, li code, td code, summary code, h2 code, h3 code {
+      background: rgba(66, 133, 244, 0.09);
+      color: #1967D2;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 0.88em;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* Fixed Frosted Header with Google 4-Color Top Accent */
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: 76px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(66, 133, 244, 0.14);
+    }
+    .topbar::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3.5px;
+      background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .topbar-inner {
+      max-width: 1560px;
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-divider {
+      width: 1.5px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.14);
+      flex-shrink: 0;
+    }
+    .brand-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand-title {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+
+    /* Badges & Buttons */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .pill-navy { background: linear-gradient(135deg, #4285F4, #1A73E8); color: #fff; }
+    .pill-blue { background: #E8F0FE; color: #1967D2; }
+    .pill-green { background: #E6F4EA; color: #137333; }
+    .pill-amber { background: #FEF7E0; color: #B06000; border: 1px solid rgba(251, 188, 4, 0.45); }
+    .pill-red { background: #FCE8E6; color: #C5221F; }
+    .pill-purple { background: var(--purple-bg); color: var(--purple); }
+    .pill-gray { background: #F1F5F9; color: var(--ink-muted); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      border-radius: 12px;
+      transition: background 0.16s ease, transform 0.08s ease, box-shadow 0.16s ease;
+      text-decoration: none;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: linear-gradient(135deg, #4285F4 0%, #1A73E8 100%);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #1A73E8 0%, #1557B0 100%); box-shadow: 0 6px 16px rgba(26, 115, 232, 0.32); }
+    .btn-green {
+      background: linear-gradient(135deg, #34A853 0%, #1E8E3E 100%);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(52, 168, 83, 0.25);
+    }
+    .btn-green:hover { background: linear-gradient(135deg, #1E8E3E 0%, #137333 100%); }
+    .btn-subtle {
+      background: #EEF2F7;
+      color: var(--ink);
+      padding: 9px 14px;
+      font-size: 13.5px;
+    }
+    .btn-subtle:hover { background: #E2E8F0; }
+    .btn-sm { padding: 6px 11px; font-size: 12.5px; border-radius: 8px; }
+    .btn.topbar-action-btn, .btn.topbar-cta {
+      height: 36px;
+      padding: 0 13px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    /* Main 2-Column Codelab Shell (Unified with /lab) */
+    .shell {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 96px 24px 72px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .sidebar {
+      position: sticky;
+      top: 96px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card {
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1.5px solid rgba(66, 133, 244, 0.14);
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .card-bonus::before {
+      background: linear-gradient(90deg, #FBBC04 0%, #EA4335 55%, #7C4DFF 100%);
+    }
+    .card-handoff {
+      background: linear-gradient(135deg, #F0F7FF 0%, #EEFBF3 100%);
+      border: 2px solid rgba(52, 168, 83, 0.35);
+    }
+    .card-handoff::before {
+      height: 5px;
+      background: linear-gradient(90deg, #4285F4 0%, #34A853 100%);
+    }
+    .card-pad { padding: 22px 24px; }
+    .card-pad-lg { padding: 30px 34px; }
+
+    /* Sidebar Progress & TOC */
+    .progress-track {
+      height: 8px;
+      background: #E8EEF5;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FBBC04 0%, #4285F4 55%, #34A853 100%);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+    .step-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .step-nav-group {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px 8px 4px;
+      margin-top: 4px;
+    }
+    .step-nav-group:first-child { padding-top: 2px; margin-top: 0; }
+    .step-nav-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 11px;
+      transition: background 0.14s ease;
+    }
+    .step-nav-row:hover { background: #F1F6FE; }
+    .step-nav-row.done { background: rgba(230, 244, 234, 0.55); }
+    .toc-chk {
+      width: 16px;
+      height: 16px;
+      accent-color: #1E8E3E;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .step-nav-link {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--ink);
+      font-size: 13.3px;
+      font-weight: 600;
+    }
+    .step-nav-row.done .step-nav-link { color: #137333; }
+    .step-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: #EEF2F7;
+      color: var(--ink-muted);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-nav-row.done .step-dot {
+      background: #E6F4EA;
+      color: #137333;
+      border: 1px solid rgba(52, 168, 83, 0.4);
+    }
+    .step-dot-bonus {
+      background: #FEF7E0;
+      color: #9A5300;
+    }
+    .step-nav-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .step-nav-meta {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-faint);
+      flex-shrink: 0;
+    }
+
+    /* Main Column */
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+    }
+    section.lab-step { scroll-margin-top: 94px; }
+
+    h1 {
+      margin: 10px 0 8px;
+      font-size: 28px;
+      line-height: 1.28;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    p { margin: 8px 0; color: var(--ink-muted); font-size: 14.5px; }
+    ul, ol { margin: 8px 0; padding-left: 20px; color: var(--ink-muted); font-size: 14.5px; }
+    li { margin: 6px 0; }
+    li strong, p strong { color: var(--ink); }
+
+    .step-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .step-header-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Pure-HTML Day-1 vs Day-2 & Workflow Diagrams */
+    .day-flow {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 150px minmax(220px, 1fr);
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0 14px;
+    }
+    .df-box {
+      border-radius: 15px;
+      padding: 15px 17px;
+      background: #fff;
+      border: 2px solid #FBBC04;
+      box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+    }
+    .df-box-day2 {
+      border-color: #1A73E8;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F4F8FF 100%);
+    }
+    .df-kicker {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #B06000;
+    }
+    .df-box-day2 .df-kicker { color: #1967D2; }
+    .df-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink);
+      margin: 3px 0 6px;
+    }
+    .df-meta {
+      font-size: 12.8px;
+      color: var(--ink-muted);
+      line-height: 1.55;
+    }
+    .df-arrow {
+      position: relative;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #137333;
+      padding: 16px 0;
+    }
+    .df-arrow::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      right: 12px;
+      top: 50%;
+      height: 2px;
+      background: #34A853;
+    }
+    .df-arrow::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      top: calc(50% - 6px);
+      border: 6px solid transparent;
+      border-left: 10px solid #34A853;
+      border-right: 0;
+    }
+    .df-arrow span {
+      position: relative;
+      z-index: 1;
+      background: #E6F4EA;
+      border: 1px solid rgba(52, 168, 83, 0.35);
+      padding: 3px 7px;
+      border-radius: 7px;
+      display: inline-block;
+    }
+
+    /* Flywheel & Graph Diagram */
+    .flow-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+    }
+    .flow-node {
+      flex: 1 1 135px;
+      background: #fff;
+      border: 1.5px solid rgba(66, 133, 244, 0.24);
+      border-radius: 11px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+    .flow-node strong { display: block; font-size: 13px; color: var(--ink); margin-bottom: 2px; }
+    .flow-node code { font-size: 11.5px; }
+    .flow-sep { font-family: var(--font-mono); font-weight: 800; color: #1A73E8; }
+
+    .graph-grid {
+      display: grid;
+      grid-template-columns: 74px 1fr 120px 150px 1.2fr;
+      align-items: center;
+      gap: 10px;
+      margin: 14px 0;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .g-col { display: flex; flex-direction: column; gap: 6px; }
+    .g-pill {
+      background: #fff;
+      border: 1.5px solid rgba(66, 133, 244, 0.28);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      text-align: center;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .g-pill-start { background: #E8F0FE; color: #1967D2; border-color: #4285F4; border-radius: 999px; }
+    .g-pill-join { background: #E6F4EA; color: #137333; border-color: #34A853; }
+    .g-pill-route { background: #FEF7E0; color: #9A5300; border-color: #FBBC04; }
+    .g-pill-hitl { background: #FCE8E6; color: #C5221F; border-color: #EA4335; }
+    .g-sub { display: block; font-weight: 500; font-size: 11px; color: var(--ink-muted); }
+
+    /* Form Controls (Live Variable Editor) */
+    .env-bar {
+      background: var(--surface-muted);
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(66, 133, 244, 0.16);
+      margin-top: 14px;
+    }
+    .env-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+      gap: 12px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-bottom: 5px;
+    }
+    .field input {
+      width: 100%;
+      padding: 8px 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(0, 0, 0, 0.13);
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.18);
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 14px;
+      padding: 15px 18px;
+      margin: 14px 0;
+      border: 1px solid transparent;
+      border-left-width: 4px;
+      font-size: 14px;
+    }
+    .callout-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .callout-blue { background: rgba(232, 240, 254, 0.58); border-color: rgba(66, 133, 244, 0.24); border-left-color: #4285F4; color: #174EA6; }
+    .callout-green { background: rgba(230, 244, 234, 0.65); border-color: rgba(52, 168, 83, 0.24); border-left-color: #34A853; color: #0D652D; }
+    .callout-amber { background: rgba(254, 247, 224, 0.78); border-color: rgba(251, 188, 4, 0.34); border-left-color: #FBBC04; color: #9A5300; }
+    .callout p { margin: 4px 0 0; color: inherit; font-size: 13.8px; }
+    .callout ul, .callout ol { color: inherit; font-size: 13.8px; }
+
+    /* Terminal Code Blocks */
+    .code-wrap {
+      border-radius: 13px;
+      overflow: hidden;
+      background: var(--code-bg);
+      margin: 12px 0;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .code-head {
+      background: var(--code-head);
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .code-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .copy-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s ease;
+    }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.22); }
+    .copy-btn.copied { background: #16A34A; }
+    .code-pre {
+      margin: 0;
+      padding: 15px 16px;
+      color: #F8FAFC;
+      font-size: 13px;
+      line-height: 1.62;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-output {
+      background: #111827;
+      border-top: 1px dashed rgba(255, 255, 255, 0.12);
+      padding: 13px 16px;
+      color: #A7F3D0;
+      font-size: 12.5px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 14px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    th {
+      background: var(--surface-muted);
+      color: var(--ink-muted);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 11px 14px;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      vertical-align: top;
+      color: var(--ink);
+    }
+
+    /* Accordion / Collapsible Code Viewer */
+    details.code-fold {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 16px;
+      margin: 12px 0;
+      background: #fff;
+    }
+    details.code-fold[open] {
+      border-color: rgba(66, 133, 244, 0.34);
+      border-left: 4px solid #4285F4;
+    }
+    details.code-fold summary {
+      position: relative;
+      display: block;
+      padding-right: 28px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--ink);
+      list-style: none;
+    }
+    details.code-fold summary::-webkit-details-marker { display: none; }
+    details.code-fold summary::after {
+      content: "+";
+      position: absolute;
+      right: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 18px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    details.code-fold[open] summary::after { content: "−"; }
+    details.code-fold .fold-body { margin-top: 10px; }
+
+    /* Verification Checklist Box */
+    .verify-box {
+      background: linear-gradient(135deg, rgba(230, 244, 234, 0.48), rgba(232, 240, 254, 0.36));
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-top: 18px;
+      border: 1px solid rgba(52, 168, 83, 0.24);
+      border-left: 4px solid #34A853;
+    }
+    .verify-box-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #137333;
+      margin-bottom: 8px;
+    }
+    .verify-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 5px 0;
+      cursor: pointer;
+      font-size: 13.6px;
+      color: var(--ink);
+    }
+    .verify-item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      margin-top: 2px;
+      accent-color: #1E8E3E;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 1080px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .day-flow { grid-template-columns: 1fr; }
+      .df-arrow { padding: 8px 0; }
+      .df-arrow::before, .df-arrow::after { display: none; }
+      .graph-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .topbar-inner { padding: 0 14px; }
+      .topbar-badge-hide { display: none; }
+      .shell { padding: 88px 14px 56px; }
+      .card-pad-lg { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ==================== FIXED FROSTED TOP NAVBAR (Unified with /lab) ==================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="brand" title="메인 포털 홈으로 이동">
+        <svg viewBox="0 0 224 36" fill="none" style="height:26px;width:auto;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud">
+          <path d="M110.371 27.915C107.508 27.915 105.137 26.9938 103.257 25.1515C101.39 23.3092 100.456 20.8818 100.456 17.8693C100.456 14.9191 101.359 12.4917 103.164 10.5872C104.981 8.67018 107.352 7.71167 110.278 7.71167C112.195 7.71167 113.85 8.20337 115.244 9.18677C116.651 10.1702 117.759 11.7075 118.568 13.7988C118.643 14.0104 118.711 14.2283 118.773 14.4523C118.836 14.6764 118.892 14.9316 118.942 15.2179L103.63 21.7158L102.566 18.6349L115.244 13.2573L114.89 14.9565C114.417 13.6245 113.757 12.6598 112.91 12.0623C112.076 11.4648 111.149 11.166 110.128 11.166C108.385 11.166 106.998 11.7635 105.964 12.9586C104.931 14.1411 104.415 15.6971 104.415 17.6266C104.415 19.444 105.012 20.9938 106.207 22.276C107.402 23.5581 108.852 24.1992 110.558 24.1992C111.578 24.1992 112.531 23.944 113.415 23.4336C114.298 22.9233 115.07 22.2075 115.73 21.2863L118.755 23.2656C117.908 24.6598 116.751 25.7863 115.282 26.6453C113.813 27.4917 112.176 27.915 110.371 27.915Z" fill="#FC413D"/>
+          <path d="M94.2754 27.336V0.597412H98.3459V27.336H94.2754Z" fill="#00AF57"/>
+          <path d="M81.784 36C79.6429 36 77.8753 35.5519 76.4811 34.6556C75.0994 33.7593 73.9479 32.334 73.0268 30.3797L76.5371 28.8299C77.1222 29.9378 77.8317 30.8029 78.6658 31.4253C79.4998 32.0602 80.5205 32.3776 81.728 32.3776C83.5703 32.3776 84.9707 31.8423 85.9292 30.7718C86.9002 29.7013 87.3857 28.2075 87.3857 26.2905V24.554H87.255C86.9562 25.0021 86.533 25.4565 85.9853 25.917C85.4375 26.3652 84.7653 26.7511 83.9687 27.0747C83.172 27.3859 82.3006 27.5415 81.3546 27.5415C79.4749 27.5415 77.8442 27.1245 76.4624 26.2905C75.0807 25.4565 74.0226 24.2988 73.2882 22.8175C72.5537 21.3237 72.1865 19.6121 72.1865 17.6826C72.1865 15.778 72.5537 14.0727 73.2882 12.5664C74.0226 11.0478 75.0683 9.85897 76.4251 9.00005C77.7944 8.14113 79.3878 7.71167 81.2052 7.71167C82.4998 7.71167 83.6886 7.96686 84.7716 8.47723C85.8546 8.9876 86.701 9.71582 87.311 10.6619H87.3857V8.29051H91.2695V25.1328C91.2695 32.3776 88.1077 36 81.784 36ZM81.784 23.8444C82.9292 23.8444 83.9251 23.5768 84.7716 23.0415C85.618 22.5063 86.2653 21.7656 86.7135 20.8195C87.1616 19.861 87.3857 18.7718 87.3857 17.5519C87.3857 16.3071 87.1616 15.2179 86.7135 14.2843C86.2653 13.3382 85.618 12.61 84.7716 12.0996C83.9251 11.5893 82.9355 11.3341 81.8027 11.3341C80.6948 11.3341 79.7176 11.5955 78.8712 12.1183C78.0247 12.6287 77.3649 13.3569 76.8919 14.3029C76.4189 15.249 76.1824 16.3382 76.1824 17.5706C76.1824 18.8652 76.4189 19.9855 76.8919 20.9316C77.3774 21.8776 78.0434 22.5996 78.8898 23.0975C79.7363 23.5955 80.701 23.8444 81.784 23.8444Z" fill="#3186FF"/>
+          <path d="M60.6284 27.952C58.7114 27.952 56.9873 27.5101 55.4562 26.6263C53.9375 25.7425 52.7487 24.5288 51.8898 22.9852C51.0434 21.4292 50.6201 19.6803 50.6201 17.7384C50.6201 15.7467 51.0558 13.9852 51.9272 12.4541C52.811 10.9106 54.0122 9.71555 55.5309 8.86907C57.0496 8.0226 58.7487 7.59937 60.6284 7.59937C62.533 7.59937 64.2446 8.02883 65.7633 8.88775C67.2944 9.74667 68.4956 10.9479 69.367 12.4915C70.2384 14.035 70.674 15.784 70.674 17.7384C70.674 19.6803 70.2446 21.4292 69.3857 22.9852C68.5267 24.5413 67.3317 25.7612 65.8006 26.645C64.2819 27.5164 62.5579 27.952 60.6284 27.952ZM60.6284 24.4043C61.811 24.4043 62.8566 24.1118 63.7653 23.5267C64.6865 22.9292 65.396 22.1263 65.894 21.118C66.4043 20.0973 66.6595 18.9707 66.6595 17.7384C66.6595 16.5184 66.4043 15.4106 65.894 14.4147C65.396 13.4064 64.6865 12.6097 63.7653 12.0247C62.8442 11.4396 61.7985 11.1471 60.6284 11.1471C59.533 11.1471 58.5247 11.4272 57.6035 11.9873C56.6823 12.5475 55.9479 13.3317 55.4002 14.34C54.8649 15.3359 54.5973 16.4686 54.5973 17.7384C54.5973 18.9583 54.8463 20.0786 55.3442 21.0993C55.8546 22.1076 56.5641 22.9105 57.4728 23.5081C58.394 24.1056 59.4458 24.4043 60.6284 24.4043Z" fill="#FFBE00"/>
+          <path d="M38.9126 27.952C36.9956 27.952 35.2715 27.5101 33.7404 26.6263C32.2217 25.7425 31.0329 24.5288 30.174 22.9852C29.3275 21.4292 28.9043 19.6803 28.9043 17.7384C28.9043 15.7467 29.34 13.9852 30.2114 12.4541C31.0952 10.9106 32.2964 9.71555 33.8151 8.86907C35.3338 8.0226 37.0329 7.59937 38.9126 7.59937C40.8171 7.59937 42.5288 8.02883 44.0474 8.88775C45.5786 9.74667 46.7798 10.9479 47.6512 12.4915C48.5225 14.035 48.9582 15.784 48.9582 17.7384C48.9582 19.6803 48.5288 21.4292 47.6698 22.9852C46.8109 24.5413 45.6159 25.7612 44.0848 26.645C42.5661 27.5164 40.842 27.952 38.9126 27.952ZM38.9126 24.4043C40.0952 24.4043 41.1408 24.1118 42.0495 23.5267C42.9707 22.9292 43.6802 22.1263 44.1781 21.118C44.6885 20.0973 44.9437 18.9707 44.9437 17.7384C44.9437 16.5184 44.6885 15.4106 44.1781 14.4147C43.6802 13.4064 42.9707 12.6097 42.0495 12.0247C41.1283 11.4396 40.0827 11.1471 38.9126 11.1471C37.8172 11.1471 36.8089 11.4272 35.8877 11.9873C34.9665 12.5475 34.2321 13.3317 33.6844 14.34C33.1491 15.3359 32.8815 16.4686 32.8815 17.7384C32.8815 18.9583 33.1304 20.0786 33.6284 21.0993C34.1387 22.1076 34.8483 22.9105 35.757 23.5081C36.6782 24.1056 37.73 24.4043 38.9126 24.4043Z" fill="#FC413D"/>
+          <path d="M13.8174 27.9522C11.2531 27.9273 8.91285 27.2925 6.79667 26.0477C4.69294 24.7904 3.03112 23.0913 1.8112 20.9502C0.603734 18.8091 0 16.4564 0 13.8921C0 11.2904 0.603734 8.93152 1.8112 6.81534C3.01867 4.69916 4.68049 3.03734 6.79667 1.82987C8.91285 0.609958 11.2655 0 13.8548 0C15.8713 0 17.7199 0.336099 19.4004 1.0083C21.0809 1.6805 22.5124 2.71369 23.695 4.10788L20.9875 6.94605C19.9294 5.86306 18.8402 5.08506 17.7199 4.61203C16.612 4.139 15.3423 3.90248 13.9108 3.90248C12.0933 3.90248 10.4502 4.31327 8.98132 5.13485C7.51244 5.95642 6.34854 7.13277 5.48962 8.66389C4.64315 10.1826 4.21991 11.944 4.21991 13.9481C4.21991 15.9025 4.64315 17.6514 5.48962 19.195C6.33609 20.7261 7.49377 21.9211 8.96264 22.7801C10.4315 23.639 12.0809 24.0684 13.9108 24.0684C15.5415 24.0684 16.9979 23.7821 18.2801 23.2095C19.5747 22.6245 20.6203 21.7531 21.417 20.5954C22.2137 19.4377 22.6929 18.0311 22.8547 16.3755H13.7614V12.5104H26.7199C26.8444 13.3319 26.9066 14.0788 26.9066 14.751C26.9066 17.3651 26.3651 19.6805 25.2821 21.6971C24.1991 23.7012 22.6618 25.251 20.6701 26.3464C18.6908 27.4419 16.4066 27.9771 13.8174 27.9522Z" fill="#3186FF"/>
+          <path d="M143.722 27.9709C139.751 27.9709 136.44 26.639 133.789 23.9751C131.137 21.2987 129.812 17.9502 129.812 13.9294C129.812 9.89625 131.143 6.56638 133.807 3.93983C136.471 1.31328 139.77 0 143.704 0C144.986 0 146.224 0.168049 147.419 0.504148C148.614 0.840248 149.697 1.3195 150.668 1.94191C151.652 2.55186 152.679 3.43568 153.749 4.59335L150.911 7.28215C149.99 6.29875 149.199 5.60165 148.54 5.19086C147.892 4.78008 147.17 4.46887 146.374 4.25725C145.577 4.03319 144.693 3.92115 143.722 3.92115C140.946 3.92115 138.619 4.84232 136.739 6.68464C134.859 8.51451 133.919 10.9232 133.919 13.9108C133.919 16.8859 134.853 19.3195 136.72 21.2116C138.587 23.0913 140.921 24.0311 143.722 24.0311C144.706 24.0311 145.652 23.8942 146.56 23.6203C147.469 23.3464 148.297 22.9606 149.044 22.4626C149.791 21.9647 150.6 21.2303 151.471 20.2593L154.384 23.0415C153.189 24.3734 152.063 25.363 151.004 26.0103C149.959 26.6576 148.826 27.1431 147.606 27.4668C146.386 27.8029 145.092 27.9709 143.722 27.9709Z" fill="#212226"/>
+          <path d="M156.44 27.3547V0.616182H160.51V27.3547H156.44Z" fill="#212226"/>
+          <path d="M172.811 27.9709C169.911 27.9709 167.515 27.0062 165.622 25.0767C163.73 23.1473 162.784 20.7199 162.784 17.7946C162.784 14.8319 163.73 12.3983 165.622 10.4938C167.527 8.5892 169.923 7.63692 172.811 7.63692C175.699 7.63692 178.095 8.59542 180 10.5124C181.905 12.4294 182.857 14.8568 182.857 17.7946C182.857 20.7199 181.911 23.1473 180.019 25.0767C178.127 27.0062 175.724 27.9709 172.811 27.9709ZM172.811 24.4232C174.517 24.4232 175.948 23.807 177.106 22.5747C178.263 21.3298 178.842 19.7365 178.842 17.7946C178.842 15.8278 178.257 14.2344 177.087 13.0145C175.929 11.7946 174.504 11.1846 172.811 11.1846C171.106 11.1846 169.674 11.7946 168.517 13.0145C167.359 14.2344 166.78 15.8278 166.78 17.7946C166.78 19.7365 167.353 21.3298 168.498 22.5747C169.656 23.807 171.093 24.4232 172.811 24.4232Z" fill="#212226"/>
+          <path d="M192.043 27.9709C189.778 27.9709 188.029 27.3174 186.796 26.0103C185.564 24.6908 184.948 22.8298 184.948 20.4274V8.2531H189.018V19.8112C189.018 21.3672 189.373 22.556 190.083 23.3776C190.805 24.1991 191.832 24.6099 193.164 24.6099C194.558 24.6099 195.734 24.0747 196.693 23.0041C197.651 21.9211 198.13 20.6265 198.13 19.1203V8.2531H202.201V27.3547H198.336V22.8174L200.184 24.6659H198.224C197.688 25.6244 196.854 26.4149 195.722 27.0373C194.589 27.6597 193.363 27.9709 192.043 27.9709Z" fill="#212226"/>
+          <path d="M213.481 27.9709C210.879 27.9709 208.72 27.0311 207.002 25.1514C205.296 23.2593 204.444 20.8133 204.444 17.8133C204.444 14.8382 205.309 12.4045 207.039 10.5124C208.782 8.62032 210.96 7.67426 213.574 7.67426C214.894 7.67426 216.108 7.97302 217.215 8.57053C218.336 9.15559 219.176 9.92737 219.736 10.8859H219.867V0.616182H223.9V27.3547H220.016V23.9751L220.446 24.722H219.904C219.307 25.7054 218.429 26.4958 217.271 27.0933C216.114 27.6784 214.85 27.9709 213.481 27.9709ZM214.209 24.4605C215.84 24.4605 217.209 23.8381 218.317 22.5933C219.437 21.3361 219.998 19.7365 219.998 17.7946C219.998 15.8527 219.431 14.2718 218.298 13.0518C217.178 11.8319 215.815 11.222 214.209 11.222C212.603 11.222 211.234 11.8319 210.101 13.0518C208.981 14.2718 208.421 15.8589 208.421 17.8133C208.421 19.7427 208.975 21.3361 210.083 22.5933C211.203 23.8381 212.578 24.4605 214.209 24.4605Z" fill="#212226"/>
+        </svg>
+        <span class="brand-divider" aria-hidden="true"></span>
+        <div class="brand-title-wrap">
+          <span class="brand-title">Production Ready Agent Platform</span>
+          <span class="pill pill-amber mono" style="font-size:11px;padding:3px 9px;">OPTIONAL</span>
+        </div>
+      </a>
+
+      <div class="topbar-actions">
+        <a href="/" class="btn btn-subtle topbar-action-btn">← 메인 홈</a>
+        <a href="/deck" class="btn btn-subtle topbar-action-btn topbar-badge-hide">01 · 소개 장표 ↗</a>
+        <a href="/checklist" class="btn btn-subtle topbar-action-btn topbar-badge-hide">02 · 체크리스트 ↗</a>
+        <a href="/lab" class="btn btn-primary topbar-cta">03 · 프로덕션 전환 실습 ↗</a>
+        <a href="/workbench" class="btn btn-subtle topbar-action-btn topbar-badge-hide">04 · 런타임 진단 ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 2-COLUMN CODELAB SHELL ==================== -->
+  <div class="shell">
+    <!-- Left Sticky Sidebar TOC -->
+    <aside class="sidebar">
+      <div class="card card-pad">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span class="pill pill-amber mono">OPTIONAL · DAY-1</span>
+          <span id="sidebarProgressLabel" class="mono" style="font-size:12.5px;font-weight:700;color:var(--accent);">0 / 8 완료 (0%)</span>
+        </div>
+
+        <div class="progress-track">
+          <div id="sidebarProgressFill" class="progress-fill" style="width: 4%;"></div>
+        </div>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(66,133,244,0.12);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:11.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;">실습 목차 (체크박스 자동 저장)</span>
+            <button type="button" onclick="resetProgress()" class="btn btn-subtle btn-sm" style="padding:3px 8px;font-size:11px;">초기화</button>
+          </div>
+          <ul id="tocList" class="step-nav"></ul>
+        </div>
+
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(66,133,244,0.12);display:flex;flex-direction:column;gap:8px;">
+          <a href="/lab" class="btn btn-green" style="width:100%;font-size:13px;padding:9px 12px;">
+            <span>03 · 프로덕션 전환 실습으로 이동 →</span>
+          </a>
+          <a href="https://github.com/kiwonilee/adk-agent-sdlc-workshop" target="_blank" rel="noopener noreferrer" class="btn btn-subtle" style="width:100%;font-size:12.5px;padding:8px 12px;">
+            <span>📦 원본 워크숍 저장소 ↗</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Codelab Content -->
+    <main class="main-col">
+
+      <!-- ==================== HERO / TOP BANNER ==================== -->
+      <section class="card card-pad-lg" id="hero">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+          <span class="pill pill-amber mono">OPTIONAL · DAY-1 ADK BUILD LAB</span>
+          <a href="https://github.com/kiwonilee/adk-agent-sdlc-workshop" target="_blank" rel="noopener noreferrer" class="mono" style="font-size:12.5px;font-weight:700;color:#1967D2;text-decoration:none;">
+            github.com/kiwonilee/adk-agent-sdlc-workshop ↗
+          </a>
+        </div>
+
+        <h1>ADK 기반 AI Agent 만들기 (Optional)</h1>
+        <p style="font-size:15.2px;color:#334155;">
+          <code>agents-cli</code>와 ADK로 실제 고객센터 AI 에이전트(<code>app/agent.py</code>)를 만들고, 로컬 Playground · CLI 테스트 · Eval Quality Flywheel까지 직접 경험하는 <strong>선택 실습</strong>입니다.
+          이미 에이전트가 있거나 프로덕션 전환만 바로 진행하려면 <a href="/lab" style="color:#1A73E8;font-weight:700;text-decoration:underline;">03 · 프로덕션 전환 실습 (<code>/lab</code>)</a>으로 이동하세요.
+        </p>
+
+        <!-- Pure-HTML Day-1 vs Day-2 Flow Diagram -->
+        <div class="day-flow" aria-label="Day-1 ADK 에이전트 개발과 Day-2 프로덕션 전환 연계 흐름">
+          <div class="df-box">
+            <div class="df-kicker">OPTIONAL · /adk-lab (DAY-1)</div>
+            <div class="df-title">에이전트 로직 개발 (<code>app/agent.py</code>)</div>
+            <div class="df-meta">
+              프로젝트 스캐폴드 · 로컬 Playground · CLI Smoke Test · Eval Quality Flywheel · (심화) Graph Workflow / Memory Bank
+            </div>
+          </div>
+          <div class="df-arrow" aria-hidden="true"><span>app/agent.py 불변<br>그대로 이어가기</span></div>
+          <div class="df-box df-box-day2">
+            <div class="df-kicker">메인 실습 · /lab (DAY-2)</div>
+            <div class="df-title">프로덕션 전환 (3대 런타임)</div>
+            <div class="df-meta">
+              <strong>ADK 기반 Agent 스캐폴딩</strong>(Agent Runtime · Cloud Run · GKE) → 정적 진단 → 보완 적용 → 클라우드 배포 · 라이브 점검
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Variable Substitution Controls -->
+        <div class="env-bar">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <strong style="font-size:13.5px;color:var(--ink);">실습 변수 실시간 치환 (입력 시 아래 모든 명령어에 자동 반영)</strong>
+            <button type="button" onclick="resetEnvConfig()" class="btn btn-subtle btn-sm" style="padding:4px 10px;font-size:12px;">기본값 초기화</button>
+          </div>
+          <div class="env-grid">
+            <div class="field">
+              <label for="envProject">GCP Project ID (<code>{{PROJECT_ID}}</code>)</label>
+              <input id="envProject" type="text" placeholder="예: my-gcp-project-id" oninput="updateEnvFromInputs()" />
+            </div>
+            <div class="field">
+              <label for="envRegion">GCP Region (<code>{{REGION}}</code>)</label>
+              <input id="envRegion" type="text" oninput="updateEnvFromInputs()" />
+            </div>
+            <div class="field">
+              <label for="envAgent">에이전트 프로젝트명 (<code>{{AGENT_NAME}}</code>)</label>
+              <input id="envAgent" type="text" oninput="updateEnvFromInputs()" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 0: 사전 준비 & Agents CLI 설치 ==================== -->
+      <section class="card card-pad-lg lab-step" id="step-0" data-step="step-0">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 0 / 4</span>
+            <span class="pill pill-gray mono">SETUP</span>
+            <span class="pill pill-gray mono">약 5분</span>
+            <h2>사전 준비 &amp; Agents CLI 설치</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="step-0" onclick="toggleStepDone('step-0')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          Google Cloud Console의 <strong>Cloud Shell</strong>에서 워크숍 실습 저장소를 클론하고, 환경 변수 · 필수 API · <code>agents-cli</code>를 준비합니다.
+        </p>
+
+        <h3>0-1. 실습 저장소 클론 및 환경 변수 설정</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 워크숍 저장소 클론 및 프로젝트·리전 환경 변수 설정</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="git clone https://github.com/kiwonilee/adk-agent-sdlc-workshop.git
+cd adk-agent-sdlc-workshop
+
+export GOOGLE_CLOUD_PROJECT={{PROJECT_ID}}
+export GOOGLE_CLOUD_LOCATION=global"></pre>
+        </div>
+
+        <h3>0-2. 필수 API 활성화</h3>
+        <p>
+          Cloud Shell 터미널에서 아래 3개 API를 활성화하고, Google Cloud Console 상단 검색창에서 <strong>"Agent Platform"</strong>으로 진입해 상단의 <strong>Enable APIs</strong>도 함께 확인합니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · Agent Platform · Cloud Trace · Cloud Build API 활성화</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="gcloud services enable aiplatform.googleapis.com \
+  cloudtrace.googleapis.com \
+  cloudbuild.googleapis.com \
+  --project ${GOOGLE_CLOUD_PROJECT}"></pre>
+        </div>
+
+        <h3>0-3. Agents CLI 설치 및 버전 확인</h3>
+        <p>
+          공식 <a href="https://google.github.io/agents-cli/" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;">Google Agents CLI ↗</a>를 설치하고 정상 동작을 확인합니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · agents-cli 설치 및 버전 확인</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="uvx google-agents-cli setup
+agents-cli --version"></pre>
+          <div class="code-output">agents-cli, version 1.3.1</div>
+        </div>
+
+        <div class="verify-box">
+          <div class="verify-box-title">✓ Step 0 확인 체크</div>
+          <label class="verify-item"><input type="checkbox" data-chk="s0-clone" onchange="saveCheckbox(this)" /> <span><code>adk-agent-sdlc-workshop</code> 저장소 클론 및 <code>GOOGLE_CLOUD_PROJECT</code> 설정 완료</span></label>
+          <label class="verify-item"><input type="checkbox" data-chk="s0-cli" onchange="saveCheckbox(this)" /> <span><code>agents-cli --version</code> 출력 확인 완료</span></label>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 1: 에이전트 프로젝트 생성 ==================== -->
+      <section class="card card-pad-lg lab-step" id="step-1" data-step="step-1">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 1 / 4</span>
+            <span class="pill pill-blue mono">SCAFFOLD</span>
+            <span class="pill pill-gray mono">약 5분</span>
+            <h2>에이전트 프로젝트 생성 (<code>agents-cli scaffold create</code>)</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="step-1" onclick="toggleStepDone('step-1')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          <code>agents-cli scaffold create</code>로 표준 ADK 에이전트 프로젝트(<code>{{AGENT_NAME}}</code>)를 생성합니다. 대화형 위저드 모드 또는 비대화형 플래그 모드 중 원하는 방식을 선택하세요.
+        </p>
+
+        <h3>1-1. 대화형 모드로 프로젝트 생성 (워크숍 기본 흐름)</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 대화형 위저드로 프로젝트 생성</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="agents-cli scaffold create {{AGENT_NAME}} --interactive"></pre>
+        </div>
+        <ol>
+          <li><strong>Template 선택</strong>: <code>1</code> (<strong><code>adk</code></strong> — Python ADK 기본 에이전트 템플릿)</li>
+          <li><strong>Deployment Target 선택</strong>: <code>1</code> (<strong><code>agent_runtime</code></strong> — Agent Platform 관리형 Agent Runtime 배포 환경)</li>
+          <li><strong>CI/CD Runner 선택</strong>: <code>1</code> (<strong><code>skip</code></strong> — 로컬 개발 및 평가에 먼저 집중)</li>
+          <li><strong>GCP Region 입력</strong>: <code>{{REGION}}</code> 입력 후 Enter</li>
+          <li><strong>GCP Credentials / Project 확인</strong>: 연결된 프로젝트(<code>{{PROJECT_ID}}</code>) 확인 후 진행</li>
+        </ol>
+
+        <h3>1-2. 비대화형 플래그로 즉시 생성 (추천 옵션 비교)</h3>
+        <div class="callout callout-green">
+          <div class="callout-title">💡 본 포털의 프로덕션 전환 실습 (<code>/lab</code>)으로 바로 이어갈 계획이라면?</div>
+          <p>
+            특정 런타임에 묶이지 않는 <strong><code>--prototype --yes</code></strong> 모드로 생성해 두면, 이후 <a href="/lab" style="color:#0D652D;font-weight:700;text-decoration:underline;"><code>/lab</code> Step 0 (배포 환경 선택) · Step 2 (Agent Skill 설치) · Step 3 (ADK 기반 Agent 스캐폴딩)</a>에서 Agent Runtime · Cloud Run · GKE 중 원하는 타겟으로 자유롭게 전환해 볼 수 있습니다.
+          </p>
+        </div>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 옵션 A (권장 · /lab 연계용 Prototype) vs 옵션 B (agent_runtime 즉시 지정)</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="# 옵션 A: /lab 프로덕션 전환 실습으로 이어갈 경우 (런타임 독립 프로토타입 권장)
+agents-cli scaffold create {{AGENT_NAME}} \
+  --agent adk \
+  --deployment-target none \
+  --prototype \
+  --yes
+
+# 옵션 B: 워크숍 원본처럼 agent_runtime 배포 타겟까지 한 번에 지정
+agents-cli scaffold create {{AGENT_NAME}} \
+  --agent adk \
+  --deployment-target agent_runtime \
+  --region {{REGION}} \
+  --yes"></pre>
+        </div>
+
+        <h3>1-3. 생성된 프로젝트 구조 및 설정 확인</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 폴더 구조 · agents-cli info · 매니페스트 확인</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cd {{AGENT_NAME}}
+ls -al
+agents-cli info
+cat agents-cli-manifest.yaml"></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>핵심 파일 / 폴더</th><th>역할</th></tr></thead>
+            <tbody>
+              <tr><td><code>agents-cli-manifest.yaml</code></td><td>선택한 템플릿(<code>adk</code>), 배포 타겟, 리전(<code>{{REGION}}</code>) 등이 기록된 프로젝트 매니페스트</td></tr>
+              <tr><td><code>app/agent.py</code></td><td>ADK 에이전트(<code>root_agent</code>) 및 도구(Tools) 핵심 로직 정의</td></tr>
+              <tr><td><code>app/agent_runtime_app.py</code></td><td>Agent Runtime 배포용 서버리스 엔트리포인트 래퍼 (<code>agent_runtime</code> 타겟 시 생성)</td></tr>
+              <tr><td><code>tests/eval/</code></td><td>품질 평가용 데이터셋(<code>datasets/</code>)과 평가 설정(<code>eval_config.yaml</code>)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 2: 기본 코드 확인 & 로컬 Playground 테스트 ==================== -->
+      <section class="card card-pad-lg lab-step" id="step-2" data-step="step-2">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 2 / 4</span>
+            <span class="pill pill-blue mono">PLAYGROUND</span>
+            <span class="pill pill-gray mono">약 5분</span>
+            <h2>기본 코드 확인 &amp; 로컬 Playground 테스트</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="step-2" onclick="toggleStepDone('step-2')">✓ 완료 표시</button>
+        </div>
+
+        <h3>2-1. Cloud Shell Editor 확인 및 정적 린트 검사</h3>
+        <p>
+          Cloud Shell 우측 상단에서 <strong>Open Editor</strong>를 눌러 <code>{{AGENT_NAME}}/app/agent.py</code>를 열어봅니다. 기본 생성된 <code>root_agent</code>에는 <code>get_weather</code>와 <code>get_current_time</code> 두 가지 샘플 도구가 포함되어 있습니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 코드 린트 및 포맷 검증</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="agents-cli lint"></pre>
+        </div>
+
+        <h3>2-2. 로컬 대화형 웹 UI(Playground) 실행 및 테스트</h3>
+        <p>
+          로컬 환경에서 대화형 GUI를 실행해 기본 에이전트의 도구 호출 흐름을 직접 눈으로 확인합니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · agents-cli playground 실행</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="agents-cli playground"></pre>
+        </div>
+        <ul>
+          <li><code>"What's the weather in San Francisco?"</code></li>
+          <li><code>"도쿄의 날씨는 어때?"</code></li>
+          <li><code>"What time is it in San Francisco?"</code></li>
+          <li><code>"서울의 날씨와 현재 시간을 알려주세요"</code> <em>(기본 샘플 코드에서는 샌프란시스코 외 시간대 조회가 제한되어 있음을 확인할 수 있습니다)</em></li>
+        </ul>
+      </section>
+
+      <!-- ==================== STEP 3: 고객센터 에이전트 코드 적용 & CLI Smoke Test ==================== -->
+      <section class="card card-pad-lg lab-step" id="step-3" data-step="step-3">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 3 / 4</span>
+            <span class="pill pill-green mono">BUILD &amp; TEST</span>
+            <span class="pill pill-gray mono">약 8분</span>
+            <h2>고객센터 에이전트 코드 적용 &amp; CLI Smoke Test</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="step-3" onclick="toggleStepDone('step-3')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          이제 기본 샘플을 프로젝트 목적에 맞는 <strong>온라인 스토어 고객센터 에이전트(<code>agent.py</code>)</strong>로 교체하고, 터미널에서 <code>agents-cli run</code>으로 빠르게 스모크 테스트를 수행합니다.
+        </p>
+
+        <h3>3-1. 고객센터 에이전트 3가지 핵심 도구 및 코드 복사</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>도구 함수</th><th>동작 및 샘플 데이터</th><th>평가 채점 유형</th></tr></thead>
+            <tbody>
+              <tr><td><code>get_order_status(order_id)</code></td><td>주문 번호(<code>ORD-1001</code>, <code>ORD-1002</code>)로 배송 상태·품목·결제 금액 조회</td><td><span class="pill pill-blue">정적 · Reference-based</span></td></tr>
+              <tr><td><code>get_refund_policy(category)</code></td><td>상품 카테고리(<code>electronics</code>, <code>apparel</code>, <code>digital</code>)별 환불 규정 안내</td><td><span class="pill pill-blue">정적 · Reference-based</span></td></tr>
+              <tr><td><code>create_support_ticket(customer_name, issue_summary)</code></td><td>현재 시각(KST) 기반 상담 티켓 번호(<code>TKT-시분초</code>) 동적 발급</td><td><span class="pill pill-purple">동적 · Reference-free</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 고객센터 에이전트 코드 복사 및 린트 검증</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cp ../agent.py ./app/agent.py
+agents-cli lint"></pre>
+        </div>
+
+        <details class="code-fold">
+          <summary>📄 <code>agent.py</code> 전체 소스 코드 보기 (클릭하여 펼치기 · 복사 가능)</summary>
+          <div class="fold-body">
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">python · agent.py (고객센터 에이전트 전체 코드)</span>
+                <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre"># ruff: noqa
+import datetime
+from zoneinfo import ZoneInfo
+
+from google.adk.agents import Agent
+from google.adk.apps import App
+from google.adk.models import Gemini
+from google.genai import types
+
+MODEL = "gemini-3.8-flash"
+
+# 데모용 인메모리 주문 데이터베이스 (고정된 정답 -&gt; 평가 시 Reference-based 채점용)
+MOCK_ORDERS = {
+    "ORD-1001": {
+        "customer": "Alice",
+        "item": "Pro Laptop 16-inch",
+        "status": "In Transit",
+        "estimated_delivery": "2026-11-02",
+        "carrier": "FedEx",
+        "amount": "$1,800",
+    },
+    "ORD-1002": {
+        "customer": "Bob",
+        "item": "Wireless Noise-Canceling Headphones",
+        "status": "Delivered",
+        "delivered_at": "2026-10-25",
+        "carrier": "UPS",
+        "amount": "$350",
+    },
+}
+
+# 카테고리별 환불 규정 데이터 (고정된 정답 -&gt; 평가 시 Reference-based 채점용)
+REFUND_POLICIES = {
+    "electronics": "Electronics can be returned within 30 days of delivery in original packaging. A 10% restocking fee applies if opened.",
+    "apparel": "Apparel and clothing items can be returned within 60 days for a full refund, provided tags are still attached.",
+    "digital": "Digital downloads and software licenses are non-refundable once the activation key has been revealed.",
+}
+
+
+def get_order_status(order_id: str) -&gt; dict:
+    """Looks up the shipping and delivery status of a customer order."""
+    normalized_id = order_id.strip().upper()
+    if normalized_id in MOCK_ORDERS:
+        return {"order_id": normalized_id, **MOCK_ORDERS[normalized_id]}
+    return {
+        "order_id": normalized_id,
+        "error": f"Order '{normalized_id}' not found. Valid sample order IDs are ORD-1001 and ORD-1002.",
+    }
+
+
+def get_refund_policy(category: str) -&gt; str:
+    """Retrieves the company refund and return policy for a product category."""
+    key = category.strip().lower()
+    for policy_key, policy_text in REFUND_POLICIES.items():
+        if policy_key in key:
+            return policy_text
+    return (
+        "Standard policy: Most physical items can be returned within 30 days of delivery. "
+        "Please specify 'electronics', 'apparel', or 'digital' for exact category rules."
+    )
+
+
+def create_support_ticket(customer_name: str, issue_summary: str) -&gt; dict:
+    """Creates a customer support ticket for issues requiring human follow-up or refund approval."""
+    now_kst = datetime.datetime.now(ZoneInfo("Asia/Seoul"))
+    ticket_id = f"TKT-{now_kst.strftime('%H%M%S')}"
+    return {
+        "ticket_id": ticket_id,
+        "customer_name": customer_name,
+        "issue_summary": issue_summary,
+        "status": "OPEN (Assigned to Tier-2 Support)",
+        "created_at": now_kst.strftime("%Y-%m-%d %H:%M:%S %Z"),
+    }
+
+
+SYSTEM_INSTRUCTION = """You are a helpful and empathetic Customer Support Agent for an online store.
+Follow these guidelines strictly:
+1. When a user asks about an order status or delivery tracking, always call `get_order_status`.
+2. When a user asks about return or refund rules, always call `get_refund_policy`.
+3. When a user wants to file a complaint, request a human agent, or open a support ticket, call `create_support_ticket`.
+4. Always provide clear, polite, and accurate answers grounded only in the tool outputs.
+"""
+
+root_agent = Agent(
+    name="root_agent",
+    model=Gemini(
+        model=MODEL,
+        retry_options=types.HttpRetryOptions(attempts=3),
+    ),
+    instruction=SYSTEM_INSTRUCTION,
+    tools=[get_order_status, get_refund_policy, create_support_ticket],
+)
+
+app = App(
+    root_agent=root_agent,
+    name="app",
+)</pre>
+            </div>
+          </div>
+        </details>
+
+        <h3>3-2. CLI 스모크 테스트 (<code>agents-cli run</code>)</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 3가지 도구 호출 스모크 테스트</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="# 1) 주문 배송 조회 도구(get_order_status) 호출 테스트
+agents-cli run &quot;Can you check the status of my order ORD-1001?&quot;
+
+# 2) 환불 규정 조회 도구(get_refund_policy) 호출 테스트
+agents-cli run &quot;What is the refund policy for electronics?&quot;
+
+# 3) 상담 티켓 생성 도구(create_support_ticket) 호출 테스트
+agents-cli run &quot;My name is Alice. My laptop screen arrived cracked, please open a support ticket.&quot;"></pre>
+          <div class="code-output">[user]: Can you check the status of my order ORD-1001?
+[root_agent]:
+[tool_call: get_order_status({"order_id": "ORD-1001"})]
+[tool_response: get_order_status -&gt; {"order_id": "ORD-1001", "customer": "Alice", "item": "Pro Laptop 16-inch", "status": "In Transit", "estimated_delivery": "2026-11-02", "carrier": "FedEx", "amount": "$1,800"}]
+Your order ORD-1001 (Pro Laptop 16-inch) is currently In Transit via FedEx, with an estimated delivery date of 2026-11-02.
+
+Session: fb30f7f7-147e-4697-8aaa-706d604589fa (resume with --session-id)</div>
+        </div>
+
+        <div class="callout callout-blue">
+          <div class="callout-title">💡 디버깅 팁</div>
+          <p><code>-v</code> (<code>--verbose</code>) 플래그를 추가하면 LLM과 주고받는 전체 JSON 이벤트 페이로드(중간 도구 호출 인자, 응답 등)를 상세히 확인할 수 있습니다. 여러 번 반복 테스트할 때는 <code>--start-server</code> 옵션으로 로컬 서버를 유지하면 실행 속도가 빨라집니다.</p>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 4: 에이전트 품질 평가 (Eval Quality Flywheel) ==================== -->
+      <section class="card card-pad-lg lab-step" id="step-4" data-step="step-4">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 4 / 4</span>
+            <span class="pill pill-purple mono">EVAL QUALITY FLYWHEEL</span>
+            <span class="pill pill-gray mono">약 10분</span>
+            <h2>에이전트 품질 평가 (Eval Quality Flywheel)</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="step-4" onclick="toggleStepDone('step-4')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          LLM 출력은 비결정적이므로 단순 <code>pytest</code>만으로는 도구 선택 정확도와 응답 품질을 검증할 수 없습니다. <code>agents-cli eval</code>로 <strong>데이터셋 정의 → 추론·채점 → 결과 분석 → 프롬프트·도구 개선 → 전/후 비교</strong>의 Quality Flywheel을 직접 돌려봅니다.
+        </p>
+
+        <!-- Pure-HTML Quality Flywheel Diagram -->
+        <div class="flow-strip" aria-label="Eval Quality Flywheel 5단계">
+          <div class="flow-node"><strong>1. Prepare Dataset</strong><code>basic-dataset.json</code></div>
+          <span class="flow-sep">→</span>
+          <div class="flow-node"><strong>2. Run &amp; Grade</strong><code>agents-cli eval run</code></div>
+          <span class="flow-sep">→</span>
+          <div class="flow-node"><strong>3. Analyze Results</strong><code>results_*.html / .json</code></div>
+          <span class="flow-sep">→</span>
+          <div class="flow-node"><strong>4. Fix Prompt/Tool</strong><code>app/agent.py</code> 개선</div>
+          <span class="flow-sep">→</span>
+          <div class="flow-node"><strong>5. Compare</strong><code>eval compare</code> 회귀 검증</div>
+        </div>
+
+        <p><strong>평가 디렉토리 구조 (<code>tests/eval/</code>)</strong>: <code>tests/eval/datasets/basic-dataset.json</code>(평가 케이스), <code>tests/eval/eval_config.yaml</code>(실행 메트릭 및 커스텀 평가기), <code>tests/eval/response_quality.py</code>(로컬 LLM-as-Judge 1~5점 채점기).</p>
+
+        <h3>4-1. 평가 데이터셋 수정 (<code>tests/eval/datasets/basic-dataset.json</code>)</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · basic-dataset.json 작성 (Reference-based 2건 + Reference-free 1건)</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cat &lt;&lt; 'EOF' &gt; tests/eval/datasets/basic-dataset.json
+{
+  &quot;eval_cases&quot;: [
+    {
+      &quot;eval_case_id&quot;: &quot;order_status_lookup&quot;,
+      &quot;prompt&quot;: {
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;parts&quot;: [{&quot;text&quot;: &quot;What is the shipping status of order ORD-1001?&quot;}]
+      },
+      &quot;reference&quot;: {
+        &quot;response&quot;: {
+          &quot;role&quot;: &quot;model&quot;,
+          &quot;parts&quot;: [{&quot;text&quot;: &quot;Order ORD-1001 for the Pro Laptop 16-inch is currently In Transit via FedEx, with an estimated delivery date of 2026-11-02.&quot;}]
+        }
+      }
+    },
+    {
+      &quot;eval_case_id&quot;: &quot;refund_policy_electronics&quot;,
+      &quot;prompt&quot;: {
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;parts&quot;: [{&quot;text&quot;: &quot;What is the refund policy for electronics?&quot;}]
+      },
+      &quot;reference&quot;: {
+        &quot;response&quot;: {
+          &quot;role&quot;: &quot;model&quot;,
+          &quot;parts&quot;: [{&quot;text&quot;: &quot;Electronics can be returned within 30 days of delivery in original packaging. A 10% restocking fee applies if opened.&quot;}]
+        }
+      }
+    },
+    {
+      &quot;eval_case_id&quot;: &quot;create_ticket_request&quot;,
+      &quot;prompt&quot;: {
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;parts&quot;: [{&quot;text&quot;: &quot;My name is Alice and my package arrived damaged. Please create a support ticket for me.&quot;}]
+      }
+    }
+  ]
+}
+EOF"></pre>
+        </div>
+
+        <div class="callout callout-blue">
+          <div class="callout-title">💡 왜 어떤 케이스에는 <code>reference</code>가 있고, 어떤 케이스에는 없을까요?</div>
+          <ul style="margin:6px 0 0 18px;">
+            <li><strong>Reference-based (<code>order_status_lookup</code>, <code>refund_policy_electronics</code>)</strong>: 고정된 주문 정보·환불 규정처럼 Golden Answer가 명확할 때 <code>reference.response</code>와 팩트 일치 여부를 채점합니다.</li>
+            <li><strong>Reference-free (<code>create_ticket_request</code>)</strong>: 매 실행 시 현재 시각 기반 티켓 번호(<code>TKT-시분초</code>)가 동적으로 달라지므로 <code>reference</code>를 생략하고, LLM 평가자가 실행 트레이스(<code>agent_data</code>)를 보고 올바른 도구 호출·할루시네이션 없음·의도 달성 여부를 채점합니다.</li>
+          </ul>
+        </div>
+
+        <h3>4-2. 평가 설정 확인 (<code>tests/eval/eval_config.yaml</code>)</h3>
+        <p>
+          <code>metrics_to_run</code>에 빌트인 메트릭과 커스텀 메트릭 이름을 등록하면 함께 실행됩니다. 전체 빌트인 메트릭 목록은 <code>agents-cli eval metric list</code>로 조회할 수 있습니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">yaml · tests/eval/eval_config.yaml</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre"># 1. 실제로 실행할 메트릭 목록 (빌트인 + 커스텀)
+metrics_to_run:
+  - final_response_quality        # 최종 답변 품질 평가 (빌트인)
+  - multi_turn_tool_use_quality   # 도구 선택 및 호출 정확도 평가 (빌트인)
+  - safety                        # 안전성 가이드라인 준수 여부 (빌트인)
+  - custom_response_quality       # 아래 custom_metrics 참조
+  - agent_turn_count              # 아래 custom_metrics 참조
+
+# 2. 커스텀 메트릭 정의 풀
+custom_metrics:
+  - name: custom_response_quality
+    custom_function_file: response_quality.py
+  - name: agent_turn_count
+    custom_function: |
+      def evaluate(instance):
+          turns = (instance.get("agent_data") or {}).get("turns", [])
+          return {'score': len(turns)}</pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>커스텀 메트릭</th><th>선언 방식</th><th>동작 원리</th></tr></thead>
+            <tbody>
+              <tr><td><code>custom_response_quality</code></td><td><code>custom_function_file: response_quality.py</code></td><td><code>google-genai</code> SDK 기반 로컬 LLM-as-Judge (1~5점 + 채점 근거)</td></tr>
+              <tr><td><code>agent_turn_count</code></td><td>YAML 인라인 Python 함수</td><td>LLM 호출 없이 실행 트레이스의 턴 수(<code>len(turns)</code>)를 결정론적으로 측정</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>4-3. 평가 실행 및 전/후 비교 (<code>eval run</code> &amp; <code>eval compare</code>)</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 일괄 평가(eval run) · 분리 실행(generate/grade) · 전/후 비교(eval compare)</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="# 옵션 1 (권장): 추론 및 채점 일괄 실행
+agents-cli eval run
+
+# 옵션 2: 2단계 분리 실행 (트레이스 생성 후 채점)
+# agents-cli eval generate
+# agents-cli eval grade
+
+# 생성된 평가 결과(.json / .html) 확인
+ls -lt artifacts/grade_results/
+
+# app/agent.py 프롬프트나 도구를 개선하고 재평가한 뒤, Baseline vs Candidate 비교:
+# agents-cli eval compare \
+#   artifacts/grade_results/results_&lt;BASELINE&gt;.json \
+#   artifacts/grade_results/results_&lt;CANDIDATE&gt;.json"></pre>
+        </div>
+
+        <div class="callout callout-amber">
+          <div class="callout-title">🧪 심화 팁 · 시뮬레이션 데이터셋 자동 생성</div>
+          <p>테스트 케이스를 직접 쓰기 어려울 때는 <code>agents-cli eval dataset synthesize</code>로 에이전트의 도구와 Instruction을 분석해 멀티턴 시뮬레이션 데이터셋을 자동 생성할 수 있습니다.</p>
+        </div>
+      </section>
+
+      <!-- ==================== BONUS A: Graph Workflow ==================== -->
+      <section class="card card-pad-lg card-bonus lab-step" id="bonus-a" data-step="bonus-a">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-amber mono">BONUS A · OPTIONAL</span>
+            <span class="pill pill-purple mono">GRAPH WORKFLOW</span>
+            <span class="pill pill-gray mono">약 8분</span>
+            <h2>Graph Workflow 멀티 단계 오케스트레이션 (<code>agent_graph.py</code>)</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="bonus-a" onclick="toggleStepDone('bonus-a')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          단일 <code>Agent</code>를 넘어 ADK의 <strong><code>Workflow</code> (Graph)</strong>로 <strong>병렬 데이터 조회(Parallel Fan-out) → <code>JoinNode</code> → 조건부 라우터(<code>classify_and_route</code>) → 전문 서브 에이전트 분기 → 매니저 승인 게이트(HITL)</strong>를 결정론적으로 구성해 봅니다.
+        </p>
+
+        <!-- Pure-HTML Graph Workflow Topology -->
+        <div class="graph-grid" aria-label="Graph Workflow 실행 토폴로지">
+          <div class="g-col"><div class="g-pill g-pill-start">START</div></div>
+          <div class="g-col">
+            <div class="g-pill">fetch_profile<span class="g-sub">병렬 Fan-out</span></div>
+            <div class="g-pill">fetch_orders<span class="g-sub">병렬 Fan-out</span></div>
+            <div class="g-pill">fetch_billing<span class="g-sub">병렬 Fan-out</span></div>
+          </div>
+          <div class="g-col"><div class="g-pill g-pill-join">JoinNode<span class="g-sub">data_joiner</span></div></div>
+          <div class="g-col"><div class="g-pill g-pill-route">classify_and_route<span class="g-sub">조건부 분기</span></div></div>
+          <div class="g-col">
+            <div class="g-pill">tech → dynamic_troubleshoot<span class="g-sub">Loop 2회</span></div>
+            <div class="g-pill g-pill-hitl">billing → billing_agent → check_refund_hitl<span class="g-sub">$100 초과 시 승인 대기 → process_approved</span></div>
+            <div class="g-pill">shipping → shipping_agent · general → general_agent</div>
+          </div>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · agent_graph.py 적용 및 Playground 실행</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cp ../agent_graph.py ./app/agent.py
+agents-cli playground"></pre>
+        </div>
+
+        <p><strong>Playground 분기별 샘플 질문 테스트:</strong></p>
+        <ul>
+          <li><strong>기술 지원 분기 (<code>tech</code>)</strong>: <code>"The application crashes every time I upload photos."</code></li>
+          <li><strong>결제/환불 &amp; HITL 승인 게이트 분기 (<code>billing</code>)</strong>: <code>"I was charged twice and need a refund of $150."</code></li>
+          <li><strong>배송 조회 분기 (<code>shipping</code>)</strong>: <code>"Where is my package for order #8492?"</code></li>
+        </ul>
+
+        <details class="code-fold">
+          <summary>📄 <code>agent_graph.py</code> 전체 소스 코드 보기 (클릭하여 펼치기 · 복사 가능)</summary>
+          <div class="fold-body">
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">python · agent_graph.py (ADK Workflow Graph 전체 코드)</span>
+                <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre"># ruff: noqa
+import asyncio
+import warnings
+import logging
+
+warnings.filterwarnings("ignore", category=UserWarning, module="google.genai")
+warnings.filterwarnings("ignore", category=ResourceWarning)
+logging.getLogger("google.genai").setLevel(logging.ERROR)
+logging.getLogger("aiohttp").setLevel(logging.ERROR)
+
+from google.adk.agents import Agent
+from google.adk.apps import App
+from google.adk.events.event_actions import EventActions
+from google.adk.events import Event
+from google.adk.events.request_input import RequestInput
+from google.adk.workflow import START, JoinNode, Workflow, node
+from google.genai import types
+
+MODEL = "gemini-3.8-flash"
+
+# ===== Section 1: Parallel Data Fetchers =====
+async def fetch_profile(node_input):
+    await asyncio.sleep(0.3)
+    return {"name": "Alice", "tier": "Gold", "account_age": "2 years"}
+
+async def fetch_orders(node_input):
+    await asyncio.sleep(0.3)
+    return {"recent_orders": 3, "last_order": "Pro Laptop #8492"}
+
+async def fetch_billing(node_input):
+    await asyncio.sleep(0.3)
+    return {"outstanding_balance": 0, "payment_method": "Visa-4242"}
+
+# ===== Section 2: Classifier / Router =====
+def classify_and_route(node_input, ctx):
+    """Inspects user message in state and routes to the right specialist."""
+    if ctx.user_content and ctx.user_content.parts:
+        user_text = "".join(p.text for p in ctx.user_content.parts if p.text).lower()
+    elif "user_message" in ctx.state:
+        user_text = str(ctx.state["user_message"]).lower()
+    profile = node_input.get("fetch_profile", {})
+    context_summary = f"Customer: {profile.get('name', 'User')}, Tier: {profile.get('tier', 'Standard')}"
+
+    if "approval_status" in ctx.state or "refund" in user_text or "charge" in user_text or "bill" in user_text:
+        route = "billing"
+    elif "crash" in user_text or "error" in user_text or "bug" in user_text:
+        route = "tech"
+    elif "track" in user_text or "package" in user_text or "delivery" in user_text:
+        route = "shipping"
+    else:
+        route = "general"
+
+    return Event(output=context_summary, actions=EventActions(route=route))
+
+# ===== Section 3: Dynamic Tech Troubleshooting Node =====
+diagnose_agent = Agent(
+    name="tech_diagnostician",
+    model=MODEL,
+    instruction="Suggest ONE specific troubleshooting step in 1 sentence.",
+)
+
+@node(rerun_on_resume=True)
+async def dynamic_troubleshoot(ctx):
+    """Loops up to 2 attempts using ctx.run_node before escalating."""
+    for attempt in (1, 2):
+        result = await ctx.run_node(diagnose_agent)
+        print(f"  [Diagnostician {attempt}]: {result}")
+    return "Troubleshooting attempts completed. Escalated to Tier 2."
+
+# ===== Section 4: Billing Agent &amp; HITL Gate =====
+billing_agent = Agent(
+    name="billing_specialist",
+    model=MODEL,
+    instruction="Acknowledge the billing refund inquiry empathetically in 1 sentence.",
+)
+
+def check_refund_hitl(node_input, ctx):
+    """HITL Gate: If refund amount &gt; $100, pause for human approval."""
+    already_approved = ctx.state.get("approval_status", None)
+    if already_approved == "approved":
+        return Event(output="Refund Processed: APPROVED by Manager", actions=EventActions(route="approved"))
+    elif already_approved == "rejected":
+        return Event(output="Refund Processed: REJECTED by Manager", actions=EventActions(route="rejected"))
+
+    refund_amount = ctx.state.get("refund_amount", 150)
+    ctx.state["pending_refund"] = refund_amount
+    ctx.state["needs_approval"] = True
+    return Event(output=f"PAUSED: Requires manager approval for ${refund_amount} refund")
+
+def process_approved(node_input):
+    return f"Final Status: {node_input}"
+
+# ===== Section 5: Shipping &amp; General Agents =====
+shipping_agent = Agent(
+    name="shipping_specialist",
+    model=MODEL,
+    instruction="Provide a tracking status update for Order #8492 in 1 sentence.",
+)
+
+general_agent = Agent(
+    name="general_specialist",
+    model=MODEL,
+    instruction="Answer general support inquiry helpfully in 1 sentence.",
+)
+
+# ===== Section 6: Build Unified Graph =====
+join = JoinNode(name="data_joiner")
+
+root_agent = Workflow(
+    name="complete_support_system",
+    edges=[
+        (START, fetch_profile, join),
+        (START, fetch_orders, join),
+        (START, fetch_billing, join),
+        (join, classify_and_route),
+        (classify_and_route, {
+            "tech": dynamic_troubleshoot,
+            "billing": billing_agent,
+            "shipping": shipping_agent,
+            "general": general_agent,
+        }),
+        (billing_agent, check_refund_hitl),
+        (check_refund_hitl, {
+            "approved": process_approved,
+        }),
+    ],
+)
+
+app = App(root_agent=root_agent, name="app")</pre>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- ==================== BONUS B: Memory Bank 장기 기억 콜백 ==================== -->
+      <section class="card card-pad-lg card-bonus lab-step" id="bonus-b" data-step="bonus-b">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-amber mono">BONUS B · OPTIONAL</span>
+            <span class="pill pill-green mono">MEMORY BANK</span>
+            <span class="pill pill-gray mono">약 8분</span>
+            <h2>Memory Bank 장기 기억 콜백 (<code>agent_memory.py</code>)</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="bonus-b" onclick="toggleStepDone('bonus-b')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          단발성 세션을 넘어, 사용자가 이전 대화에서 언급한 정보(이름·주문 번호 등)를 장기 기억(Long-term Memory)으로 저장하고 새 세션에서도 기억하도록 <strong>Memory Bank</strong>를 연동합니다.
+        </p>
+        <ul>
+          <li><strong><code>preload_memory</code> 도구</strong>: 매 턴 시작 시 Memory Bank에서 사용자 관련 기억을 조회해 시스템 컨텍스트에 자동 주입합니다.</li>
+          <li><strong><code>add_session_to_memory_callback</code> (<code>after_agent_callback</code>)</strong>: 에이전트 추론 완료 후 <code>await callback_context.add_session_to_memory()</code>를 호출해 세션 내용을 Memory Bank에 저장합니다.</li>
+        </ul>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · agent_memory.py 적용 및 In-Place 재배포 (Agent Runtime 배포 후 테스트 시)</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="cp ../agent_memory.py ./app/agent.py
+
+# Agent Runtime에 이미 배포한 경우 동일 인스턴스 In-Place 업데이트:
+# agents-cli deploy --project {{PROJECT_ID}} --region {{REGION}}"></pre>
+        </div>
+
+        <details class="code-fold">
+          <summary>📄 <code>agent_memory.py</code> 핵심 변경 코드 보기 (클릭하여 펼치기 · 복사 가능)</summary>
+          <div class="fold-body">
+            <div class="code-wrap">
+              <div class="code-head">
+                <span class="code-label">python · agent_memory.py (Memory Bank 콜백 &amp; preload_memory 발췌)</span>
+                <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
+              <pre class="code-pre">from google.adk.agents import Agent
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.models import Gemini
+from google.adk.tools import preload_memory
+from google.genai import types
+
+### Memory Bank 사용을 위한 콜백 함수 추가
+async def add_session_to_memory_callback(callback_context: CallbackContext):
+    # Session 내의 정보들을 Memory Bank에 저장
+    await callback_context.add_session_to_memory()
+    return None
+
+root_agent = Agent(
+    name="root_agent",
+    model=Gemini(
+        model=MODEL,
+        retry_options=types.HttpRetryOptions(attempts=3),
+    ),
+    instruction=SYSTEM_INSTRUCTION,
+    ### preload_memory: 에이전트가 매 턴 시작 시 메모리를 검색하고 시스템 메시지로 주입
+    tools=[get_order_status, get_refund_policy, create_support_ticket, preload_memory],
+    ### after_agent_callback: 에이전트 추론 완료 후 세션 메모리를 저장
+    after_agent_callback=add_session_to_memory_callback,
+)</pre>
+            </div>
+          </div>
+        </details>
+
+        <h3>멀티 세션 기억 검증 시나리오 (Console Playground)</h3>
+        <ol>
+          <li><strong>세션 1 (기억 저장)</strong>: <code>"Hi! My name is Alice, and my active order ID is ORD-1001."</code> 입력 → 응답 완료 후 <code>after_agent_callback</code>이 Memory Bank에 비동기 저장.</li>
+          <li><strong>세션 2 (새 세션 시작 &amp; 기억 인출)</strong>: Playground에서 <strong>New Session / Reset</strong>을 누른 뒤 주문 번호 없이 <code>"What is my name, and where is my order right now?"</code> 질문 → <code>preload_memory</code>로 이름(<code>Alice</code>)과 주문 번호(<code>ORD-1001</code>)를 기억해 <code>get_order_status("ORD-1001")</code>를 즉시 호출하는 것을 확인합니다.</li>
+        </ol>
+      </section>
+
+      <!-- ==================== BONUS C: Gemini Enterprise 게시 ==================== -->
+      <section class="card card-pad-lg card-bonus lab-step" id="bonus-c" data-step="bonus-c">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-amber mono">BONUS C · OPTIONAL</span>
+            <span class="pill pill-blue mono">PUBLISH</span>
+            <span class="pill pill-gray mono">약 5분</span>
+            <h2>Gemini Enterprise 게시 (<code>publish gemini-enterprise</code>)</h2>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm step-done-btn" data-done-btn="bonus-c" onclick="toggleStepDone('bonus-c')">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          배포가 완료된 에이전트를 <strong>Gemini Enterprise</strong> 앱에 전사 에이전트 도구로 등록하고 Preview 화면에서 호출합니다. (먼저 Cloud Console 검색창에서 <strong>Gemini Enterprise</strong>로 진입해 앱을 생성해 두세요.)
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · 대상 Gemini Enterprise 앱 목록 조회 및 에이전트 등록</span>
+            <button type="button" class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="# 1) Gemini Enterprise 앱 목록 조회
+agents-cli publish gemini-enterprise --list
+
+# 2) 조회 결과의 name 값을 GE_APP_ID에 등록 후 에이전트 게시
+export GE_APP_ID=&quot;projects/&lt;PROJECT_NUMBER&gt;/locations/global/collections/default_collection/engines/&lt;ENGINE_ID&gt;&quot;
+
+agents-cli publish gemini-enterprise \
+  --gemini-enterprise-app-id &quot;${GE_APP_ID}&quot; \
+  --display-name &quot;Customer Support Agent&quot; \
+  --description &quot;Checks order status, explains refund policies, and creates support tickets&quot; \
+  --tool-description &quot;Use this tool to ask the customer support agent about orders, refunds, or support tickets.&quot;"></pre>
+          <div class="code-output">✅ Successfully created agent registration!
+   Agent Name: projects/.../locations/global/collections/default_collection/engines/.../assistants/default_assistant/agents/...
+🔗 View in Console: https://console.cloud.google.com/gemini-enterprise/...</div>
+        </div>
+
+        <p>
+          등록 후 출력된 Console 링크의 <strong>Preview</strong> 화면에서 <code>@Customer Support Agent</code>로 멘션하거나 좌측 <strong>Agents</strong> 목록에서 선택해 바로 대화할 수 있습니다.
+        </p>
+      </section>
+
+      <!-- ==================== HANDOFF SECTION -> /lab ==================== -->
+      <section class="card card-pad-lg card-handoff lab-step" id="handoff">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px;">
+          <span class="pill pill-green mono">NEXT STEP · DAY-2 PRODUCTION HANDOFF</span>
+          <span class="pill pill-blue mono">/lab</span>
+        </div>
+
+        <h2 style="font-size:22px;">이제 만든 <code>app/agent.py</code> 코드는 그대로 두고 프로덕션으로 전환하세요</h2>
+        <p style="font-size:15px;color:#1E293B;margin-top:8px;">
+          원본 워크숍의 섹션 9~10(배포 · 관측성 모니터링)은 본 포털의 <strong>03 · 프로덕션 전환 실습 (<code>/lab</code>)</strong>에서
+          <strong>Agent Runtime · Cloud Run · GKE</strong> 3개 운영 환경으로 확장해 체계적으로 다룹니다.
+        </p>
+        <p style="font-size:14.2px;color:#334155;">
+          방금 만든 <code>{{AGENT_NAME}}</code> 프로젝트의 <code>app/agent.py</code>는 한 줄도 바꾸지 않은 채,
+          <code>/lab</code>의 <strong>Step 0 (배포 환경 선택)</strong> · <strong>Step 2 (Agent Skill 설치)</strong> · <strong>Step 3 (ADK 기반 Agent 스캐폴딩)</strong>으로 바로 이어서 진행할 수 있습니다.
+        </p>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
+          <a href="/lab?track=agent_runtime" class="btn btn-subtle" style="gap:6px;">
+            <img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18" style="width:18px;height:18px;object-fit:contain;">
+            <span>Agent Runtime 실습 →</span>
+          </a>
+          <a href="/lab?track=cloud_run" class="btn btn-subtle" style="gap:6px;">
+            <img src="/static/icons/cloud-run.png" alt="Cloud Run" width="18" height="18" style="width:18px;height:18px;object-fit:contain;">
+            <span>Cloud Run 실습 →</span>
+          </a>
+          <a href="/lab?track=gke" class="btn btn-subtle" style="gap:6px;">
+            <img src="/static/icons/gke.png" alt="GKE" width="18" height="18" style="width:18px;height:18px;object-fit:contain;">
+            <span>GKE 실습 →</span>
+          </a>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;">
+          <a href="/guide" class="btn btn-primary">
+            <span>✨ Agent Skill 사용 가이드 · 추천 프롬프트 (/guide) →</span>
+          </a>
+          <a href="/lab" class="btn btn-subtle">
+            <span>🚀 03 · 프로덕션 전환 실습 (/lab) →</span>
+          </a>
+          <a href="/checklist" class="btn btn-green">
+            <span>📋 02 · 프로덕션 체크리스트 (/checklist) ↗</span>
+          </a>
+          <a href="/workbench" class="btn btn-subtle">
+            <span>🩺 04 · 런타임 진단 위자드 (/workbench) ↗</span>
+          </a>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "prod_ready_adk_lab_v1";
+
+    const TOC_ITEMS = [
+      { id: "step-0", code: "0", title: "사전 준비 & Agents CLI 설치", time: "5분", group: "core" },
+      { id: "step-1", code: "1", title: "프로젝트 생성 (scaffold create)", time: "5분", group: "core" },
+      { id: "step-2", code: "2", title: "코드 확인 & 로컬 Playground", time: "5분", group: "core" },
+      { id: "step-3", code: "3", title: "고객센터 코드 & CLI Smoke Test", time: "8분", group: "core" },
+      { id: "step-4", code: "4", title: "품질 평가 (Eval Quality Flywheel)", time: "10분", group: "core" },
+      { id: "bonus-a", code: "A", title: "Graph Workflow (agent_graph.py)", time: "8분", group: "bonus" },
+      { id: "bonus-b", code: "B", title: "Memory Bank (agent_memory.py)", time: "8분", group: "bonus" },
+      { id: "bonus-c", code: "C", title: "Gemini Enterprise 게시", time: "5분", group: "bonus" },
+    ];
+
+    const DEFAULT_ENV = {
+      projectId: "",
+      region: "us-central1",
+      agentName: "customer-support-agent",
+    };
+
+    let state = {
+      env: { ...DEFAULT_ENV },
+      doneSteps: {},
+      checkedItems: {},
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            state.env = { ...DEFAULT_ENV, ...(parsed.env || {}) };
+            state.doneSteps = parsed.doneSteps || {};
+            state.checkedItems = parsed.checkedItems || {};
+          }
+        }
+      } catch (_) {}
+    }
+
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+    }
+
+    function registerInlineTemplates() {
+      document.querySelectorAll("code:not(pre code), .code-output, [data-auto-tpl]").forEach(el => {
+        if (!el.getAttribute("data-tpl") && (el.textContent || "").includes("{{")) {
+          el.setAttribute("data-tpl", el.textContent);
+        }
+      });
+    }
+
+    function applyTemplates() {
+      const proj = state.env.projectId.trim() || "<YOUR_PROJECT_ID>";
+      const reg = state.env.region.trim() || DEFAULT_ENV.region;
+      const agent = state.env.agentName.trim() || DEFAULT_ENV.agentName;
+      const map = {
+        "{{PROJECT_ID}}": proj,
+        "{{REGION}}": reg,
+        "{{AGENT_NAME}}": agent,
+      };
+      document.querySelectorAll("[data-tpl]").forEach(el => {
+        let txt = el.getAttribute("data-tpl") || "";
+        for (const [k, v] of Object.entries(map)) {
+          txt = txt.split(k).join(v);
+        }
+        el.textContent = txt;
+      });
+    }
+
+    function syncEnvInputs() {
+      const pairs = [
+        ["envProject", state.env.projectId],
+        ["envRegion", state.env.region],
+        ["envAgent", state.env.agentName],
+      ];
+      pairs.forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el && el.value !== val) el.value = val;
+      });
+    }
+
+    function updateEnvFromInputs() {
+      const p = document.getElementById("envProject");
+      const r = document.getElementById("envRegion");
+      const a = document.getElementById("envAgent");
+      if (p) state.env.projectId = p.value;
+      if (r) state.env.region = r.value;
+      if (a) state.env.agentName = a.value;
+      applyTemplates();
+      saveState();
+    }
+
+    function resetEnvConfig() {
+      state.env = { ...DEFAULT_ENV };
+      syncEnvInputs();
+      applyTemplates();
+      saveState();
+    }
+
+    function renderTocAndProgress() {
+      const ul = document.getElementById("tocList");
+      const doneCount = TOC_ITEMS.filter(item => Boolean(state.doneSteps[item.id])).length;
+      const pct = Math.round((doneCount / TOC_ITEMS.length) * 100);
+      const lbl = document.getElementById("sidebarProgressLabel");
+      const fill = document.getElementById("sidebarProgressFill");
+      if (lbl) lbl.textContent = `${doneCount} / ${TOC_ITEMS.length} 완료 (${pct}%)`;
+      if (fill) fill.style.width = `${Math.max(4, pct)}%`;
+
+      const groupTitles = {
+        core: "1. Core Day-1 Build (Step 0 ~ 4)",
+        bonus: "2. Optional 심화 Bonus (A ~ C)",
+      };
+      let lastGroup = null;
+      ul.innerHTML = TOC_ITEMS.map(item => {
+        const isDone = Boolean(state.doneSteps[item.id]);
+        let headerHtml = "";
+        if (item.group !== lastGroup) {
+          lastGroup = item.group;
+          headerHtml = `<li class="step-nav-group">${groupTitles[item.group]}</li>`;
+        }
+        const dotCls = item.group === "bonus" ? "step-dot step-dot-bonus" : "step-dot";
+        return `${headerHtml}
+          <li class="step-nav-row${isDone ? " done" : ""}">
+            <input type="checkbox" class="toc-chk" ${isDone ? "checked" : ""} aria-label="${item.title} 완료 표시" onchange="toggleStepDone('${item.id}')" />
+            <a class="step-nav-link" href="#${item.id}">
+              <span class="${dotCls}">${isDone ? "✓" : item.code}</span>
+              <span class="step-nav-label">${item.title}</span>
+              <span class="step-nav-meta">${item.time}</span>
+            </a>
+          </li>
+        `;
+      }).join("") + `
+        <li class="step-nav-group">3. Day-2 Production Handoff</li>
+        <li class="step-nav-row">
+          <a class="step-nav-link" href="#handoff" style="padding-left:24px;color:#137333;">
+            <span class="step-dot" style="background:#E6F4EA;color:#137333;">→</span>
+            <span class="step-nav-label">프로덕션 전환 실습 (/lab)</span>
+          </a>
+        </li>
+      `;
+
+      document.querySelectorAll("[data-done-btn]").forEach(btn => {
+        const id = btn.getAttribute("data-done-btn");
+        const done = Boolean(state.doneSteps[id]);
+        btn.textContent = done ? "✓ 완료됨" : "✓ 완료 표시";
+        btn.style.background = done ? "var(--green-bg)" : "";
+        btn.style.color = done ? "var(--green)" : "";
+      });
+
+      document.querySelectorAll("input[type='checkbox'][data-chk]").forEach(cb => {
+        const key = cb.getAttribute("data-chk");
+        cb.checked = Boolean(state.checkedItems[key]);
+      });
+    }
+
+    function toggleStepDone(stepId) {
+      state.doneSteps[stepId] = !state.doneSteps[stepId];
+      saveState();
+      renderTocAndProgress();
+    }
+
+    function saveCheckbox(cb) {
+      const key = cb.getAttribute("data-chk");
+      if (key) state.checkedItems[key] = cb.checked;
+      saveState();
+    }
+
+    function resetProgress() {
+      state.doneSteps = {};
+      state.checkedItems = {};
+      saveState();
+      renderTocAndProgress();
+    }
+
+    function copyCodeBlock(btn) {
+      const pre = btn.closest(".code-wrap").querySelector(".code-pre");
+      const text = pre ? pre.textContent : "";
+      const orig = btn.textContent;
+      const done = () => {
+        btn.textContent = "✓ 복사됨";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove("copied"); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); } catch (_) {}
+          document.body.removeChild(ta);
+          done();
+        });
+      }
+    }
+
+    function init() {
+      loadState();
+      registerInlineTemplates();
+      syncEnvInputs();
+      applyTemplates();
+      renderTocAndProgress();
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

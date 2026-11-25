@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Skill 사용 가이드 &amp; 추천 프롬프트 · Production Ready Agent Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #F7F9FC;
+      --surface: #FFFFFF;
+      --surface-muted: #F4F7FB;
+      --surface-subtle: #EAEFF6;
+      --ink: #0F172A;
+      --ink-muted: #475569;
+      --ink-faint: #64748B;
+      --g-blue: #4285F4;
+      --g-red: #EA4335;
+      --g-yellow: #FBBC04;
+      --g-green: #34A853;
+      --primary: #1A73E8;
+      --primary-hover: #1557B0;
+      --green: #137333;
+      --green-bg: #E6F4EA;
+      --amber: #B06000;
+      --amber-bg: #FEF7E0;
+      --red: #C5221F;
+      --red-bg: #FCE8E6;
+      --border: rgba(66, 133, 244, 0.14);
+      --code-bg: #0F172A;
+      --code-head: #1E293B;
+      --shadow: 0 12px 34px rgba(15, 23, 42, 0.055);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 9px;
+      --font-sans: 'Google Sans', 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'Google Sans Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      font-family: var(--font-sans);
+      background-color: #F7F9FC;
+      background-image:
+        radial-gradient(circle at 10% 8%, rgba(66, 133, 244, 0.12), transparent 34%),
+        radial-gradient(circle at 90% 6%, rgba(52, 168, 83, 0.11), transparent 34%),
+        radial-gradient(circle at 52% 26%, rgba(251, 188, 4, 0.09), transparent 40%),
+        radial-gradient(circle at 78% 68%, rgba(234, 67, 53, 0.05), transparent 36%),
+        radial-gradient(rgba(15, 23, 42, 0.055) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+      background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+      color: var(--ink);
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { margin: 0; min-height: 100vh; line-height: 1.65; }
+    code, pre, kbd, .mono { font-family: var(--font-mono); }
+
+    p code, li code, td code, summary code, h2 code, h3 code {
+      background: rgba(66, 133, 244, 0.09);
+      color: #1967D2;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 0.88em;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* Fixed Frosted Header */
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: 76px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(66, 133, 244, 0.14);
+    }
+    .topbar::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3.5px;
+      background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .topbar-inner {
+      max-width: 1560px;
+      height: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-divider {
+      width: 1px;
+      height: 22px;
+      background: #DADCE0;
+      flex-shrink: 0;
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-subtle {
+      background: #EEF2F7;
+      color: var(--ink);
+      height: 36px;
+      padding: 0 13px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .btn-subtle:hover { background: #E2E8F0; }
+    .btn-blue {
+      background: linear-gradient(135deg, #4285F4 0%, #1A73E8 100%);
+      color: #fff;
+      height: 36px;
+      padding: 0 14px;
+      font-size: 13px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.24);
+    }
+    .btn-blue:hover { background: linear-gradient(135deg, #1A73E8 0%, #1557B0 100%); }
+
+    /* Layout */
+    .shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 104px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 28px 30px;
+      position: relative;
+      overflow: hidden;
+      scroll-margin-top: 92px;
+    }
+    .card-rainbow::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4285F4 0%, #EA4335 34%, #FBBC04 68%, #34A853 100%);
+    }
+    .card-blue::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3.5px;
+      background: linear-gradient(90deg, #4285F4, #1A73E8);
+    }
+    .card-green::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3.5px;
+      background: linear-gradient(90deg, #34A853, #1E8E3E);
+    }
+    .card-amber::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3.5px;
+      background: linear-gradient(90deg, #FBBC04, #F29900);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #E8F0FE;
+      color: #1967D2;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      margin-bottom: 12px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.25;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    h3 {
+      margin: 20px 0 8px;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    p { margin: 8px 0; color: var(--ink-muted); font-size: 14.5px; }
+    ul { margin: 8px 0; padding-left: 20px; color: var(--ink-muted); font-size: 14.5px; }
+    li { margin: 5px 0; }
+    li strong, p strong { color: var(--ink); }
+
+    .sec-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: #E8F0FE;
+      color: #1967D2;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    /* Quick Anchor Pills */
+    .quick-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 6px;
+    }
+    .q-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--surface-muted);
+      border: 1px solid rgba(66, 133, 244, 0.16);
+      color: var(--ink);
+      font-size: 12.8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .q-pill:hover { background: #E8F0FE; border-color: #4285F4; color: #1967D2; }
+
+    /* Guarantee Strip */
+    .trust-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .trust-item {
+      background: var(--surface-muted);
+      border: 1px solid rgba(66, 133, 244, 0.14);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+    .trust-item strong { display: block; color: var(--ink); font-size: 13.5px; margin-bottom: 2px; }
+
+    /* 4-Step Flow Strip */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+    .flow-step {
+      background: var(--surface-muted);
+      border: 1px solid rgba(66, 133, 244, 0.16);
+      border-radius: 13px;
+      padding: 12px 14px;
+    }
+    .flow-step-k {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      color: #1967D2;
+      margin-bottom: 3px;
+    }
+    .flow-step-t { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+    .flow-step-d { font-size: 12.5px; color: var(--ink-muted); line-height: 1.45; }
+
+    /* Code & Prompt Cards */
+    .code-wrap {
+      margin: 10px 0 16px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: var(--code-bg);
+    }
+    .code-wrap.prompt-card {
+      background: #F8FAFF;
+      border: 1.5px solid rgba(26, 115, 232, 0.28);
+    }
+    .code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 14px;
+      background: var(--code-head);
+      color: #CBD5E1;
+      font-size: 12.2px;
+      font-weight: 600;
+    }
+    .prompt-card .code-head {
+      background: #E8F0FE;
+      color: #174EA6;
+      border-bottom: 1px solid rgba(26, 115, 232, 0.16);
+    }
+    .code-label { font-family: var(--font-mono); }
+    .copy-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #F8FAFC;
+      border-radius: 8px;
+      padding: 5px 11px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.18); }
+    .prompt-card .copy-btn {
+      border: 1px solid rgba(26, 115, 232, 0.35);
+      background: #FFFFFF;
+      color: #1A73E8;
+    }
+    .prompt-card .copy-btn:hover { background: #1A73E8; color: #FFFFFF; }
+    .copy-btn.copied { background: #1E8E3E !important; border-color: #1E8E3E !important; color: #FFFFFF !important; }
+    .code-pre {
+      margin: 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: #E2E8F0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .prompt-card .code-pre {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.65;
+      color: #0F172A;
+      font-weight: 500;
+    }
+
+    /* Interactive Prompt Builder (Target Pills local to Builder) */
+    .builder-target-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0 10px;
+    }
+    .builder-target-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 4px;
+    }
+    .bt-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(15, 23, 42, 0.14);
+      background: #FFFFFF;
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .bt-pill:hover { border-color: #4285F4; background: #F8FBFF; }
+    .bt-pill.active {
+      border-color: #1A73E8;
+      background: #E8F0FE;
+      color: #1967D2;
+    }
+    .bt-pill img { width: 16px; height: 16px; object-fit: contain; display: block; }
+
+    .builder-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .cond-toggle {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(66, 133, 244, 0.18);
+      background: #FFFFFF;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .cond-toggle:hover { border-color: #4285F4; background: #F8FBFF; }
+    .cond-toggle.checked { border-color: #1A73E8; background: #E8F0FE; }
+    .cond-toggle input { margin-top: 3px; width: 16px; height: 16px; accent-color: #1A73E8; flex-shrink: 0; }
+    .cond-title { font-size: 13.8px; font-weight: 700; color: var(--ink); display: block; }
+    .cond-sub { font-size: 12.2px; color: var(--ink-muted); display: block; margin-top: 2px; }
+    .cond-id {
+      display: inline-block;
+      margin-top: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 5px;
+      background: rgba(26, 115, 232, 0.1);
+      color: #1967D2;
+    }
+    .builder-opts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--surface-muted);
+      border: 1px solid rgba(66, 133, 244, 0.14);
+      margin-bottom: 14px;
+      font-size: 13.2px;
+    }
+    .builder-opts label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink); }
+    .builder-opts input[type="number"],
+    .builder-opts select {
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .item-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0 12px;
+      font-size: 12px;
+    }
+    .item-pill {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .item-pill.on { background: #E6F4EA; color: #137333; }
+    .item-pill.na { background: #F1F5F9; color: #64748B; text-decoration: line-through; }
+
+    /* Scenario Recipe Grid */
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .recipe-card {
+      border: 1px solid rgba(66, 133, 244, 0.16);
+      border-radius: 16px;
+      padding: 16px 18px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .recipe-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #EEF2F7;
+      color: #334155;
+      margin-bottom: 6px;
+      width: fit-content;
+    }
+    .recipe-card h4 { margin: 0 0 4px; font-size: 15.5px; font-weight: 700; color: var(--ink); }
+    .recipe-card p { margin: 0 0 10px; font-size: 13.2px; }
+    .recipe-card .code-wrap { margin: 0; }
+
+    /* Tables */
+    table.scope-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13.5px;
+    }
+    table.scope-tbl th, table.scope-tbl td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #E2E8F0;
+      vertical-align: top;
+    }
+    table.scope-tbl th {
+      background: #F8FAFC;
+      color: #334155;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .env-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .env-cell img { width: 18px; height: 18px; object-fit: contain; display: block; }
+
+    .next-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .next-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(66, 133, 244, 0.18);
+      background: #F8FAFF;
+      text-decoration: none;
+      color: var(--ink);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .next-card:hover {
+      transform: translateY(-2px);
+      border-color: #1A73E8;
+      box-shadow: 0 8px 20px rgba(26, 115, 232, 0.12);
+    }
+    .next-k { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #1967D2; }
+    .next-t { font-size: 14.5px; font-weight: 700; margin: 4px 0; }
+    .next-d { font-size: 12.5px; color: var(--ink-muted); }
+
+    .builder-gke-only { display: none; }
+    #builder[data-btarget="gke"] .builder-gke-only { display: flex; }
+
+    @media (max-width: 900px) {
+      .flow-grid, .next-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .recipe-grid, .builder-grid, .trust-strip { grid-template-columns: 1fr; }
+      .topbar-hide { display: none; }
+    }
+    @media (max-width: 680px) {
+      .card { padding: 20px 18px; }
+      .flow-grid, .next-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== FIXED TOP NAVBAR ==================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/" title="메인 포털 홈으로 이동">
+        <svg viewBox="0 0 224 36" fill="none" style="height:26px;width:auto;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" aria-label="Google Cloud">
+          <path d="M110.371 27.915C107.508 27.915 105.137 26.9938 103.257 25.1515C101.39 23.3092 100.456 20.8818 100.456 17.8693C100.456 14.9191 101.359 12.4917 103.164 10.5872C104.981 8.67018 107.352 7.71167 110.278 7.71167C112.195 7.71167 113.85 8.20337 115.244 9.18677C116.651 10.1702 117.759 11.7075 118.568 13.7988C118.643 14.0104 118.711 14.2283 118.773 14.4523C118.836 14.6764 118.892 14.9316 118.942 15.2179L103.63 21.7158L102.566 18.6349L115.244 13.2573L114.89 14.9565C114.417 13.6245 113.757 12.6598 112.91 12.0623C112.076 11.4648 111.149 11.166 110.128 11.166C108.385 11.166 106.998 11.7635 105.964 12.9586C104.931 14.1411 104.415 15.6971 104.415 17.6266C104.415 19.444 105.012 20.9938 106.207 22.276C107.402 23.5581 108.852 24.1992 110.558 24.1992C111.578 24.1992 112.531 23.944 113.415 23.4336C114.298 22.9233 115.07 22.2075 115.73 21.2863L118.755 23.2656C117.908 24.6598 116.751 25.7863 115.282 26.6453C113.813 27.4917 112.176 27.915 110.371 27.915Z" fill="#FC413D"/>
+          <path d="M94.2754 27.336V0.597412H98.3459V27.336H94.2754Z" fill="#00AF57"/>
+          <path d="M81.784 36C79.6429 36 77.8753 35.5519 76.4811 34.6556C75.0994 33.7593 73.9479 32.334 73.0268 30.3797L76.5371 28.8299C77.1222 29.9378 77.8317 30.8029 78.6658 31.4253C79.4998 32.0602 80.5205 32.3776 81.728 32.3776C83.5703 32.3776 84.9707 31.8423 85.9292 30.7718C86.9002 29.7013 87.3857 28.2075 87.3857 26.2905V24.554H87.255C86.9562 25.0021 86.533 25.4565 85.9853 25.917C85.4375 26.3652 84.7653 26.7511 83.9687 27.0747C83.172 27.3859 82.3006 27.5415 81.3546 27.5415C79.4749 27.5415 77.8442 27.1245 76.4624 26.2905C75.0807 25.4565 74.0226 24.2988 73.2882 22.8175C72.5537 21.3237 72.1865 19.6121 72.1865 17.6826C72.1865 15.778 72.5537 14.0727 73.2882 12.5664C74.0226 11.0478 75.0683 9.85897 76.4251 9.00005C77.7944 8.14113 79.3878 7.71167 81.2052 7.71167C82.4998 7.71167 83.6886 7.96686 84.7716 8.47723C85.8546 8.9876 86.701 9.71582 87.311 10.6619H87.3857V8.29051H91.2695V25.1328C91.2695 32.3776 88.1077 36 81.784 36ZM81.784 23.8444C82.9292 23.8444 83.9251 23.5768 84.7716 23.0415C85.618 22.5063 86.2653 21.7656 86.7135 20.8195C87.1616 19.861 87.3857 18.7718 87.3857 17.5519C87.3857 16.3071 87.1616 15.2179 86.7135 14.2843C86.2653 13.3382 85.618 12.61 84.7716 12.0996C83.9251 11.5893 82.9355 11.3341 81.8027 11.3341C80.6948 11.3341 79.7176 11.5955 78.8712 12.1183C78.0247 12.6287 77.3649 13.3569 76.8919 14.3029C76.4189 15.249 76.1824 16.3382 76.1824 17.5706C76.1824 18.8652 76.4189 19.9855 76.8919 20.9316C77.3774 21.8776 78.0434 22.5996 78.8898 23.0975C79.7363 23.5955 80.701 23.8444 81.784 23.8444Z" fill="#3186FF"/>
+          <path d="M60.6284 27.952C58.7114 27.952 56.9873 27.5101 55.4562 26.6263C53.9375 25.7425 52.7487 24.5288 51.8898 22.9852C51.0434 21.4292 50.6201 19.6803 50.6201 17.7384C50.6201 15.7467 51.0558 13.9852 51.9272 12.4541C52.811 10.9106 54.0122 9.71555 55.5309 8.86907C57.0496 8.0226 58.7487 7.59937 60.6284 7.59937C62.533 7.59937 64.2446 8.02883 65.7633 8.88775C67.2944 9.74667 68.4956 10.9479 69.367 12.4915C70.2384 14.035 70.674 15.784 70.674 17.7384C70.674 19.6803 70.2446 21.4292 69.3857 22.9852C68.5267 24.5413 67.3317 25.7612 65.8006 26.645C64.2819 27.5164 62.5579 27.952 60.6284 27.952ZM60.6284 24.4043C61.811 24.4043 62.8566 24.1118 63.7653 23.5267C64.6865 22.9292 65.396 22.1263 65.894 21.118C66.4043 20.0973 66.6595 18.9707 66.6595 17.7384C66.6595 16.5184 66.4043 15.4106 65.894 14.4147C65.396 13.4064 64.6865 12.6097 63.7653 12.0247C62.8442 11.4396 61.7985 11.1471 60.6284 11.1471C59.533 11.1471 58.5247 11.4272 57.6035 11.9873C56.6823 12.5475 55.9479 13.3317 55.4002 14.34C54.8649 15.3359 54.5973 16.4686 54.5973 17.7384C54.5973 18.9583 54.8463 20.0786 55.3442 21.0993C55.8546 22.1076 56.5641 22.9105 57.4728 23.5081C58.394 24.1056 59.4458 24.4043 60.6284 24.4043Z" fill="#FFBE00"/>
+          <path d="M38.9126 27.952C36.9956 27.952 35.2715 27.5101 33.7404 26.6263C32.2217 25.7425 31.0329 24.5288 30.174 22.9852C29.3275 21.4292 28.9043 19.6803 28.9043 17.7384C28.9043 15.7467 29.34 13.9852 30.2114 12.4541C31.0952 10.9106 32.2964 9.71555 33.8151 8.86907C35.3338 8.0226 37.0329 7.59937 38.9126 7.59937C40.8171 7.59937 42.5288 8.02883 44.0474 8.88775C45.5786 9.74667 46.7798 10.9479 47.6512 12.4915C48.5225 14.035 48.9582 15.784 48.9582 17.7384C48.9582 19.6803 48.5288 21.4292 47.6698 22.9852C46.8109 24.5413 45.6159 25.7612 44.0848 26.645C42.5661 27.5164 40.842 27.952 38.9126 27.952ZM38.9126 24.4043C40.0952 24.4043 41.1408 24.1118 42.0495 23.5267C42.9707 22.9292 43.6802 22.1263 44.1781 21.118C44.6885 20.0973 44.9437 18.9707 44.9437 17.7384C44.9437 16.5184 44.6885 15.4106 44.1781 14.4147C43.6802 13.4064 42.9707 12.6097 42.0495 12.0247C41.1283 11.4396 40.0827 11.1471 38.9126 11.1471C37.8172 11.1471 36.8089 11.4272 35.8877 11.9873C34.9665 12.5475 34.2321 13.3317 33.6844 14.34C33.1491 15.3359 32.8815 16.4686 32.8815 17.7384C32.8815 18.9583 33.1304 20.0786 33.6284 21.0993C34.1387 22.1076 34.8483 22.9105 35.757 23.5081C36.6782 24.1056 37.73 24.4043 38.9126 24.4043Z" fill="#FC413D"/>
+          <path d="M13.8174 27.9522C11.2531 27.9273 8.91285 27.2925 6.79667 26.0477C4.69294 24.7904 3.03112 23.0913 1.8112 20.9502C0.603734 18.8091 0 16.4564 0 13.8921C0 11.2904 0.603734 8.93152 1.8112 6.81534C3.01867 4.69916 4.68049 3.03734 6.79667 1.82987C8.91285 0.609958 11.2655 0 13.8548 0C15.8713 0 17.7199 0.336099 19.4004 1.0083C21.0809 1.6805 22.5124 2.71369 23.695 4.10788L20.9875 6.94605C19.9294 5.86306 18.8402 5.08506 17.7199 4.61203C16.612 4.139 15.3423 3.90248 13.9108 3.90248C12.0933 3.90248 10.4502 4.31327 8.98132 5.13485C7.51244 5.95642 6.34854 7.13277 5.48962 8.66389C4.64315 10.1826 4.21991 11.944 4.21991 13.9481C4.21991 15.9025 4.64315 17.6514 5.48962 19.195C6.33609 20.7261 7.49377 21.9211 8.96264 22.7801C10.4315 23.639 12.0809 24.0684 13.9108 24.0684C15.5415 24.0684 16.9979 23.7821 18.2801 23.2095C19.5747 22.6245 20.6203 21.7531 21.417 20.5954C22.2137 19.4377 22.6929 18.0311 22.8547 16.3755H13.7614V12.5104H26.7199C26.8444 13.3319 26.9066 14.0788 26.9066 14.751C26.9066 17.3651 26.3651 19.6805 25.2821 21.6971C24.1991 23.7012 22.6618 25.251 20.6701 26.3464C18.6908 27.4419 16.4066 27.9771 13.8174 27.9522Z" fill="#3186FF"/>
+          <path d="M143.722 27.9709C139.751 27.9709 136.44 26.639 133.789 23.9751C131.137 21.2987 129.812 17.9502 129.812 13.9294C129.812 9.89625 131.143 6.56638 133.807 3.93983C136.471 1.31328 139.77 0 143.704 0C144.986 0 146.224 0.168049 147.419 0.504148C148.614 0.840248 149.697 1.3195 150.668 1.94191C151.652 2.55186 152.679 3.43568 153.749 4.59335L150.911 7.28215C149.99 6.29875 149.199 5.60165 148.54 5.19086C147.892 4.78008 147.17 4.46887 146.374 4.25725C145.577 4.03319 144.693 3.92115 143.722 3.92115C140.946 3.92115 138.619 4.84232 136.739 6.68464C134.859 8.51451 133.919 10.9232 133.919 13.9108C133.919 16.8859 134.853 19.3195 136.72 21.2116C138.587 23.0913 140.921 24.0311 143.722 24.0311C144.706 24.0311 145.652 23.8942 146.56 23.6203C147.469 23.3464 148.297 22.9606 149.044 22.4626C149.791 21.9647 150.6 21.2303 151.471 20.2593L154.384 23.0415C153.189 24.3734 152.063 25.363 151.004 26.0103C149.959 26.6576 148.826 27.1431 147.606 27.4668C146.386 27.8029 145.092 27.9709 143.722 27.9709Z" fill="#212226"/>
+          <path d="M156.44 27.3547V0.616182H160.51V27.3547H156.44Z" fill="#212226"/>
+          <path d="M172.811 27.9709C169.911 27.9709 167.515 27.0062 165.622 25.0767C163.73 23.1473 162.784 20.7199 162.784 17.7946C162.784 14.8319 163.73 12.3983 165.622 10.4938C167.527 8.5892 169.923 7.63692 172.811 7.63692C175.699 7.63692 178.095 8.59542 180 10.5124C181.905 12.4294 182.857 14.8568 182.857 17.7946C182.857 20.7199 181.911 23.1473 180.019 25.0767C178.127 27.0062 175.724 27.9709 172.811 27.9709ZM172.811 24.4232C174.517 24.4232 175.948 23.807 177.106 22.5747C178.263 21.3298 178.842 19.7365 178.842 17.7946C178.842 15.8278 178.257 14.2344 177.087 13.0145C175.929 11.7946 174.504 11.1846 172.811 11.1846C171.106 11.1846 169.674 11.7946 168.517 13.0145C167.359 14.2344 166.78 15.8278 166.78 17.7946C166.78 19.7365 167.353 21.3298 168.498 22.5747C169.656 23.807 171.093 24.4232 172.811 24.4232Z" fill="#212226"/>
+          <path d="M192.043 27.9709C189.778 27.9709 188.029 27.3174 186.796 26.0103C185.564 24.6908 184.948 22.8298 184.948 20.4274V8.2531H189.018V19.8112C189.018 21.3672 189.373 22.556 190.083 23.3776C190.805 24.1991 191.832 24.6099 193.164 24.6099C194.558 24.6099 195.734 24.0747 196.693 23.0041C197.651 21.9211 198.13 20.6265 198.13 19.1203V8.2531H202.201V27.3547H198.336V22.8174L200.184 24.6659H198.224C197.688 25.6244 196.854 26.4149 195.722 27.0373C194.589 27.6597 193.363 27.9709 192.043 27.9709Z" fill="#212226"/>
+          <path d="M213.481 27.9709C210.879 27.9709 208.72 27.0311 207.002 25.1514C205.296 23.2593 204.444 20.8133 204.444 17.8133C204.444 14.8382 205.309 12.4045 207.039 10.5124C208.782 8.62032 210.96 7.67426 213.574 7.67426C214.894 7.67426 216.108 7.97302 217.215 8.57053C218.336 9.15559 219.176 9.92737 219.736 10.8859H219.867V0.616182H223.9V27.3547H220.016V23.9751L220.446 24.722H219.904C219.307 25.7054 218.429 26.4958 217.271 27.0933C216.114 27.6784 214.85 27.9709 213.481 27.9709ZM214.209 24.4605C215.84 24.4605 217.209 23.8381 218.317 22.5933C219.437 21.3361 219.998 19.7365 219.998 17.7946C219.998 15.8527 219.431 14.2718 218.298 13.0518C217.178 11.8319 215.815 11.222 214.209 11.222C212.603 11.222 211.234 11.8319 210.101 13.0518C208.981 14.2718 208.421 15.8589 208.421 17.8133C208.421 19.7427 208.975 21.3361 210.083 22.5933C211.203 23.8381 212.578 24.4605 214.209 24.4605Z" fill="#212226"/>
+        </svg>
+        <span class="brand-divider" aria-hidden="true"></span>
+        <span class="brand-title">Production Ready Agent Platform</span>
+      </a>
+
+      <div class="topbar-actions">
+        <a href="/" class="btn btn-subtle">← 메인 홈</a>
+        <a href="/deck" class="btn btn-subtle topbar-hide">01 · 소개 장표 ↗</a>
+        <a href="/checklist" class="btn btn-subtle topbar-hide">02 · 체크리스트 ↗</a>
+        <a href="/lab" class="btn btn-subtle topbar-hide">03 · 실습 가이드 ↗</a>
+        <a href="/workbench" class="btn btn-blue">04 · 런타임 진단 ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <!-- ==================== HERO ==================== -->
+    <section class="card card-rainbow">
+      <div class="eyebrow">AGENT SKILL GUIDE · ALL ENVIRONMENTS</div>
+      <h1>이미 만든 ADK 에이전트에 Agent Skill 적용하기</h1>
+      <p>
+        <code>adk create</code> 또는 직접 작성한 <code>app/agent.py</code> 프로젝트에 <code>agent-production-readiness</code> 스킬을 설치하고,
+        <strong>공통 4단계 프롬프트</strong>만으로 프로덕션 체크리스트 정적 진단 → 변경점 검토 → 보완 적용 → 리포트 생성까지 마치는 실전 가이드입니다.
+        Agent Runtime · Cloud Run · GKE 어느 환경이든 사용법은 동일하며, 스킬이 프로젝트 설정(<code>deployment/</code>)에서 배포 환경을 자동 감지합니다.
+        <em>(Antigravity CLI <code>agy</code> · Gemini CLI · Claude Code · Cursor 공통)</em>
+      </p>
+
+      <div class="quick-nav">
+        <a class="q-pill" href="#setup">① 설치 · 사전 준비</a>
+        <a class="q-pill" href="#workflow">② 4단계 기본 프롬프트</a>
+        <a class="q-pill" href="#builder">③ 내 조건 맞춤 프롬프트 생성기</a>
+        <a class="q-pill" href="#recipes">④ 상황별 추천 프롬프트</a>
+        <a class="q-pill" href="#scope">⑤ 수정 범위 · 플랫폼 Skill</a>
+      </div>
+
+      <div class="trust-strip">
+        <div class="trust-item">
+          <strong>🔒 app/agent.py 로직 불변</strong>
+          에이전트 프롬프트·도구·로직은 건드리지 않고 플랫폼 연결·배포 구성만 보완합니다.
+        </div>
+        <div class="trust-item">
+          <strong>🧭 Preview 항목 판정 비차단</strong>
+          Agent Registry · Agent Gateway · 사용자 위임 인증 등은 점검·안내만 하며 통과를 막지 않습니다.
+        </div>
+        <div class="trust-item">
+          <strong>📚 일반 플랫폼 BP는 별도 Skill 연계</strong>
+          프로브·PDB·알림·네트워크·Non-Root 등은 <code>google/skills</code> 플랫폼 Skill로 이어서 점검합니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 1. SETUP ==================== -->
+    <section class="card card-blue" id="setup">
+      <h2><span class="sec-num">1</span> 사전 준비 (최초 1회 · 약 2분)</h2>
+      <p>로컬 PC 또는 Cloud Shell에서 <code>agent-production-readiness</code> 스킬을 설치합니다. 기존 ADK 프로젝트에 배포 구성(<code>deployment/</code>)이 없다면 <code>agents-cli scaffold enhance</code>로 뼈대만 추가합니다.</p>
+
+      <h3>1-1. Agent Skill 설치 (모든 환경 공통)</h3>
+      <div class="code-wrap">
+        <div class="code-head">
+          <span class="code-label">bash · GitHub에서 최신 agent-production-readiness 스킬 설치</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+        </div>
+        <pre class="code-pre">rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
+curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" \
+  | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness</pre>
+      </div>
+      <p style="font-size:13px;">
+        최신 스킬 소스·문서 확인은 <a href="https://github.com/kiwonilee/production-ready-agent-platform/tree/main/skills/agent-production-readiness" target="_blank" rel="noopener noreferrer">GitHub 저장소 (<code>skills/agent-production-readiness</code>) ↗</a>에서 바로 볼 수 있습니다.
+      </p>
+
+      <h3>1-2. 기존 ADK 프로젝트에 배포 구성(<code>deployment/</code>)이 없는 경우</h3>
+      <p>
+        순수 <code>adk create</code>나 직접 작성한 <code>app/agent.py</code>만 있는 프로젝트라면 아래 명령어로 배포 뼈대(Terraform · Cloud Build · Dockerfile)만 덧붙이세요.
+        기존 <code>app/agent.py</code>는 <code>Skipping (your code)</code>로 그대로 보존됩니다. <em>(이미 <code>deployment/</code> 폴더가 있다면 이 단계는 건너뜁니다.)</em>
+      </p>
+      <div class="code-wrap">
+        <div class="code-head">
+          <span class="code-label">bash · deployment/ 뼈대 추가 (--deployment-target: agent_runtime | cloud_run | gke)</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+        </div>
+        <pre class="code-pre">cd &lt;내-ADK-프로젝트-폴더&gt;
+
+# 배포 대상에 따라 agent_runtime | cloud_run | gke 중 하나 지정
+agents-cli scaffold enhance . \
+  --deployment-target agent_runtime \
+  --cicd-runner google_cloud_build \
+  --region us-central1</pre>
+      </div>
+    </section>
+
+    <!-- ==================== 2. STANDARD 4-STEP WORKFLOW ==================== -->
+    <section class="card card-blue" id="workflow">
+      <h2><span class="sec-num">2</span> 표준 4단계 워크플로우 &amp; 기본 추천 프롬프트</h2>
+      <p>ADK 프로젝트 루트에서 코딩 에이전트(<code>agy</code>, <code>gemini</code>, <code>claude</code> 등)를 실행한 뒤, 아래 4단계 순서로 프롬프트를 입력하는 것을 권장합니다. 배포 환경은 스킬이 프로젝트에서 자동 감지하며, 원하면 프롬프트에 환경명만 덧붙이면 됩니다.</p>
+
+      <div class="flow-grid">
+        <div class="flow-step">
+          <div class="flow-step-k">STEP 1 · SCAN</div>
+          <div class="flow-step-t">의존성 · 정적 진단</div>
+          <div class="flow-step-d"><code>doctor</code> 실행 + 코드 조건 자동 판단 + 수정 없이 현황 표 확인</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-k">STEP 2 · DIFF</div>
+          <div class="flow-step-t">변경점 미리보기</div>
+          <div class="flow-step-d"><code>app/agent.py</code> 미수정 확인 + 자동 적용 vs 안내 전용 구분</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-k">STEP 3 · APPLY</div>
+          <div class="flow-step-t">보완 적용 · 리포트</div>
+          <div class="flow-step-d">승인 후 패치 + <code>uv.lock</code> 갱신 + 재검사 + <code>READINESS_REPORT</code></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-k">STEP 4 · DEPLOY</div>
+          <div class="flow-step-t">배포 · 플랫폼 Skill</div>
+          <div class="flow-step-d">Terraform/<code>agents-cli deploy</code> + <code>google/skills</code> 일반 BP 점검</div>
+        </div>
+      </div>
+
+      <h3>Step 1. 의존성 점검 + 조건 자동 판단 + 정적 진단 (<code>doctor</code> → <code>scan</code>)</h3>
+      <div class="code-wrap prompt-card">
+        <div class="code-head">
+          <span class="code-label">PROMPT 01 · 공통 정적 진단 (수정 없음 · 환경 자동 감지)</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+        </div>
+        <pre class="code-pre">agent-production-readiness 스킬을 사용해서 현재 ADK 프로젝트를 점검해줘. (배포 환경은 프로젝트 설정에서 자동 감지해줘.)
+1) 먼저 doctor로 필수 도구(agents-cli · agents-cli Skill)와 권장 플랫폼 Skill 설치 상태를 확인해줘.
+2) 코드에서 멀티턴 대화, 장기 기억, AI 생성 코드 실행, MCP·외부 도구 호출, 사용자 대신 외부 호출 여부를 자동 판단하고, 판단이 애매한 조건만 한 번에 질문해줘.
+3) 파일은 아직 수정하지 말고, 5개 카테고리(State &amp; Memory · Runtime Lifecycle · CI/CD &amp; Evaluation · Observability · Security &amp; Governance)별 충족 현황과 주요 블로커를 표로 정리해줘.</pre>
+      </div>
+
+      <h3>Step 2. 변경점(diff) 미리보기 — <code>app/agent.py</code> 불변 확인</h3>
+      <div class="code-wrap prompt-card">
+        <div class="code-head">
+          <span class="code-label">PROMPT 02 · 변경점 미리보기 &amp; 적용 범위 확인</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+        </div>
+        <pre class="code-pre">방금 진단 결과에서 보완이 필요한 항목들의 변경점(diff)을 먼저 보여줘.
+app/agent.py의 에이전트 로직·도구·프롬프트는 수정하지 않는지 확인해주고, 자동 적용되는 항목과 내가 직접 설정해야 하는 안내 전용(guidance-only) 항목을 구분해서 설명해줘.</pre>
+      </div>
+
+      <h3>Step 3. 보완 적용 · 재검사 · 리포트 생성 (<code>apply</code> → <code>report</code>)</h3>
+      <div class="code-wrap prompt-card">
+        <div class="code-head">
+          <span class="code-label">PROMPT 03 · 보완 적용 + 재검사 + 리포트 출력</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+        </div>
+        <pre class="code-pre">diff 확인했어. 제안된 변경 사항을 적용하고, uv.lock 갱신 후 재검사까지 돌려줘.
+최종 결과를 READINESS_REPORT.md와 READINESS_REPORT.html로 생성하고,
+남은 Preview 항목 · 권고 사항(Advisory) · 함께 실행해야 할 Google Cloud 플랫폼 Skill 목록을 요약해줘.</pre>
+      </div>
+
+      <h3>Step 4. GCP 배포 명령어 정리 + 일반 플랫폼 BP 추가 점검</h3>
+      <div class="code-wrap prompt-card">
+        <div class="code-head">
+          <span class="code-label">PROMPT 04 · 배포 명령어 + 플랫폼 Skill 연계</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+        </div>
+        <pre class="code-pre">현재 프로젝트 설정 기준으로 GCP 배포 명령어(Terraform apply + agents-cli deploy)와 배포 후 검증 명령어(Agent Registry 등록 확인, 인증 호출 테스트)를 순서대로 정리해줘.
+그리고 이 환경에 권장되는 Google Cloud 플랫폼 Skill로 일반 인프라 Best Practice(헬스 프로브 · 알림 정책 · 네트워크 · 컨테이너 보안 등)도 이어서 점검해줘.</pre>
+      </div>
+    </section>
+
+    <!-- ==================== 3. INTERACTIVE PROMPT BUILDER ==================== -->
+    <section class="card card-green" id="builder" data-btarget="auto">
+      <h2><span class="sec-num" style="background:#E6F4EA;color:#137333;">3</span> 내 에이전트 조건 맞춤 프롬프트 생성기</h2>
+      <p>
+        내 ADK 에이전트의 특성을 체크하면, 추가 질문 없이 바로 <code>scan</code> → <code>diff</code>까지 진행할 수 있는
+        <strong>맞춤 원샷 프롬프트</strong>를 만들어 드립니다.
+      </p>
+
+      <div class="builder-target-bar" role="radiogroup" aria-label="프롬프트 생성기 대상 환경">
+        <span class="builder-target-label">대상 환경:</span>
+        <button type="button" class="bt-pill active" data-bt="auto" onclick="setBuilderTarget('auto')">자동 감지 (auto)</button>
+        <button type="button" class="bt-pill" data-bt="agent_runtime" onclick="setBuilderTarget('agent_runtime')"><img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="16" height="16">Agent Runtime</button>
+        <button type="button" class="bt-pill" data-bt="cloud_run" onclick="setBuilderTarget('cloud_run')"><img src="/static/icons/cloud-run.png" alt="Cloud Run" width="16" height="16">Cloud Run</button>
+        <button type="button" class="bt-pill" data-bt="gke" onclick="setBuilderTarget('gke')"><img src="/static/icons/gke.png" alt="GKE" width="16" height="16">GKE</button>
+      </div>
+
+      <div class="builder-grid">
+        <label class="cond-toggle checked" id="wrap-conv">
+          <input type="checkbox" id="cond-conv" checked onchange="renderBuilder()">
+          <span>
+            <span class="cond-title">멀티턴 대화 (conv)</span>
+            <span class="cond-sub">이전 대화 맥락을 이어가야 하는 에이전트</span>
+            <span class="cond-id" id="id-conv">*-F1 · 관리형 영속 세션</span>
+          </span>
+        </label>
+        <label class="cond-toggle" id="wrap-memory">
+          <input type="checkbox" id="cond-memory" onchange="renderBuilder()">
+          <span>
+            <span class="cond-title">장기 기억 필요 (memory)</span>
+            <span class="cond-sub">세션이 끝나도 사용자 선호·사실을 기억</span>
+            <span class="cond-id" id="id-memory">*-F2 · Memory Bank</span>
+          </span>
+        </label>
+        <label class="cond-toggle checked" id="wrap-tools">
+          <input type="checkbox" id="cond-tools" checked onchange="renderBuilder()">
+          <span>
+            <span class="cond-title">MCP · 외부 도구 호출 (tools)</span>
+            <span class="cond-sub">MCP 서버 · 외부 API · 원격 A2A 에이전트 호출</span>
+            <span class="cond-id" id="id-tools">Agent Gateway (Preview)</span>
+          </span>
+        </label>
+        <label class="cond-toggle" id="wrap-code">
+          <input type="checkbox" id="cond-code" onchange="renderBuilder()">
+          <span>
+            <span class="cond-title">AI 생성 코드 실행 (code)</span>
+            <span class="cond-sub">LLM이 생성한 Python·셸 코드를 실행</span>
+            <span class="cond-id" id="id-code">AI 생성 코드 격리</span>
+          </span>
+        </label>
+        <label class="cond-toggle" id="wrap-delegated">
+          <input type="checkbox" id="cond-delegated" onchange="renderBuilder()">
+          <span>
+            <span class="cond-title">사용자 대신 외부 도구 호출 (delegated)</span>
+            <span class="cond-sub">사용자 계정으로 Jira·GitHub 등 외부 시스템 호출</span>
+            <span class="cond-id" id="id-delegated">Agent Identity auth manager (Preview)</span>
+          </span>
+        </label>
+        <label class="cond-toggle builder-gke-only" id="wrap-idle">
+          <input type="checkbox" id="cond-idle" onchange="renderBuilder()">
+          <span>
+            <span class="cond-title">자주 일시정지·재개하는 상태 유지형 에이전트 (idle)</span>
+            <span class="cond-sub">GKE 전용 · 입력 대기가 길어 유휴 시 컴퓨팅 반납 필요</span>
+            <span class="cond-id">GKE-O2 · Agent Substrate / Sandbox</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="builder-opts">
+        <label>
+          평가 게이트 기준 점수 (<code>eval_threshold</code>):
+          <input type="number" id="opt-eval" value="3.5" min="1.0" max="5.0" step="0.1" onchange="renderBuilder()" style="width:74px;">
+        </label>
+        <label class="builder-gke-only">
+          GKE 실행 패턴:
+          <select id="opt-gke-pattern" onchange="renderBuilder()">
+            <option value="standard_pods">standard_pods (일반 Pod)</option>
+            <option value="agent_substrate">agent_substrate (기본 권장 · Standard ≥ 1.37)</option>
+            <option value="agent_sandbox">agent_sandbox (상시 실행 · 사이드카 · Autopilot)</option>
+          </select>
+        </label>
+        <label class="builder-gke-only">
+          무중단 종료 유예(초):
+          <input type="number" id="opt-gke-grace" value="120" min="30" max="600" step="30" onchange="renderBuilder()" style="width:76px;">
+        </label>
+      </div>
+
+      <div style="font-size:12.8px;font-weight:700;color:var(--ink-muted);">선택 조건 기준 점검 대상 조건부 항목:</div>
+      <div class="item-pills" id="builderPills"></div>
+
+      <div class="code-wrap prompt-card">
+        <div class="code-head">
+          <span class="code-label">CUSTOM PROMPT · 내 조건이 반영된 원샷 진단·diff 프롬프트</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+        </div>
+        <pre class="code-pre" id="builderPrompt"></pre>
+      </div>
+    </section>
+
+    <!-- ==================== 4. SCENARIO RECIPES ==================== -->
+    <section class="card card-amber" id="recipes">
+      <h2><span class="sec-num" style="background:#FEF7E0;color:#B06000;">4</span> 상황별 추천 프롬프트 모음</h2>
+      <p>특정 목적이나 환경에 맞춰 바로 복사해 쓸 수 있는 실전 프롬프트 레시피입니다.</p>
+
+      <div class="recipe-grid">
+        <article class="recipe-card">
+          <div>
+            <span class="recipe-tag">환경 미정 · 비교 추천</span>
+            <h4>① 배포 환경 추천 + 즉시 정적 진단</h4>
+            <p>Agent Runtime · Cloud Run · GKE 중 어디에 올릴지 아직 못 정했을 때 사용합니다.</p>
+          </div>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">PROMPT · 환경 추천 + scan</span>
+              <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">현재 ADK 프로젝트 코드를 분석해서 Agent Runtime, Cloud Run, GKE 중 어떤 배포 환경이 가장 적합한지 근거와 함께 추천해줘.
+그리고 추천한 환경을 기준으로 agent-production-readiness 스킬의 정적 진단(scan)을 수정 없이 바로 실행해서 표로 보여줘.</pre>
+          </div>
+        </article>
+
+        <article class="recipe-card">
+          <div>
+            <span class="recipe-tag"><img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="14" height="14"> Agent Runtime</span>
+            <h4>② Agent Identity + Agent Gateway 중심</h4>
+            <p>관리형 런타임에서 전용 신원과 외부 MCP 호출 통제를 안전하게 도입할 때 사용합니다.</p>
+          </div>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">PROMPT · Agent Runtime 보안·거버넌스</span>
+              <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">agent-production-readiness 스킬로 Agent Runtime 기준 진단 및 diff를 보여줘.
+- 신원은 전용 SA 대신 Agent Identity(AR-S1)를 우선 사용하고,
+- 외부 MCP 도구를 호출하므로 Agent Gateway(AR-S3)는 먼저 DRY_RUN 모드로 구성해줘.
+- 트레이스에 프롬프트 본문이 기록되지 않는지(AR-OB1)도 반드시 확인해줘.</pre>
+          </div>
+        </article>
+
+        <article class="recipe-card">
+          <div>
+            <span class="recipe-tag"><img src="/static/icons/cloud-run.png" alt="Cloud Run" width="14" height="14"> Cloud Run</span>
+            <h4>③ 인증 호출 · 영속 세션 · Cloud Trace</h4>
+            <p>서버리스 컨테이너 배포 전 필수 보안과 멀티턴 세션·트레이스를 점검할 때 사용합니다.</p>
+          </div>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">PROMPT · Cloud Run 프로덕션 점검</span>
+              <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">agent-production-readiness 스킬로 Cloud Run 기준 정적 진단(scan)과 diff를 보여줘.
+- allUsers 공개 호출 차단(CR-S1), 전용 신원·최소 권한(CR-S2),
+- InMemorySessionService 대신 VertexAiSessionService 연결(CR-F1),
+- Cloud Trace 내보내기 및 프롬프트 미기록(CR-OB1)을 중점적으로 확인해줘.</pre>
+          </div>
+        </article>
+
+        <article class="recipe-card">
+          <div>
+            <span class="recipe-tag"><img src="/static/icons/gke.png" alt="GKE" width="14" height="14"> GKE</span>
+            <h4>④ 긴 응답 보호 + AI 코드 격리 (Substrate / Sandbox)</h4>
+            <p>GKE에서 스트리밍 응답 보호와 격리 샌드박스를 구성할 때 사용합니다.</p>
+          </div>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">PROMPT · GKE Agent Substrate / Sandbox</span>
+              <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">agent-production-readiness 스킬로 GKE 기준 진단 및 diff를 보여줘.
+- 긴 스트리밍 응답 보호를 위해 terminationGracePeriodSeconds는 180초로 설정해줘(GKE-O1).
+- AI 생성 코드 실행과 유휴 일시정지·복원이 필요해 실행 패턴은 agent_substrate(GKE Standard 1.37 이상)로 적용해줘(GKE-S2, GKE-O2).
+  (Autopilot이나 사이드카·Arm 노드가 필요하면 agent_sandbox 대안으로 안내해줘.)</pre>
+          </div>
+        </article>
+
+        <article class="recipe-card">
+          <div>
+            <span class="recipe-tag">부분 적용 · CI/CD &amp; Evaluation</span>
+            <h4>⑤ CI/CD 파이프라인 · 평가 게이트만 추가</h4>
+            <p>다른 설정은 그대로 두고 품질 평가 게이트(<code>*-D1</code>, <code>*-D2</code>)만 먼저 도입할 때 사용합니다.</p>
+          </div>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">PROMPT · 평가 게이트 부분 적용</span>
+              <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">agent-production-readiness 스킬로 전체 수정은 하지 말고,
+CI/CD 파이프라인과 평가 게이트(D1, D2)만 점검해줘.
+평가 점수 임계값(eval_threshold)은 4.0으로 설정해서 diff를 먼저 보여주고, 내가 승인하면 적용해줘.</pre>
+          </div>
+        </article>
+
+        <article class="recipe-card">
+          <div>
+            <span class="recipe-tag">사용자 위임 인증 · Preview</span>
+            <h4>⑥ Jira · GitHub 등 사용자 대신 외부 도구 호출</h4>
+            <p>정적 API 키/PAT를 제거하고 Agent Identity auth manager(3-legged OAuth)로 전환할 때 사용합니다.</p>
+          </div>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">PROMPT · 사용자 위임 인증 (delegated)</span>
+              <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">이 에이전트는 사용자 대신 GitHub와 Jira API를 호출해.
+agent-production-readiness 스킬로 delegated=true 조건을 포함해 Security &amp; Governance 항목을 점검하고,
+코드나 환경변수에 정적 API 키·PAT가 남아있는지 확인한 뒤 Agent Identity auth manager(3-legged OAuth) 전환 가이드를 코드 예시와 함께 알려줘.</pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== 5. SCOPE & PLATFORM SKILLS ==================== -->
+    <section class="card" id="scope">
+      <h2><span class="sec-num">5</span> 수정 범위 &amp; 함께 사용하면 좋은 플랫폼 Skill</h2>
+      <table class="scope-tbl">
+        <thead>
+          <tr>
+            <th style="width:24%;">구분</th>
+            <th style="width:42%;">대상 파일 / 영역</th>
+            <th>설명</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>🔒 절대 수정 안 함</strong></td>
+            <td><code>app/agent.py</code> (프롬프트 · 도구 · 에이전트 로직)</td>
+            <td>비즈니스 로직은 보존됩니다. <code>scaffold enhance</code>와 스킬 <code>apply</code> 모두 건드리지 않습니다.</td>
+          </tr>
+          <tr>
+            <td><strong>🛠️ 자동 패치 가능</strong></td>
+            <td><code>app/app_utils/services.py</code> · <code>app/fast_api_app.py</code> · <code>pyproject.toml</code> · <code>Dockerfile</code> · <code>deployment/terraform/*.tf</code> · <code>deployment/k8s/*.yaml</code> · <code>tests/eval/</code> · <code>.cloudbuild/staging.yaml</code></td>
+            <td>항상 <code>diff</code>로 먼저 확인한 뒤 사용자 승인 후에만 적용합니다.</td>
+          </tr>
+          <tr>
+            <td><strong>📋 안내 전용 (Guidance)</strong></td>
+            <td><code>*-D1</code> (CI/CD 파이프라인 생성) · <code>AR-S4</code> / <code>CR-S5</code> (코드 격리) · <code>AR-S5</code> / <code>CR-S6</code> / <code>GKE-S5</code> (사용자 위임 인증)</td>
+            <td>상태를 판정하고 정확한 설정 가이드·명령어만 안내하며 임의로 파일을 덮어쓰지 않습니다.</td>
+          </tr>
+          <tr>
+            <td><strong>📚 플랫폼 Skill 위임</strong></td>
+            <td>헬스 프로브 · PDB · Terraform IaC 드리프트 · 알림 정책 · Non-Root · Direct VPC/PSC-I · Private Nodes · NetworkPolicy · PSS · SA 키 미사용</td>
+            <td>일반 컨테이너 인프라 BP는 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer"><code>google/skills · cloud</code></a> 플랫폼 Skill로 병행 점검하세요.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>환경별 함께 참조 권장 Google Cloud 플랫폼 Skill</h3>
+      <table class="scope-tbl">
+        <thead>
+          <tr>
+            <th style="width:22%;">환경</th>
+            <th>함께 참조 권장 플랫폼 Skill (<a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer">google/skills · cloud</a>)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="env-cell"><img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18">Agent Runtime</span></td>
+            <td>
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-deploy" target="_blank" rel="noopener noreferrer"><code>agent-platform-deploy</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-agent-registry" target="_blank" rel="noopener noreferrer"><code>agent-platform-agent-registry</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-access-audit" target="_blank" rel="noopener noreferrer"><code>agent-platform-access-audit</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-alert-configuration" target="_blank" rel="noopener noreferrer"><code>agent-platform-alert-configuration</code></a>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="env-cell"><img src="/static/icons/cloud-run.png" alt="Cloud Run" width="18" height="18">Cloud Run</span></td>
+            <td>
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/cloud-run-basics" target="_blank" rel="noopener noreferrer"><code>cloud-run-basics</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/cloud-run-alert-configuration" target="_blank" rel="noopener noreferrer"><code>cloud-run-alert-configuration</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/google-cicd-terraform" target="_blank" rel="noopener noreferrer"><code>google-cicd-terraform</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/google-cloud-waf-security" target="_blank" rel="noopener noreferrer"><code>google-cloud-waf-security</code></a>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="env-cell"><img src="/static/icons/gke.png" alt="GKE" width="18" height="18">GKE</span></td>
+            <td>
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-productionize" target="_blank" rel="noopener noreferrer"><code>gke-productionize</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-reliability" target="_blank" rel="noopener noreferrer"><code>gke-reliability</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-workload-security" target="_blank" rel="noopener noreferrer"><code>gke-workload-security</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-workload-identity" target="_blank" rel="noopener noreferrer"><code>gke-workload-identity</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-networking" target="_blank" rel="noopener noreferrer"><code>gke-networking</code></a> ·
+              <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-alert-configuration" target="_blank" rel="noopener noreferrer"><code>gke-alert-configuration</code></a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>다음 단계로 이동하기</h3>
+      <div class="next-grid">
+        <a class="next-card" href="/checklist">
+          <span class="next-k">02 · CHECKLIST</span>
+          <span class="next-t">환경별 체크리스트 상세</span>
+          <span class="next-d">5개 범주 · 33개 항목의 Check · Best Practice · 공식 문서 확인</span>
+        </a>
+        <a class="next-card" href="/lab">
+          <span class="next-k">03 · HANDS-ON LAB</span>
+          <span class="next-t">처음부터 따라 하는 실습</span>
+          <span class="next-d">Step 0~9 코드랩으로 배포·라이브 점검·정리까지 전체 체험</span>
+        </a>
+        <a class="next-card" href="/deck#page5">
+          <span class="next-k">01 · DECK (#05~06)</span>
+          <span class="next-t">환경별 장단점 · 선택 가이드</span>
+          <span class="next-d">Agent Runtime · Cloud Run · GKE 비교 및 의사결정 기준</span>
+        </a>
+        <a class="next-card" href="/workbench">
+          <span class="next-k">04 · WORKBENCH</span>
+          <span class="next-t">배포 후 런타임 JSON 진단</span>
+          <span class="next-d">Zero-IAM 방식으로 실제 배포 리소스 설정 JSON 즉시 감사</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const BUILDER_META = {
+      auto: {
+        label: "프로젝트 환경 자동 감지",
+        ids: {
+          conv: "*-F1 · 관리형 영속 세션",
+          memory: "*-F2 · Memory Bank",
+          tools: "Agent Gateway (Preview)",
+          code: "AI 생성 코드 격리",
+          delegated: "Agent Identity auth manager (Preview)",
+        },
+      },
+      agent_runtime: {
+        label: "Agent Runtime",
+        ids: {
+          conv: "AR-F1 · 관리형 영속 세션",
+          memory: "AR-F2 · Memory Bank",
+          tools: "AR-S3 · Agent Gateway (Preview)",
+          code: "AR-S4 · Code Execution",
+          delegated: "AR-S5 · auth manager (Preview)",
+        },
+      },
+      cloud_run: {
+        label: "Cloud Run",
+        ids: {
+          conv: "CR-F1 · 관리형 영속 세션",
+          memory: "CR-F2 · Memory Bank",
+          tools: "CR-S4 · Agent Gateway (Preview)",
+          code: "CR-S5 · Cloud Run sandboxes (Preview)",
+          delegated: "CR-S6 · auth manager (Preview)",
+        },
+      },
+      gke: {
+        label: "GKE",
+        ids: {
+          conv: "GKE-F1 · 관리형 영속 세션",
+          memory: "GKE-F2 · Memory Bank",
+          tools: "GKE-S4 · Agent Gateway for GKE (Preview)",
+          code: "GKE-S2 · Agent Substrate / Sandbox",
+          delegated: "GKE-S5 · auth manager (Preview)",
+          idle: "GKE-O2 · 유휴 일시정지 · 복원",
+        },
+      },
+    };
+
+    let builderTarget = "auto";
+
+    function setBuilderTarget(target) {
+      if (!BUILDER_META[target]) target = "auto";
+      builderTarget = target;
+      document.getElementById("builder").setAttribute("data-btarget", target);
+      document.querySelectorAll("[data-bt]").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-bt") === target);
+      });
+      const meta = BUILDER_META[target];
+      ["conv", "memory", "tools", "code", "delegated"].forEach(k => {
+        const el = document.getElementById(`id-${k}`);
+        if (el && meta.ids[k]) el.textContent = meta.ids[k];
+      });
+      renderBuilder();
+    }
+
+    function renderBuilder() {
+      const meta = BUILDER_META[builderTarget];
+      const keys = builderTarget === "gke"
+        ? ["conv", "memory", "tools", "code", "delegated", "idle"]
+        : ["conv", "memory", "tools", "code", "delegated"];
+
+      const condState = {};
+      const pills = [];
+      keys.forEach(k => {
+        const cb = document.getElementById(`cond-${k}`);
+        const wrap = document.getElementById(`wrap-${k}`);
+        const on = !!(cb && cb.checked);
+        condState[k] = on;
+        if (wrap) wrap.classList.toggle("checked", on);
+        const label = meta.ids[k] || k;
+        pills.push(`<span class="item-pill ${on ? "on" : "na"}">${on ? "✓" : "N/A"} ${label}</span>`);
+      });
+      document.getElementById("builderPills").innerHTML = pills.join("");
+
+      const condText = keys.map(k => `${k}=${condState[k] ? "true" : "false"}`).join(", ");
+      const evalThreshold = document.getElementById("opt-eval").value || "3.5";
+      const targetPhrase = builderTarget === "auto"
+        ? "프로젝트 설정에서 배포 환경을 자동 감지해"
+        : `${meta.label} 기준으로`;
+
+      const lines = [
+        `agent-production-readiness 스킬로 현재 ADK 프로젝트를 ${targetPhrase} 점검하고 변경점(diff)까지 보여줘.`,
+        `- 조건은 ${condText} 로 적용해서 추가 질문 없이 바로 진행해줘.`,
+        `- 평가 게이트 기준 점수(eval_threshold)는 ${evalThreshold} 로 맞춰줘.`,
+      ];
+
+      if (builderTarget === "gke") {
+        const pat = document.getElementById("opt-gke-pattern").value;
+        const grace = document.getElementById("opt-gke-grace").value || "120";
+        lines.push(`- GKE 실행 패턴은 ${pat}, 무중단 종료 유예 시간(terminationGracePeriodSeconds)은 ${grace}초로 설정해줘.`);
+      }
+      lines.push(`- 파일은 아직 수정하지 말고, 5개 카테고리별 진단 표와 파일별 diff를 먼저 보여줘. (app/agent.py 로직은 수정 금지)`);
+
+      document.getElementById("builderPrompt").textContent = lines.join("\n");
+    }
+
+    function copyBlock(btn) {
+      const wrap = btn.closest(".code-wrap");
+      const pre = wrap ? wrap.querySelector(".code-pre") : null;
+      if (!pre) return;
+      const text = pre.textContent || "";
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = "✓ 복사됨";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.classList.remove("copied");
+        }, 1600);
+      });
+    }
+
+    setBuilderTarget("auto");
+  </script>
+</body>
+</html>

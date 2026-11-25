@@ -70,16 +70,31 @@ flowchart LR
 
 > 웹에서 환경별 명령어 자동 전환과 **내 조건 맞춤 프롬프트 생성기**를 쓰려면 [`/guide` (`web/static/guide.html`)](web/static/guide.html) 페이지를 이용하세요.
 
-### 1. 사전 준비 (최초 1회 · 약 2분)
+### 1. 사전 준비 (최초 1회 · 약 3분)
 
-**① Agent Skill 설치** *(Antigravity CLI `agy` · Gemini CLI · Claude Code · Cursor 공통)*:
+**① Google Agents CLI (`agents-cli`) 및 공식 Agents CLI Skill 설치**:
+```bash
+command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv tool install google-agents-cli --upgrade
+agents-cli setup --skip-auth
+agents-cli --version
+```
+
+**② `agent-production-readiness` + Google Cloud 플랫폼 Agent Skills (`google/skills`) 설치** *(Antigravity CLI `agy` · Gemini CLI · Claude Code · Cursor 공통)*:
 ```bash
 rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
 curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" \
   | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
+
+# 대상 환경(agent_runtime | cloud_run | gke)의 공식 Google Cloud Agent Skills(google/skills) 설치 + doctor 검증
+python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py doctor . \
+  --target agent_runtime \
+  --install-platform-skills \
+  --skills-dir ~/.gemini/skills
 ```
 
-**② 기존 ADK 프로젝트에 배포 구성(`deployment/`)이 없는 경우**:
+**③ 기존 ADK 프로젝트에 배포 구성(`deployment/`)이 없는 경우**:
 순수 `adk create`나 직접 작성한 `app/agent.py`만 있는 프로젝트라면 `agents-cli scaffold enhance`로 배포 뼈대(Terraform · Cloud Build · Dockerfile)만 덧붙입니다. 기존 `app/agent.py`는 `Skipping (your code)`로 그대로 보존됩니다. *(이미 `deployment/`가 있다면 건너뜁니다.)*
 ```bash
 cd <내-ADK-프로젝트-폴더>

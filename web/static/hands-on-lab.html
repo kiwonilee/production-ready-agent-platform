@@ -1635,6 +1635,35 @@
     .code-same-callout .callout-title { font-size: 16.5px; }
     .code-same-lead { margin: 6px 0 0; font-size: 15.5px; font-weight: 600; color: #174EA6; line-height: 1.6; }
     .code-flow { display: grid; grid-template-columns: minmax(200px, 1fr) 130px minmax(260px, 1.5fr); align-items: center; gap: 10px; margin: 14px 0 6px; }
+    .skill-flow {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
+      margin: 14px 0 18px; padding: 14px; border-radius: 14px;
+      background: #F4F7FC; border: 1px solid rgba(26,115,232,0.16);
+    }
+    .sf-step {
+      position: relative; background: #FFFFFF; border-radius: 11px; padding: 11px 13px;
+      border: 1.5px solid #E2E8F0; display: flex; flex-direction: column; gap: 4px;
+    }
+    .sf-step.is-active {
+      border-color: #1A73E8; background: #F0F6FF;
+      box-shadow: 0 6px 16px -10px rgba(26,115,232,0.45);
+    }
+    .sf-step.is-done {
+      border-color: #34A853; background: #EFFAF3;
+    }
+    .sf-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .sf-badge {
+      font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 2px 7px; border-radius: 999px; background: #E2E8F0; color: #334155;
+    }
+    .sf-step.is-active .sf-badge { background: #1A73E8; color: #FFFFFF; }
+    .sf-step.is-done .sf-badge { background: #188038; color: #FFFFFF; }
+    .sf-tag { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #64748B; }
+    .sf-step.is-active .sf-tag { color: #1A73E8; }
+    .sf-step.is-done .sf-tag { color: #188038; }
+    .sf-title { font-size: 13.5px; font-weight: 700; color: #0F172A; line-height: 1.3; margin-top: 2px; }
+    .sf-desc { font-size: 12px; color: #475569; line-height: 1.4; }
+    @media (max-width: 860px) { .skill-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .cf-source { background: #fff; border: 2px solid #34A853; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(60,64,67,.12); }
     .cf-kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; color: #137333; text-transform: uppercase; }
     .cf-title { font-size: 17px; font-weight: 800; color: var(--ink); margin: 2px 0 6px; }
@@ -1894,14 +1923,14 @@
         </div>
         <p class="track-only" data-track="gke" style="margin:8px 0 0;font-size:13.5px;color:var(--ink-muted);">GKE 환경에서는 <code>agents-cli</code> 기본값에 따라 클러스터명과 네임스페이스가 모두 실습 Agent 서비스명(<code>{{AGENT_NAME}}</code>)으로 생성됩니다. Agent Gateway for GKE(Preview)를 사용할 계획이라면 Region을 <code>us-central1</code> 또는 <code>europe-west1</code>로 지정하세요.</p>
 
-        <h3>1-2. Cloud Shell 열기 및 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 필수 CLI 도구 설치·확인</h3>
+        <h3>1-2. Cloud Shell 열기 및 기본 CLI 도구 확인 (<code>python3</code> · <code>gcloud</code> · <code>uv</code> · <code>terraform</code> · <code>agy</code>)</h3>
         <ol>
           <li><a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;text-decoration:underline;">Google Cloud Console ↗</a>에 로그인한 뒤, 우측 상단의 <strong>Cloud Shell 활성화 (<code>&gt;_</code>)</strong> 아이콘을 클릭해 터미널을 엽니다.</li>
-          <li>열린 Cloud Shell 터미널에 아래 명령어를 복사·실행하여 <code>python3</code>, <code>gcloud</code> 버전을 확인하고, <strong><code>uv</code></strong> · <strong><code>agents-cli</code></strong> · <strong><code>terraform</code></strong>을 설치(미설치 시 자동 설치)합니다.<span class="track-only" data-track="gke"> GKE 환경은 이어서 <strong><code>kubectl</code></strong> · <strong><code>gke-gcloud-auth-plugin</code></strong>도 확인합니다.</span></li>
+          <li>열린 Cloud Shell 터미널에 아래 명령어를 복사·실행하여 <code>python3</code>, <code>gcloud</code>, <code>agy</code> 버전을 확인하고, 미설치된 <strong><code>uv</code></strong> · <strong><code>terraform</code></strong>을 자동 설치합니다.<span class="track-only" data-track="gke"> GKE 환경은 이어서 <strong><code>kubectl</code></strong> · <strong><code>gke-gcloud-auth-plugin</code></strong>도 확인합니다.</span></li>
         </ol>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · Cloud Shell에서 도구 버전 확인 및 uv · agents-cli · terraform 설치 (모든 환경 공통)</span>
+            <span class="code-label">bash · 기본 CLI 도구 확인 및 uv · terraform 설치 (모든 환경 공통)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="python3 --version
@@ -1909,8 +1938,6 @@ gcloud --version | head -n 1
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH=&quot;$HOME/.local/bin:$PATH&quot;
 uv --version
-command -v agents-cli >/dev/null 2>&1 || uv tool install google-agents-cli
-agents-cli --version
 if ! terraform -version 2>/dev/null | grep -q &quot;^Terraform v&quot;; then
   wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
   echo &quot;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?&lt;=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main&quot; | sudo tee /etc/apt/sources.list.d/hashicorp.list
@@ -1928,25 +1955,41 @@ agy --version"></pre>
 gke-gcloud-auth-plugin --version 2&gt;/dev/null || sudo apt-get install -y google-cloud-cli-gke-gcloud-auth-plugin"></pre>
         </div>
 
+        <h3>1-3. Google Agents CLI (<code>agents-cli</code>) 및 공식 Agents CLI Skill 설치</h3>
+        <p>
+          ADK 프로젝트 스캐폴딩(<code>scaffold</code>)·평가(<code>eval</code>)·배포(<code>deploy</code>)를 담당하는 공식 <strong><code>agents-cli</code></strong>와
+          코딩 에이전트용 공식 <strong>Agents CLI Skills</strong>(<code>google-agents-cli-workflow</code> · <code>scaffold</code> · <code>eval</code> · <code>deploy</code> 등)를 함께 설치합니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · agents-cli 설치(업그레이드) + 공식 Agents CLI Skill 글로벌 설치</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+uv tool install google-agents-cli --upgrade
+agents-cli setup --skip-auth
+agents-cli --version"></pre>
+        </div>
+
         <div class="callout callout-blue">
           <div class="callout-title">🧰 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 실습에 사용하는 필수 CLI 도구</div>
           <ul style="margin:6px 0 0 18px;">
             <li><strong><code>python3</code> · <code>gcloud</code></strong> — Python 실행 및 Google Cloud 배포용 CLI로, <strong>Cloud Shell에 기본 설치</strong>되어 있습니다.</li>
             <li><strong><code>uv</code></strong> — Python 가상환경·패키지 설치 및 <code>agents-cli</code> 도구 설치를 빠르게 처리하는 패키지 매니저입니다.</li>
-            <li><strong><code>agents-cli</code> (<code>google-agents-cli</code>)</strong> — ADK 에이전트 생성(<code>scaffold</code>), 로컬 실행(<code>run</code>), 배포(<code>deploy</code>)를 담당하는 Google 공식 CLI입니다. 위 명령어로 자동 설치됩니다.</li>
+            <li><strong><code>agents-cli</code> (<code>google-agents-cli</code>)</strong> — ADK 에이전트 생성(<code>scaffold</code>), 로컬 실행(<code>run</code>), 평가(<code>eval</code>), 배포(<code>deploy</code>)를 담당하며, <code>agents-cli setup --skip-auth</code>를 실행해야 <code>agy</code>의 <code>/skills</code>에 공식 Agents CLI 스킬이 등록됩니다.</li>
             <li><strong><code>terraform</code></strong> — Step 6 배포 시 <span class="track-only" data-track="agent_runtime">Agent Identity · IAM · Agent Runtime 관련</span><span class="track-only" data-track="cloud_run">Cloud Run 서비스 · IAM 등</span><span class="track-only" data-track="gke">GKE 클러스터 · Workload Identity · 워크로드 등</span> GCP 인프라를 코드(IaC)로 프로비저닝할 때 사용합니다. 미설치 시 위 명령어로 자동 설치됩니다.</li>
             <li class="track-only" data-track="gke"><strong><code>kubectl</code> · <code>gke-gcloud-auth-plugin</code></strong> — GKE 클러스터 인증, Agent Gateway/Sandbox/Substrate 매니페스트 적용 및 라이브 JSON 추출에 사용합니다. (Cloud Shell에 기본 설치)</li>
             <li><strong>Antigravity CLI (명령어: <code>agy</code>)</strong> — 대화형 AI 코딩 CLI로, Agent Skill을 실행해 진단·조치를 수행할 때 사용합니다.</li>
           </ul>
         </div>
 
-        <h3>1-3. GCP 프로젝트 설정 및 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 필수 API 활성화 (공통 + 환경 전용)</h3>
+        <h3>1-4. GCP 프로젝트 설정 및 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 필수 API 활성화 (공통 + 환경 전용)</h3>
         <p>Cloud Shell 터미널에서 <code>1-1</code>에 입력한 GCP 프로젝트를 기본값으로 지정하고, 에이전트 개발·등록·배포에 공통으로 필요한 API와 선택한 환경에만 필요한 API를 <strong>한 번에</strong> 활성화합니다.</p>
         <div class="track-only" data-track="agent_runtime">
-          <p style="margin:4px 0 6px;font-size:13.5px;color:var(--ink-muted);"><strong>공통 6개</strong>(<code>aiplatform</code> <code>cloudbuild</code> <code>artifactregistry</code> <code>secretmanager</code> <code>agentregistry</code> <code>apphub</code>) + <strong>Agent Runtime 전용 3개</strong> = 총 9개 API를 한 번에 활성화합니다.</p>
+          <p style="margin:4px 0 6px;font-size:13.5px;color:var(--ink-muted);"><strong>공통 6개</strong>(<code>aiplatform</code> <code>cloudbuild</code> <code>artifactregistry</code> <code>secretmanager</code> <code>agentregistry</code> <code>apphub</code>) + <strong>Agent Runtime · Gateway 전용 5개</strong> = 총 11개 API를 한 번에 활성화합니다.</p>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · 프로젝트 설정 및 Agent Runtime 필수 API(공통 + Agent Runtime 전용) 활성화</span>
+              <span class="code-label">bash · 프로젝트 설정 및 Agent Runtime 필수 API(공통 + Agent Gateway · Model Armor) 활성화</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="gcloud config set project {{PROJECT_ID}}
@@ -1960,16 +2003,18 @@ gcloud services enable \
   apphub.googleapis.com \
   networkservices.googleapis.com \
   networksecurity.googleapis.com \
+  serviceextensions.googleapis.com \
+  modelarmor.googleapis.com \
   iap.googleapis.com \
   --project={{PROJECT_ID}}"></pre>
           </div>
-          <p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-muted);"><strong>Agent Runtime 전용</strong> — 에이전트가 MCP 서버·외부 API·다른 에이전트를 호출할 때 체크리스트의 <strong>Agent Gateway(<code>AR-S3</code>, Preview · 조건부)</strong>로 외부 호출을 통제하기 위한 <code>networkservices</code> · <code>networksecurity</code> · <code>iap</code>(IAP/UAP) API입니다.</p>
+          <p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-muted);"><strong>Agent Runtime 전용</strong> — <strong>Agent Gateway(<code>AR-S3</code>, Preview)</strong> + IAP V2 + Model Armor 가드레일 전체 체험을 위한 <code>networkservices</code> · <code>networksecurity</code> · <code>serviceextensions</code> · <code>modelarmor</code> · <code>iap</code> API입니다.</p>
         </div>
         <div class="track-only" data-track="cloud_run">
-          <p style="margin:4px 0 6px;font-size:13.5px;color:var(--ink-muted);"><strong>공통 6개</strong>(<code>aiplatform</code> <code>cloudbuild</code> <code>artifactregistry</code> <code>secretmanager</code> <code>agentregistry</code> <code>apphub</code>) + <strong>Cloud Run 전용 1개</strong> = 총 7개 API를 한 번에 활성화합니다.</p>
+          <p style="margin:4px 0 6px;font-size:13.5px;color:var(--ink-muted);"><strong>공통 6개</strong>(<code>aiplatform</code> <code>cloudbuild</code> <code>artifactregistry</code> <code>secretmanager</code> <code>agentregistry</code> <code>apphub</code>) + <strong>Cloud Run 전용 1개</strong> = 기본 7개 API를 활성화하고, 이어서 <strong>Agent Gateway 체험용 6개 API</strong>도 함께 켭니다.</p>
           <div class="code-wrap">
             <div class="code-head">
-              <span class="code-label">bash · 프로젝트 설정 및 Cloud Run 필수 API(공통 + Cloud Run 전용) 활성화</span>
+              <span class="code-label">bash · 프로젝트 설정 및 Cloud Run 기본 필수 API(7개) 활성화</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
             </div>
             <pre class="code-pre" data-tpl="gcloud config set project {{PROJECT_ID}}
@@ -1984,7 +2029,21 @@ gcloud services enable \
   run.googleapis.com \
   --project={{PROJECT_ID}}"></pre>
           </div>
-          <p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-muted);"><strong>Cloud Run 전용</strong> — Cloud Run 서비스 배포용 <code>run.googleapis.com</code>입니다. Agent Gateway for Cloud Run(<code>CR-S4</code>, Preview · 조건부)을 쓸 때 필요한 사전 요건은 Step 3에서 안내합니다.</p>
+          <div class="code-wrap" style="margin-top:10px;">
+            <div class="code-head">
+              <span class="code-label">bash · [실습 전체 체험 · CR-S4] Agent Gateway for Cloud Run + Model Armor API(6개) 추가 활성화</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="gcloud services enable \
+  compute.googleapis.com \
+  networkservices.googleapis.com \
+  networksecurity.googleapis.com \
+  serviceextensions.googleapis.com \
+  modelarmor.googleapis.com \
+  iap.googleapis.com \
+  --project={{PROJECT_ID}}"></pre>
+          </div>
+          <p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-muted);"><strong>안내</strong> — 위 6개는 <strong>Agent Gateway for Cloud Run(<code>CR-S4</code>, Preview)</strong> + IAP V2 + Model Armor까지 끝까지 체험하기 위한 API입니다. <em>(Qwiklabs 샌드박스 정책상 일부 Preview API가 제한되더라도 위 기본 7개만으로 Cloud Run 배포 실습은 정상 진행됩니다.)</em></p>
         </div>
         <div class="track-only" data-track="gke">
           <p style="margin:4px 0 6px;font-size:13.5px;color:var(--ink-muted);"><strong>공통 6개</strong>(<code>aiplatform</code> <code>cloudbuild</code> <code>artifactregistry</code> <code>secretmanager</code> <code>agentregistry</code> <code>apphub</code>) + <strong>GKE 전용 12개</strong> = 총 18개 API를 한 번에 활성화합니다.</p>
@@ -2054,7 +2113,30 @@ curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive
 ls -la ~/.gemini/skills/agent-production-readiness/SKILL.md</pre>
         </div>
 
-        <h3>2-2. Antigravity CLI 실행 · 로그인 및 <code>/skills</code> 확인</h3>
+        <h3>2-2. Google Cloud 플랫폼 Agent Skills (<code>google/skills</code>) 설치 및 <code>doctor</code> 검증 (권장)</h3>
+        <p>
+          일반 인프라 Best Practice(헬스 프로브 · 알림 정책 · Non-Root · 네트워크 보안 등)를 점검하는 공식
+          <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;text-decoration:underline;">Google Cloud Agent Skills (<code>google/skills</code>) ↗</a>를
+          선택한 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 환경에 맞춰 <code>~/.gemini/skills/</code>에 한 번에 설치하고, <code>agents-cli</code> · Agents CLI 스킬 · 플랫폼 스킬 상태를 <code>doctor</code>로 즉시 확인합니다.
+        </p>
+        <div class="code-wrap">
+          <div class="code-head">
+            <span class="code-label">bash · {{TARGET_LABEL}}용 Google Cloud Agent Skills 일괄 설치 및 doctor 의존성 검증</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py doctor . \
+  --target {{TARGET_KEY}} \
+  --install-platform-skills \
+  --skills-dir ~/.gemini/skills"></pre>
+        </div>
+        <p style="margin:6px 0 0;font-size:13px;color:var(--ink-muted);">
+          <span class="track-only" data-track="agent_runtime">설치되는 Agent Runtime 플랫폼 스킬: <code>agent-platform-deploy</code> · <code>agent-platform-agent-registry</code> · <code>agent-platform-access-audit</code> · <code>agent-platform-alert-configuration</code></span>
+          <span class="track-only" data-track="cloud_run">설치되는 Cloud Run 플랫폼 스킬: <code>cloud-run-basics</code> · <code>cloud-run-alert-configuration</code> · <code>google-cicd-terraform</code> · <code>google-cloud-waf-security</code></span>
+          <span class="track-only" data-track="gke">설치되는 GKE 플랫폼 스킬: <code>gke-reliability</code> · <code>gke-productionize</code> · <code>gke-networking</code> · <code>gke-workload-security</code> · <code>gke-workload-identity</code> · <code>gke-alert-configuration</code></span>
+          <br/><em>(Node/npx 환경에서 개별 설치하려면 <code>npx -y skills add google/skills --skill &lt;스킬명&gt; -g -y</code>도 사용할 수 있습니다.)</em>
+        </p>
+
+        <h3>2-3. Antigravity CLI 실행 · 로그인 및 <code>/skills</code> 확인</h3>
         <p><strong>① 실습 작업 디렉터리(<code>~/agent-lab</code>)에서 Antigravity CLI(<code>agy</code>)를 실행합니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
@@ -2078,7 +2160,7 @@ agy"></pre>
           </ol>
         </div>
 
-        <p><strong>② Antigravity CLI 대화창에서 <code>/skills</code>를 입력해 스킬이 정상 설치되었는지 확인한 뒤, <code>/exit</code>(또는 <code>Ctrl+C</code>)로 터미널로 돌아옵니다:</strong></p>
+        <p><strong>② Antigravity CLI 대화창에서 <code>/skills</code>를 입력해 3종 스킬(<code>agent-production-readiness</code> · <code>google-agents-cli-*</code> · Google Cloud 플랫폼 스킬)이 모두 로드되었는지 확인한 뒤, <code>/exit</code>(또는 <code>Ctrl+C</code>)로 터미널로 돌아옵니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
             <span class="code-label">Antigravity CLI &gt; command · 설치된 스킬 목록 확인</span>
@@ -2086,7 +2168,9 @@ agy"></pre>
           </div>
           <pre class="code-pre" data-tpl="/skills"></pre>
           <div class="code-output">Shared skills · From ~/.gemini/skills
-  agent-production-readiness: Audits and hardens local Google Cloud AI Agent projects...</div>
+  agent-production-readiness: Checks and fixes production readiness of local Google Cloud AI agent projects...
+  google-agents-cli-workflow / scaffold / deploy / eval ...  (from agents-cli setup)
+  agent-platform-deploy / cloud-run-basics / gke-reliability ... (from google/skills)</div>
         </div>
 
         <div class="callout callout-green">
@@ -2188,7 +2272,7 @@ agents-cli scaffold enhance . \
 
         <div class="callout callout-blue track-only" data-track="agent_runtime" style="margin-top:12px;">
           <div class="callout-title"><img class="prod-icon-inline" src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18"> Agent Runtime 참고 — Agent Gateway (<code>AR-S3</code>, Preview · 조건부)</div>
-          <p style="margin-top:4px;">에이전트가 MCP 서버·외부 API·다른 에이전트를 호출한다면 체크리스트의 <strong>Agent Gateway(<code>AR-S3</code>)</strong>로 외부 호출을 통제할 수 있습니다. 필요한 <code>networkservices</code> · <code>networksecurity</code> · <code>iap</code> API는 Step 1-3에서 이미 활성화했습니다.</p>
+          <p style="margin-top:4px;">에이전트가 MCP 서버·외부 API·다른 에이전트를 호출한다면 체크리스트의 <strong>Agent Gateway(<code>AR-S3</code>)</strong>로 외부 호출을 통제할 수 있습니다. 필요한 <code>networkservices</code> · <code>networksecurity</code> · <code>iap</code> API는 Step 1-4에서 이미 활성화했습니다.</p>
         </div>
 
         <div class="callout callout-blue track-only" data-track="cloud_run" style="margin-top:12px;">
@@ -2250,10 +2334,41 @@ Local server stopped.</div>
 
         <p>
           Step 3에서 스캐폴딩한 프로젝트 루트(<code>~/agent-lab/{{AGENT_NAME}}</code>)에서 <strong>Antigravity CLI</strong>(<code>agy</code>)를 실행하고,
-          운영 환경 프로필을 선택한 뒤 <code>scan</code>(프로덕션 체크리스트 정적 점검)을 실행해 취약점을 파악합니다.
+          <strong><code>agent-production-readiness</code></strong> 스킬로 <strong>① 의존성 점검(<code>doctor</code>) → ② 코드 조건 자동 판단·질문 → ③ 정적 진단(<code>scan</code>)</strong>을 수행합니다. <em>(이 단계에서는 파일을 수정하지 않습니다.)</em>
         </p>
 
-        <h3>4-1. 정적 진단(Scanning) 실행</h3>
+        <div class="skill-flow" aria-label="Agent Skill 4단계 진행 흐름 (현재: 1단계 정적 진단)">
+          <div class="sf-step is-active">
+            <div class="sf-head"><span class="sf-badge">STAGE 1 · 현재</span><span class="sf-tag">Step 4</span></div>
+            <div class="sf-title">doctor · 조건 판단 · scan</div>
+            <div class="sf-desc">필수 도구 확인 + 코드 조건 자동 감지/질문 + 수정 없는 현황표</div>
+          </div>
+          <div class="sf-step">
+            <div class="sf-head"><span class="sf-badge">STAGE 2</span><span class="sf-tag">Step 5-1</span></div>
+            <div class="sf-title">diff 미리보기 · 승인</div>
+            <div class="sf-desc">파일별 변경점 검토 + <code>app/agent.py</code> 불변 확인</div>
+          </div>
+          <div class="sf-step">
+            <div class="sf-head"><span class="sf-badge">STAGE 3</span><span class="sf-tag">Step 5-2</span></div>
+            <div class="sf-title">apply · 재검사 · 리포트</div>
+            <div class="sf-desc">패치 적용 · <code>uv lock</code> · 재검사 · <code>READINESS_REPORT</code></div>
+          </div>
+          <div class="sf-step">
+            <div class="sf-head"><span class="sf-badge">STAGE 4</span><span class="sf-tag">Step 5-3</span></div>
+            <div class="sf-title">플랫폼 Skill 일반 BP 점검</div>
+            <div class="sf-desc"><code>google/skills</code>로 프로브 · 알림 · 네트워크 추가 점검</div>
+          </div>
+        </div>
+
+        <div class="callout callout-amber" style="margin:10px 0 14px;">
+          <div class="callout-title">🧪 실습 전체 체험 모드 (Preview 포함) vs. 실전 운영 적용 (<code>/guide</code>)</div>
+          <p style="margin-top:4px;">
+            <strong>실전 프로젝트(<a href="/guide" target="_blank" rel="noopener noreferrer" style="color:#9A5300;font-weight:700;text-decoration:underline;">/guide ↗</a>)</strong>에서는 코드 조건에 맞는 항목만 선별 적용하고, <strong>Preview 항목은 반드시 사용자 별도 동의 후에만 적용</strong>합니다.
+            반면 이 <strong>핸즈온 실습</strong>에서는 <em>"모든 기능(조건부 + Preview 포함)을 적용했을 때 코드·Terraform·K8s·리포트가 어떻게 바뀌는지"</em> 끝까지 눈으로 확인하기 위해 <strong>전체 항목 체험 프롬프트</strong>를 사용합니다.
+          </p>
+        </div>
+
+        <h3>4-1. 정적 진단(Scanning) 실행 — 실습 전체 항목(조건부 + Preview 포함)</h3>
         <p><strong>① 에이전트 프로젝트 루트에서 Antigravity CLI(<code>agy</code>)를 실행합니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
@@ -2264,73 +2379,76 @@ Local server stopped.</div>
 agy"></pre>
         </div>
 
-        <p><strong>② 열린 Antigravity CLI 대화창에 아래 프롬프트를 그대로 붙여넣으세요:</strong></p>
+        <p><strong>② 열린 Antigravity CLI 대화창에 아래 실습 체험용 프롬프트를 그대로 붙여넣으세요:</strong></p>
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 기준 scan 요청</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 실습 전체 체험 scan (조건부 + Preview 포함)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
-          <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 scan 해줘.
-조치사항에 대해 아직 수정하지 말고, 항목별 충족 현황과 주요 미충족·보완 항목, 참고 권고(Advisory)를 표로 요약해줘."></pre>
+          <pre class="code-pre" data-tpl="agent-production-readiness 스킬을 사용해서 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 점검해줘.
+이것은 전체 기능을 체험하는 핸즈온 실습이므로, 실제 운영과 달리 조건부 항목(장기 기억 · 외부 도구 호출 · 사용자 위임 인증 포함)과 Preview 항목(Agent Registry · Agent Gateway 등)까지 모두 포함해서 확인하고 싶어.
+1) 먼저 doctor로 필수 도구(agents-cli · agents-cli Skill)와 권장 플랫폼 Skill 설치 상태를 확인해줘.
+2) 파일은 아직 수정하지 말고, 5개 카테고리(State &amp; Memory · Runtime Lifecycle · CI/CD &amp; Evaluation · Observability · Security &amp; Governance) 전체 항목의 현재 상태를 표로 정리해줘.
+3) 각 항목 중 자동 패치되는 항목과 수동 가이드 전용 항목을 구분해서 알려줘."></pre>
         </div>
 
-        <p><strong>③ 진단 실행 전 나타나는 프로필 선택 메뉴에서 화살표(<code>↑↓</code>) + <code>Enter</code>로 범위를 고릅니다:</strong></p>
+        <p><strong>③ 스킬이 <code>doctor</code> 확인 후 전체 항목(조건부 + Preview 포함)을 스캔해 현황표를 출력합니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">Antigravity CLI &gt; Question 1/1 · 운영 환경 프로필 선택</span>
+            <span class="code-label">Antigravity CLI &gt; Step 1 · 실습 전체 체험 조건 적용 요약</span>
           </div>
-          <div class="code-output" style="border-top:none;">&gt; 1. 풀 프로덕션 (권장) — 상용 운영 전체 기준 적용 (State &amp; Memory · Runtime Lifecycle · CI/CD &amp; Evaluation · Observability · Security &amp; Governance)
-  2. 표준 프로덕션 — 외부 공개 API 상용 서비스
-  3. 경량 / PoC — 단발성 · 최소 비용 개발용 (기본 보안 · 프롬프트 미기록)
-  4. 직접 맞춤 조합 — 멀티턴 대화 · 장기 기억 · AI 생성 코드 실행 · MCP·외부 도구 호출 여부를 직접 선택</div>
+          <div class="code-output" style="border-top:none;">[실습 전체 체험 모드 — 조건 오버라이드 및 Preview 포함]
+  • 멀티턴 대화 (conv) · 장기 기억 (memory) · 외부 도구 (tools) · 위임 인증 (delegated) → 전체 포함
+  • Preview 항목 (Agent Registry · Agent Gateway · auth manager 등) → 실습 확인을 위해 명시 포함
+  ※ 실제 운영 적용(/guide)에서는 코드에서 감지된 조건만 점검하고, Preview는 사용자 동의 없이 건너뜁니다.</div>
         </div>
 
         <div class="callout callout-blue">
-          <div class="callout-title">💡 프로필 선택 &amp; 조건부 항목 판단</div>
+          <div class="callout-title">💡 실전 vs. 실습 판정 규칙 이해하기</div>
           <ul style="margin:6px 0 0 18px;">
-            <li><strong>1~3번 프리셋</strong>: 추가 질문 없이 선택한 프로필 기준으로 즉시 <code>scan</code> 실행. 조건부 항목(멀티턴 대화 · 장기 기억 · AI 생성 코드 실행 · MCP·외부 도구 호출)은 스킬이 코드에서 먼저 판단하고, 해당 없으면 <code>N/A</code>로 자동 제외합니다.</li>
-            <li><strong>4번 직접 맞춤 조합</strong>: 코드만으로 판단하기 어려운 조건(예: 세션을 넘어 사용자를 기억해야 하는지)을 직접 선택해 맞춤 진단</li>
-            <li><strong>Preview 항목</strong>(Agent Registry · Agent Gateway · 사용자 위임 인증)은 미충족이어도 판정을 막지 않고 보완 권고로 표시됩니다.</li>
+            <li><strong>실전 기본 동작 (<code>--items ALL</code>)</strong>: 코드에서 자동 판단해 해당 없는 조건부 항목은 <code>N/A</code>로 제외하고, Preview 항목은 <strong>최종 통과 판정(<code>🟢 Production Ready</code>)을 차단하지 않으며 자동 패치에서도 제외</strong>합니다.</li>
+            <li><strong>실습 전체 체험 모드</strong>: 위 프롬프트처럼 조건과 Preview 항목을 명시적으로 포함하면, 자동 패치 가능한 항목(Memory Bank · Agent Registry · Agent Runtime/GKE Agent Gateway 등)의 실제 diff와 수동 가이드 항목(Cloud Run Agent Gateway · Sandbox · auth manager)의 구성 절차를 한 번에 확인할 수 있습니다.</li>
           </ul>
         </div>
 
-        <p><strong>④ 진단 결과 예시</strong> <span style="font-size:13px;color:var(--ink-muted);">(항목 ID는 프로덕션 체크리스트 기준이며, 판정은 프로젝트 상태에 따라 달라집니다)</span></p>
+        <p><strong>④ 진단 결과 예시</strong> <span style="font-size:13px;color:var(--ink-muted);">(실습 전체 체험 기준 — 모든 조건부·Preview 항목 포함 시)</span></p>
         <div class="code-wrap track-only" data-track="cloud_run">
-          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · Cloud Run</span></div>
-          <div class="code-output" style="border-top:none;">  Skipped (N/A)     : CR-F2, CR-S4, CR-S6
-  🔴 RED   [CR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)
-           └─ InMemorySessionService 사용 — 재시작·스케일아웃 시 대화 유실
+          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · Cloud Run (전체 체험)</span></div>
+          <div class="code-output" style="border-top:none;">  🔴 RED   [CR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)     ← 자동 패치
+  🔴 RED   [CR-F2] 관리형 장기 기억 저장 (Memory Bank)               ← 자동 패치
   🟢 GREEN [CR-D1] CI/CD 파이프라인 (agents-cli)
-  🔴 RED   [CR-D2] 평가 데이터셋 · 평가 게이트
-  🟡 AMBER [CR-OB1] Cloud Trace · 프롬프트 미기록
-  🟡 AMBER [CR-S1] 인증된 호출만 허용
+  🔴 RED   [CR-D2] 평가 데이터셋 · 평가 게이트                       ← 자동 패치
+  🟡 AMBER [CR-OB1] Cloud Trace · 프롬프트 미기록                    ← 자동 패치
+  🟡 AMBER [CR-S1] 인증된 호출만 허용                                ← 자동 패치
   🟢 GREEN [CR-S2] 에이전트 전용 신원 · 최소 권한
-  🟡 AMBER [CR-S3] Agent Registry 등록 (Preview)</div>
+  🟡 AMBER [CR-S3] Agent Registry 등록 (Preview)                    ← 자동 패치 (동의 시)
+  🔴 RED   [CR-S4] Agent Gateway for Cloud Run (Preview)            ← 수동 가이드 (YAML/CLI)
+  🟡 AMBER [CR-S6] 사용자 위임 인증 auth manager (Preview)          ← 수동 가이드 (3LO OAuth)</div>
         </div>
         <div class="code-wrap track-only" data-track="agent_runtime">
-          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · Agent Runtime</span></div>
-          <div class="code-output" style="border-top:none;">  Skipped (N/A)     : AR-F2, AR-S5
-  🟢 GREEN [AR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)
+          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · Agent Runtime (전체 체험)</span></div>
+          <div class="code-output" style="border-top:none;">  🟢 GREEN [AR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)
+  🟢 GREEN [AR-F2] 관리형 장기 기억 저장 (Memory Bank)
   🟢 GREEN [AR-D1] CI/CD 파이프라인 (agents-cli)
-  🔴 RED   [AR-D2] 평가 데이터셋 · 평가 게이트
-  🟡 AMBER [AR-OB1] 프롬프트 미기록
-           └─ OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT 미설정
+  🔴 RED   [AR-D2] 평가 데이터셋 · 평가 게이트                       ← 자동 패치
+  🟡 AMBER [AR-OB1] 프롬프트 미기록 (NO_CONTENT)                     ← 자동 패치
   🟢 GREEN [AR-S1] 에이전트 전용 신원 · 최소 권한
-  🟡 AMBER [AR-S2] Agent Registry 등록 (Preview)
-  🟡 AMBER [AR-S3] Agent Gateway (외부 호출 통제) (Preview)</div>
+  🟡 AMBER [AR-S2] Agent Registry 등록 (Preview)                    ← 자동 패치 (동의 시)
+  🔴 RED   [AR-S3] Agent Gateway DRY_RUN + CA 신뢰 (Preview)        ← 자동 패치 (동의 시)
+  🟡 AMBER [AR-S5] 사용자 위임 인증 auth manager (Preview)          ← 수동 가이드 (3LO OAuth)</div>
         </div>
         <div class="code-wrap track-only" data-track="gke">
-          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · GKE</span></div>
-          <div class="code-output" style="border-top:none;">  Skipped (N/A)     : GKE-F2, GKE-O2, GKE-S2, GKE-S5
-  🔴 RED   [GKE-F1] 관리형 영속 세션 저장 (VertexAiSessionService)
-  🟡 AMBER [GKE-O1] 무중단 종료 (긴 응답 보호)
-           └─ terminationGracePeriodSeconds 기본값(30s) — 긴 스트리밍 응답이 끊길 수 있음
+          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · GKE (전체 체험)</span></div>
+          <div class="code-output" style="border-top:none;">  🔴 RED   [GKE-F1] 관리형 영속 세션 저장 (VertexAiSessionService)    ← 자동 패치
+  🔴 RED   [GKE-F2] 관리형 장기 기억 저장 (Memory Bank)              ← 자동 패치
+  🟡 AMBER [GKE-O1] 무중단 종료 (preStop · 120s)                     ← 자동 패치
   🟢 GREEN [GKE-D1] CI/CD 파이프라인 (agents-cli)
-  🔴 RED   [GKE-D2] 평가 데이터셋 · 평가 게이트
-  🟡 AMBER [GKE-OB1] Cloud Trace · 프롬프트 미기록
+  🔴 RED   [GKE-D2] 평가 데이터셋 · 평가 게이트                      ← 자동 패치
+  🟡 AMBER [GKE-OB1] Cloud Trace · 프롬프트 미기록                   ← 자동 패치
   🟢 GREEN [GKE-S1] 에이전트 전용 신원 · 최소 권한
-  🟡 AMBER [GKE-S3] Agent Registry 등록 (Preview)
-  🟡 AMBER [GKE-S4] Agent Gateway for GKE (외부 호출 통제) (Preview)</div>
+  🟡 AMBER [GKE-S3] Agent Registry 등록 (Preview)                   ← 자동 패치 (동의 시)
+  🔴 RED   [GKE-S4] Agent Gateway for GKE (Preview)                 ← 자동 패치 (agent-gateway.yaml)
+  🟡 AMBER [GKE-S5] 사용자 위임 인증 auth manager (Preview)         ← 수동 가이드 (3LO OAuth)</div>
         </div>
 
         <h3>4-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 전용 체크포인트 상세</h3>
@@ -2376,31 +2494,69 @@ agy"></pre>
         </div>
 
         <p>
-          열려 있는 <strong>Antigravity CLI</strong> 대화창에서 <strong>① 변경점(diff) 검토</strong>와 <strong>② 변경 사항 적용 · 재검사 · 점검 리포트(<code>READINESS_REPORT.md / .html</code>) 생성</strong>을 두 단계로 나누어 안전하게 진행합니다.
-          생성된 점검 리포트에는 <strong>항목별 충족 현황</strong>과 함께, 조직 정책에 따라 사용자가 선택 후 직접 설정할 <strong>Post-Setup Decision Guide</strong> 체크리스트가 정리됩니다.
+          열려 있는 <strong>Antigravity CLI</strong> 대화창에서 <strong>① 변경점(diff) 검토</strong> → <strong>② 변경 사항 적용 · 재검사 · 리포트 생성</strong> → <strong>③ 플랫폼 Skill 일반 인프라 BP 점검(선택)</strong> 순서로 안전하게 진행합니다.
+          생성된 점검 리포트(<code>READINESS_REPORT.md / .html</code>)에는 항목별 충족 현황과 함께 조직 정책에 따라 직접 선택할 <strong>Post-Setup Decision Guide</strong>가 정리됩니다.
         </p>
 
-        <h3>5-1. 변경점(diff) 검토</h3>
-        <div class="code-wrap prompt-card">
-          <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 변경점(diff) 미리보기</span>
-            <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+        <div class="skill-flow" aria-label="Agent Skill 4단계 진행 흐름 (현재: 2~4단계 보완 및 플랫폼 점검)">
+          <div class="sf-step is-done">
+            <div class="sf-head"><span class="sf-badge">✓ STAGE 1</span><span class="sf-tag">완료</span></div>
+            <div class="sf-title">doctor · 조건 판단 · scan</div>
+            <div class="sf-desc">의존성 확인 + 조건 감지 + 5대 카테고리 현황 파악</div>
           </div>
-          <pre class="code-pre" data-tpl="방금 진단한 {{TARGET_LABEL}} 프로필 기준으로 적용될 파일별 주요 변경점(diff)을 요약해줘."></pre>
+          <div class="sf-step is-active">
+            <div class="sf-head"><span class="sf-badge">STAGE 2 · 현재</span><span class="sf-tag">5-1</span></div>
+            <div class="sf-title">diff 미리보기 · 승인</div>
+            <div class="sf-desc">파일별 변경점 검토 + <code>app/agent.py</code> 불변 확인</div>
+          </div>
+          <div class="sf-step is-active">
+            <div class="sf-head"><span class="sf-badge">STAGE 3 · 현재</span><span class="sf-tag">5-2</span></div>
+            <div class="sf-title">apply · 재검사 · 리포트</div>
+            <div class="sf-desc">패치 적용 · <code>uv lock</code> · 재검사 · <code>READINESS_REPORT</code></div>
+          </div>
+          <div class="sf-step is-active">
+            <div class="sf-head"><span class="sf-badge">STAGE 4 · 선택</span><span class="sf-tag">5-3</span></div>
+            <div class="sf-title">플랫폼 Skill 일반 BP 점검</div>
+            <div class="sf-desc"><code>google/skills</code>로 프로브 · 알림 · 네트워크 추가 점검</div>
+          </div>
         </div>
 
-        <h3>5-2. 변경 사항 적용 · 재검사 · 점검 리포트 생성</h3>
+        <h3>5-1. [STAGE 2] 변경점(<code>diff</code>) 미리보기 — Preview 포함 전체 확인 &amp; <code>app/agent.py</code> 불변 검증</h3>
+        <div class="code-wrap prompt-card">
+          <div class="code-head">
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 실습 전체 항목(Preview 포함) diff 미리보기</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="방금 진단한 {{TARGET_LABEL}} 전체 항목(조건부 + Preview 포함) 기준으로 적용될 파일별 주요 변경점(diff)을 먼저 보여줘.
+app/agent.py의 에이전트 로직·도구·프롬프트는 수정하지 않는지 확인해주고, 자동 패치되는 항목과 내가 직접 설정해야 하는 수동 가이드 항목(예: Agent Gateway 수동 구성, auth manager)의 YAML·CLI 절차를 구분해서 설명해줘."></pre>
+        </div>
+
+        <h3>5-2. [STAGE 3] 전체 보완 적용(Preview 명시적 동의) · <code>uv lock</code> · 재검사 · 점검 리포트 생성</h3>
         <p style="font-size:13.5px;color:var(--ink-muted);margin-bottom:8px;">
-          변경점을 확인한 뒤 아래 프롬프트를 입력하세요. (파라미터 조정이 필요하면 예: <em>"VPC 이름은 prod-vpc로 적용해줘"</em>를 덧붙이면 됩니다.)
+          변경점을 확인한 뒤 아래 프롬프트로 <strong>Preview 항목 적용에 명시적으로 동의</strong>하고 일괄 적용합니다.
+          <em>(실전 운영에서는 <a href="/guide" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;">/guide ↗</a>처럼 필요한 항목만 선택해 적용하세요.)</em>
         </p>
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 변경 사항 적용 및 재검사</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 전체 적용(Preview 동의) + 재검사 + 리포트</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
-          <pre class="code-pre" data-tpl="확인했어. 제안된 변경 사항을 적용하고 재검사와 점검 리포트 생성까지 진행해줘."></pre>
-          <div class="code-output">✅ 적용 완료 · uv.lock 갱신 · 재검사 통과 (🟢 Production Ready · 🔴 0 · 🟡 0)
+          <pre class="code-pre" data-tpl="diff 확인했고, 실습 체험을 위해 Preview 항목(Agent Registry · Agent Gateway 등) 포함 적용에 동의해.
+자동 패치 가능한 전체 항목을 적용하고, uv.lock 갱신 후 재검사와 READINESS_REPORT.md / .html 생성까지 진행해줘."></pre>
+          <div class="code-output">✅ 적용 완료 (조건부 + Preview 포함) · uv.lock 갱신 · 재검사 통과 (🟢 Production Ready)
 📄 Exported: READINESS_REPORT.md &amp; READINESS_REPORT.html</div>
+        </div>
+
+        <h3>5-3. [STAGE 4 · 선택] Google Cloud 플랫폼 Skill로 일반 인프라 BP 추가 점검</h3>
+        <p style="font-size:13.5px;color:var(--ink-muted);margin-bottom:8px;">
+          Step 2-2에서 설치한 공식 <code>google/skills</code> 플랫폼 스킬을 같은 <code>agy</code> 세션에서 바로 호출해, 헬스 프로브 · 알림 정책 · Non-Root · 네트워크 보안 등 일반 인프라 Best Practice까지 이어서 점검할 수 있습니다.
+        </p>
+        <div class="code-wrap prompt-card">
+          <div class="code-head">
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 플랫폼 Skill 추가 점검</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="이 {{TARGET_LABEL}} 환경에 설치된 Google Cloud 플랫폼 Skill로 일반 인프라 Best Practice(헬스 프로브 · 알림 정책 · Non-Root 컨테이너 · 네트워크 보안 등)도 이어서 점검해줘."></pre>
         </div>
 
         <div class="callout callout-amber track-only" data-track="gke" style="margin-top:12px;">
@@ -2545,7 +2701,7 @@ agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --no-confirm-proj
 gcloud container clusters get-credentials {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}}
 
 # [선택] 실행 패턴별 확장 매니페스트 적용:
-# 1) Agent Gateway for GKE (사전 요건: GKE >= 1.37.2-gke.1042000 Rapid, us-central1/europe-west1, Step 1-3 9개 API + 리전 proxy-only 서브넷 + Namespace ambient 라벨)
+# 1) Agent Gateway for GKE (사전 요건: GKE >= 1.37.2-gke.1042000 Rapid, us-central1/europe-west1, Step 1-4 9개 API + 리전 proxy-only 서브넷 + Namespace ambient 라벨)
 # kubectl label namespace {{AGENT_NAME}} networking.gke.io/dataplane-mode=ambient --overwrite
 # [ -f deployment/k8s/agent-gateway.yaml ] &amp;&amp; kubectl apply -f deployment/k8s/agent-gateway.yaml
 # 2) AI 생성 코드 격리 (GKE-S2): Agent Substrate (Standard >= 1.37 + kubectl ate) 또는 대안 Agent Sandbox (SandboxWarmPool)
@@ -2938,7 +3094,7 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
           <summary>Q5. (GKE) <code>agent-gateway.yaml</code> 적용 시 CRD 없음 오류나 PSS <code>restricted</code> 거부·Autopilot 충돌이 발생합니다.</summary>
           <div class="faq-body">
             <ul style="margin:6px 0 0 18px;">
-              <li><strong>Agent Gateway for GKE CRD 없음</strong>: 공식 Agent Gateway for GKE(<code>GCPAgentGateway</code>, <code>GCPBackend</code>, <code>GCPEgressPolicy</code>, <code>GCPAuthzPolicy</code> v1, <code>GCPExtensionBinding</code> v1)는 <strong>GKE &ge; <code>1.37.2-gke.1042000</code> (Rapid 채널)</strong>, Preview 리전(<strong><code>us-central1</code> / <code>europe-west1</code></strong>), Step 1-3의 <strong>9개 공식 API</strong>, 그리고 리전 <code>proxy-only</code> 서브넷이 선행되어야 합니다.</li>
+              <li><strong>Agent Gateway for GKE CRD 없음</strong>: 공식 Agent Gateway for GKE(<code>GCPAgentGateway</code>, <code>GCPBackend</code>, <code>GCPEgressPolicy</code>, <code>GCPAuthzPolicy</code> v1, <code>GCPExtensionBinding</code> v1)는 <strong>GKE &ge; <code>1.37.2-gke.1042000</code> (Rapid 채널)</strong>, Preview 리전(<strong><code>us-central1</code> / <code>europe-west1</code></strong>), Step 1-4의 <strong>9개 공식 API</strong>, 그리고 리전 <code>proxy-only</code> 서브넷이 선행되어야 합니다.</li>
               <li><strong>Agent Substrate + Autopilot 충돌</strong>: <code>Agent Substrate</code>(<code>ate.dev/v1alpha1</code>)는 <strong>GKE Standard &ge; 1.37 전용</strong>입니다. Autopilot 클러스터에서는 <code>Standard Pods</code> 또는 <code>Agent Sandbox</code>를 사용하세요.</li>
               <li><strong>PSS <code>restricted</code> 적용 후 Pod 스케줄링 거부</strong>: 반드시 Non-Root <code>securityContext</code>가 반영된 <code>terraform apply</code>(또는 Deployment 업데이트)를 <strong>먼저</strong> 완료한 뒤 Namespace에 <code>pod-security.kubernetes.io/enforce=restricted</code> 라벨을 부착해야 합니다.</li>
             </ul>

@@ -69,6 +69,7 @@ def skill_search_dirs(project_dir: str | Path | None = None) -> list[Path]:
     home = Path.home()
     dirs = [
         home / ".gemini" / "config" / "skills",
+        home / ".gemini" / "antigravity-cli" / "skills",
         home / ".gemini" / "skills",
         home / ".gemini" / ".agents" / "skills",
         home / ".agents" / "skills",

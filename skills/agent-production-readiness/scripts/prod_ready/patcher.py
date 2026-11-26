@@ -2675,10 +2675,10 @@ resource "google_project_service" "agent_gateway_apis" {
 }
 
 resource "google_network_services_agent_gateway" "egress_gateway" {
-  project   = var.project_id
-  location  = var.region
-  name      = "${var.project_name}-egress-gw"
-  protocols = ["MCP"]
+  provider = google-beta
+  project  = var.project_id
+  location = var.region
+  name     = "${var.project_name}-egress-gw"
 
   google_managed {
     governed_access_path = "AGENT_TO_ANYWHERE"
@@ -3094,11 +3094,11 @@ resource "google_project_service" "agent_gateway_apis" {
 }
 
 resource "google_network_services_agent_gateway" "egress_gateway" {
-  for_each  = local.deploy_project_ids
-  project   = each.value
-  location  = var.region
-  name      = "${var.project_name}-egress-gw"
-  protocols = ["MCP"]
+  provider = google-beta
+  for_each = local.deploy_project_ids
+  project  = each.value
+  location = var.region
+  name     = "${var.project_name}-egress-gw"
 
   google_managed {
     governed_access_path = "AGENT_TO_ANYWHERE"

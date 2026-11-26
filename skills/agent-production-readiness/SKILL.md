@@ -161,9 +161,16 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" report <project_dir> --target <targe
 
 After generating `READINESS_REPORT.md` and `READINESS_REPORT.html`, summarize the final verdict, any remaining Preview items or advisories, and the recommended Google Cloud platform skills for the target.
 
-### Step 5: Deploy & Platform Skill Follow-up
+### Step 5: Deploy, Live Verification & Platform Skill Follow-up
 
-Use `references/deployment-guide.md` for `terraform apply`, `uvx google-agents-cli deploy` (only after explicit approval; `--agent-identity` and `--service-account` are mutually exclusive), GKE `kubectl apply` of generated manifests, and post-deploy checks (`gcloud agent-registry agents list`, unauthenticated call returns 403 for `CR-S1`). Finish by recommending the target's platform skills from https://github.com/google/skills/tree/main/skills/cloud; when the user asks to follow up on general infrastructure best practices, automatically consult the installed platform skills for the target (probes, alerts, non-root/PSS, networking, IAM/WAF, IaC) without requiring the user to list those topics.
+Use `references/deployment-guide.md` for `terraform apply` (preferring `deployment/terraform/single-project` when present; pass `organization_id` on Cloud Run when declared), `agents-cli deploy` (only after summarizing commands and receiving explicit user approval; `--agent-identity` and `--service-account` are mutually exclusive), and GKE `kubectl apply` of generated manifests.
+
+When the user requests **post-deploy live verification** (even briefly, e.g. "체크리스트 적용 항목대로 잘 동작하는지 검증해줘"), automatically inspect `READINESS_REPORT.md` / the applied checklist items and run **all applicable end-to-end behavioral checks without requiring the user to list them**, then summarize results in a Korean table:
+- **Auth / Security**: Cloud Run unauthenticated call returns `403` vs IAM Identity Token call returns `200` (`CR-S1`); verify live Revision / Reasoning Engine / Deployment identity (`Agent Identity` / dedicated SA), `NO_CONTENT`, `AGENT_ENGINE_SESSION_ID`, and `gcloud agent-registry agents list`.
+- **Sessions & Memory Bank**: Run 3-turn `agents-cli run --url ... --mode=adk` — Turn 1 introduces a user fact (capture `Session: <id>`), Turn 2 resumes with `--session-id` (`*-F1`), Turn 3 starts a fresh session after a brief pause to test Memory Bank recall (`*-F2`).
+- **Evaluation & Trace**: Run `agents-cli eval run --config tests/eval/eval_config.yaml --dataset tests/eval/datasets/basic-dataset.json` (with `--url` on Cloud Run / GKE port-forward) and provide the Cloud Trace Explorer link (`https://console.cloud.google.com/traces/explorer?project=<PROJECT_ID>`) to confirm prompts are not logged (`NO_CONTENT`).
+
+Finish by recommending the target's platform skills from https://github.com/google/skills/tree/main/skills/cloud; when the user asks to follow up on general infrastructure best practices, automatically consult the installed platform skills for the target (probes, alerts, non-root/PSS, networking, IAM/WAF, IaC) without requiring the user to list those topics. When asked to clean up resources, always preview what will be destroyed (removing GKE `deployment/k8s/` first to avoid LB/Gateway finalizer hangs) and wait for explicit approval before `terraform destroy`.
 
 ### Optional: Web Workbench
 

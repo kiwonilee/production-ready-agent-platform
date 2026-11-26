@@ -1643,7 +1643,9 @@
     .sf-step {
       position: relative; background: #FFFFFF; border-radius: 11px; padding: 11px 13px;
       border: 1.5px solid #E2E8F0; display: flex; flex-direction: column; gap: 4px;
+      cursor: pointer; text-align: left; font-family: inherit; transition: border-color 0.15s ease, transform 0.12s ease;
     }
+    .sf-step:hover { border-color: #93C5FD; transform: translateY(-1px); }
     .sf-step.is-active {
       border-color: #1A73E8; background: #F0F6FF;
       box-shadow: 0 6px 16px -10px rgba(26,115,232,0.45);
@@ -1653,12 +1655,13 @@
     }
     .sf-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
     .sf-badge {
-      font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
-      padding: 2px 7px; border-radius: 999px; background: #E2E8F0; color: #334155;
+      font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.2px;
+      padding: 2px 8px; border-radius: 999px; background: #E2E8F0; color: #334155;
+      white-space: nowrap; flex-shrink: 0;
     }
     .sf-step.is-active .sf-badge { background: #1A73E8; color: #FFFFFF; }
     .sf-step.is-done .sf-badge { background: #188038; color: #FFFFFF; }
-    .sf-tag { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #64748B; }
+    .sf-tag { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #64748B; white-space: nowrap; flex-shrink: 0; }
     .sf-step.is-active .sf-tag { color: #1A73E8; }
     .sf-step.is-done .sf-tag { color: #188038; }
     .sf-title { font-size: 13.5px; font-weight: 700; color: #0F172A; line-height: 1.3; margin-top: 2px; }
@@ -1741,7 +1744,7 @@
       <div class="card card-pad">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span id="sidebarTrackBadge" class="pill pill-navy mono">Agent Runtime</span>
-          <span id="sidebarProgressLabel" class="mono" style="font-size:12.5px;font-weight:700;color:var(--accent);">0 / 10 완료 (0%)</span>
+          <span id="sidebarProgressLabel" class="mono" style="font-size:12.5px;font-weight:700;color:var(--accent);">0 / 12 완료 (0%)</span>
         </div>
 
         <div class="progress-track">
@@ -1749,7 +1752,7 @@
         </div>
 
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(66,133,244,0.12);">
-          <div style="font-size:11.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">실습 목차 (Step 0 ~ Step 9)</div>
+          <div style="font-size:11.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">실습 목차 (Step 0 ~ Step 11)</div>
           <ul id="stepNavList" class="step-nav"></ul>
         </div>
       </div>
@@ -1780,11 +1783,11 @@
           <span class="stage-num">2</span>
           <span class="stage-text">
             <span class="stage-name">Remediation</span>
-            <span class="stage-sub">보완 적용 · 재검사</span>
+            <span class="stage-sub">미리보기 · 적용 · BP</span>
           </span>
         </button>
         <span class="stage-arrow" aria-hidden="true">→</span>
-        <button type="button" class="stage-node" data-stage="deploy" onclick="goToStep(6)">
+        <button type="button" class="stage-node" data-stage="deploy" onclick="goToStep(8)">
           <span class="stage-num">3</span>
           <span class="stage-text">
             <span class="stage-name">Deploy</span>
@@ -1792,7 +1795,7 @@
           </span>
         </button>
         <span class="stage-arrow" aria-hidden="true">→</span>
-        <button type="button" class="stage-node" data-stage="runtime_audit" onclick="goToStep(7)">
+        <button type="button" class="stage-node" data-stage="runtime_audit" onclick="goToStep(9)">
           <span class="stage-num">4</span>
           <span class="stage-text">
             <span class="stage-name">Runtime Audit</span>
@@ -1801,11 +1804,11 @@
         </button>
       </nav>
 
-      <!-- ==================== STEP 0 (배포 환경 선택 · Step 1~9에서는 숨김) ==================== -->
+      <!-- ==================== STEP 0 (배포 환경 선택 · Step 1~11에서는 숨김) ==================== -->
       <section class="card card-pad-lg env-picker lab-step" data-step="0" id="step-0" aria-label="배포 환경 선택">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 0 / 9</span>
+            <span class="pill pill-navy mono">STEP 0 / 11</span>
             <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-common">모든 환경 선택</span>
             <span class="pill pill-gray mono">약 1분</span>
@@ -1878,7 +1881,7 @@
         </div>
 
         <div class="step-footer">
-          <span style="font-size:13px;color:var(--ink-faint);">선택한 환경은 Step 1~9 동안 고정되며 좌측 <strong>Step 0</strong>에서 언제든 바꿀 수 있습니다.</span>
+          <span style="font-size:13px;color:var(--ink-faint);">선택한 환경은 Step 1~11 동안 고정되며 좌측 <strong>Step 0</strong>에서 언제든 바꿀 수 있습니다.</span>
           <button class="btn btn-primary" onclick="completeAndNext(0)">선택한 <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 환경으로 Step 1 시작 →</button>
         </div>
       </section>
@@ -1887,7 +1890,7 @@
       <section class="card card-pad-lg lab-step" data-step="1" id="step-1">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 1 / 9</span>
+            <span class="pill pill-navy mono">STEP 1 / 11</span>
             <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-env" data-auto-tpl="1">{{TARGET_LABEL}} 환경 기준</span>
             <span class="pill pill-gray mono">약 5분</span>
@@ -1965,7 +1968,7 @@ gke-gcloud-auth-plugin --version 2&gt;/dev/null || sudo apt-get install -y googl
             <li><strong><code>python3</code> · <code>gcloud</code></strong> — Python 실행 및 Google Cloud 배포용 CLI로, <strong>Cloud Shell에 기본 설치</strong>되어 있습니다.</li>
             <li><strong><code>uv</code></strong> — Python 가상환경·패키지 설치 및 <code>agents-cli</code> 도구 설치를 빠르게 처리하는 패키지 매니저입니다.</li>
             <li><strong><code>agents-cli</code> (<code>google-agents-cli</code>)</strong> — ADK 에이전트 생성(<code>scaffold</code>), 로컬 실행(<code>run</code>), 평가(<code>eval</code>), 배포(<code>deploy</code>)를 담당하며, <code>agents-cli setup --skip-auth</code>를 실행해야 <code>agy</code>의 <code>/skills</code>에 공식 Agents CLI 스킬이 등록됩니다.</li>
-            <li><strong><code>terraform</code></strong> — Step 6 배포 시 <span class="track-only" data-track="agent_runtime">Agent Identity · IAM · Agent Runtime 관련</span><span class="track-only" data-track="cloud_run">Cloud Run 서비스 · IAM 등</span><span class="track-only" data-track="gke">GKE 클러스터 · Workload Identity · 워크로드 등</span> GCP 인프라를 코드(IaC)로 프로비저닝할 때 사용합니다. 미설치 시 위 명령어로 자동 설치됩니다.</li>
+            <li><strong><code>terraform</code></strong> — Step 8 배포 시 <span class="track-only" data-track="agent_runtime">Agent Identity · IAM · Agent Runtime 관련</span><span class="track-only" data-track="cloud_run">Cloud Run 서비스 · IAM 등</span><span class="track-only" data-track="gke">GKE 클러스터 · Workload Identity · 워크로드 등</span> GCP 인프라를 코드(IaC)로 프로비저닝할 때 사용합니다. 미설치 시 위 명령어로 자동 설치됩니다.</li>
             <li class="track-only" data-track="gke"><strong><code>kubectl</code> · <code>gke-gcloud-auth-plugin</code></strong> — GKE 클러스터 인증, Agent Gateway/Sandbox/Substrate 매니페스트 적용 및 라이브 JSON 추출에 사용합니다. (Cloud Shell에 기본 설치)</li>
             <li><strong>Antigravity CLI (명령어: <code>agy</code>)</strong> — 대화형 AI 코딩 CLI로, Agent Skill을 실행해 진단·조치를 수행할 때 사용합니다.</li>
           </ul>
@@ -2068,7 +2071,7 @@ gcloud services enable \
       <section class="card card-pad-lg lab-step" data-step="2" id="step-2">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 2 / 9</span>
+            <span class="pill pill-navy mono">STEP 2 / 11</span>
             <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-common">모든 환경 공통</span>
             <span class="pill pill-gray mono">약 3분</span>
@@ -2169,7 +2172,7 @@ agy"></pre>
       <section class="card card-pad-lg lab-step" data-step="3" id="step-3">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 3 / 9</span>
+            <span class="pill pill-navy mono">STEP 3 / 11</span>
             <span class="pill pill-gray mono">SETUP</span>
             <span class="pill pill-env" data-auto-tpl="1">{{TARGET_LABEL}} 전용</span>
             <span class="pill pill-gray mono">약 6분</span>
@@ -2300,99 +2303,71 @@ Local server stopped.</div>
         </div>
       </section>
 
-      <!-- ==================== STEP 4 (1. Scanning: 정적 진단) ==================== -->
+      <!-- ==================== STEP 4 (① 진단 · Find) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="4" id="step-4">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 4 / 9</span>
-            <span class="pill pill-blue mono">1. SCANNING</span>
+            <span class="pill pill-navy mono">STEP 4 / 11</span>
+            <span class="pill pill-blue mono">① FIND</span>
             <span class="pill pill-common">모든 환경 공통</span>
-            <span class="pill pill-gray mono">약 6분</span>
-            <h2>Scanning · 정적 진단</h2>
+            <span class="pill pill-gray mono">약 3분</span>
+            <h2>진단 (Find) · 현재 상태 확인</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(4)">✓ 완료 표시</button>
         </div>
 
         <p>
-          Step 3에서 스캐폴딩한 프로젝트 루트(<code>~/agent-lab/{{AGENT_NAME}}</code>)에서 <strong>Antigravity CLI</strong>(<code>agy</code>)를 실행하고,
-          <strong><code>agent-production-readiness</code></strong> 스킬로 <strong>① 의존성 점검(<code>doctor</code>) → ② 코드 조건 자동 판단·질문 → ③ 정적 진단(<code>scan</code>)</strong>을 수행합니다. <em>(이 단계에서는 파일을 수정하지 않습니다.)</em>
+          프로젝트 루트에서 <code>agy</code>를 실행하고 <strong>파일을 수정하지 않은 상태</strong>로 의존성(<code>doctor</code>) · 조건 · 체크리스트 현황(<code>scan</code>)을 확인합니다.
+          <em>(실습에서는 조건부·Preview 항목까지 모두 포함해 확인합니다 · 실전 운영은 <a href="/guide" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;">/guide ↗</a>)</em>
         </p>
 
-        <div class="skill-flow" aria-label="Agent Skill 4단계 진행 흐름 (현재: 1단계 정적 진단)">
-          <div class="sf-step is-active">
-            <div class="sf-head"><span class="sf-badge">STAGE 1 · 현재</span><span class="sf-tag">Step 4</span></div>
-            <div class="sf-title">doctor · 조건 판단 · scan</div>
-            <div class="sf-desc">필수 도구 확인 + 코드 조건 자동 감지/질문 + 수정 없는 현황표</div>
-          </div>
-          <div class="sf-step">
-            <div class="sf-head"><span class="sf-badge">STAGE 2</span><span class="sf-tag">Step 5-1</span></div>
-            <div class="sf-title">diff 미리보기 · 승인</div>
-            <div class="sf-desc">파일별 변경점 검토 · 기존 코드 주석 보존 확인 및 승인</div>
-          </div>
-          <div class="sf-step">
-            <div class="sf-head"><span class="sf-badge">STAGE 3</span><span class="sf-tag">Step 5-2</span></div>
-            <div class="sf-title">apply · 재검사 · 리포트</div>
-            <div class="sf-desc">패치 적용 · <code>uv lock</code> · 재검사 · <code>READINESS_REPORT</code></div>
-          </div>
-          <div class="sf-step">
-            <div class="sf-head"><span class="sf-badge">STAGE 4</span><span class="sf-tag">Step 5-3</span></div>
-            <div class="sf-title">플랫폼 Skill 일반 BP 점검</div>
-            <div class="sf-desc"><code>google/skills</code>로 프로브 · 알림 · 네트워크 추가 점검</div>
-          </div>
+        <div class="skill-flow" aria-label="Agent Skill 4단계 흐름 (현재: Step 4 진단)">
+          <button type="button" class="sf-step is-active" onclick="goToStep(4)">
+            <div class="sf-head"><span class="sf-badge">① 진단</span><span class="sf-tag">Step 4</span></div>
+            <div class="sf-title">Find (doctor · scan)</div>
+            <div class="sf-desc">수정 없이 현황표 확인</div>
+          </button>
+          <button type="button" class="sf-step" onclick="goToStep(5)">
+            <div class="sf-head"><span class="sf-badge">② 미리보기</span><span class="sf-tag">Step 5</span></div>
+            <div class="sf-title">Diff (변경점 검토)</div>
+            <div class="sf-desc">원본 주석 보존 · 승인 전 확인</div>
+          </button>
+          <button type="button" class="sf-step" onclick="goToStep(6)">
+            <div class="sf-head"><span class="sf-badge">③ 적용</span><span class="sf-tag">Step 6</span></div>
+            <div class="sf-title">Fix (패치 · 리포트)</div>
+            <div class="sf-desc">apply · 재검사 · 리포트</div>
+          </button>
+          <button type="button" class="sf-step" onclick="goToStep(7)">
+            <div class="sf-head"><span class="sf-badge">④ 인프라 BP</span><span class="sf-tag">Step 7 · 선택</span></div>
+            <div class="sf-title">Option (플랫폼 스킬)</div>
+            <div class="sf-desc">일반 인프라 BP 점검</div>
+          </button>
         </div>
 
-        <div class="callout callout-amber" style="margin:10px 0 14px;">
-          <div class="callout-title">🧪 실습 전체 체험 모드 (Preview 포함) vs. 실전 운영 적용 (<code>/guide</code>)</div>
-          <p style="margin-top:4px;">
-            <strong>실전 프로젝트(<a href="/guide" target="_blank" rel="noopener noreferrer" style="color:#9A5300;font-weight:700;text-decoration:underline;">/guide ↗</a>)</strong>에서는 코드 조건에 맞는 항목만 선별 적용하고, <strong>Preview 항목은 반드시 사용자 별도 동의 후에만 적용</strong>합니다.
-            반면 이 <strong>핸즈온 실습</strong>에서는 <em>"모든 기능(조건부 + Preview 포함)을 적용했을 때 코드·Terraform·K8s·리포트가 어떻게 바뀌는지"</em> 끝까지 눈으로 확인하기 위해 <strong>전체 항목 체험 프롬프트</strong>를 사용합니다.
-          </p>
-        </div>
-
-        <h3>4-1. 정적 진단(Scanning) 실행 — 실습 전체 항목(조건부 + Preview 포함)</h3>
-        <p><strong>① 에이전트 프로젝트 루트에서 Antigravity CLI(<code>agy</code>)를 실행합니다:</strong></p>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · 에이전트 프로젝트 루트에서 Antigravity CLI 실행</span>
+            <span class="code-label">bash · 프로젝트 루트에서 Antigravity CLI 실행</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
           <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 agy"></pre>
         </div>
 
-        <p><strong>② 열린 Antigravity CLI 대화창에 아래 실습 체험용 프롬프트를 그대로 붙여넣으세요:</strong></p>
-        <div class="code-wrap prompt-card">
+        <div class="code-wrap prompt-card" style="margin-top:10px;">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 실습 전체 체험 scan (조건부 + Preview 포함)</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · ① 진단 (Find · {{TARGET_LABEL}})</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
           <pre class="code-pre" data-tpl="agent-production-readiness 스킬로 현재 프로젝트를 {{TARGET_LABEL}} 기준으로 점검해줘.
 실습 전체 체험이므로 모든 조건부 항목과 Preview 항목까지 포함해서, 파일 수정 없이 진단 결과만 표로 보여줘."></pre>
         </div>
 
-        <p><strong>③ 스킬이 <code>doctor</code> 확인 후 전체 항목(조건부 + Preview 포함)을 스캔해 현황표를 출력합니다:</strong></p>
-        <div class="code-wrap">
-          <div class="code-head">
-            <span class="code-label">Antigravity CLI &gt; Step 1 · 실습 전체 체험 조건 적용 요약</span>
-          </div>
-          <div class="code-output" style="border-top:none;">[실습 전체 체험 모드 — 조건 오버라이드 및 Preview 포함]
-  • 멀티턴 대화 (conv) · 장기 기억 (memory) · 외부 도구 (tools) · 위임 인증 (delegated) → 전체 포함
-  • Preview 항목 (Agent Registry · Agent Gateway · auth manager 등) → 실습 확인을 위해 명시 포함
-  ※ 실제 운영 적용(/guide)에서는 코드에서 감지된 조건만 점검하고, Preview는 사용자 동의 없이 건너뜁니다.</div>
-        </div>
-
-        <div class="callout callout-blue">
-          <div class="callout-title">💡 실전 vs. 실습 판정 규칙 이해하기</div>
-          <ul style="margin:6px 0 0 18px;">
-            <li><strong>실전 기본 동작 (<code>--items ALL</code>)</strong>: 코드에서 자동 판단해 해당 없는 조건부 항목은 <code>N/A</code>로 제외하고, Preview 항목은 <strong>최종 통과 판정(<code>🟢 Production Ready</code>)을 차단하지 않으며 자동 패치에서도 제외</strong>합니다.</li>
-            <li><strong>실습 전체 체험 모드</strong>: 위 프롬프트처럼 조건과 Preview 항목을 명시적으로 포함하면, 자동 패치 가능한 항목(Memory Bank · Agent Registry · Agent Runtime/GKE Agent Gateway 등)의 실제 diff와 수동 가이드 항목(Cloud Run Agent Gateway · Sandbox · auth manager)의 구성 절차를 한 번에 확인할 수 있습니다.</li>
-          </ul>
-        </div>
-
-        <p><strong>④ 진단 결과 예시</strong> <span style="font-size:13px;color:var(--ink-muted);">(실습 전체 체험 기준 — 모든 조건부·Preview 항목 포함 시)</span></p>
-        <div class="code-wrap track-only" data-track="cloud_run">
-          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · Cloud Run (전체 체험)</span></div>
-          <div class="code-output" style="border-top:none;">  🔴 RED   [CR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)     ← 자동 패치
+        <details class="faq" style="margin-top:12px;">
+          <summary>📋 예상 진단 결과 예시 보기 (<span data-auto-tpl="1">{{TARGET_LABEL}}</span> 기준)</summary>
+          <div class="faq-body">
+            <div class="code-wrap track-only" data-track="cloud_run">
+              <div class="code-head"><span class="code-label">scan 결과 예시 · Cloud Run</span></div>
+              <div class="code-output" style="border-top:none;">  🔴 RED   [CR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)     ← 자동 패치
   🔴 RED   [CR-F2] 관리형 장기 기억 저장 (Memory Bank)               ← 자동 패치
   🟢 GREEN [CR-D1] CI/CD 파이프라인 (agents-cli)
   🔴 RED   [CR-D2] 평가 데이터셋 · 평가 게이트                       ← 자동 패치
@@ -2402,10 +2377,10 @@ agy"></pre>
   🟡 AMBER [CR-S3] Agent Registry 등록 (Preview)                    ← 자동 패치 (동의 시)
   🔴 RED   [CR-S4] Agent Gateway for Cloud Run (Preview)            ← 수동 가이드 (YAML/CLI)
   🟡 AMBER [CR-S6] 사용자 위임 인증 auth manager (Preview)          ← 수동 가이드 (3LO OAuth)</div>
-        </div>
-        <div class="code-wrap track-only" data-track="agent_runtime">
-          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · Agent Runtime (전체 체험)</span></div>
-          <div class="code-output" style="border-top:none;">  🟢 GREEN [AR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)
+            </div>
+            <div class="code-wrap track-only" data-track="agent_runtime">
+              <div class="code-head"><span class="code-label">scan 결과 예시 · Agent Runtime</span></div>
+              <div class="code-output" style="border-top:none;">  🟢 GREEN [AR-F1] 관리형 영속 세션 저장 (VertexAiSessionService)
   🟡 AMBER [AR-F2] 관리형 장기 기억 저장 (Memory Bank)               ← 자동 패치 (preload_memory · 콜백)
   🟢 GREEN [AR-D1] CI/CD 파이프라인 (agents-cli)
   🔴 RED   [AR-D2] 평가 데이터셋 · 평가 게이트                       ← 자동 패치
@@ -2414,10 +2389,10 @@ agy"></pre>
   🟡 AMBER [AR-S2] Agent Registry 등록 (Preview)                    ← 자동 패치 (동의 시)
   🔴 RED   [AR-S3] Agent Gateway DRY_RUN + CA 신뢰 (Preview)        ← 자동 패치 (동의 시)
   🟡 AMBER [AR-S5] 사용자 위임 인증 auth manager (Preview)          ← 수동 가이드 (3LO OAuth)</div>
-        </div>
-        <div class="code-wrap track-only" data-track="gke">
-          <div class="code-head"><span class="code-label">Antigravity CLI &gt; scan 결과 예시 · GKE (전체 체험)</span></div>
-          <div class="code-output" style="border-top:none;">  🔴 RED   [GKE-F1] 관리형 영속 세션 저장 (VertexAiSessionService)    ← 자동 패치
+            </div>
+            <div class="code-wrap track-only" data-track="gke">
+              <div class="code-head"><span class="code-label">scan 결과 예시 · GKE</span></div>
+              <div class="code-output" style="border-top:none;">  🔴 RED   [GKE-F1] 관리형 영속 세션 저장 (VertexAiSessionService)    ← 자동 패치
   🔴 RED   [GKE-F2] 관리형 장기 기억 저장 (Memory Bank)              ← 자동 패치
   🟡 AMBER [GKE-O1] 무중단 종료 (preStop · 120s)                     ← 자동 패치
   🟢 GREEN [GKE-D1] CI/CD 파이프라인 (agents-cli)
@@ -2427,162 +2402,236 @@ agy"></pre>
   🟡 AMBER [GKE-S3] Agent Registry 등록 (Preview)                   ← 자동 패치 (동의 시)
   🔴 RED   [GKE-S4] Agent Gateway for GKE (Preview)                 ← 자동 패치 (agent-gateway.yaml)
   🟡 AMBER [GKE-S5] 사용자 위임 인증 auth manager (Preview)         ← 수동 가이드 (3LO OAuth)</div>
-        </div>
-
-        <h3>4-2. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 전용 체크포인트 상세</h3>
-        <div class="callout callout-blue" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 20px;">
-          <div style="flex:1;min-width:260px;">
-            <div class="callout-title">📋 환경별 체크리스트 상세 페이지 (단일 레퍼런스)</div>
-            <p style="margin-top:4px;">
-              프로덕션 체크리스트는 세션·장기 기억·평가 게이트·프롬프트 미기록·에이전트 신원·Agent Registry·Agent Gateway·사용자 위임 인증처럼 <strong>AI 에이전트 특성에서 비롯되는 항목만</strong> 다룹니다.
-              <span class="track-only" data-track="cloud_run"><code>CR-F1</code> ~ <code>CR-S6</code></span><span class="track-only" data-track="agent_runtime"><code>AR-F1</code> ~ <code>AR-S5</code></span><span class="track-only" data-track="gke"><code>GKE-F1</code> ~ <code>GKE-S5</code></span> 항목의 범주(<code>State &amp; Memory · Runtime Lifecycle(GKE) · CI/CD &amp; Evaluation · Observability · Security &amp; Governance</code>)별 Check, Best Practice, 조건부·Preview 여부는 전용 단일 페이지에서 확인하세요.
-            </p>
+            </div>
           </div>
-          <a id="step4ChecklistBtn" href="/checklist?track=agent_runtime" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="flex-shrink:0;">
-            <span><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 체크리스트 상세 페이지 열기 ↗</span>
-          </a>
-        </div>
+        </details>
 
-        <div class="callout callout-amber" style="margin-top:12px;">
-          <div class="callout-title">📚 일반 플랫폼 BP는 플랫폼 스킬로 점검하세요 (강력 권장)</div>
-          <p style="margin-top:4px;">
-            헬스 프로브 · PodDisruptionBudget · Non-Root 컨테이너 · Pod Security Standards · NetworkPolicy · Secret Manager 버전 고정 · Direct VPC Egress/PSC Interface · Terraform IaC · 알림 정책 · CPU 부스트처럼 <strong>에이전트가 아닌 워크로드에도 똑같이 적용되는 플랫폼 BP는 이 체크리스트에 포함하지 않으며, 자동 패치 대상도 아닙니다.</strong>
-            프로덕션 오픈 전에는 반드시 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer">Google Cloud 플랫폼 스킬 (github.com/google/skills)</a>로 함께 점검하세요.
-            <span class="track-only" data-track="cloud_run">(Cloud Run 추천: <code>cloud-run-basics</code> · <code>cloud-run-alert-configuration</code> · <code>google-cicd-terraform</code> · <code>google-cloud-waf-security</code>)</span><span class="track-only" data-track="agent_runtime">(Agent Runtime 추천: <code>agent-platform-deploy</code> · <code>agent-platform-agent-registry</code> · <code>agent-platform-access-audit</code> · <code>agent-platform-alert-configuration</code>)</span><span class="track-only" data-track="gke">(GKE 추천: <code>gke-productionize</code> · <code>gke-reliability</code> · <code>gke-workload-security</code> · <code>gke-workload-identity</code> · <code>gke-networking</code> · <code>gke-alert-configuration</code>)</span>
-          </p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding:12px 16px;border-radius:12px;background:var(--surface-muted);border:1px solid rgba(66,133,244,0.16);font-size:13.5px;">
+          <span>📋 <strong data-auto-tpl="1">{{TARGET_LABEL}}</strong> 항목별 Check · Best Practice · 공식 문서 상세는 체크리스트 페이지에서 확인할 수 있습니다.</span>
+          <a id="step4ChecklistBtn" href="/checklist?track=agent_runtime" target="_blank" rel="noopener noreferrer" class="btn btn-subtle btn-sm" style="flex-shrink:0;">
+            <span><span data-auto-tpl="1">{{TARGET_LABEL}}</span> 체크리스트 상세 ↗</span>
+          </a>
         </div>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(3)">← 이전 (Step 3)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5(보완 적용)로 이동 →</button>
+          <button class="btn btn-primary" onclick="completeAndNext(4)">Step 4 완료하고 Step 5(② 변경 미리보기)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 5 (2. Remediation: 보완 적용 · 재검사) ==================== -->
+      <!-- ==================== STEP 5 (② 변경 미리보기 · Diff) ==================== -->
       <section class="card card-pad-lg lab-step" data-step="5" id="step-5">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 5 / 9</span>
-            <span class="pill pill-amber mono">2. REMEDIATION</span>
+            <span class="pill pill-navy mono">STEP 5 / 11</span>
+            <span class="pill pill-amber mono">② DIFF</span>
             <span class="pill pill-common">모든 환경 공통</span>
-            <span class="pill pill-gray mono">약 7분</span>
-            <h2>보완 적용 · 재검사</h2>
+            <span class="pill pill-gray mono">약 2분</span>
+            <h2>변경 미리보기 (Diff) · 승인 전 검토</h2>
           </div>
           <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(5)">✓ 완료 표시</button>
         </div>
 
         <p>
-          열려 있는 <strong>Antigravity CLI</strong> 대화창에서 <strong>① 변경점(diff) 검토</strong> → <strong>② 변경 사항 적용 · 재검사 · 리포트 생성</strong> → <strong>③ 플랫폼 Skill 일반 인프라 BP 점검(선택)</strong> 순서로 안전하게 진행합니다.
-          생성된 점검 리포트(<code>READINESS_REPORT.md / .html</code>)에는 항목별 충족 현황과 함께 조직 정책에 따라 직접 선택할 <strong>Post-Setup Decision Guide</strong>가 정리됩니다.
+          실제 파일을 수정하기 전에 <strong>어떤 파일이 어떻게 바뀌는지(diff)</strong>와 수동 설정 항목을 미리 확인합니다.
+          기존 코드(<code>app/agent.py</code> 등) 수정이 필요하면 원본 라인을 <code># [ORIGINAL before prod-ready ...]</code> 주석으로 보존한 diff로 보여줍니다.
         </p>
 
-        <div class="skill-flow" aria-label="Agent Skill 4단계 진행 흐름 (현재: 2~4단계 보완 및 플랫폼 점검)">
-          <div class="sf-step is-done">
-            <div class="sf-head"><span class="sf-badge">✓ STAGE 1</span><span class="sf-tag">완료</span></div>
-            <div class="sf-title">doctor · 조건 판단 · scan</div>
-            <div class="sf-desc">의존성 확인 + 조건 감지 + 체크리스트 현황 파악</div>
-          </div>
-          <div class="sf-step is-active">
-            <div class="sf-head"><span class="sf-badge">STAGE 2 · 현재</span><span class="sf-tag">5-1</span></div>
-            <div class="sf-title">diff 미리보기 · 승인</div>
-            <div class="sf-desc">파일별 변경점 검토 · 기존 코드 주석 보존 확인 및 승인</div>
-          </div>
-          <div class="sf-step is-active">
-            <div class="sf-head"><span class="sf-badge">STAGE 3 · 현재</span><span class="sf-tag">5-2</span></div>
-            <div class="sf-title">apply · 재검사 · 리포트</div>
-            <div class="sf-desc">패치 적용 · <code>uv lock</code> · 재검사 · <code>READINESS_REPORT</code></div>
-          </div>
-          <div class="sf-step is-active">
-            <div class="sf-head"><span class="sf-badge">STAGE 4 · 선택</span><span class="sf-tag">5-3</span></div>
-            <div class="sf-title">플랫폼 Skill 일반 BP 점검</div>
-            <div class="sf-desc"><code>google/skills</code>로 프로브 · 알림 · 네트워크 추가 점검</div>
-          </div>
+        <div class="skill-flow" aria-label="Agent Skill 4단계 흐름 (현재: Step 5 변경 미리보기)">
+          <button type="button" class="sf-step is-done" onclick="goToStep(4)">
+            <div class="sf-head"><span class="sf-badge">✓ ① 진단</span><span class="sf-tag">Step 4</span></div>
+            <div class="sf-title">Find (doctor · scan)</div>
+            <div class="sf-desc">수정 없이 현황표 확인</div>
+          </button>
+          <button type="button" class="sf-step is-active" onclick="goToStep(5)">
+            <div class="sf-head"><span class="sf-badge">② 미리보기</span><span class="sf-tag">Step 5</span></div>
+            <div class="sf-title">Diff (변경점 검토)</div>
+            <div class="sf-desc">원본 주석 보존 · 승인 전 확인</div>
+          </button>
+          <button type="button" class="sf-step" onclick="goToStep(6)">
+            <div class="sf-head"><span class="sf-badge">③ 적용</span><span class="sf-tag">Step 6</span></div>
+            <div class="sf-title">Fix (패치 · 리포트)</div>
+            <div class="sf-desc">apply · 재검사 · 리포트</div>
+          </button>
+          <button type="button" class="sf-step" onclick="goToStep(7)">
+            <div class="sf-head"><span class="sf-badge">④ 인프라 BP</span><span class="sf-tag">Step 7 · 선택</span></div>
+            <div class="sf-title">Option (플랫폼 스킬)</div>
+            <div class="sf-desc">일반 인프라 BP 점검</div>
+          </button>
         </div>
 
-        <h3>5-1. [STAGE 2] 변경점(<code>diff</code>) 미리보기 — Preview 포함 전체 확인 &amp; 승인 전 검토</h3>
-        <p style="font-size:13.5px;color:var(--ink-muted);margin-bottom:8px;">
-          스킬 규칙에 따라 기존 코드(<code>app/agent.py</code> · <code>app/fast_api_app.py</code>) 수정이 필요하면 원본을 <code># [ORIGINAL before prod-ready ...]</code> 주석으로 보존한 diff를 먼저 보여주고, 승인 전에는 파일을 수정하지 않습니다.
-        </p>
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 실습 전체 항목(Preview 포함) diff 미리보기</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · ② 변경 미리보기 (Diff)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
           <pre class="code-pre" data-tpl="방금 진단한 전체 항목(조건부 + Preview 포함) 기준으로 적용될 변경점(diff)과 수동 설정 가이드를 먼저 보여줘."></pre>
         </div>
 
-        <h3>5-2. [STAGE 3] 전체 보완 적용(승인 · Preview 동의) · <code>uv lock</code> · 재검사 · 리포트 생성</h3>
-        <p style="font-size:13.5px;color:var(--ink-muted);margin-bottom:8px;">
-          변경점을 확인한 뒤 아래 프롬프트로 <strong>기존 코드 변경 및 Preview 항목 적용에 명시적으로 동의</strong>하고 일괄 적용합니다.
-          <em>(실전 운영에서는 <a href="/guide" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;">/guide ↗</a>처럼 필요한 항목만 선택해 적용하세요.)</em>
+        <p style="margin-top:10px;font-size:13.5px;color:var(--ink-muted);">
+          💬 이 단계에서는 파일이 바뀌지 않습니다. 특정 항목을 빼거나 옵션(예: 평가 점수 기준, GKE 실행 패턴 등)을 바꾸고 싶다면 <code>agy</code>와 바로 대화해 조정하세요.
         </p>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4 · 진단)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(③ 보완 적용)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 6 (③ 보완 적용 · Fix) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="6" id="step-6">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 6 / 11</span>
+            <span class="pill pill-amber mono">③ FIX</span>
+            <span class="pill pill-common">모든 환경 공통</span>
+            <span class="pill pill-gray mono">약 3분</span>
+            <h2>보완 적용 (Fix) · 재검사 · 리포트</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(6)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          Step 5에서 검토한 diff를 승인해 자동 패치를 적용하고, <code>uv.lock</code> 동기화 · 재검사 · 최종 리포트(<code>READINESS_REPORT.md / .html</code>)까지 한 번에 생성합니다.
+        </p>
+
+        <div class="skill-flow" aria-label="Agent Skill 4단계 흐름 (현재: Step 6 보완 적용)">
+          <button type="button" class="sf-step is-done" onclick="goToStep(4)">
+            <div class="sf-head"><span class="sf-badge">✓ ① 진단</span><span class="sf-tag">Step 4</span></div>
+            <div class="sf-title">Find (doctor · scan)</div>
+            <div class="sf-desc">수정 없이 현황표 확인</div>
+          </button>
+          <button type="button" class="sf-step is-done" onclick="goToStep(5)">
+            <div class="sf-head"><span class="sf-badge">✓ ② 미리보기</span><span class="sf-tag">Step 5</span></div>
+            <div class="sf-title">Diff (변경점 검토)</div>
+            <div class="sf-desc">원본 주석 보존 · 승인 전 확인</div>
+          </button>
+          <button type="button" class="sf-step is-active" onclick="goToStep(6)">
+            <div class="sf-head"><span class="sf-badge">③ 적용</span><span class="sf-tag">Step 6</span></div>
+            <div class="sf-title">Fix (패치 · 리포트)</div>
+            <div class="sf-desc">apply · 재검사 · 리포트</div>
+          </button>
+          <button type="button" class="sf-step" onclick="goToStep(7)">
+            <div class="sf-head"><span class="sf-badge">④ 인프라 BP</span><span class="sf-tag">Step 7 · 선택</span></div>
+            <div class="sf-title">Option (플랫폼 스킬)</div>
+            <div class="sf-desc">일반 인프라 BP 점검</div>
+          </button>
+        </div>
+
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 전체 적용(승인 · Preview 동의) + 재검사 + 리포트</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · ③ 보완 적용 (Fix)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
           <pre class="code-pre" data-tpl="diff 확인했고, 기존 코드 변경과 Preview 항목 포함 적용에 동의해. 적용 후 재검사와 리포트 생성까지 진행해줘."></pre>
-          <div class="code-output">✅ 적용 완료 (조건부 + Preview 포함) · uv.lock 갱신 · 재검사 통과 (🟢 Production Ready)
-📄 Exported: READINESS_REPORT.md &amp; READINESS_REPORT.html</div>
+          <div class="code-output">✅ 적용 완료 · uv.lock 갱신 · 재검사 통과 · READINESS_REPORT.md / .html 생성</div>
         </div>
 
-        <h3>5-3. [STAGE 4 · 선택] Google Cloud 플랫폼 Skill로 일반 인프라 BP 추가 점검</h3>
-        <p style="font-size:13.5px;color:var(--ink-muted);margin-bottom:8px;">
-          Step 2-2에서 설치한 공식 <code>google/skills</code> 플랫폼 스킬을 같은 <code>agy</code> 세션에서 바로 호출해, 헬스 프로브 · 알림 정책 · Non-Root · 네트워크 보안 등 일반 인프라 Best Practice까지 이어서 점검할 수 있습니다.
+        <div class="callout callout-amber track-only" data-track="gke" style="margin-top:12px;">
+          <div class="callout-title"><img class="prod-icon-inline" src="/static/icons/gke.png" alt="GKE" width="18" height="18"> GKE 실행 패턴 지정 팁 (선택)</div>
+          <p style="margin-top:4px;">AI 생성 코드 격리(<code>GKE-S2</code>)를 적용할 때 <em>"GKE Standard(&ge;1.37) + <code>agent_substrate</code>로 적용해줘"</em> 또는 <em>"<code>agent_sandbox</code>로 적용해줘"</em>처럼 대화로 바로 지정할 수 있습니다.</p>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5 · 미리보기)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7(④ 인프라 BP 점검 · 선택)로 이동 →</button>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 7 (④ 인프라 BP 점검 · Option) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="7" id="step-7">
+        <div class="step-header">
+          <div class="step-header-left">
+            <span class="pill pill-navy mono">STEP 7 / 11</span>
+            <span class="pill pill-gray mono">④ OPTION</span>
+            <span class="pill pill-common">모든 환경 공통</span>
+            <span class="pill pill-gray mono">약 2분 · 선택</span>
+            <h2>인프라 BP 점검 (Option) · 플랫폼 스킬</h2>
+          </div>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(7)">✓ 완료 표시</button>
+        </div>
+
+        <p>
+          에이전트 고유 체크리스트 외에, Step 2-2에서 설치한 공식 <strong>Google Cloud 플랫폼 스킬(<code>google/skills</code>)</strong>로 헬스 프로브 · 알림 정책 · 네트워크 · 컨테이너 보안 등 일반 인프라 Best Practice를 이어서 점검합니다. <em>(선택 단계이며 건너뛰고 바로 배포해도 됩니다.)</em>
         </p>
+
+        <div class="skill-flow" aria-label="Agent Skill 4단계 흐름 (현재: Step 7 인프라 BP 점검)">
+          <button type="button" class="sf-step is-done" onclick="goToStep(4)">
+            <div class="sf-head"><span class="sf-badge">✓ ① 진단</span><span class="sf-tag">Step 4</span></div>
+            <div class="sf-title">Find (doctor · scan)</div>
+            <div class="sf-desc">수정 없이 현황표 확인</div>
+          </button>
+          <button type="button" class="sf-step is-done" onclick="goToStep(5)">
+            <div class="sf-head"><span class="sf-badge">✓ ② 미리보기</span><span class="sf-tag">Step 5</span></div>
+            <div class="sf-title">Diff (변경점 검토)</div>
+            <div class="sf-desc">원본 주석 보존 · 승인 전 확인</div>
+          </button>
+          <button type="button" class="sf-step is-done" onclick="goToStep(6)">
+            <div class="sf-head"><span class="sf-badge">✓ ③ 적용</span><span class="sf-tag">Step 6</span></div>
+            <div class="sf-title">Fix (패치 · 리포트)</div>
+            <div class="sf-desc">apply · 재검사 · 리포트</div>
+          </button>
+          <button type="button" class="sf-step is-active" onclick="goToStep(7)">
+            <div class="sf-head"><span class="sf-badge">④ 인프라 BP</span><span class="sf-tag">Step 7 · 선택</span></div>
+            <div class="sf-title">Option (플랫폼 스킬)</div>
+            <div class="sf-desc">일반 인프라 BP 점검</div>
+          </button>
+        </div>
+
         <div class="code-wrap prompt-card">
           <div class="code-head">
-            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 플랫폼 Skill 추가 점검</span>
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · ④ 인프라 BP 점검 (Option)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
           <pre class="code-pre" data-tpl="설치된 Google Cloud 플랫폼 스킬로 이 {{TARGET_LABEL}} 환경의 일반 인프라 설정도 이어서 점검해줘."></pre>
         </div>
 
-        <div class="callout callout-amber track-only" data-track="gke" style="margin-top:12px;">
-          <div class="callout-title"><img class="prod-icon-inline" src="/static/icons/gke.png" alt="GKE" width="18" height="18"> GKE 트랙 선택 옵션 — 클러스터 모드 &amp; 실행 패턴 지정 팁</div>
-          <p style="margin-top:4px;">
-            기본값은 기존 클러스터 모드 보존(신규 생성 시 <code>autopilot</code>) + <code>standard_pods</code>(Agent Gateway for GKE 매니페스트 생성)입니다.
-            에이전트가 AI 생성 코드를 실행한다면(<code>GKE-S2</code>) 위 프롬프트에 다음처럼 실행 패턴을 명시하세요:
-          </p>
-          <ul style="margin:6px 0 0 18px;">
-            <li><strong>AI 생성 코드 격리 · 고밀도 에이전트 (Agent Substrate, 기본 권장)</strong>: <em>"GKE Standard 클러스터(&ge; 1.37)와 <code>agent_substrate</code>(WorkerPool) 패턴으로 적용해줘."</em> (Autopilot과 조합 불가)</li>
-            <li><strong>상시 실행 에이전트 · 사이드카 · Arm 노드 · Autopilot이 필요할 때 (Agent Sandbox, 대안)</strong>: <em>"GKE 실행 패턴은 <code>agent_sandbox</code>(SandboxWarmPool)로 적용해줘."</em></li>
-          </ul>
-        </div>
-
-        <div class="callout callout-blue" style="margin-top:12px;">
-          <div class="callout-title">ℹ️ 자동 적용 범위</div>
-          <p style="margin-top:4px;">스킬이 자동으로 고치는 대상은 프로덕션 체크리스트의 에이전트 특성 항목뿐입니다. 헬스 프로브 · CPU 부스트 · Non-Root · PSS · NetworkPolicy · 알림 정책 같은 일반 플랫폼 BP는 자동 패치하지 않으므로, Step 4-2에서 안내한 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer">플랫폼 스킬</a>로 별도 점검하세요.</p>
-        </div>
+        <p style="margin-top:10px;font-size:13.5px;color:var(--ink-muted);">
+          💬 <code>agy</code> 대화가 열려 있으므로, 제안된 인프라 설정 중 반영하고 싶은 항목이 있으면 AI와 대화하며 바로 추가·수정한 뒤 Step 8 배포로 넘어가면 됩니다.
+        </p>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4 · Scanning)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(5)">Step 5 완료하고 Step 6(Deploy)로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6 · 적용)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료(또는 건너뛰고) Step 8(배포 · 검증)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 6 (3. Deploy: 클라우드 배포) ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="6" id="step-6">
+      <!-- ==================== STEP 8 (3. Deploy: 클라우드 배포) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="8" id="step-8">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 6 / 9</span>
+            <span class="pill pill-navy mono">STEP 8 / 11</span>
             <span class="pill pill-purple mono">3. DEPLOY</span>
             <span class="pill pill-env" data-auto-tpl="1">{{TARGET_LABEL}} 전용</span>
             <span class="pill pill-gray mono" id="step6TimePill">약 8분</span>
             <h2 data-auto-tpl="1">Deploy · {{TARGET_LABEL}} 배포</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(6)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(8)">✓ 완료 표시</button>
         </div>
 
         <!-- CLOUD RUN DEPLOY -->
         <div class="track-only" data-track="cloud_run">
-          <h3>6-1. Terraform 프로비저닝 &amp; <code>agents-cli deploy</code></h3>
-          <div class="code-wrap">
+          <p style="font-size:13.8px;color:var(--ink-muted);margin:0 0 12px;">
+            열려 있는 <strong>Antigravity CLI(<code>agy</code>)</strong> 대화창에서 나가지 않고 그대로 프롬프트로 Terraform 프로비저닝 → Cloud Run 배포 → 동작 종합 검증까지 한 번에 진행할 수 있습니다. <em>(직접 터미널 명령으로 실행하려면 아래 접이식 메뉴를 펼치세요.)</em>
+          </p>
+
+          <h3>8-1. Terraform 프로비저닝 &amp; Cloud Run 배포 (<code>agy</code> 프롬프트)</h3>
+          <div class="code-wrap prompt-card">
             <div class="code-head">
-              <span class="code-label">bash · Terraform + agents-cli deploy</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              <span class="code-label">Antigravity CLI &gt; prompt · Cloud Run Terraform 프로비저닝 &amp; 배포</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+            <pre class="code-pre" data-tpl="프로젝트 {{PROJECT_ID}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 인프라를 프로비저닝하고 Cloud Run에 배포해줘. 실행할 명령어를 먼저 요약하고 내 승인 후 진행해줘."></pre>
+          </div>
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 실행하고 싶다면? (Terraform + <code>agents-cli deploy</code> 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Terraform + agents-cli deploy</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 ORG_ID=$(gcloud projects get-ancestors {{PROJECT_ID}} --format='value(id)' --filter='type:organization' 2>/dev/null || true)
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply \
@@ -2590,87 +2639,95 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
   -var=&quot;region={{REGION}}&quot; \
   -var=&quot;organization_id=${ORG_ID}&quot;) &amp;&amp; \
 agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --no-confirm-project"></pre>
-          </div>
-
-          <h3>6-2. 배포 동작 종합 검증 (인증 차단 · 신원 · Registry · 세션/Memory Bank · Trace · Eval)</h3>
-          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            Step 5에서 적용한 항목들이 실제 Cloud Run 런타임에서 의도대로 동작하는지 <strong>2개 블록</strong>으로 끝까지 확인합니다.
-            <em>(① 비인증 <code>403</code> 차단 vs 인증 <code>200</code> · 전용 신원/Agent Identity · Registry 등록 · <code>NO_CONTENT</code> 환경변수 → ② 실제 대화로 영속 세션·Memory Bank 회상 · 배포 대상 Eval · Cloud Trace 확인)</em>
-          </p>
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · [검증 1/2] CR-S1 인증 차단(403 vs 200) · CR-S2/S3 신원/Registry · CR-OB1 환경변수 확인</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
             </div>
-            <pre class="code-pre" data-tpl="SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
+          </details>
+
+          <h3>8-2. 배포 동작 종합 검증 (<code>agy</code> 프롬프트)</h3>
+          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
+            비인증 <code>403</code> 차단 vs 인증 <code>200</code> · 전용 신원/Agent Identity · Registry · <code>NO_CONTENT</code> · 영속 세션 · Memory Bank 회상 · 배포 대상 Eval · Cloud Trace까지 한 번에 검증합니다.
+          </p>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">Antigravity CLI &gt; prompt · Cloud Run 배포 동작 종합 검증</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="방금 Cloud Run({{PROJECT_ID}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
+          </div>
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 실행하고 싶다면? (Cloud Run 종합 검증 bash 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Cloud Run 배포 동작 종합 검증 (CR-S1/S2/S3 · CR-F1/F2 · CR-D2 · CR-OB1 한 번에 확인)</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
 echo &quot;Deployed URL: ${SERVICE_URL}&quot;
 
-# 1) [CR-S1 네거티브 테스트] 토큰 없는 익명 호출은 403으로 차단되어야 정상
+echo &quot;=== [1/6] CR-S1 인증 차단 (403 vs 200) ===&quot;
 curl -s -o /dev/null -w &quot;Unauthenticated HTTP %{http_code} (403이면 정상)\n&quot; &quot;${SERVICE_URL}/list-apps&quot;
-
-# 2) [CR-S1 인증 호출] IAM Identity Token 헤더 포함 시 정상 응답 ([&quot;app&quot;])
 curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-identity-token)&quot; &quot;${SERVICE_URL}/list-apps&quot; ; echo
 
-# 3) [CR-S2 · CR-S3 · CR-OB1 · CR-F1/F2] Revision의 Agent Identity · 전용 SA · NO_CONTENT · Session ID 환경변수 확인
+echo &quot;=== [2/6] CR-S2 · CR-S3 · CR-OB1 · CR-F1/F2 Revision 설정 &amp; Agent Registry ===&quot;
 LATEST_REV=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.latestReadyRevisionName)')
 gcloud beta run revisions describe &quot;${LATEST_REV}&quot; --region={{REGION}} --project={{PROJECT_ID}} \
   --format='yaml(metadata.annotations,spec.serviceAccountName,spec.containers[0].env)'
+gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
 
-# 4) [CR-S3 Preview] Agent Registry 카탈로그 자동 등록 확인
-gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}"></pre>
-            <div class="code-output">Unauthenticated HTTP 403 (403이면 정상)
-["app"]</div>
-          </div>
-
-          <div class="code-wrap" style="margin-top:10px;">
-            <div class="code-head">
-              <span class="code-label">bash · [검증 2/2] CR-F1 영속 세션 · CR-F2 Memory Bank 회상 · CR-D2 Eval · CR-OB1 Cloud Trace</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-SERVICE_URL=$(gcloud run services describe {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} --format='value(status.url)')
-
-# 1) [CR-F1] 첫 번째 대화 실행 및 세션 ID 추출
+echo &quot;=== [3/6] CR-F1 영속 세션 멀티턴 대화 ===&quot;
 TURN1=$(agents-cli run --url &quot;${SERVICE_URL}&quot; --mode=adk &quot;My name is Alex and I live in Seoul. What is the weather in San Francisco?&quot;)
 echo &quot;${TURN1}&quot;
 SESSION_ID=$(echo &quot;${TURN1}&quot; | grep -oE 'Session: [^ ]+' | awk '{print $2}' | tail -n 1)
-
-# 2) [CR-F1 영속 세션] 같은 세션 ID로 후속 질문 → 이전 대화(Alex/Seoul) 기억 확인
 [ -n &quot;${SESSION_ID}&quot; ] &amp;&amp; agents-cli run --url &quot;${SERVICE_URL}&quot; --mode=adk --session-id &quot;${SESSION_ID}&quot; &quot;What is my name and where do I live?&quot;
 
-# 3) [CR-F2 Memory Bank] 세션 ID 없이 새 세션으로 질문 → 장기 기억 회상 확인 (백그라운드 추출에 수 초 소요 가능)
+echo &quot;=== [4/6] CR-F2 Memory Bank 새 세션 장기 기억 회상 ===&quot;
 sleep 5
 agents-cli run --url &quot;${SERVICE_URL}&quot; --mode=adk &quot;Do you remember my name from our previous conversation?&quot;
 
-# 4) [CR-D2] 배포된 Cloud Run 엔드포인트 대상 평가 데이터셋 실행
+echo &quot;=== [5/6] CR-D2 배포 엔드포인트 대상 평가(Eval) ===&quot;
 agents-cli eval run --config tests/eval/eval_config.yaml --dataset tests/eval/datasets/basic-dataset.json --url &quot;${SERVICE_URL}&quot; --project={{PROJECT_ID}} --region={{REGION}}
 
-# 5) [CR-OB1] Cloud Trace 콘솔에서 방금 호출한 스팬에 프롬프트 원문이 기록되지 않았는지(NO_CONTENT) 확인
-echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID}}&quot;"></pre>
-          </div>
+echo &quot;=== [6/6] CR-OB1 Cloud Trace (NO_CONTENT 프롬프트 미기록 확인) ===&quot;
+echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID}}&quot;"></pre>
+              </div>
+            </div>
+          </details>
 
           <div class="callout callout-blue" style="margin-top:10px;">
             <div class="callout-title">💡 인바운드 인증 &amp; Cloud Run 단계적 거버넌스 가이드 (아키텍처 참고)</div>
             <p style="margin-top:4px;">
               이 스킬은 Cloud Run의 기본 URL(<code>*.a.run.app</code>)이나 <code>ingress</code>를 강제로 차단하지 않습니다.
               실제 서비스 오픈 시에는 체크리스트 순서대로 <strong>인증된 호출만 허용(<code>CR-S1</code>) → 에이전트 전용 신원 · 최소 권한(<code>CR-S2</code>) → Agent Registry 등록(<code>CR-S3</code>, Preview) → MCP·외부 도구를 호출한다면 Agent Gateway for Cloud Run(<code>CR-S4</code>, Preview)</strong>을 단계적으로 적용하는 접근이 가장 현실적입니다.
-              Direct VPC Egress · VPC-SC 같은 네트워크 구성은 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer">플랫폼 스킬</a>(<code>cloud-run-basics</code> · <code>google-cloud-waf-security</code>)로 점검하세요.
+              <em>(실습에서 수동 가이드 항목인 <code>CR-S4</code> Agent Gateway for Cloud Run까지 이어서 체험하고 싶다면 같은 <code>agy</code> 대화창에서 "방금 안내한 Agent Gateway for Cloud Run도 구성해줘"라고 요청할 수 있습니다.)</em>
             </p>
           </div>
         </div>
 
         <!-- AGENT RUNTIME DEPLOY -->
         <div class="track-only" data-track="agent_runtime">
-          <h3>6-1. Terraform 프로비저닝 &amp; <code>agents-cli deploy</code></h3>
-          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            Agent Runtime은 Terraform으로 Agent Identity Shell · Agent Gateway(선택 시) · IAM 바인딩을 생성한 뒤 <code>agents-cli deploy --agent-identity</code>로 컨테이너를 배포합니다(최초 배포 약 5~10분 소요 · <code>--no-wait</code> + <code>--status</code> 사용).
+          <p style="font-size:13.8px;color:var(--ink-muted);margin:0 0 12px;">
+            열려 있는 <strong>Antigravity CLI(<code>agy</code>)</strong> 대화창에서 그대로 Terraform 프로비저닝 → Agent Runtime 배포(최초 약 5~10분 소요) → 동작 종합 검증까지 진행할 수 있습니다. <em>(직접 터미널 명령으로 실행하려면 아래 접이식 메뉴를 펼치세요.)</em>
           </p>
-          <div class="code-wrap">
+
+          <h3>8-1. Terraform 프로비저닝 &amp; Agent Runtime 배포 (<code>agy</code> 프롬프트)</h3>
+          <div class="code-wrap prompt-card">
             <div class="code-head">
-              <span class="code-label">bash · Terraform + agents-cli deploy --agent-identity</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              <span class="code-label">Antigravity CLI &gt; prompt · Agent Runtime Terraform 프로비저닝 &amp; 배포</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+            <pre class="code-pre" data-tpl="프로젝트 {{PROJECT_ID}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 인프라를 프로비저닝하고 Agent Runtime에 Agent Identity 모드로 배포해줘. 실행할 명령어를 먼저 요약하고 내 승인 후 진행해줘."></pre>
+          </div>
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 실행하고 싶다면? (Terraform + <code>agents-cli deploy</code> 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Terraform + agents-cli deploy --agent-identity</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;) &amp;&amp; \
 agents-cli deploy \
@@ -2681,70 +2738,83 @@ agents-cli deploy \
   --no-confirm-project --no-wait &amp;&amp; \
 agents-cli deploy --status
 # (선택) 사설 VPC 접근(PSC-I)을 별도 플랫폼 스킬로 구성한 경우 위 deploy 명령에 --network-attachment 옵션을 추가하세요."></pre>
-          </div>
+              </div>
+            </div>
+          </details>
 
-          <h3>6-2. 배포 동작 종합 검증 (신원 · Registry · Gateway · 세션/Memory Bank · Trace · Eval)</h3>
+          <h3>8-2. 배포 동작 종합 검증 (<code>agy</code> 프롬프트)</h3>
           <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            배포된 Agent Runtime 인스턴스의 <strong>신원·Agent Registry·Agent Gateway·<code>NO_CONTENT</code></strong> 설정과 <strong>실제 대화(세션·Memory Bank)·평가·Cloud Trace</strong>를 한 번에 확인합니다.
+            배포된 Agent Runtime의 신원·Agent Registry·Agent Gateway·<code>NO_CONTENT</code> 설정과 실제 대화(영속 세션·Memory Bank)·Eval·Cloud Trace를 한 번에 검증합니다.
           </p>
-          <div class="code-wrap">
+          <div class="code-wrap prompt-card">
             <div class="code-head">
-              <span class="code-label">bash · [검증 1/2] AR-S1/S2/S3 신원 · Registry · Gateway &amp; AR-OB1 NO_CONTENT 설정 확인</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              <span class="code-label">Antigravity CLI &gt; prompt · Agent Runtime 배포 동작 종합 검증</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
-# 1) 배포 목록 및 Agent Registry 카탈로그 등록 확인 (AR-S2)
-agents-cli deploy --list
-gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
-
-# 2) 배포된 Agent Runtime의 identityType(AR-S1) · agentGatewayConfig(AR-S3) · NO_CONTENT(AR-OB1) 확인
-ENGINE_RESOURCE=$(python3 -c 'import json; print(json.load(open(&quot;deployment_metadata.json&quot;))[&quot;remote_agent_runtime_id&quot;])')
-curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; \
-  &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/${ENGINE_RESOURCE}&quot; \
-  | python3 -c 'import json,sys; d=json.load(sys.stdin).get(&quot;spec&quot;,{}); print(json.dumps({&quot;identityType&quot;:d.get(&quot;identityType&quot;),&quot;agentGatewayConfig&quot;:d.get(&quot;agentGatewayConfig&quot;),&quot;env&quot;:d.get(&quot;deploymentSpec&quot;,{}).get(&quot;env&quot;)}, indent=2))'"></pre>
+            <pre class="code-pre" data-tpl="방금 Agent Runtime({{PROJECT_ID}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
           </div>
-
-          <div class="code-wrap" style="margin-top:10px;">
-            <div class="code-head">
-              <span class="code-label">bash · [검증 2/2] AR-F1 영속 세션 · AR-F2 Memory Bank 회상 · AR-D2 Eval · AR-OB1 Cloud Trace</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 실행하고 싶다면? (Agent Runtime 종합 검증 bash 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Agent Runtime 배포 동작 종합 검증 (AR-S1/S2/S3 · AR-F1/F2 · AR-D2 · AR-OB1 한 번에 확인)</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 ENGINE_RESOURCE=$(python3 -c 'import json; print(json.load(open(&quot;deployment_metadata.json&quot;))[&quot;remote_agent_runtime_id&quot;])')
 ENGINE_URL=&quot;https://{{REGION}}-aiplatform.googleapis.com/reasoningEngines/v1/${ENGINE_RESOURCE}/api&quot;
 
-# 1) [AR-F1] 첫 번째 대화 실행 및 세션 ID 추출
+echo &quot;=== [1/5] AR-S1 · AR-S2 · AR-S3 · AR-OB1 신원 · Registry · Gateway · NO_CONTENT ===&quot;
+agents-cli deploy --list
+gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
+curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; \
+  &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/${ENGINE_RESOURCE}&quot; \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin).get(&quot;spec&quot;,{}); print(json.dumps({&quot;identityType&quot;:d.get(&quot;identityType&quot;),&quot;agentGatewayConfig&quot;:d.get(&quot;agentGatewayConfig&quot;),&quot;env&quot;:d.get(&quot;deploymentSpec&quot;,{}).get(&quot;env&quot;)}, indent=2))'
+
+echo &quot;=== [2/5] AR-F1 관리형 영속 세션 멀티턴 대화 ===&quot;
 TURN1=$(agents-cli run --url &quot;${ENGINE_URL}&quot; --mode=adk &quot;My name is Alex and I live in Seoul. What is the weather in San Francisco?&quot;)
 echo &quot;${TURN1}&quot;
 SESSION_ID=$(echo &quot;${TURN1}&quot; | grep -oE 'Session: [^ ]+' | awk '{print $2}' | tail -n 1)
-
-# 2) [AR-F1 관리형 영속 세션] 같은 세션 ID로 후속 질문 → 맥락 유지 확인
 [ -n &quot;${SESSION_ID}&quot; ] &amp;&amp; agents-cli run --url &quot;${ENGINE_URL}&quot; --mode=adk --session-id &quot;${SESSION_ID}&quot; &quot;What is my name and where do I live?&quot;
 
-# 3) [AR-F2 Memory Bank] 새 세션으로 질문 → 장기 기억 회상 확인 (백그라운드 추출에 수 초 소요 가능)
+echo &quot;=== [3/5] AR-F2 Memory Bank 새 세션 장기 기억 회상 ===&quot;
 sleep 5
 agents-cli run --url &quot;${ENGINE_URL}&quot; --mode=adk &quot;Do you remember my name from our previous conversation?&quot;
 
-# 4) [AR-D2] 평가 데이터셋 실행 (로컬/배포 품질 검증)
+echo &quot;=== [4/5] AR-D2 평가 데이터셋 실행 (Eval) ===&quot;
 agents-cli eval run --config tests/eval/eval_config.yaml --dataset tests/eval/datasets/basic-dataset.json --project={{PROJECT_ID}} --region={{REGION}}
 
-# 5) [AR-OB1] Cloud Trace 콘솔에서 프롬프트 원문 미기록(NO_CONTENT) 확인
-echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID}}&quot;"></pre>
-          </div>
+echo &quot;=== [5/5] AR-OB1 Cloud Trace (NO_CONTENT 프롬프트 미기록 확인) ===&quot;
+echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID}}&quot;"></pre>
+              </div>
+            </div>
+          </details>
         </div>
 
         <!-- GKE DEPLOY -->
         <div class="track-only" data-track="gke">
-          <h3>6-1. Terraform 클러스터·워크로드 프로비저닝 &amp; GKE 확장 매니페스트 적용</h3>
-          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            GKE 트랙은 Terraform으로 클러스터(<code>{{AGENT_NAME}}</code>, Autopilot/Standard) · Workload Identity · Deployment/Service(무중단 종료 <code>GKE-O1</code> · 트레이스 <code>GKE-OB1</code> · Registry 어노테이션 <code>GKE-S3</code> 반영)를 프로비저닝한 뒤(최초 클러스터 생성 약 10~15분 소요), <code>agents-cli deploy</code>로 이미지를 빌드·롤아웃하고 필요 시 <code>deployment/k8s/</code>의 확장 매니페스트를 적용합니다.
+          <p style="font-size:13.8px;color:var(--ink-muted);margin:0 0 12px;">
+            열려 있는 <strong>Antigravity CLI(<code>agy</code>)</strong> 대화창에서 그대로 Terraform 클러스터 프로비저닝(최초 약 10~15분 소요) → GKE 배포 → 동작 종합 검증까지 진행할 수 있습니다. <em>(직접 터미널 명령으로 실행하려면 아래 접이식 메뉴를 펼치세요.)</em>
           </p>
-          <div class="code-wrap">
+
+          <h3>8-1. Terraform 클러스터·워크로드 프로비저닝 &amp; GKE 배포 (<code>agy</code> 프롬프트)</h3>
+          <div class="code-wrap prompt-card">
             <div class="code-head">
-              <span class="code-label">bash · Terraform + agents-cli deploy + kubectl apply (GKE 확장 매니페스트)</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              <span class="code-label">Antigravity CLI &gt; prompt · GKE Terraform 프로비저닝 · 배포 · 확장 매니페스트 적용</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+            <pre class="code-pre" data-tpl="프로젝트 {{PROJECT_ID}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 클러스터·인프라를 프로비저닝하고 GKE에 배포해줘. 실행할 명령어와 적용할 확장 매니페스트(deployment/k8s/)를 먼저 요약하고 내 승인 후 진행해줘."></pre>
+          </div>
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 실행하고 싶다면? (Terraform + <code>agents-cli deploy</code> + <code>kubectl apply</code> 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Terraform + agents-cli deploy + kubectl apply (GKE 확장 매니페스트)</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply \
   -var=&quot;project_id={{PROJECT_ID}}&quot; \
@@ -2761,75 +2831,77 @@ gcloud container clusters get-credentials {{AGENT_NAME}} --region={{REGION}} --p
 # 2) AI 생성 코드 격리 (GKE-S2): Agent Substrate (Standard >= 1.37 + kubectl ate) 또는 대안 Agent Sandbox (SandboxWarmPool)
 # [ -f deployment/k8s/agent-substrate.yaml ] &amp;&amp; kubectl apply -f deployment/k8s/agent-substrate.yaml
 # [ -f deployment/k8s/agent-sandbox.yaml ] &amp;&amp; kubectl apply -f deployment/k8s/agent-sandbox.yaml"></pre>
-          </div>
-
-          <h3>6-2. 배포 동작 종합 검증 (Pod · 무중단 종료 · Registry · 세션/Memory Bank · Trace · Eval)</h3>
-          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
-            GKE Deployment의 <strong>무중단 종료(<code>GKE-O1</code>) · 신원/Registry(<code>GKE-S1/S3</code>) · <code>NO_CONTENT</code>(<code>GKE-OB1</code>)</strong> 반영 여부와 <strong>실제 대화(세션·Memory Bank)·Eval·Cloud Trace</strong>를 확인합니다.
-          </p>
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · [검증 1/2] Pod 상태 · GKE-O1 무중단 종료 · GKE-S3 Registry · GKE-OB1 환경변수 확인</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+              </div>
             </div>
-            <pre class="code-pre" data-tpl="# 1) Pod 기동 상태 및 GKE-O1(terminationGracePeriodSeconds) · GKE-S3(Agent Registry 어노테이션) 확인
+          </details>
+
+          <h3>8-2. 배포 동작 종합 검증 (<code>agy</code> 프롬프트)</h3>
+          <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
+            GKE Deployment의 무중단 종료(<code>GKE-O1</code>)·신원/Registry(<code>GKE-S1/S3</code>)·<code>NO_CONTENT</code>(<code>GKE-OB1</code>) 설정과 실제 대화(영속 세션·Memory Bank)·Eval·Cloud Trace를 한 번에 검증합니다.
+          </p>
+          <div class="code-wrap prompt-card">
+            <div class="code-head">
+              <span class="code-label">Antigravity CLI &gt; prompt · GKE 배포 동작 종합 검증</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+            </div>
+            <pre class="code-pre" data-tpl="방금 GKE({{PROJECT_ID}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
+          </div>
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 실행하고 싶다면? (GKE 종합 검증 bash 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · GKE 배포 동작 종합 검증 (GKE-O1/S3/OB1 · GKE-F1/F2 · GKE-D2 한 번에 확인)</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+echo &quot;=== [1/5] Pod · GKE-O1 무중단 종료 · GKE-S3 Registry · GKE-OB1 환경변수 ===&quot;
 kubectl get deploy,pods -n {{AGENT_NAME}}
 kubectl get deploy {{AGENT_NAME}} -n {{AGENT_NAME}} -o jsonpath='grace={.spec.template.spec.terminationGracePeriodSeconds}s annotations={.metadata.annotations}{&quot;\n&quot;}'
-
-# 2) [GKE-OB1 · GKE-F1/F2] 컨테이너 환경변수(NO_CONTENT · AGENT_ENGINE_SESSION_ID) 확인
 kubectl get deploy {{AGENT_NAME}} -n {{AGENT_NAME}} -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{&quot;\n&quot;}{end}' | grep -E 'OTEL|AGENT_ENGINE'
+gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
 
-# 3) [GKE-S3 Preview] Agent Registry 카탈로그 등록 확인
-gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}"></pre>
-          </div>
-
-          <div class="code-wrap" style="margin-top:10px;">
-            <div class="code-head">
-              <span class="code-label">bash · [검증 2/2] Port-Forward로 GKE-F1 영속 세션 · GKE-F2 Memory Bank · GKE-D2 Eval · Cloud Trace 확인</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 kubectl port-forward svc/{{AGENT_NAME}} 8080:8080 -n {{AGENT_NAME}} &amp;
 PF_PID=$!; sleep 2
 
-# 1) [GKE-F1] 첫 번째 대화 실행 및 세션 ID 추출
+echo &quot;=== [2/5] GKE-F1 영속 세션 멀티턴 대화 ===&quot;
 TURN1=$(agents-cli run --url &quot;http://127.0.0.1:8080&quot; --mode=adk &quot;My name is Alex and I live in Seoul. What is the weather in San Francisco?&quot;)
 echo &quot;${TURN1}&quot;
 SESSION_ID=$(echo &quot;${TURN1}&quot; | grep -oE 'Session: [^ ]+' | awk '{print $2}' | tail -n 1)
-
-# 2) [GKE-F1 영속 세션] 같은 세션 ID로 후속 질문 → 맥락 유지 확인
 [ -n &quot;${SESSION_ID}&quot; ] &amp;&amp; agents-cli run --url &quot;http://127.0.0.1:8080&quot; --mode=adk --session-id &quot;${SESSION_ID}&quot; &quot;What is my name and where do I live?&quot;
 
-# 3) [GKE-F2 Memory Bank] 새 세션으로 질문 → 장기 기억 회상 확인 (백그라운드 추출에 수 초 소요 가능)
+echo &quot;=== [3/5] GKE-F2 Memory Bank 새 세션 장기 기억 회상 ===&quot;
 sleep 5
 agents-cli run --url &quot;http://127.0.0.1:8080&quot; --mode=adk &quot;Do you remember my name from our previous conversation?&quot;
 
-# 4) [GKE-D2] 배포된 GKE 서비스 대상 평가 데이터셋 실행
+echo &quot;=== [4/5] GKE-D2 배포 서비스 대상 평가(Eval) ===&quot;
 agents-cli eval run --config tests/eval/eval_config.yaml --dataset tests/eval/datasets/basic-dataset.json --url &quot;http://127.0.0.1:8080&quot; --project={{PROJECT_ID}} --region={{REGION}}
-
 kill $PF_PID 2>/dev/null || true
-# 5) [GKE-OB1] Cloud Trace 콘솔에서 프롬프트 원문 미기록(NO_CONTENT) 확인
-echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID}}&quot;"></pre>
-          </div>
+
+echo &quot;=== [5/5] GKE-OB1 Cloud Trace (NO_CONTENT 프롬프트 미기록 확인) ===&quot;
+echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID}}&quot;"></pre>
+              </div>
+            </div>
+          </details>
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(5)">← 이전 (Step 5 · 보완 적용)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(6)">Step 6 완료하고 Step 7(Runtime Audit)로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(7)">← 이전 (Step 7 · 인프라 BP)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(8)">Step 8 완료하고 Step 9(Runtime Audit)로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 7 (4. Runtime Audit: 라이브 점검) ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="7" id="step-7">
+      <!-- ==================== STEP 9 (4. Runtime Audit: 라이브 점검) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="9" id="step-9">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 7 / 9</span>
+            <span class="pill pill-navy mono">STEP 9 / 11</span>
             <span class="pill pill-green mono">4. RUNTIME AUDIT</span>
             <span class="pill pill-env" data-auto-tpl="1">{{TARGET_LABEL}} 전용</span>
             <span class="pill pill-gray mono">약 6분</span>
             <h2>Runtime Audit · 라이브 런타임 JSON 점검</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(7)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(9)">✓ 완료 표시</button>
         </div>
 
         <p>
@@ -2837,7 +2909,7 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
           <strong>Step-by-Step 위자드</strong>로 점검합니다.
         </p>
 
-        <h3>7-1. 배포된 실서비스 설정 JSON 추출</h3>
+        <h3>9-1. 배포된 실서비스 설정 JSON 추출</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
             <div class="code-head">
@@ -2882,7 +2954,7 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
           </div>
         </div>
 
-        <h3>7-2. Web Workbench 열기 &amp; 위자드 시작</h3>
+        <h3>9-2. Web Workbench 열기 &amp; 위자드 시작</h3>
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0 16px;">
           <a id="step7WorkbenchBtn" href="https://prod-ready-workbench-1018407696981.us-central1.run.app" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
             <span>🚀 Production-Readiness Web Workbench 열기 ↗</span>
@@ -2894,7 +2966,7 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
           <li>복사한 JSON을 붙여넣고(또는 GCP 미배포 시 <strong>[샘플 채우기]</strong> 클릭) <strong><code>[진단 위자드 시작하기]</code></strong>를 누릅니다.</li>
         </ol>
 
-        <h3>7-3. 위자드 체크포인트 선택 가이드 (<span data-auto-tpl="1">{{TARGET_LABEL}}</span>)</h3>
+        <h3>9-3. 위자드 체크포인트 선택 가이드 (<span data-auto-tpl="1">{{TARGET_LABEL}}</span>)</h3>
         <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
           위자드는 프로덕션 체크리스트와 같은 항목 ID(<code>CR-*</code> · <code>AR-*</code> · <code>GKE-*</code>)로 점검합니다. 일반 플랫폼 BP는 점수에서 빠지고 아래 <strong>플랫폼 Skill 참조 권장</strong> 그룹으로 따로 표시됩니다.
         </p>
@@ -2906,7 +2978,7 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-F1</td><td>관리형 영속 세션 저장 (VertexAiSessionService) <em>· 조건부: 멀티턴 대화</em></td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>단일턴은 <strong>Stateless 유지</strong> / 멀티턴은 <code>agentengine://</code> 등 관리형 영속 세션 저장 연결</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-S1</td><td>인증된 호출만 허용</td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>퍼블릭 서비스는 <strong>퍼블릭 의도</strong> / 사내 전용은 <strong>IAM 인증 호출만 허용</strong></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-S2</td><td>에이전트 전용 신원 · 최소 권한</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Agent Identity (SPIFFE ID) 또는 전용 SA 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-S3</td><td>Agent Registry 등록 <em>· Preview</em></td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Step 6에서 Agent Identity로 배포 완료 <em>(미적용 기존 서비스 진단 시 🟡 보완 권고)</em></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-S3</td><td>Agent Registry 등록 <em>· Preview</em></td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Step 8에서 Agent Identity로 배포 완료 <em>(미적용 기존 서비스 진단 시 🟡 보완 권고)</em></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-S4</td><td>Agent Gateway (외부 호출 통제) <em>· Preview · 조건부: MCP·외부 도구 호출</em></td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>외부 도구를 호출한다면 <strong>Agent Gateway for Cloud Run 단계적 도입</strong> 확인</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-OB1</td><td>Cloud Trace · 프롬프트 미기록</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">CR-S5</td><td>AI 생성 코드 격리 (Cloud Run sandboxes) <em>· Preview · 조건부: AI 생성 코드 실행</em></td><td><span class="pill pill-purple mono">🟣 거버넌스 확인</span></td><td>AI가 만든 코드를 실행한다면 <code>--sandbox-launcher</code>(2세대)로 Cloud Run sandbox에서 실행 (점검·안내만)</td></tr>
@@ -2941,7 +3013,7 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
               <thead><tr><th>ID</th><th>점검 항목</th><th>예상 상태</th><th>실습 추천 선택</th></tr></thead>
               <tbody>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">AR-S1</td><td>에이전트 전용 신원 · 최소 권한</td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Agent Identity (SPIFFE ID) 확인 완료</td></tr>
-                <tr><td class="mono" style="font-weight:700;color:var(--accent);">AR-S2</td><td>Agent Registry 등록 <em>· Preview</em></td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Step 6에서 <code>--agent-identity</code>로 배포 완료 <em>(미적용 기존 엔진 진단 시 🟡 보완 권고)</em></td></tr>
+                <tr><td class="mono" style="font-weight:700;color:var(--accent);">AR-S2</td><td>Agent Registry 등록 <em>· Preview</em></td><td><span class="pill pill-green mono">🟢 자동 통과</span></td><td>Step 8에서 <code>--agent-identity</code>로 배포 완료 <em>(미적용 기존 엔진 진단 시 🟡 보완 권고)</em></td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">AR-S3</td><td>Agent Gateway (외부 호출 통제) <em>· Preview · 조건부: MCP·외부 도구 호출</em></td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ Agent Gateway 바인딩</strong> (초기 <code>DRY_RUN</code>으로 HTTP 498 차단 방지)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">AR-OB1</td><td>프롬프트 미기록</td><td><span class="pill pill-amber mono">🟡 보완 권고</span></td><td><strong>🛠️ 권장 적용</strong> (<code>NO_CONTENT</code>)</td></tr>
                 <tr><td class="mono" style="font-weight:700;color:var(--accent);">AR-S4</td><td>AI 생성 코드 격리 (Code Execution) <em>· 조건부: AI 생성 코드 실행</em></td><td><span class="pill pill-blue mono">🔵 판단 필요</span></td><td>AI가 만든 코드를 실행한다면 Agent Platform Code Execution(관리형 샌드박스)에 위임 (점검·안내만)</td></tr>
@@ -2997,22 +3069,22 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(6)">← 이전 (Step 6)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(7)">Step 7 완료하고 Step 8로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(8)">← 이전 (Step 8)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(9)">Step 9 완료하고 Step 10으로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 8 (4. Runtime Audit: 보완 및 최종 재검증) ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="8" id="step-8">
+      <!-- ==================== STEP 10 (4. Runtime Audit: 보완 및 최종 재검증) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="10" id="step-10">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 8 / 9</span>
+            <span class="pill pill-navy mono">STEP 10 / 11</span>
             <span class="pill pill-green mono">4. RUNTIME AUDIT</span>
             <span class="pill pill-env" data-auto-tpl="1">{{TARGET_LABEL}} 전용</span>
             <span class="pill pill-gray mono">약 5분</span>
             <h2>Runtime Audit · 보완 명령어 반영 및 최종 재검증</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(8)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(10)">✓ 완료 표시</button>
         </div>
 
         <p>
@@ -3020,7 +3092,7 @@ echo &quot;Cloud Trace 확인: https://console.cloud.google.com/traces/explorer?
           내가 변경 대상으로 선택한 항목만 조합된 맞춤형 실행 명령어와 <strong>Markdown(<code>.md</code>) 리포트</strong>가 생성됩니다.
         </p>
 
-        <h3>8-1. 리포트에서 생성된 맞춤형 업데이트 명령어 실행</h3>
+        <h3>10-1. 리포트에서 생성된 맞춤형 업데이트 명령어 실행</h3>
         <div class="track-only" data-track="cloud_run">
           <div class="code-wrap">
             <div class="code-head">
@@ -3081,61 +3153,85 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
 
         <div class="callout callout-green">
           <div class="callout-title">🎉 End-to-End 검증 완료</div>
-          <p>반영 후 Step 7의 JSON 조회 명령어를 다시 붙여넣어 모든 검증 항목이 <strong><code>🟢 GREEN</code></strong>인지 확인하고, 우측 상단의 <strong><code>[리포트(.md) 다운로드]</code></strong>로 증적 파일을 저장하세요.</p>
+          <p>반영 후 Step 9의 JSON 조회 명령어를 다시 붙여넣어 모든 검증 항목이 <strong><code>🟢 GREEN</code></strong>인지 확인하고, 우측 상단의 <strong><code>[리포트(.md) 다운로드]</code></strong>로 증적 파일을 저장하세요.</p>
         </div>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(7)">← 이전 (Step 7)</button>
-          <button class="btn btn-primary" onclick="completeAndNext(8)">Step 8 완료하고 Step 9로 이동 →</button>
+          <button class="btn btn-subtle" onclick="goToStep(9)">← 이전 (Step 9)</button>
+          <button class="btn btn-primary" onclick="completeAndNext(10)">Step 10 완료하고 Step 11로 이동 →</button>
         </div>
       </section>
 
-      <!-- ==================== STEP 9 (Clean-Up) ==================== -->
-      <section class="card card-pad-lg lab-step" data-step="9" id="step-9">
+      <!-- ==================== STEP 11 (Clean-Up) ==================== -->
+      <section class="card card-pad-lg lab-step" data-step="11" id="step-11">
         <div class="step-header">
           <div class="step-header-left">
-            <span class="pill pill-navy mono">STEP 9 / 9</span>
+            <span class="pill pill-navy mono">STEP 11 / 11</span>
             <span class="pill pill-gray mono">CLEAN-UP</span>
             <span class="pill pill-env" data-auto-tpl="1">{{TARGET_LABEL}} 전용</span>
             <span class="pill pill-gray mono">약 3분</span>
             <h2>Clean-Up · 실습 리소스 정리 &amp; 트러블슈팅 FAQ</h2>
           </div>
-          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(9)">✓ 완료 표시</button>
+          <button class="btn btn-subtle btn-sm step-done-btn" onclick="toggleStepDone(11)">✓ 완료 표시</button>
         </div>
 
-        <h3>9-1. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 실습 리소스 삭제</h3>
+        <h3>11-1. <span data-auto-tpl="1">{{TARGET_LABEL}}</span> 실습 리소스 삭제 (<code>agy</code> 프롬프트)</h3>
+        <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 8px;">
+          <code>agy</code> 대화창에서 그대로 실습 리소스 정리를 요청할 수 있습니다. <em>(직접 터미널 명령으로 삭제하려면 아래 접이식 메뉴를 펼치세요.)</em>
+        </p>
+        <div class="code-wrap prompt-card">
+          <div class="code-head">
+            <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 실습 리소스 정리 (terraform destroy)</span>
+            <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
+          </div>
+          <pre class="code-pre" data-tpl="실습을 마쳤으니 {{PROJECT_ID}} / {{REGION}}에 배포한 {{TARGET_LABEL}} 리소스를 안전하게 정리해줘. 삭제될 리소스를 먼저 확인하고 내 승인 후 진행해줘."></pre>
+        </div>
+
         <div class="track-only" data-track="cloud_run">
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · Terraform 인프라 및 Cloud Run 리소스 일괄 삭제</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 삭제하고 싶다면? (Cloud Run Clean-Up 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Terraform 인프라 및 Cloud Run 리소스 일괄 삭제</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 ORG_ID=$(gcloud projects get-ancestors {{PROJECT_ID}} --format='value(id)' --filter='type:organization' 2>/dev/null || true)
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform destroy -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot; -var=&quot;organization_id=${ORG_ID}&quot;)"></pre>
-          </div>
+              </div>
+            </div>
+          </details>
         </div>
 
         <div class="track-only" data-track="agent_runtime">
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · Terraform 인프라 및 Agent Runtime 리소스 일괄 삭제</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 삭제하고 싶다면? (Agent Runtime Clean-Up 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · Terraform 인프라 및 Agent Runtime 리소스 일괄 삭제</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform destroy -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;)"></pre>
-          </div>
+              </div>
+            </div>
+          </details>
         </div>
 
         <div class="track-only" data-track="gke">
-          <div class="code-wrap">
-            <div class="code-head">
-              <span class="code-label">bash · GKE 확장 매니페스트 및 Terraform 클러스터 리소스 일괄 삭제</span>
-              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
-            </div>
-            <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
+          <details class="faq" style="margin-top:8px;">
+            <summary>💻 직접 터미널에서 삭제하고 싶다면? (GKE Clean-Up 명령어)</summary>
+            <div class="faq-body">
+              <div class="code-wrap">
+                <div class="code-head">
+                  <span class="code-label">bash · GKE 확장 매니페스트 및 Terraform 클러스터 리소스 일괄 삭제</span>
+                  <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+                </div>
+                <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 # 1) 클러스터 자격증명 연결 후 Gateway/LB Finalizer 정리를 위해 k8s 매니페스트를 먼저 삭제
 gcloud container clusters get-credentials {{AGENT_NAME}} --region={{REGION}} --project={{PROJECT_ID}} 2>/dev/null || true
 [ -d deployment/k8s ] &amp;&amp; kubectl delete -f deployment/k8s/ --ignore-not-found=true
@@ -3145,10 +3241,12 @@ sleep 15  # LoadBalancer / Gateway Finalizer 정리 대기
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform destroy -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;)
 # ※ logs_data_bucket 삭제 실패 시: gcloud storage rm -r &quot;gs://{{PROJECT_ID}}-{{AGENT_NAME}}-logs/**&quot; 후 terraform destroy 재실행"></pre>
-          </div>
+              </div>
+            </div>
+          </details>
         </div>
 
-        <h3>9-2. 자주 묻는 질문 &amp; 트러블슈팅 FAQ</h3>
+        <h3>11-2. 자주 묻는 질문 &amp; 트러블슈팅 FAQ</h3>
 
         <details class="faq">
           <summary>Q1. Antigravity CLI에서 <code>agent-production-readiness</code> 스킬을 찾지 못한다고 나와요.</summary>
@@ -3190,7 +3288,7 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
         </details>
 
         <div class="step-footer">
-          <button class="btn btn-subtle" onclick="goToStep(8)">← 이전 (Step 8)</button>
+          <button class="btn btn-subtle" onclick="goToStep(10)">← 이전 (Step 10)</button>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <button class="btn btn-subtle" onclick="goToStep(0)">← 다른 배포 환경 체험하기 (Step 0)</button>
             <button class="btn btn-green" onclick="markAllComplete()">🎉 실습 완료 처리</button>
@@ -3202,18 +3300,20 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
   </div>
 
   <script>
-    // Step 0 chooses the deployment environment (hidden on Steps 1–9); `env: true` steps show only the selected environment's content.
+    // Step 0 chooses the deployment environment (hidden on Steps 1–11); `env: true` steps show only the selected environment's content.
     const STEPS_META = [
       { id: 0, code: "0", title: "배포 환경 선택", time: "1분", group: "setup", env: false },
       { id: 1, code: "1", title: "실습 환경 준비", time: "5분", group: "setup", env: true },
       { id: 2, code: "2", title: "Agent Skill 설치 및 실행 확인", time: "3분", group: "setup", env: false },
       { id: 3, code: "3", title: "ADK 기반 Agent 스캐폴딩", time: "6분", group: "setup", env: true },
-      { id: 4, code: "4", title: "Scanning · 정적 진단", time: "6분", group: "readiness", env: false },
-      { id: 5, code: "5", title: "보완 적용 · 재검사", time: "7분", group: "readiness", env: false },
-      { id: 6, code: "6", title: "Deploy · 클라우드 배포", time: "8분", group: "readiness", env: true },
-      { id: 7, code: "7", title: "Runtime Audit · 라이브 점검", time: "6분", group: "readiness", env: true },
-      { id: 8, code: "8", title: "Runtime Audit · 보완 및 재검증", time: "5분", group: "readiness", env: true },
-      { id: 9, code: "9", title: "Clean-Up · 리소스 정리 & FAQ", time: "3분", group: "cleanup", env: true },
+      { id: 4, code: "4", title: "① 진단 (Find)", time: "3분", group: "readiness", env: false },
+      { id: 5, code: "5", title: "② 변경 미리보기 (Diff)", time: "2분", group: "readiness", env: false },
+      { id: 6, code: "6", title: "③ 보완 적용 (Fix)", time: "3분", group: "readiness", env: false },
+      { id: 7, code: "7", title: "④ 인프라 BP (Option)", time: "2분", group: "readiness", env: false },
+      { id: 8, code: "8", title: "Deploy · 클라우드 배포", time: "8분", group: "readiness", env: true },
+      { id: 9, code: "9", title: "Runtime Audit · 라이브 점검", time: "6분", group: "readiness", env: true },
+      { id: 10, code: "10", title: "Runtime Audit · 보완 및 재검증", time: "5분", group: "readiness", env: true },
+      { id: 11, code: "11", title: "Clean-Up · 리소스 정리 & FAQ", time: "3분", group: "cleanup", env: true },
     ];
 
     const TRACKS = {
@@ -3582,8 +3682,8 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
           ? `${tr.shortLabel} 실습 환경 준비`
           : s.id === 3
             ? `ADK 기반 Agent 스캐폴딩 (${tr.shortLabel})`
-            : (s.id === 6 ? `Deploy · ${tr.shortLabel} 배포` : s.title);
-        const stepTime = (s.id === 6 && tr.key === "gke") ? "15~20분" : s.time;
+            : (s.id === 8 ? `Deploy · ${tr.shortLabel} 배포` : s.title);
+        const stepTime = (s.id === 8 && tr.key === "gke") ? "15~20분" : s.time;
         let headerHtml = "";
         if (s.group !== lastGroup) {
           lastGroup = s.group;
@@ -3636,9 +3736,9 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
       const stageStepMap = {
         setup: [0, 1, 2, 3],
         scanning: [4],
-        remediation: [5],
-        deploy: [6],
-        runtime_audit: [7, 8],
+        remediation: [5, 6, 7],
+        deploy: [8],
+        runtime_audit: [9, 10],
       };
       const defaultNum = { setup: "0", scanning: "1", remediation: "2", deploy: "3", runtime_audit: "4" };
 

@@ -2621,7 +2621,7 @@ agy"></pre>
               <span class="code-label">Antigravity CLI &gt; prompt · Cloud Run Terraform 프로비저닝 &amp; 배포</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="프로젝트 {{PROJECT_ID}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 인프라를 프로비저닝하고 Cloud Run에 배포해줘. 실행할 명령어를 먼저 요약하고 내 승인 후 진행해줘."></pre>
+            <pre class="code-pre" data-tpl="{{PROMPT_PROJECT}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 인프라를 프로비저닝하고 Cloud Run에 배포해줘. 실행할 명령어를 먼저 요약하고 내 승인 후 진행해줘."></pre>
           </div>
           <details class="faq" style="margin-top:8px;">
             <summary>💻 직접 터미널에서 실행하고 싶다면? (Terraform + <code>agents-cli deploy</code> 명령어)</summary>
@@ -2652,7 +2652,7 @@ agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --no-confirm-proj
               <span class="code-label">Antigravity CLI &gt; prompt · Cloud Run 배포 동작 종합 검증</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="방금 Cloud Run({{PROJECT_ID}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
+            <pre class="code-pre" data-tpl="방금 Cloud Run({{PROMPT_PROJECT_SHORT}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
           </div>
           <details class="faq" style="margin-top:8px;">
             <summary>💻 직접 터미널에서 실행하고 싶다면? (Cloud Run 종합 검증 bash 명령어)</summary>
@@ -2717,7 +2717,7 @@ echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID
               <span class="code-label">Antigravity CLI &gt; prompt · Agent Runtime Terraform 프로비저닝 &amp; 배포</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="프로젝트 {{PROJECT_ID}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 인프라를 프로비저닝하고 Agent Runtime에 Agent Identity 모드로 배포해줘. 실행할 명령어를 먼저 요약하고 내 승인 후 진행해줘."></pre>
+            <pre class="code-pre" data-tpl="{{PROMPT_PROJECT}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 인프라를 프로비저닝하고 적용된 설정 그대로 Agent Runtime에 배포해줘. 실행할 명령어를 먼저 요약하고 내 승인 후 진행해줘."></pre>
           </div>
           <details class="faq" style="margin-top:8px;">
             <summary>💻 직접 터미널에서 실행하고 싶다면? (Terraform + <code>agents-cli deploy</code> 명령어)</summary>
@@ -2751,7 +2751,7 @@ agents-cli deploy --status
               <span class="code-label">Antigravity CLI &gt; prompt · Agent Runtime 배포 동작 종합 검증</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="방금 Agent Runtime({{PROJECT_ID}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
+            <pre class="code-pre" data-tpl="방금 Agent Runtime({{PROMPT_PROJECT_SHORT}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
           </div>
           <details class="faq" style="margin-top:8px;">
             <summary>💻 직접 터미널에서 실행하고 싶다면? (Agent Runtime 종합 검증 bash 명령어)</summary>
@@ -2770,7 +2770,7 @@ agents-cli deploy --list
 gcloud agent-registry agents list --location={{REGION}} --project={{PROJECT_ID}}
 curl -sS -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; \
   &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/${ENGINE_RESOURCE}&quot; \
-  | python3 -c 'import json,sys; d=json.load(sys.stdin).get(&quot;spec&quot;,{}); print(json.dumps({&quot;identityType&quot;:d.get(&quot;identityType&quot;),&quot;agentGatewayConfig&quot;:d.get(&quot;agentGatewayConfig&quot;),&quot;env&quot;:d.get(&quot;deploymentSpec&quot;,{}).get(&quot;env&quot;)}, indent=2))'
+  | python3 -c 'import json,sys; d=json.load(sys.stdin).get(&quot;spec&quot;,{}); ds=d.get(&quot;deploymentSpec&quot;,{}); print(json.dumps({&quot;identityType&quot;:d.get(&quot;identityType&quot;),&quot;agentGatewayConfig&quot;:ds.get(&quot;agentGatewayConfig&quot;),&quot;env&quot;:ds.get(&quot;env&quot;)}, indent=2))'
 
 echo &quot;=== [2/5] AR-F1 관리형 영속 세션 멀티턴 대화 ===&quot;
 TURN1=$(agents-cli run --url &quot;${ENGINE_URL}&quot; --mode=adk &quot;My name is Alex and I live in Seoul. What is the weather in San Francisco?&quot;)
@@ -2804,7 +2804,7 @@ echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID
               <span class="code-label">Antigravity CLI &gt; prompt · GKE Terraform 프로비저닝 · 배포 · 확장 매니페스트 적용</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="프로젝트 {{PROJECT_ID}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 클러스터·인프라를 프로비저닝하고 GKE에 배포해줘. 실행할 명령어와 적용할 확장 매니페스트(deployment/k8s/)를 먼저 요약하고 내 승인 후 진행해줘."></pre>
+            <pre class="code-pre" data-tpl="{{PROMPT_PROJECT}}, 리전 {{REGION}} 기준으로 이 프로젝트의 Terraform 클러스터·인프라를 프로비저닝하고 GKE에 배포해줘. 실행할 명령어와 적용할 확장 매니페스트(deployment/k8s/)를 먼저 요약하고 내 승인 후 진행해줘."></pre>
           </div>
           <details class="faq" style="margin-top:8px;">
             <summary>💻 직접 터미널에서 실행하고 싶다면? (Terraform + <code>agents-cli deploy</code> + <code>kubectl apply</code> 명령어)</summary>
@@ -2844,7 +2844,7 @@ gcloud container clusters get-credentials {{AGENT_NAME}} --region={{REGION}} --p
               <span class="code-label">Antigravity CLI &gt; prompt · GKE 배포 동작 종합 검증</span>
               <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
             </div>
-            <pre class="code-pre" data-tpl="방금 GKE({{PROJECT_ID}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
+            <pre class="code-pre" data-tpl="방금 GKE({{PROMPT_PROJECT_SHORT}} / {{REGION}})에 배포한 에이전트가 체크리스트 적용 항목대로 실제 잘 동작하는지 종합 검증하고 결과를 표로 정리해줘."></pre>
           </div>
           <details class="faq" style="margin-top:8px;">
             <summary>💻 직접 터미널에서 실행하고 싶다면? (GKE 종합 검증 bash 명령어)</summary>
@@ -3184,7 +3184,7 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
             <span class="code-label" data-auto-tpl="1">Antigravity CLI &gt; prompt · {{TARGET_LABEL}} 실습 리소스 정리 (terraform destroy)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">프롬프트 복사</button>
           </div>
-          <pre class="code-pre" data-tpl="실습을 마쳤으니 {{PROJECT_ID}} / {{REGION}}에 배포한 {{TARGET_LABEL}} 리소스를 안전하게 정리해줘. 삭제될 리소스를 먼저 확인하고 내 승인 후 진행해줘."></pre>
+          <pre class="code-pre" data-tpl="실습을 마쳤으니 {{PROMPT_PROJECT_SHORT}} / {{REGION}}에 배포한 {{TARGET_LABEL}} 리소스를 안전하게 정리해줘. 삭제될 리소스를 먼저 확인하고 내 승인 후 진행해줘."></pre>
         </div>
 
         <div class="track-only" data-track="cloud_run">
@@ -3461,7 +3461,11 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
 
     function applyTemplates() {
       const tr = TRACKS[state.track];
-      const proj = state.env.projectId.trim() || "<YOUR_PROJECT_ID>";
+      const rawProj = state.env.projectId.trim();
+      const hasRealProj = Boolean(rawProj && rawProj !== "<YOUR_PROJECT_ID>" && rawProj !== "my-gcp-project-id");
+      const proj = rawProj || "<YOUR_PROJECT_ID>";
+      const promptProj = hasRealProj ? `프로젝트 ${rawProj}` : "현재 gcloud 기본 프로젝트";
+      const promptProjShort = hasRealProj ? rawProj : "현재 gcloud 기본 프로젝트";
       const reg = state.env.region.trim() || DEFAULT_ENV.region;
       const agent = state.env.agentName.trim() || DEFAULT_ENV.agentName;
       const wb = WORKBENCH_URL;
@@ -3469,6 +3473,8 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
 
       const map = {
         "{{PROJECT_ID}}": proj,
+        "{{PROMPT_PROJECT}}": promptProj,
+        "{{PROMPT_PROJECT_SHORT}}": promptProjShort,
         "{{REGION}}": reg,
         "{{AGENT_NAME}}": agent,
         "{{WORKBENCH_URL}}": wb,

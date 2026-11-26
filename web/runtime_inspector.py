@@ -640,7 +640,7 @@ def _flatten_k8s_items(raw_items: list[Any]) -> list[dict[str, Any]]:
                 for single_key in ("cluster", "namespace", "deployment", "pdb", "hpa", "podMonitoring", "sandbox", "substrate"):
                     if isinstance(item.get(single_key), dict):
                         flat.append(item[single_key])
-                for list_key in ("networkPolicies", "agentGateways"):
+                for list_key in ("networkPolicies", "agentGateways", "podSnapshots"):
                     if isinstance(item.get(list_key), list):
                         flat.extend(_flatten_k8s_items(item[list_key]))
             else:
@@ -694,6 +694,7 @@ def _group_k8s_items_into_bundles(items: list[Any]) -> list[dict[str, Any]]:
     netpols: list[dict[str, Any]] = []
     pod_monitorings: list[dict[str, Any]] = []
     sandboxes: list[dict[str, Any]] = []
+    pod_snapshots: list[dict[str, Any]] = []
     substrates: list[dict[str, Any]] = []
     gateways: list[dict[str, Any]] = []
     cluster: dict[str, Any] = {}
@@ -718,14 +719,16 @@ def _group_k8s_items_into_bundles(items: list[Any]) -> list[dict[str, Any]]:
             netpols.append(item)
         elif kind == "PodMonitoring":
             pod_monitorings.append(item)
-        elif kind in ("SandboxTemplate", "SandboxWarmPool", "SandboxClaim", "PodSnapshotPolicy", "PodSnapshotStorageConfig"):
+        elif kind in ("SandboxTemplate", "SandboxWarmPool", "SandboxClaim"):
             sandboxes.append(item)
+        elif kind in ("PodSnapshotPolicy", "PodSnapshotStorageConfig"):
+            pod_snapshots.append(item)
         elif kind in ("WorkerPool", "ActorTemplate"):
             substrates.append(item)
         elif kind in ("Gateway", "HTTPRoute", "GCPAgentGateway", "GCPBackend", "GCPEgressPolicy", "GCPAuthzPolicy", "GCPExtensionBinding"):
             gateways.append(item)
 
-    if not any([deployments, namespaces, pdbs, hpas, netpols, pod_monitorings, sandboxes, substrates, gateways, cluster]):
+    if not any([deployments, namespaces, pdbs, hpas, netpols, pod_monitorings, sandboxes, pod_snapshots, substrates, gateways, cluster]):
         return []
 
     if not deployments:
@@ -741,6 +744,7 @@ def _group_k8s_items_into_bundles(items: list[Any]) -> list[dict[str, Any]]:
                 "networkPolicies": netpols,
                 "podMonitoring": pod_monitorings[0] if pod_monitorings else None,
                 "sandbox": sandboxes[0] if sandboxes else None,
+                "podSnapshots": pod_snapshots,
                 "substrate": substrates[0] if substrates else None,
                 "agentGateways": gateways,
             }
@@ -765,6 +769,7 @@ def _group_k8s_items_into_bundles(items: list[Any]) -> list[dict[str, Any]]:
                 "networkPolicies": dep_nps,
                 "podMonitoring": dep_pms[0] if dep_pms else None,
                 "sandbox": sandboxes[0] if sandboxes else None,
+                "podSnapshots": pod_snapshots,
                 "substrate": substrates[0] if substrates else None,
                 "agentGateways": gateways,
             }
@@ -942,7 +947,7 @@ def get_sample_runtime_json(runtime_type: str = "cloud_run") -> dict[str, Any]:
                                         "limits": {"cpu": "1", "memory": "4Gi"},
                                     },
                                     "env": [
-                                        {"name": "GOOGLE_GENAI_USE_ENTERPRISE", "value": "true"},
+                                        {"name": "GOOGLE_GENAI_USE_VERTEXAI", "value": "True"},
                                         {"name": "GOOGLE_CLOUD_PROJECT", "value": "geap-sandbox-kwlee"},
                                         {"name": "GOOGLE_CLOUD_LOCATION", "value": "global"},
                                         {"name": "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", "value": "true"},
@@ -976,7 +981,7 @@ def get_sample_runtime_json(runtime_type: str = "cloud_run") -> dict[str, Any]:
                     "maxInstances": 10,
                     "env": [
                         {"name": "GOOGLE_CLOUD_LOCATION", "value": "global"},
-                        {"name": "GOOGLE_GENAI_USE_ENTERPRISE", "value": "true"},
+                        {"name": "GOOGLE_GENAI_USE_VERTEXAI", "value": "True"},
                         {"name": "ADK_SESSION_SERVICE_URI", "value": "agentengine://"},
                         {"name": "OTEL_SEMCONV_STABILITY_OPT_IN", "value": "gen_ai_latest_experimental"},
                         {"name": "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "value": "EVENT_ONLY"},
@@ -1017,7 +1022,7 @@ def get_sample_runtime_json(runtime_type: str = "cloud_run") -> dict[str, Any]:
                             "ports": [{"containerPort": 8000, "name": "http1"}],
                             "resources": {"limits": {"cpu": "1000m", "memory": "512Mi"}},
                             "env": [
-                                {"name": "GOOGLE_GENAI_USE_ENTERPRISE", "value": "true"},
+                                {"name": "GOOGLE_GENAI_USE_VERTEXAI", "value": "True"},
                                 {"name": "GOOGLE_CLOUD_PROJECT", "value": "geap-sandbox-kwlee"},
                                 {"name": "GOOGLE_CLOUD_LOCATION", "value": "global"},
                                 {"name": "MCP_SERVER_URL", "value": "https://currency-mcp-server-r6j5nyqrla-uc.a.run.app/mcp"},
@@ -1578,15 +1583,26 @@ def _evaluate_cloud_run_service_legacy(
         "console_guide": "Agent Gateway는 ALB처럼 리소스만 생성해 끝나지 않습니다. Agent Identity · Registry · PSC/DNS · IAP V2(DRY_RUN→ENFORCED) · roles/iap.egressor CEL · Model Armor를 함께 구성하세요. (상세 가이드: /guide 및 references/agent-registry-mcp-a2a.md §6)",
     })
 
-    # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT)
+    # 9. [R5.1] OpenTelemetry Prompt Privacy Guard (NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false)
     otel_val = env_map.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "")
+    adk_spans_val = env_map.get("ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", "").lower()
     otel_semconv = "OTEL_SEMCONV_STABILITY_OPT_IN" in env_map
-    if otel_val == "NO_CONTENT":
+    if otel_val == "NO_CONTENT" and adk_spans_val != "true":
         r51_status = "GREEN"
-        r51_current = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 설정됨 (프롬프트 평문 기록 차단)"
+        r51_current = (
+            "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT"
+            + (f", ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS={adk_spans_val}" if adk_spans_val else "")
+            + " 설정됨 (프롬프트 평문 기록 차단)"
+        )
+    elif otel_val == "NO_CONTENT" and adk_spans_val == "true":
+        r51_status = "AMBER"
+        r51_current = (
+            "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT이나 "
+            "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=true로 설정되어 ADK 스팬에 프롬프트 본문이 기록될 수 있음 (false 전환 권고)"
+        )
     elif otel_val:
         r51_status = "AMBER"
-        r51_current = f"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT={otel_val} (프로덕션 PII 취급 시 NO_CONTENT 변경 권고)"
+        r51_current = f"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT={otel_val} (프로덕션 PII 취급 시 NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 변경 권고)"
     else:
         r51_status = "AMBER"
         r51_current = (
@@ -1602,23 +1618,24 @@ def _evaluate_cloud_run_service_legacy(
         "title": "OpenTelemetry 트레이스 프롬프트(PII) 평문 기록 방지 (NO_CONTENT)",
         "status": r51_status,
         "current_state": r51_current,
-        "recommended_state": "프로덕션 OTel 트레이싱 사용 시 OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT 권장",
+        "recommended_state": "프로덕션 OTel 트레이싱 사용 시 OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 권장",
         "why_it_matters": (
             "분산 트레이싱(Cloud Trace)을 켠 운영 환경에서 개인정보가 포함된 사용자 프롬프트 원문이 트레이스에 평문 저장되는 것을 방지하기 위한 안전장치입니다. "
             "(트레이싱을 사용하지 않거나 프롬프트 디버깅이 필요한 개발/샌드박스 환경이라면 설정하지 않아도 무방합니다.)"
         ),
-        "how_to_fix_title": "OTel 프라이버시 환경변수(NO_CONTENT) 명시 설정",
+        "how_to_fix_title": "OTel 프라이버시 환경변수(NO_CONTENT · false) 명시 설정",
         "gcloud_cmd": (
             f"gcloud run services update {service_name} \\\n"
             f"  --region={region} \\\n"
             f"  --project={project_id} \\\n"
-            f"  --update-env-vars=\"OTEL_SERVICE_NAME={service_name},OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT,OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental\""
+            f"  --update-env-vars=\"OTEL_SERVICE_NAME={service_name},OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT,ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false,OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental\""
         ),
         "terraform_snippet": (
             'env {\n  name  = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"\n  value = "NO_CONTENT"\n}\n'
+            'env {\n  name  = "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS"\n  value = "false"\n}\n'
             'env {\n  name  = "OTEL_SEMCONV_STABILITY_OPT_IN"\n  value = "gen_ai_latest_experimental"\n}'
         ),
-        "console_guide": f"Cloud Run 콘솔 > {service_name} > [변수 및 보안 비밀] 탭에서 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT`를 추가하세요.",
+        "console_guide": f"Cloud Run 콘솔 > {service_name} > [변수 및 보안 비밀] 탭에서 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT`와 `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false`를 추가하세요.",
     })
 
     verified_checks = [c for c in checks if c["status"] in ("GREEN", "AMBER", "RED")]
@@ -1682,7 +1699,7 @@ def _evaluate_cloud_run_service_legacy(
         "stage1_skill_cmd": (
             "# 배포 전 로컬 PC (Agent Skill): 프로덕션 체크리스트 Cloud Run 항목(State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance) 점검 및 패치\n"
             "# 일반 플랫폼 Best Practice는 플랫폼 Skill 참고: https://github.com/google/skills/tree/main/skills/cloud\n"
-            "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target cloud_run"
+            "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan <내_로컬_에이전트_코드_폴더> --target cloud_run"
         ),
         "checks": checks,
     }
@@ -1728,6 +1745,9 @@ def _evaluate_agent_runtime_engine_legacy(
     )
 
     otel_capture = env_map.get("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "")
+    ar_adk_spans = env_map.get("ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", "").lower()
+    ar_otel_ok = (otel_capture == "NO_CONTENT") and (ar_adk_spans != "true")
+    has_memory_bank_cfg = bool((eng.get("contextSpec") or {}).get("memoryBankConfig"))
     loc_val = env_map.get("GOOGLE_CLOUD_LOCATION", "")
     has_guardrail = env_map.get("MODEL_ARMOR_ENABLED", "").lower() == "true" or "MODEL_ARMOR_TEMPLATE_ID" in env_map
     min_inst = dep_spec.get("minInstances")
@@ -1743,7 +1763,9 @@ def _evaluate_agent_runtime_engine_legacy(
         (
             f"[AR-F1 · AR-F2] 관리형 영속 세션 저장 · 관리형 장기 기억 저장 (VertexAiSessionService · VertexAiMemoryBankService): "
             f"별도 Cloud SQL/Redis 없이 agentengine:// 기반 영속 세션 및 장기 메모리를 플랫폼이 기본 제공합니다 "
-            f"(현재 ADK_SESSION_SERVICE_URI={env_map.get('ADK_SESSION_SERVICE_URI', 'agentengine://')})."
+            f"(현재 ADK_SESSION_SERVICE_URI={env_map.get('ADK_SESSION_SERVICE_URI', 'agentengine://')}"
+            + (", contextSpec.memoryBankConfig 활성화 확인됨" if has_memory_bank_cfg else "")
+            + ")."
         ),
         (
             "제로 트러스트 IAM 인바운드 인증 (IAM-Only Inbound): "
@@ -1863,8 +1885,9 @@ def _evaluate_agent_runtime_engine_legacy(
             ),
             "how_to_fix_title": "Agent Gateway(DRY_RUN) 프로비저닝 및 Agent Runtime 연결",
             "gcloud_cmd": (
-                f"# [Step 1] 로컬 AR-S3 조치로 Agent Gateway Terraform(DRY_RUN) + Dockerfile CA 번들 생성\n"
+                f"# [Step 1] 로컬 AR-S3 조치로 Agent Gateway Terraform(DRY_RUN · provider = google-beta) + Dockerfile CA 번들 생성\n"
                 f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-S3\n\n"
+                f"# (또는 기존 Agent Gateway를 바로 바인딩할 때: agents-cli deploy --agent-gateway-egress=projects/{project_id}/locations/{region}/agentGateways/<GW_NAME>)\n\n"
                 f"# [Step 2] Model Armor Floor Settings 및 AuthzPolicy 확인 (읽기 전용)\n"
                 f"gcloud model-armor floorsettings describe --full-uri=\"projects/{project_id}/locations/global/floorSetting\"\n"
                 f"gcloud beta network-security authz-policies list --location={region} --project={project_id}\n\n"
@@ -1872,13 +1895,14 @@ def _evaluate_agent_runtime_engine_legacy(
                 f"gcloud beta network-services agent-gateways list --location={region} --project={project_id}"
             ),
             "terraform_snippet": (
+                '# production_ready.tf: resource "google_network_services_agent_gateway" "egress_gateway" { provider = google-beta ... }\n'
                 'agent_gateway_config {\n'
                 '  agent_to_anywhere_config {\n'
                 '    agent_gateway = google_network_services_agent_gateway.egress_gateway.id\n'
                 '  }\n'
                 '}'
             ),
-            "console_guide": "Agent Skill(`--target agent_runtime --items AR-S3`)으로 `production_ready.tf`의 Agent Gateway(`iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
+            "console_guide": "Agent Skill(`--target agent_runtime --items AR-S3`)으로 `production_ready.tf`의 Agent Gateway(`provider = google-beta`, `iamEnforcementMode=DRY_RUN`)와 `Dockerfile` CA 번들 설치 구문을 생성한 뒤 배포하세요.",
         },
         {
             "id": "R5.1",
@@ -1886,14 +1910,27 @@ def _evaluate_agent_runtime_engine_legacy(
             "check_type": "RUNTIME_RECOMMENDED",
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "OpenTelemetry 트레이스 프롬프트(PII) 평문 기록 방지 (NO_CONTENT)",
-            "status": "GREEN" if otel_capture == "NO_CONTENT" else "AMBER",
-            "current_state": f"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = {otel_capture or '미설정'} (프로덕션 PII 취급 시 NO_CONTENT 권고)",
-            "recommended_state": "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = NO_CONTENT",
-            "why_it_matters": f"현재 `{otel_capture or '미설정'}` 상태입니다. 프로덕션에서 고객 개인정보가 포함된 프롬프트 원문이 트레이스에 기록되지 않도록 `NO_CONTENT` 설정을 권장합니다.",
-            "how_to_fix_title": "OTel 프라이버시 환경변수 NO_CONTENT 설정",
-            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-OB1",
-            "terraform_snippet": 'env {\n  name  = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"\n  value = "NO_CONTENT"\n}',
-            "console_guide": "배포 설정에서 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` 값을 `NO_CONTENT`로 지정하세요.",
+            "status": "GREEN" if ar_otel_ok else "AMBER",
+            "current_state": (
+                "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT"
+                + (f", ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS={ar_adk_spans}" if ar_adk_spans else "")
+                + " 설정됨 (프롬프트 평문 기록 차단)"
+                if ar_otel_ok
+                else (
+                    "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT이나 ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=true로 설정됨 (false 전환 권고)"
+                    if otel_capture == "NO_CONTENT"
+                    else f"OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = {otel_capture or '미설정'} (프로덕션 PII 취급 시 NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false 권고)"
+                )
+            ),
+            "recommended_state": "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS = false",
+            "why_it_matters": f"현재 `{otel_capture or '미설정'}` (ADK 스팬 캡처: `{ar_adk_spans or '미설정'}`) 상태입니다. 프로덕션에서 고객 개인정보가 포함된 프롬프트 원문이 트레이스에 기록되지 않도록 `NO_CONTENT` + `false` 설정을 권장합니다.",
+            "how_to_fix_title": "OTel 프라이버시 환경변수 NO_CONTENT · false 설정",
+            "gcloud_cmd": "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target agent_runtime --items AR-OB1",
+            "terraform_snippet": (
+                'env {\n  name  = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"\n  value = "NO_CONTENT"\n}\n'
+                'env {\n  name  = "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS"\n  value = "false"\n}'
+            ),
+            "console_guide": "배포 설정에서 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT` 및 `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false`로 지정하세요.",
         },
     ]
 
@@ -1943,7 +1980,7 @@ def _evaluate_agent_runtime_engine_legacy(
             f"uvx google-agents-cli deploy --project={project_id} --region={region}"
         ),
         "platform_guarantees": ar_platform_guarantees,
-        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target agent_runtime  # 프로덕션 체크리스트 Agent Runtime 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
+        "stage1_skill_cmd": "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan <내_로컬_에이전트_코드_폴더> --target agent_runtime  # 프로덕션 체크리스트 Agent Runtime 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
         "checks": checks,
     }
 
@@ -2329,7 +2366,7 @@ def _evaluate_gke_workload_legacy(
                 "(헬스 프로브 구성 자체는 일반 플랫폼 Best Practice이므로 gke-reliability 플랫폼 Skill을 참고하세요.)"
             ),
             "how_to_fix_title": "Graceful Termination(120s + preStop) 적용",
-            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-O1",
+            "gcloud_cmd": "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-O1",
             "terraform_snippet": (
                 'termination_grace_period_seconds = 120\n'
                 'container {\n'
@@ -2362,7 +2399,7 @@ def _evaluate_gke_workload_legacy(
                 "인메모리 세션에 의존하면 멀티턴 대화가 끊어지므로 외부 영속 세션 저장소를 연동해야 합니다."
             ),
             "how_to_fix_title": "외부 영속 세션 서비스 연동",
-            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-F1",
+            "gcloud_cmd": "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-F1",
             "terraform_snippet": (
                 'env { name = "AGENT_ENGINE_SESSION_ID"; value = var.agent_engine_session_id }\n'
                 'env { name = "GOOGLE_CLOUD_AGENT_ENGINE_LOCATION"; value = var.region }'
@@ -2446,7 +2483,7 @@ def _evaluate_gke_workload_legacy(
             "how_to_fix_title": "에이전트 전용 KSA + Workload Identity(또는 Agent Identity) 연결",
             "gcloud_cmd": (
                 f"# [Step 1] 로컬 GKE 매니페스트에 전용 KSA + Workload Identity 바인딩 적용\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S1\n\n"
+                f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-S1\n\n"
                 f"# [Step 2 · 읽기 전용 확인] Deployment의 serviceAccountName 확인\n"
                 f"kubectl get deploy -n {namespace_name} -o jsonpath='{{.items[*].spec.template.spec.serviceAccountName}}'"
             ),
@@ -2534,7 +2571,7 @@ def _evaluate_gke_workload_legacy(
                 f"# [Step 1] Agent Registry & App Hub API 활성화\n"
                 f"gcloud services enable agentregistry.googleapis.com apphub.googleapis.com --project={project_id}\n\n"
                 f"# [Step 2] 로컬 GKE 코드에 Agent Registry 라벨 + SPIFFE 어노테이션 자동 추가\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S3\n\n"
+                f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-S3\n\n"
                 f"# [Step 3 · 읽기 전용 확인] Agent Registry 등록 상태 조회\n"
                 f"gcloud agent-registry agents list --location={region} --project={project_id}"
             ),
@@ -2573,14 +2610,14 @@ def _evaluate_gke_workload_legacy(
             "how_to_fix_title": "Agent Gateway for GKE 매니페스트 생성 (AI 생성 코드 실행 시 GKE-S2 함께)",
             "gcloud_cmd": (
                 f"# [Option A] Standard GKE Pods + Agent Gateway for GKE 매니페스트 생성\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S4\n"
+                f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-S4\n"
                 f"# GKE >= 1.37.2-gke.1042000 Rapid + 필요한 API + Proxy-only Subnet 확인 후 적용:\n"
                 f"kubectl apply -f deployment/k8s/agent-gateway.yaml\n\n"
                 f"# [Option B] AI 생성 코드 실행: Agent Substrate on GKE (GKE Standard >= 1.37 전용)\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
+                f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
                 f"  --params '{{\"gke_cluster_mode\":\"standard\",\"gke_execution_pattern\":\"agent_substrate\"}}'\n\n"
                 f"# [Option C] 상시 실행 에이전트 · 사이드카 · Arm 노드 · Autopilot이 필요할 때: Agent Sandbox on GKE\n"
-                f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
+                f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
                 f"  --params '{{\"gke_execution_pattern\":\"agent_sandbox\"}}'"
             ),
             "terraform_snippet": (
@@ -2612,7 +2649,7 @@ def _evaluate_gke_workload_legacy(
             "how_to_fix_title": "OTel 프롬프트 미기록(NO_CONTENT) 적용",
             "gcloud_cmd": (
                 "# 로컬 코드에 OTel NO_CONTENT 프라이버시 환경변수 적용\n"
-                "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-OB1"
+                "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-OB1"
             ),
             "terraform_snippet": (
                 'env { name = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"; value = "NO_CONTENT" }\n'
@@ -2653,36 +2690,43 @@ def _evaluate_gke_workload_legacy(
             ),
             "how_to_fix_title": "Agent Substrate(또는 Agent Sandbox) 매니페스트 적용",
             "gcloud_cmd": (
-                "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
+                "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-S2 \\\n"
                 "  --params '{\"gke_cluster_mode\":\"standard\",\"gke_execution_pattern\":\"agent_substrate\"}'"
             ),
             "terraform_snippet": "# deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1 WorkerPool) 또는 agent-sandbox.yaml",
             "console_guide": "샌드박스 Pod의 NetworkPolicy가 메타데이터 서버를 차단하고 서비스 계정 토큰을 마운트하지 않는지 확인하세요.",
         })
 
-    # GKE-O2 (conditional: idle conversational agents) — the "idle" condition cannot be read from JSON, so the
-    # check is emitted only when Agent Substrate is detected (suspend/resume capability in use).
-    if is_substrate_pattern:
+    # GKE-O2 (conditional: idle conversational agents) — emitted when Agent Substrate OR PodSnapshot (Agent Sandbox) is detected.
+    pod_snapshots = bundle.get("podSnapshots") or []
+    has_pod_snapshot = bool(pod_snapshots)
+    if is_substrate_pattern or has_pod_snapshot:
+        if is_substrate_pattern:
+            o2_status = "AMBER" if autopilot_substrate_conflict else "GREEN"
+            o2_current = (
+                "Agent Substrate(ate.dev) 리소스 감지 — 유휴 에이전트 스냅샷 일시정지 · 요청 시 복원 가능"
+                + (" · 🟡 GKE Autopilot에서는 Agent Substrate를 사용할 수 없습니다 (GKE Standard >= 1.37 전용)" if autopilot_substrate_conflict else "")
+            )
+        else:
+            o2_status = "GREEN"
+            o2_current = "Agent Sandbox + GKE Pod snapshot(PodSnapshotPolicy) 구성 감지 — 유휴 상태 저장 · 복원(약 3~5초) 가능"
         checks.append({
             "id": "R7.1",
             "domain": "Optimize",
             "check_type": "RUNTIME_VERIFIED",
             "verification_scope": "RUNTIME_VERIFIED",
             "title": "에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)",
-            "status": "AMBER" if autopilot_substrate_conflict else "GREEN",
-            "current_state": (
-                "Agent Substrate(ate.dev) 리소스 감지 — 유휴 에이전트 스냅샷 일시정지 · 요청 시 복원 가능"
-                + (" · 🟡 GKE Autopilot에서는 Agent Substrate를 사용할 수 없습니다 (GKE Standard >= 1.37 전용)" if autopilot_substrate_conflict else "")
-            ),
-            "recommended_state": "자주 일시정지·재개하는 상태 유지형 에이전트는 Agent Substrate on GKE(GKE Standard >= 1.37)에서 실행해 유휴 시 일시정지 · 요청 시 복원",
+            "status": o2_status,
+            "current_state": o2_current,
+            "recommended_state": "자주 일시정지·재개하는 상태 유지형 에이전트는 Agent Substrate on GKE(GKE Standard >= 1.37) 또는 Autopilot에서 Agent Sandbox + Pod snapshot으로 유휴 시 일시정지 · 요청 시 복원",
             "why_it_matters": (
                 "대화형 에이전트는 대부분의 시간을 사용자 입력이나 도구 응답을 기다리며 보내므로, Pod를 계속 띄워 두면 "
                 "유휴 에이전트가 CPU·메모리를 점유합니다."
             ),
-            "how_to_fix_title": "Agent Substrate 매니페스트 적용 (GKE Standard)",
-            "gcloud_cmd": "uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke --items GKE-O2 --conditions idle=true",
-            "terraform_snippet": "# deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1 WorkerPool · ActorTemplate)",
-            "console_guide": "GKE Standard 1.37 이상 클러스터에서 Agent Substrate 워커 풀이 동작하는지 확인하세요.",
+            "how_to_fix_title": "Agent Substrate(Standard) 또는 Agent Sandbox + Pod snapshot(Autopilot) 적용",
+            "gcloud_cmd": "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke --items GKE-O2 --conditions idle=true",
+            "terraform_snippet": "# deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1 WorkerPool · ActorTemplate) 또는 Agent Sandbox + PodSnapshotPolicy",
+            "console_guide": "GKE Standard 1.37 이상에서는 Agent Substrate 워커 풀, Autopilot에서는 Agent Sandbox + PodSnapshotPolicy 구성을 확인하세요.",
         })
 
     verified_checks = [c for c in checks if c["status"] in ("GREEN", "AMBER", "RED")]
@@ -2736,9 +2780,9 @@ def _evaluate_gke_workload_legacy(
         "platform_guarantees": [],
         "combined_runtime_fix_cmd": (
             f"# ⚠️ 선택한 항목에 따라 UI에서 맞춤형 GKE 조치 명령어가 동적으로 생성됩니다.\n"
-            f"uv run prod-ready apply <내_로컬_에이전트_폴더> --target gke"
+            f"python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py apply <내_로컬_에이전트_폴더> --target gke"
         ),
-        "stage1_skill_cmd": "uv run prod-ready scan <내_로컬_에이전트_코드_폴더> --target gke  # 프로덕션 체크리스트 GKE 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
+        "stage1_skill_cmd": "python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py scan <내_로컬_에이전트_코드_폴더> --target gke  # 프로덕션 체크리스트 GKE 항목 (일반 플랫폼 BP는 플랫폼 Skill 참고)",
         "checks": checks,
     }
 

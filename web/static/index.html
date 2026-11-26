@@ -198,6 +198,11 @@
       transition: background 0.14s ease, color 0.14s ease;
     }
     .step-nav-btn:hover { background: #F1F6FE; }
+    .step-nav-btn:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+    .step-nav-btn:disabled:hover { background: transparent; }
     .step-nav-btn.active {
       background: #E8F0FE;
       color: #1967D2;
@@ -220,6 +225,10 @@
     .step-nav-btn.active .step-dot {
       background: #1A73E8;
       color: #FFFFFF;
+    }
+    .step-nav-btn.done .step-dot {
+      background: #E6F4EA;
+      color: #137333;
     }
 
     @media (max-width: 1080px) {
@@ -495,7 +504,7 @@
             </h2>
           </a>
           <p class="mt-2 mb-4 text-[13.8px] leading-[1.6] text-[#475569]">
-            ADK 기반 Agent 스캐폴딩부터 정적 진단, 자동 패치 적용, 클라우드 배포, 라이브 점검까지 따라 하는 <strong>Step 0 ~ Step 9 코드랩</strong>입니다.
+            ADK 기반 Agent 스캐폴딩부터 정적 진단, 자동 패치 적용, 클라우드 배포, 라이브 점검까지 따라 하는 <strong>Step 0 ~ Step 11 코드랩</strong>입니다.
           </p>
           <ul class="m-0 p-0 list-none space-y-1.5 text-[13px] text-[#334155] border-t border-[#4285F4]/12 pt-3.5">
             <li class="flex items-center gap-2"><span class="text-[#1A73E8] font-bold">•</span><span>Agent Runtime · Cloud Run · GKE 3대 트랙 선택</span></li>
@@ -575,20 +584,26 @@
           </p>
         </div>
 
-        <!-- Step Navigation Links -->
+        <!-- Step Navigation Links (1:1 with Step 1 ~ Step 3 flow) -->
         <div class="border-t border-[#4285F4]/15 pt-3.5">
           <div class="text-[11.5px] font-bold uppercase tracking-[0.04em] text-[#64748B] mb-2">진단 단계 (Step 1 ~ Step 3)</div>
           <ul class="space-y-1 p-0 m-0 list-none">
             <li>
               <button id="sidebarNavStep1" onclick="openInputView('step-01-select')" class="step-nav-btn active">
                 <span class="step-dot">1</span>
-                <span class="truncate">환경 선택 &amp; 조회 명령어</span>
+                <span class="truncate">설정 JSON 입력</span>
               </button>
             </li>
             <li>
-              <button id="sidebarNavStep2" onclick="openInputView('step-02-paste')" class="step-nav-btn">
+              <button id="sidebarNavStep2" onclick="openWizardView(wizardStepIdx)" class="step-nav-btn" disabled title="JSON 진단을 시작하면 활성화됩니다">
                 <span class="step-dot">2</span>
-                <span class="truncate">JSON 붙여넣기 &amp; 진단 시작</span>
+                <span class="truncate">항목별 위자드 점검</span>
+              </button>
+            </li>
+            <li>
+              <button id="sidebarNavStep3" onclick="openReportView()" class="step-nav-btn" disabled title="JSON 진단을 시작하면 활성화됩니다">
+                <span class="step-dot">3</span>
+                <span class="truncate">최종 진단 리포트</span>
               </button>
             </li>
           </ul>
@@ -663,13 +678,13 @@
           </div>
         </section>
 
-        <!-- ==================== STEP 1: SELECT ENV & COPY COMMAND ==================== -->
-        <section id="step-01-select" class="scroll-mt-[96px] card-surface g-accent-blue card-pad-lg space-y-5">
+        <!-- ==================== STEP 1: ENV SELECT + COMMAND + PASTE JSON ==================== -->
+        <section id="step-01-select" class="scroll-mt-[96px] card-surface g-accent-blue card-pad-lg space-y-6">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <span class="inline-flex items-center rounded-[10px] bg-[#E8F0FE] px-3 py-1 font-mono text-[12.5px] font-bold text-[#1967D2]">Step 1</span>
               <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A]">
-                내 에이전트 배포 환경을 입력하고 조회 명령어를 복사합니다
+                배포 환경 선택 및 설정 JSON 입력
               </h2>
             </div>
             <!-- Segmented Runtime Selector -->
@@ -692,7 +707,7 @@
             </div>
           </div>
 
-          <ol class="m-0 list-decimal space-y-4 pl-5 text-[14.5px] leading-[1.65] text-[#475569] marker:font-semibold marker:text-[#64748B]">
+          <ol class="m-0 list-decimal space-y-5 pl-5 text-[14.5px] leading-[1.65] text-[#475569] marker:font-semibold marker:text-[#64748B]">
             <li>
               아래 입력칸에 내 에이전트가 배포된 <strong>GCP 프로젝트 ID</strong>, <strong>리전(Region)</strong>, 그리고 <strong>서비스 이름</strong>을 입력하면 하단 터미널 명령어가 자동으로 완성됩니다.
               <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl bg-[#F4F7FB] border border-[#4285F4]/12 p-4">
@@ -731,54 +746,42 @@
                 <pre id="generatedCmd" class="m-0 p-4 font-mono text-[13.5px] leading-[1.65] text-[#F8FAFC] overflow-x-auto"></pre>
               </div>
             </li>
+            <li id="step-02-paste" class="scroll-mt-[96px]">
+              <div class="flex flex-wrap items-center justify-between gap-2.5">
+                <span>터미널에 출력된 <strong>JSON 전체</strong>를 아래 상자에 붙여넣고 진단을 시작합니다. <span class="text-[#64748B]">(바로 체험하려면 우측 샘플 버튼 클릭)</span></span>
+                <!-- One-click Demo Sample Loaders -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button onclick="loadSampleJson('agent_runtime')"
+                    class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E8F0FE] hover:bg-[#D2E3FC] border border-[#4285F4]/25 px-2.5 text-[12px] font-bold text-[#1967D2] transition">
+                    <img src="/static/icons/agent-runtime.png" alt="Agent Runtime" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플: Agent Runtime</span>
+                  </button>
+                  <button onclick="loadSampleJson('cloud_run')"
+                    class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E6F4EA] hover:bg-[#CEEAD6] border border-[#34A853]/25 px-2.5 text-[12px] font-bold text-[#137333] transition">
+                    <img src="/static/icons/cloud-run.png" alt="Cloud Run" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플: Cloud Run</span>
+                  </button>
+                  <button onclick="loadSampleJson('gke')"
+                    class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#FEF7E0] hover:bg-[#FEEFC3] border border-[#FBBC04]/40 px-2.5 text-[12px] font-bold text-[#B06000] transition">
+                    <img src="/static/icons/gke.png" alt="GKE" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플: GKE</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="mt-3 rounded-xl bg-[#F4F7FB] border border-[#4285F4]/12 p-3">
+                <textarea id="jsonPasteArea" rows="7" placeholder="여기에 gcloud run services describe ..., reasoningEngines 조회 결과, 또는 GKE kubectl 멀티 JSON(deploy/pdb/hpa/netpol + ns + CRD) 결과를 붙여넣으세요..."
+                  class="w-full rounded-lg bg-white p-3.5 font-mono text-[13.5px] leading-relaxed text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:ring-2 focus:ring-[#4285F4]/20 focus:outline-none"></textarea>
+              </div>
+
+              <div id="parseErrorBox" class="mt-3 hidden rounded-xl bg-[#FCE8E6] border border-[#EA4335]/25 px-4 py-3 text-[14px] font-semibold text-[#C5221F]"></div>
+
+              <div class="mt-4 flex justify-end">
+                <button onclick="analyzePastedJson()"
+                  class="g-btn-blue inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-[14.5px] font-bold transition">
+                  <span class="material-symbols-outlined">play_arrow</span>
+                  <span>진단 위자드 시작하기 (Step-by-Step)</span>
+                </button>
+              </div>
+            </li>
           </ol>
-        </section>
-
-        <!-- ==================== STEP 2: PASTE JSON & RUN DIAGNOSIS ==================== -->
-        <section id="step-02-paste" class="scroll-mt-[96px] card-surface g-accent-green card-pad-lg space-y-5">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex items-center rounded-[10px] bg-[#E6F4EA] px-3 py-1 font-mono text-[12.5px] font-bold text-[#137333]">Step 2</span>
-              <h2 class="m-0 text-[20px] font-bold tracking-[-0.02em] text-[#0F172A]">
-                터미널에 출력된 JSON을 붙여넣고 진단을 시작합니다
-              </h2>
-            </div>
-
-            <!-- One-click Demo Sample Loaders -->
-            <div class="flex flex-wrap items-center gap-2">
-              <button onclick="loadSampleJson('agent_runtime')"
-                class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E8F0FE] hover:bg-[#D2E3FC] border border-[#4285F4]/25 px-3 text-[12.5px] font-bold text-[#1967D2] transition">
-                <img src="/static/icons/agent-runtime.png" alt="Agent Runtime" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플 채우기: Agent Runtime (Graph Workflow)</span>
-              </button>
-              <button onclick="loadSampleJson('cloud_run')"
-                class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E6F4EA] hover:bg-[#CEEAD6] border border-[#34A853]/25 px-3 text-[12.5px] font-bold text-[#137333] transition">
-                <img src="/static/icons/cloud-run.png" alt="Cloud Run" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플 채우기: Cloud Run (currency-agent)</span>
-              </button>
-              <button onclick="loadSampleJson('gke')"
-                class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#FEF7E0] hover:bg-[#FEEFC3] border border-[#FBBC04]/40 px-3 text-[12.5px] font-bold text-[#B06000] transition">
-                <img src="/static/icons/gke.png" alt="GKE" class="h-4 w-4 object-contain" width="16" height="16"><span>샘플 채우기: GKE (gke-enterprise-agent)</span>
-              </button>
-            </div>
-          </div>
-
-          <p class="m-0 text-[14.5px] leading-[1.65] text-[#475569]">
-            터미널에 출력된 JSON 전체를 아래 상자에 붙여넣고 <strong>[진단 위자드 시작하기]</strong> 버튼을 누르세요. (터미널을 열기 전이라면 우측 상단의 <strong>샘플 채우기</strong> 버튼으로 즉시 테스트해 볼 수 있습니다.)
-          </p>
-
-          <div class="rounded-xl bg-[#F4F7FB] border border-[#4285F4]/12 p-3">
-            <textarea id="jsonPasteArea" rows="7" placeholder="여기에 gcloud run services describe ..., reasoningEngines 조회 결과, 또는 GKE kubectl 멀티 JSON(deploy/pdb/hpa/netpol + ns + CRD) 결과를 붙여넣으세요..."
-              class="w-full rounded-lg bg-white p-3.5 font-mono text-[13.5px] leading-relaxed text-[#0F172A] border border-[#4285F4]/20 focus:border-[#1A73E8] focus:ring-2 focus:ring-[#4285F4]/20 focus:outline-none"></textarea>
-          </div>
-
-          <div id="parseErrorBox" class="hidden rounded-xl bg-[#FCE8E6] border border-[#EA4335]/25 px-4 py-3 text-[14px] font-semibold text-[#C5221F]"></div>
-
-          <div class="flex justify-end">
-            <button onclick="analyzePastedJson()"
-              class="g-btn-blue inline-flex h-11 items-center justify-center gap-2 rounded-xl px-6 text-[14.5px] font-bold transition">
-              <span class="material-symbols-outlined">play_arrow</span>
-              <span>진단 위자드 시작하기 (Step-by-Step)</span>
-            </button>
-          </div>
         </section>
       </div><!-- /#runtimeSetupSections -->
 
@@ -813,11 +816,24 @@
     // Per-check user-defined tuning parameters (initialized from detected_config, never hardcoded blindly)
     let userTuningParams = {};
 
-    function setSidebarSetupActive(targetId) {
+    function setSidebarSetupActive() {
+      const hasData = Boolean(analyzedResults[activeResultIndex]);
       const s1 = document.getElementById("sidebarNavStep1");
       const s2 = document.getElementById("sidebarNavStep2");
-      if (s1) s1.classList.toggle("active", workbenchPhase === "input" && targetId !== "step-02-paste");
-      if (s2) s2.classList.toggle("active", workbenchPhase === "input" && targetId === "step-02-paste");
+      const s3 = document.getElementById("sidebarNavStep3");
+      if (s1) {
+        s1.classList.toggle("active", workbenchPhase === "input");
+        s1.classList.toggle("done", hasData && workbenchPhase !== "input");
+      }
+      if (s2) {
+        s2.disabled = !hasData;
+        s2.classList.toggle("active", workbenchPhase === "wizard");
+        s2.classList.toggle("done", hasData && workbenchPhase === "report");
+      }
+      if (s3) {
+        s3.disabled = !hasData;
+        s3.classList.toggle("active", workbenchPhase === "report");
+      }
     }
 
     function setRuntimeMode(mode) {
@@ -863,7 +879,7 @@
           `# [방법 1 · 권장] 현재 kubeconfig 컨텍스트의 GKE 워크로드·네임스페이스·확장 CRD 일괄 조회 (멀티 JSON 그대로 붙여넣기 가능)\n` +
           `kubectl get deployment,pdb,hpa,networkpolicy -n ${targetNs} -o json\n` +
           `kubectl get ns ${targetNs} -o json\n` +
-          `for r in podmonitoring gateway gcpagentgateway gcpbackend gcpegresspolicy sandboxtemplate workerpool; do\n` +
+          `for r in podmonitoring gateway gcpagentgateway gcpauthzpolicy gcpextensionbinding gcpbackend gcpegresspolicy sandboxtemplate podsnapshotpolicy workerpool actortemplate; do\n` +
           `  kubectl get "$r" -n ${targetNs} -o json 2>/dev/null\n` +
           `done\n\n` +
           `# [방법 2 · 클러스터 설정까지 함께 점검 시 위 출력 아래에 이어서 붙여넣기]\n` +
@@ -1320,7 +1336,7 @@
           ? "코드의 InMemorySessionService 재정의를 제거하고 관리형 영속 세션 저장 사용"
           : "VertexAiSessionService(관리형 영속 세션 저장) 연동 추가";
         const fixDesc = rt === "cloud_run"
-          ? "세션 서비스 URI(agentengine://)를 환경변수로 연결합니다. 코드 쪽 연결은 로컬 Agent Skill로 반영합니다."
+          ? "AGENT_ENGINE_SESSION_ID 환경변수로 관리형 세션·Memory Bank를 연결합니다 (Cloud Run OTel 리소스 감지 보존). 코드 연결은 로컬 Agent Skill로 반영합니다."
           : "재시작·스케일아웃 후에도 대화가 이어지도록 로컬 Agent Skill로 세션 서비스를 연결합니다.";
         return [
           wizOpt("keep_in_code", "ok", "🟢 코드 내 구현됨", "조치 불필요 — 코드에서 이미 VertexAiSessionService를 사용 중", "적합 (코드에서 관리형 영속 세션 저장 사용)", "설정 JSON에는 보이지 않지만 애플리케이션 코드가 외부 세션 저장소를 사용합니다."),
@@ -1539,7 +1555,7 @@
           const action = decisionAction(c);
           if (kind === "session") {
             const engId = (p.agent_engine_id || "<ENGINE_ID>").trim();
-            envPairs.push(`ADK_SESSION_SERVICE_URI=agentengine://projects/${proj}/locations/${reg}/reasoningEngines/${engId}`);
+            envPairs.push(`AGENT_ENGINE_SESSION_ID=${engId}`);
             localItems.push(c.id);
           } else if (kind === "memory" || kind === "evalgate" || kind === "gateway") {
             localItems.push(c.id);
@@ -1674,7 +1690,7 @@
             (notes.length ? [...new Set(notes)].join("\n") + "\n" : "") +
             applyLine + "\n\n" +
             `# [Terraform 반영] 변경된 매니페스트를 클러스터에 적용\n` +
-            `terraform -chdir=${localDir}/deployment/terraform apply`
+            `terraform -chdir=${localDir}/deployment/terraform/single-project apply`
           );
         }
         if (k8sManifests.length > 0) {
@@ -1703,7 +1719,10 @@
         if (kind === "session" || kind === "memory" || kind === "evalgate") {
           localItems.push(c.id);
         } else if (kind === "trace") {
-          envPairs.push("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT");
+          envPairs.push(
+            "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT",
+            "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false"
+          );
         } else if (kind === "identity") {
           if (action === "apply_identity") {
             deployFlags.push("--agent-identity");

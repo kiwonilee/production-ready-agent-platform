@@ -2634,10 +2634,14 @@ agy"></pre>
                 <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 ORG_ID=$(gcloud projects get-ancestors {{PROJECT_ID}} --format='value(id)' --filter='type:organization' 2>/dev/null || true)
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
-(cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply \
-  -var=&quot;project_id={{PROJECT_ID}}&quot; \
-  -var=&quot;region={{REGION}}&quot; \
-  -var=&quot;organization_id=${ORG_ID}&quot;) &amp;&amp; \
+# (권장) terraform.tfvars에 변수를 저장해 두면 이후 재배포·terraform destroy 시에도 값이 유지됩니다.
+# CR-F1/F2 영속 세션·Memory Bank용 Reasoning Engine ID가 있다면 agent_engine_id = &quot;<ENGINE_ID>&quot; 도 함께 추가하세요.
+cat &gt; &quot;$TF_DIR/terraform.tfvars&quot; &lt;&lt;EOF
+project_id      = &quot;{{PROJECT_ID}}&quot;
+region          = &quot;{{REGION}}&quot;
+organization_id = &quot;${ORG_ID}&quot;
+EOF
+(cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply) &amp;&amp; \
 agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --no-confirm-project"></pre>
               </div>
             </div>
@@ -2696,11 +2700,15 @@ echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID
           </details>
 
           <div class="callout callout-blue" style="margin-top:10px;">
-            <div class="callout-title">💡 인바운드 인증 &amp; Cloud Run 단계적 거버넌스 가이드 (아키텍처 참고)</div>
+            <div class="callout-title">💡 인바운드 인증 · Agent Identity(Preview) 세션 트러블슈팅 &amp; 단계적 거버넌스</div>
             <p style="margin-top:4px;">
               이 스킬은 Cloud Run의 기본 URL(<code>*.a.run.app</code>)이나 <code>ingress</code>를 강제로 차단하지 않습니다.
               실제 서비스 오픈 시에는 체크리스트 순서대로 <strong>인증된 호출만 허용(<code>CR-S1</code>) → 에이전트 전용 신원 · 최소 권한(<code>CR-S2</code>) → Agent Registry 등록(<code>CR-S3</code>, Preview) → MCP·외부 도구를 호출한다면 Agent Gateway for Cloud Run(<code>CR-S4</code>, Preview)</strong>을 단계적으로 적용하는 접근이 가장 현실적입니다.
               <em>(실습에서 수동 가이드 항목인 <code>CR-S4</code> Agent Gateway for Cloud Run까지 이어서 체험하고 싶다면 같은 <code>agy</code> 대화창에서 "방금 안내한 Agent Gateway for Cloud Run도 구성해줘"라고 요청할 수 있습니다.)</em>
+            </p>
+            <p style="margin-top:6px;">
+              <strong>⚠️ Preview 트러블슈팅 (<code>CR-S2</code> Agent Identity + <code>CR-F1/F2</code> 세션 <code>401 UNAUTHENTICATED</code>):</strong>
+              일부 프로젝트/조직에서 Cloud Run <code>IDENTITY_TYPE_AGENT_IDENTITY</code>(Preview) 리비전이 관리형 세션 API(<code>VertexAiSessionService</code>) 호출 시 인증서 바인딩(mTLS) 토큰 제약으로 <code>401 UNAUTHENTICATED</code>를 반환할 수 있습니다. 이 경우 <code>service.tf</code>의 <code>workload_identity_config</code> 대신 전용 최소 권한 서비스 계정(<code>service_account = google_service_account.app_sa.email</code>)으로 전환해 배포하면 <code>CR-S2</code>(전용 신원·최소 권한) 기준을 유지하면서 영속 세션·Memory Bank가 정상 동작합니다.
             </p>
           </div>
         </div>
@@ -2816,9 +2824,14 @@ echo &quot;https://console.cloud.google.com/traces/explorer?project={{PROJECT_ID
                 </div>
                 <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
-(cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply \
-  -var=&quot;project_id={{PROJECT_ID}}&quot; \
-  -var=&quot;region={{REGION}}&quot;) &amp;&amp; \
+# ⚠️ 중요: agents-cli deploy가 내부적으로 terraform apply를 재실행하므로,
+# agent_engine_id(GKE-F1/F2)는 일회성 -var 대신 terraform.tfvars에 기록해 두어야 빈 값으로 덮어써지지 않습니다.
+cat &gt; &quot;$TF_DIR/terraform.tfvars&quot; &lt;&lt;EOF
+project_id = &quot;{{PROJECT_ID}}&quot;
+region     = &quot;{{REGION}}&quot;
+# agent_engine_id = &quot;<ENGINE_ID>&quot;  # GKE-F1/F2 관리형 세션·Memory Bank용 Reasoning Engine ID 입력 시 주석 해제
+EOF
+(cd &quot;$TF_DIR&quot; &amp;&amp; terraform init &amp;&amp; terraform apply) &amp;&amp; \
 agents-cli deploy --project={{PROJECT_ID}} --region={{REGION}} --no-confirm-project
 
 # 클러스터 자격증명 연결 (agents-cli GKE 기본 클러스터명·네임스페이스 = {{AGENT_NAME}})
@@ -3216,6 +3229,12 @@ TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/t
                 </div>
                 <pre class="code-pre" data-tpl="cd ~/agent-lab/{{AGENT_NAME}}
 TF_DIR=$([ -d deployment/terraform/single-project ] &amp;&amp; echo deployment/terraform/single-project || echo deployment/terraform)
+# 1) 세션·Memory Bank 하위 리소스가 생성된 Agent Runtime은 force=true로 먼저 삭제해야 terraform destroy 400 오류를 방지할 수 있습니다.
+ENGINE_RESOURCE=$(python3 -c 'import json; print(json.load(open(&quot;deployment_metadata.json&quot;)).get(&quot;remote_agent_runtime_id&quot;,&quot;&quot;))' 2>/dev/null || true)
+[ -n &quot;${ENGINE_RESOURCE}&quot; ] &amp;&amp; curl -sS -X DELETE -H &quot;Authorization: Bearer $(gcloud auth print-access-token)&quot; \
+  -H &quot;X-Goog-User-Project: {{PROJECT_ID}}&quot; &quot;https://{{REGION}}-aiplatform.googleapis.com/v1beta1/${ENGINE_RESOURCE}?force=true&quot; &amp;&amp; sleep 15
+# 2) 로그 버킷 비우기 후 Terraform 일괄 삭제
+gcloud storage rm -r &quot;gs://{{PROJECT_ID}}-{{AGENT_NAME}}-logs/**&quot; 2>/dev/null || true
 (cd &quot;$TF_DIR&quot; &amp;&amp; terraform destroy -var=&quot;project_id={{PROJECT_ID}}&quot; -var=&quot;region={{REGION}}&quot;)"></pre>
               </div>
             </div>

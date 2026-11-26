@@ -448,11 +448,17 @@ def inspect_deployed_agent(
 
 def _extract_cloud_run_meta(svc: dict[str, Any], project_hint: str, region_hint: str) -> tuple[str, str, str]:
     meta = svc.get("metadata", {})
-    labels = meta.get("labels", {})
-    svc_name = meta.get("name") or svc.get("name", "my-agent").split("/")[-1]
-    region = labels.get("cloud.googleapis.com/location") or region_hint or "us-central1"
-    project_id = project_hint or "my-gcp-project"
-    containers = svc.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [{}])
+    labels = meta.get("labels", {}) or svc.get("labels", {})
+    full_name = str(svc.get("name", ""))
+    parts = full_name.split("/")
+    svc_name = meta.get("name") or (parts[-1] if full_name else "my-agent")
+    region = labels.get("cloud.googleapis.com/location") or (parts[3] if len(parts) >= 6 and parts[2] == "locations" else "") or region_hint or "us-central1"
+    project_id = project_hint or (parts[1] if len(parts) >= 6 and parts[0] == "projects" else "") or "my-gcp-project"
+    containers = (
+        svc.get("spec", {}).get("template", {}).get("spec", {}).get("containers")
+        or svc.get("template", {}).get("containers")
+        or [{}]
+    )
     if containers:
         for e in containers[0].get("env", []):
             if e.get("name") == "GOOGLE_CLOUD_PROJECT" and e.get("value"):
@@ -1046,34 +1052,50 @@ def _evaluate_cloud_run_service_legacy(
     svc: dict[str, Any],
     now_str: str,
 ) -> dict[str, Any]:
+    is_v2_api = ("template" in svc and "spec" not in svc)
     meta = svc.get("metadata", {})
-    meta_ann = meta.get("annotations", {})
-    labels = meta.get("labels", {})
+    meta_ann = meta.get("annotations", {}) or (svc.get("annotations", {}) if is_v2_api else {})
+    labels = meta.get("labels", {}) or (svc.get("labels", {}) if is_v2_api else {})
     spec = svc.get("spec", {})
-    tmpl = spec.get("template", {})
+    tmpl = svc.get("template", {}) if is_v2_api else spec.get("template", {})
     tmpl_meta = tmpl.get("metadata", {})
-    tmpl_ann = tmpl_meta.get("annotations", {})
-    tmpl_spec = tmpl.get("spec", {})
+    tmpl_ann = tmpl_meta.get("annotations", {}) or (tmpl.get("annotations", {}) if is_v2_api else {})
+    tmpl_spec = tmpl if is_v2_api else tmpl.get("spec", {})
     containers = tmpl_spec.get("containers", [{}])
     container = containers[0] if containers else {}
 
     status_obj = svc.get("status", {})
-    service_url = status_obj.get("url", "")
+    service_url = status_obj.get("url", "") or str(svc.get("uri", ""))
     created_by = labels.get("created-by", meta_ann.get("run.googleapis.com/client-name", "gcloud"))
 
-    ingress = meta_ann.get("run.googleapis.com/ingress", "all")
-    min_scale = int(tmpl_ann.get("autoscaling.knative.dev/minScale", meta_ann.get("run.googleapis.com/minScale", "0")))
-    max_scale = int(tmpl_ann.get("autoscaling.knative.dev/maxScale", meta_ann.get("run.googleapis.com/maxScale", "100")))
-    cpu_boost = tmpl_ann.get("run.googleapis.com/startup-cpu-boost", "false").lower() == "true"
-    cpu_throttling = tmpl_ann.get("run.googleapis.com/cpu-throttling", "true").lower() == "true"
-    exec_env = tmpl_ann.get("run.googleapis.com/execution-environment", "default (미지정)")
-    vpc_access = tmpl_ann.get("run.googleapis.com/vpc-access-connector", "") or tmpl_ann.get("run.googleapis.com/network-interfaces", "")
-    vpc_egress = tmpl_ann.get("run.googleapis.com/vpc-access-egress", "")
+    raw_ingress = str(meta_ann.get("run.googleapis.com/ingress") or svc.get("ingress") or "all")
+    v2_ingress_map = {
+        "INGRESS_TRAFFIC_ALL": "all",
+        "INGRESS_TRAFFIC_INTERNAL_ONLY": "internal",
+        "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER": "internal-and-cloud-load-balancing",
+    }
+    ingress = v2_ingress_map.get(raw_ingress, raw_ingress)
+    v2_scaling = tmpl.get("scaling", {}) if is_v2_api else {}
+    min_scale = int(v2_scaling.get("minInstanceCount", tmpl_ann.get("autoscaling.knative.dev/minScale", meta_ann.get("run.googleapis.com/minScale", "0"))))
+    max_scale = int(v2_scaling.get("maxInstanceCount", tmpl_ann.get("autoscaling.knative.dev/maxScale", meta_ann.get("run.googleapis.com/maxScale", "100"))))
+    ctr_res = container.get("resources", {})
+    cpu_boost = bool(ctr_res.get("startupCpuBoost")) if is_v2_api and "startupCpuBoost" in ctr_res else (tmpl_ann.get("run.googleapis.com/startup-cpu-boost", "false").lower() == "true")
+    cpu_throttling = bool(ctr_res.get("cpuIdle", True)) if is_v2_api and "cpuIdle" in ctr_res else (tmpl_ann.get("run.googleapis.com/cpu-throttling", "true").lower() == "true")
+    exec_env = str(tmpl.get("executionEnvironment") or tmpl_ann.get("run.googleapis.com/execution-environment") or "default (미지정)")
+    v2_vpc = tmpl.get("vpcAccess") or {}
+    vpc_access = (
+        tmpl_ann.get("run.googleapis.com/vpc-access-connector", "")
+        or tmpl_ann.get("run.googleapis.com/network-interfaces", "")
+        or v2_vpc.get("connector", "")
+        or (json.dumps(v2_vpc.get("networkInterfaces")) if v2_vpc.get("networkInterfaces") else "")
+    )
+    vpc_egress = tmpl_ann.get("run.googleapis.com/vpc-access-egress", "") or str(v2_vpc.get("egress", ""))
     cloudsql_instances = tmpl_ann.get("run.googleapis.com/cloudsql-instances", "")
 
-    concurrency = int(tmpl_spec.get("containerConcurrency", 80))
-    timeout_sec = int(tmpl_spec.get("timeoutSeconds", 300))
-    sa_email = tmpl_spec.get("serviceAccountName", "")
+    concurrency = int(tmpl_spec.get("maxInstanceRequestConcurrency") or tmpl_spec.get("containerConcurrency", 80))
+    raw_timeout = tmpl_spec.get("timeout") or tmpl_spec.get("timeoutSeconds", 300)
+    timeout_sec = int(str(raw_timeout).rstrip("s")) if str(raw_timeout).rstrip("s").isdigit() else 300
+    sa_email = tmpl_spec.get("serviceAccountName", "") or tmpl_spec.get("serviceAccount", "")
     functional_type = str(
         meta_ann.get("run.googleapis.com/functional-type")
         or svc.get("functionalType")
@@ -1447,9 +1469,16 @@ def _evaluate_cloud_run_service_legacy(
         r42_current = f"functional-type={functional_type}, identity-type={identity_type} (SPIFFE Agent Identity & Agent Registry 자동 등록 구성됨)"
     elif has_functional_agent or has_agent_identity:
         r42_status = "AMBER"
+        v1_hint = (
+            " (※ 참고: Knative v1 `gcloud run services describe` 출력은 Terraform v2의 `functionalType` 필드를 생략할 수 있습니다. "
+            "Cloud Run v2 REST API 조회 또는 `gcloud agent-registry agents list`로 실제 등록 여부를 확인하세요.)"
+            if (has_agent_identity and not has_functional_agent and not is_v2_api)
+            else ""
+        )
         r42_current = (
             f"일부만 설정됨 (functional-type={functional_type or '미설정'}, identity-type={identity_type or '미설정'}) — "
             "에이전트 서비스는 두 항목을 함께 설정해야 SPIFFE ID 발급과 Agent Registry 자동 등록이 완성됩니다."
+            + v1_hint
         )
     else:
         r42_status = "AMBER"

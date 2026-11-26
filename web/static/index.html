@@ -872,7 +872,12 @@
 
       if (runtimeMode === "cloud_run") {
         const targetSvc = svc || "YOUR_AGENT_SERVICE";
-        cmdEl.textContent = `gcloud run services describe ${targetSvc} \\\n  --region=${reg} \\\n  --project=${proj} \\\n  --format=json`;
+        cmdEl.textContent =
+          `# [기본 조회 · Knative v1] gcloud run services describe\n` +
+          `gcloud run services describe ${targetSvc} \\\n  --region=${reg} \\\n  --project=${proj} \\\n  --format=json\n\n` +
+          `# [참고 · CR-S3 functionalType까지 정확히 확인하려면 Cloud Run v2 REST API 출력 붙여넣기 가능]\n` +
+          `# curl -s -H "Authorization: Bearer $(gcloud auth print-access-token)" \\\n` +
+          `#   "https://run.googleapis.com/v2/projects/${proj}/locations/${reg}/services/${targetSvc}"`;
       } else if (runtimeMode === "gke") {
         const targetNs = svc || "gke-enterprise-agent";
         cmdEl.textContent =

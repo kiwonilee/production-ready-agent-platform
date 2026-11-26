@@ -89,7 +89,10 @@ curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $(gcloud auth
 ```
 
 > [!NOTE]
-> **Agent Runtime `AR-S3`**: `google_vertex_ai_reasoning_engine`의 `agent_gateway_config`는 최신 `google-beta` 프로바이더가 필요합니다. 구버전이면 Agent Gateway 리소스만 Terraform으로 만들고 연결은 `agents-cli deploy` 또는 Python SDK로 합니다. 정책은 `DRY_RUN`으로 시작해 검토 후 `ENFORCED`로 전환합니다.
+> - **Agent Runtime `AR-S3`**: `google_vertex_ai_reasoning_engine`의 `agent_gateway_config` 및 `google_network_services_agent_gateway`는 `provider = google-beta`가 필요합니다. 정책은 `DRY_RUN`으로 시작해 검토 후 `ENFORCED`로 전환합니다.
+> - **GKE / Cloud Run `agent_engine_id` 유지**: `agents-cli deploy` on GKE가 내부적으로 `terraform apply`를 재실행하므로, `agent_engine_id`(및 Cloud Run `organization_id`)는 일회성 `-var` 대신 `terraform.tfvars`에 저장하세요.
+> - **Cloud Run `CR-S2` Agent Identity(Preview) 세션 `401`**: Preview 워크로드 인증서(mTLS) 제약으로 `VertexAiSessionService` 호출이 `401`을 반환하면 전용 최소 권한 서비스 계정(`app_sa`)으로 전환하세요 (`CR-S2` 기준 유지).
+> - **Agent Runtime 정리(`terraform destroy`)**: 세션·Memory Bank 하위 리소스가 생성된 엔진은 `DELETE .../reasoningEngines/<ID>?force=true` 실행 후 `terraform destroy`를 수행하세요.
 
 ## 5. 플랫폼 Skill로 일반 BP 점검 (적극 권장)
 

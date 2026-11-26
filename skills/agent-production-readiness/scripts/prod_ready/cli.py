@@ -165,13 +165,26 @@ def _run_doctor(args: argparse.Namespace) -> int:
     return 0 if rep.required_ok else 1
 
 
-def _print_report(report: ProjectScanReport) -> None:
+def _print_report(report: ProjectScanReport, deps_rep: deps_mod.DepsReport | None = None) -> None:
     print("=" * 84)
     print(f"🛡️  Production-Readiness Scan Report — {report.project_name}")
     print("=" * 84)
     print(f"  Project Directory : {report.project_dir}")
     print(f"  Detected Mode     : {report.project_mode}")
     print(f"  Deployment Target : {report.deployment_target}")
+    if deps_rep is not None:
+        cli_v = deps_rep.agents_cli.get("version") or "확인 불가"
+        cli_ok = "✅" if deps_rep.agents_cli.get("ok") else "❌"
+        req_total = len(deps_mod.REQUIRED_SKILLS)
+        req_found = len(deps_rep.required_found)
+        plat_total = len(deps_rep.platform_found) + len(deps_rep.platform_missing)
+        plat_found = len(deps_rep.platform_found)
+        plat_icon = "✅" if deps_rep.platform_ok else "⚠️"
+        print(
+            f"  Doctor Preflight  : agents-cli {cli_v} {cli_ok} | "
+            f"agents-cli Skill {req_found}/{req_total} {'✅' if not deps_rep.required_missing else '❌'} | "
+            f"플랫폼 Skill {plat_found}/{plat_total} {plat_icon}"
+        )
     print(f"  Readiness Verdict : {report.verdict}")
     print(
         f"  Compliance Status : 🟢 {report.green_count} / {report.total_count} 충족 | "
@@ -309,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.json:
             print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
         else:
-            _print_report(report)
+            _print_report(report, deps_rep=_deps if isinstance(_deps, deps_mod.DepsReport) else None)
         return 0
 
     if args.command == "diff":

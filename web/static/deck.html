@@ -1236,17 +1236,25 @@
   <a href="#pageend" class="nav-slide" data-p="pageend"><span class="pagenum">··</span>마무리 · 포털 바로가기</a>
 
   <div class="s-divider"></div>
-  <div class="stitle">Appendix (기술 상세 · A1~A10)</div>
-  <a href="#page7" class="nav-slide" data-p="page7"><span class="pagenum">A1</span>왜 Production-Readiness인가?</a>
-  <a href="#page8" class="nav-slide" data-p="page8"><span class="pagenum">A2</span>Prototype vs. Production Gap 상세</a>
-  <a href="#page9" class="nav-slide" data-p="page9"><span class="pagenum">A3</span>전체 아키텍처 &amp; 통합 포털</a>
-  <a href="#page10" class="nav-slide" data-p="page10"><span class="pagenum">A4</span>점검 체계 · 판정 · 플랫폼 Skill</a>
-  <a href="#page11" class="nav-slide" data-p="page11"><span class="pagenum">A5</span>환경별 체크리스트 항목 차이</a>
-  <a href="#page12" class="nav-slide" data-p="page12"><span class="pagenum">A6</span>특화 기능 ① Agent Runtime · CR</a>
-  <a href="#page13" class="nav-slide" data-p="page13"><span class="pagenum">A7</span>특화 기능 ② GKE 3대 아키텍처</a>
-  <a href="#page14" class="nav-slide" data-p="page14"><span class="pagenum">A8</span>3대 런타임 6대 축 비교표</a>
-  <a href="#page15" class="nav-slide" data-p="page15"><span class="pagenum">A9</span>환경별 장단점 종합 상세</a>
-  <a href="#page16" class="nav-slide" data-p="page16"><span class="pagenum">A10</span>선택 기준 &amp; 도입 로드맵 상세</a>
+  <div class="stitle">Appendix · Feature Deep Dive (A1~A5)</div>
+  <a href="#page7" class="nav-slide" data-p="page7"><span class="pagenum">A1</span>Agent Identity &amp; auth manager</a>
+  <a href="#page8" class="nav-slide" data-p="page8"><span class="pagenum">A2</span>Agent Registry (중앙 카탈로그)</a>
+  <a href="#page9" class="nav-slide" data-p="page9"><span class="pagenum">A3</span>Agent Gateway (L7 보안·가드레일)</a>
+  <a href="#page10" class="nav-slide" data-p="page10"><span class="pagenum">A4</span>Agent Substrate &amp; 코드 격리</a>
+  <a href="#page11" class="nav-slide" data-p="page11"><span class="pagenum">A5</span>Managed Sessions &amp; Memory Bank</a>
+
+  <div class="s-divider"></div>
+  <div class="stitle">Appendix · 기술 상세 (A6~A15)</div>
+  <a href="#page12" class="nav-slide" data-p="page12"><span class="pagenum">A6</span>왜 Production-Readiness인가?</a>
+  <a href="#page13" class="nav-slide" data-p="page13"><span class="pagenum">A7</span>Prototype vs. Production Gap 상세</a>
+  <a href="#page14" class="nav-slide" data-p="page14"><span class="pagenum">A8</span>전체 아키텍처 &amp; 통합 포털</a>
+  <a href="#page15" class="nav-slide" data-p="page15"><span class="pagenum">A9</span>점검 체계 · 판정 · 플랫폼 Skill</a>
+  <a href="#page16" class="nav-slide" data-p="page16"><span class="pagenum">A10</span>환경별 체크리스트 항목 차이</a>
+  <a href="#page17" class="nav-slide" data-p="page17"><span class="pagenum">A11</span>특화 기능 ① Agent Runtime · CR</a>
+  <a href="#page18" class="nav-slide" data-p="page18"><span class="pagenum">A12</span>특화 기능 ② GKE 3대 아키텍처</a>
+  <a href="#page19" class="nav-slide" data-p="page19"><span class="pagenum">A13</span>3대 런타임 6대 축 비교표</a>
+  <a href="#page20" class="nav-slide" data-p="page20"><span class="pagenum">A14</span>환경별 장단점 종합 상세</a>
+  <a href="#page21" class="nav-slide" data-p="page21"><span class="pagenum">A15</span>선택 기준 &amp; 도입 로드맵 상세</a>
 
   <div class="s-divider"></div>
   <div class="stitle">Web Portal 바로가기</div>
@@ -1341,11 +1349,11 @@
           <div class="f1-hero">데모는 쉽다.<br/><span class="hl-r">상용 운영은</span><br/><span class="hl-b">전혀 다르다.</span></div>
           <div class="f1-quote">
             <span class="f1-quote-bar" aria-hidden="true"></span>
-            <p>AI 에이전트의 실행 특성은 기존 Stateless 웹 API가 전제로 삼던 운영 가정을 근본부터 깨뜨립니다.</p>
+            <p>로컬 데모에서는 보이지 않던 4가지 실행 특성이 실제 상용 트래픽·배포·보안 기준을 만나는 순간 리스크로 드러납니다.</p>
           </div>
           <div class="f1-reality">
-            <span class="fr-tag">CORE SHIFT</span>
-            <span>Stateless 웹 API ≠ 상태·추론 기반 AI 에이전트</span>
+            <span class="fr-tag">REALITY GAP</span>
+            <span>로컬 데모의 성공 ≠ 상용 운영 준비 완료</span>
           </div>
         </div>
 
@@ -1398,7 +1406,7 @@
 
       <div class="ed-foot">
         <span class="ed-foot-note">개발팀은 에이전트 로직에 집중하고, 상용 운영 기준은 표준 체크리스트와 자동화 파이프라인에 맡겨야 합니다.</span>
-        <span class="jump-app" data-goto="page7" tabindex="0">Appendix A1 상세 →</span>
+        <span class="jump-app" data-goto="page12" tabindex="0">Appendix A6 상세 →</span>
       </div>
     </div>
   </section>
@@ -1477,7 +1485,7 @@
         </div>
 
         <div class="f2-foot-light">
-          <span class="jump-app" data-goto="page8" tabindex="0">Appendix A2 Gap 상세표 →</span>
+          <span class="jump-app" data-goto="page13" tabindex="0">Appendix A7 Gap 상세표 →</span>
         </div>
       </div>
     </div>
@@ -1582,7 +1590,7 @@
 
       <div class="ed-foot">
         <span class="more" data-detail="workflow" tabindex="0">Skill 설치 · 실행 방식 보기</span>
-        <span class="jump-app" data-goto="page9" tabindex="0">Appendix A3 아키텍처 상세 →</span>
+        <span class="jump-app" data-goto="page14" tabindex="0">Appendix A8 아키텍처 상세 →</span>
       </div>
     </div>
   </section>
@@ -1662,7 +1670,7 @@
 
       <div class="ed-foot">
         <span class="more" data-detail="eval-gate" tabindex="0">평가 게이트 코드 상세</span>
-        <span class="jump-app" data-goto="page10" tabindex="0">Appendix A4 · A5 항목별 매트릭스 →</span>
+        <span class="jump-app" data-goto="page15" tabindex="0">Appendix A9 · A10 항목별 매트릭스 →</span>
       </div>
     </div>
   </section>
@@ -1760,7 +1768,7 @@
 
       <div class="ed-foot">
         <span class="ed-foot-note">운영 편의(Agent Runtime) · 비용/유연성(Cloud Run) · 풀 통제/격리/GPU(GKE) 사이의 전략적 선택</span>
-        <span class="jump-app" data-goto="page12" tabindex="0">Appendix A6 ~ A9 특화 기능 · 6축 비교표 →</span>
+        <span class="jump-app" data-goto="page17" tabindex="0">Appendix A11 ~ A14 특화 기능 · 6축 비교표 →</span>
       </div>
     </div>
   </section>
@@ -1844,7 +1852,7 @@
 
       <div class="ed-foot">
         <span class="ed-foot-note">모든 환경에서 동일한 체크리스트와 Agent Skill 파이프라인을 그대로 사용합니다.</span>
-        <span class="jump-app" data-goto="page16" tabindex="0">Appendix A10 도입 로드맵 상세 →</span>
+        <span class="jump-app" data-goto="page21" tabindex="0">Appendix A15 도입 로드맵 상세 →</span>
       </div>
     </div>
   </section>
@@ -1864,14 +1872,310 @@
       <a href="/guide" class="pbtn b">✨ Skill 사용 가이드</a>
       <a href="/lab" class="pbtn b">🛠️ 03 · 실습 Lab</a>
       <a href="/workbench" class="pbtn g">🩺 04 · 런타임 진단</a>
-      <button type="button" class="pbtn d" data-goto="page7" style="cursor:pointer;border:1px solid #DADCE0;">📎 Appendix 상세 자료 (A1 ~ A10) →</button>
+      <button type="button" class="pbtn d" data-goto="page7" style="cursor:pointer;border:1px solid #DADCE0;">📎 Appendix 상세 자료 (A1 ~ A15) →</button>
+    </div>
+  </section>
+
+  <!-- ======================= A1 : FEATURE DEEP DIVE — AGENT IDENTITY & AUTH MANAGER ======================= -->
+  <section class="slide appendix" id="page7">
+    <div class="corner"></div>
+    <div class="pageno">A1</div>
+    <div class="title">Feature Deep Dive ① · Agent Identity &amp; auth manager <span class="tsub">SPIFFE ID &amp; User-Delegated OAuth</span></div>
+
+    <div class="headline"><span class="k">에이전트 전용 암호화 신원(SPIFFE ID)</span>과 <strong>사용자 위임 인증(3-legged OAuth)</strong>으로 공유 SA·정적 API 키 제거</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>왜 필요한가? · 2가지 인증 축</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>기존 공유 Service Account &amp; 정적 PAT의 한계</div>
+            <ul class="blist compact">
+              <li><b>권한 과다 &amp; 감사 추적 불가</b> — 여러 에이전트가 하나의 SA를 공유하면 프롬프트 인젝션 시 영향 범위가 프로젝트 전체로 확산</li>
+              <li><b>정적 API 키 / PAT 유출 위험</b> — Jira·GitHub 등 외부 도구를 에이전트 공용 키로 호출하면 호출한 최종 사용자 권한 검증 불가</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>Agent Identity의 2대 보안 계층</div>
+            <div class="flowsteps">
+              <div class="fstep"><div class="fnum">1</div><div class="ftx"><b>에이전트 자체 신원 (Agent Identity · SPIFFE ID)</b><span class="sm">조직 단위 워크로드 풀(<code>agents.global.org-&lt;ORG_ID&gt;.system.id.goog/...</code>)에서 에이전트별 독립 암호화 신원 발급 · 최소 권한 IAM 바인딩</span></div></div>
+              <div class="fstep green"><div class="fnum">2</div><div class="ftx"><b>사용자 위임 인증 (auth manager · 3-legged OAuth)</b><span class="bdg prev">Preview</span><span class="sm">사용자 계정으로 외부 시스템 호출 시 정적 토큰 대신 <code>GcpAuthProvider</code> + <code>google-adk[agent-identity]</code>로 사용자별 OAuth 토큰 위임 발급</span></div></div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="note blue"><b>체크리스트 매핑</b> — 전용 신원(<code>AR-S1 · CR-S2 · GKE-S1</code>)은 필수, 사용자 위임 인증(<code>AR-S5 · CR-S6 · GKE-S5</code>)은 조건부·안내 전용</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>3대 런타임 선언 방식 &amp; ADK 연동</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>환경별 Agent Identity 활성화 방식</div>
+            <table class="mini">
+              <tr><th>환경</th><th>선언 / 구성 방식</th><th>특이사항</th></tr>
+              <tr><td><img class="prod-icon" src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18"><b>Agent Runtime</b></td><td><code>spec.identity_type = "AGENT_IDENTITY"</code><br/><code>agents-cli deploy --agent-identity</code></td><td>IAM 바인딩에 <code>effective_identity</code> 직접 참조 (<code>--service-account</code>와 상호 배타)</td></tr>
+              <tr><td><img class="prod-icon" src="/static/icons/cloud-run.png" alt="Cloud Run" width="18" height="18"><b>Cloud Run</b></td><td><code>workload_identity_config { identity_type = "IDENTITY_TYPE_AGENT_IDENTITY" }</code></td><td>Agent는 Agent Identity · MCP 서버는 전용 최소 권한 SA 자동 분기</td></tr>
+              <tr><td><img class="prod-icon" src="/static/icons/gke.png" alt="GKE" width="18" height="18"><b>GKE</b></td><td>Pod 어노테이션 <code>iam.gke.io/spiffe-identity-type: agent-identity</code></td><td>전용 KSA + Workload Identity Federation 병행</td></tr>
+            </table>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>사용자 위임 인증 (auth manager · ADK 도구 연동)</div>
+            <div class="codebox"><span class="cm"># pyproject.toml: google-adk[agent-identity]</span>
+<span class="kw">from</span> google.adk.integrations.agent_identity <span class="kw">import</span> GcpAuthProvider
+
+auth_provider = GcpAuthProvider(
+    auth_provider_name=<span class="st">"projects/.../authProviders/github-3lo"</span>
+)
+<span class="cm"># ❌ 정적 GITHUB_PAT / *_API_KEY 환경변수 사용 시 스캐너가 🔴 RED 탐지</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= A2 : FEATURE DEEP DIVE — AGENT REGISTRY ======================= -->
+  <section class="slide appendix" id="page8">
+    <div class="corner"></div>
+    <div class="pageno">A2</div>
+    <div class="title">Feature Deep Dive ② · Agent Registry <span class="tsub">Central Discovery &amp; Governance Catalog · Preview</span></div>
+
+    <div class="headline"><span class="k">조직 내 모든 에이전트와 MCP 서버</span>를 중앙 카탈로그에 자동 등록하고 <strong>하드코딩 URL 없는 동적 탐색</strong> 구현</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>핵심 역할 · 하이브리드 아키텍처 허브</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>왜 Agent Registry가 필요한가?</div>
+            <ul class="blist compact">
+              <li><b>Shadow AI 방지 &amp; 중앙 가시성</b> — Cloud Run · Agent Runtime · GKE에 흩어진 에이전트와 MCP 도구 서버를 단일 카탈로그(<code>agentregistry.googleapis.com</code>)로 통합 관리</li>
+              <li><b>하드코딩 URL 제거 (Lazy Discovery)</b> — 엔드포인트 URL을 코드에 박지 않고 레지스트리 이름으로 런타임에 안전하게 조회</li>
+              <li><b>Agent Gateway · App Hub 연계 기반</b> — 등록된 에이전트·MCP 자산에 거버넌스 정책과 호출 허용 목록을 일관되게 적용</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>3대 런타임 자동 등록 방식 (<code>AR-S2 · CR-S3 · GKE-S3</code>)</div>
+            <table class="mini">
+              <tr><th>환경</th><th>자동 등록 선언</th></tr>
+              <tr><td><img class="prod-icon" src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18"><b>Agent Runtime</b></td><td><code>identity_type = "AGENT_IDENTITY"</code> 배포 시 자동 등록</td></tr>
+              <tr><td><img class="prod-icon" src="/static/icons/cloud-run.png" alt="Cloud Run" width="18" height="18"><b>Cloud Run</b></td><td><code>functional_type = "FUNCTIONAL_TYPE_AGENT"</code> 또는 FastMCP 감지 시 <code>"FUNCTIONAL_TYPE_MCP_SERVER"</code> 자동 분기</td></tr>
+              <tr><td><img class="prod-icon" src="/static/icons/gke.png" alt="GKE" width="18" height="18"><b>GKE</b></td><td>Deployment 라벨 <code>registry.gke.io/functional-type: AGENT</code></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>ADK Lazy Discovery 전환 &amp; 운영 검증</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>하드코딩 URL → AgentRegistry 동적 조회 전환</div>
+            <div class="codebox"><span class="cm"># ❌ 안티패턴: 환경별 URL 하드코딩 (스캐너 AMBER 탐지)</span>
+<span class="bad">mcp = McpToolset(url="https://currency-mcp-uc.a.run.app/mcp")</span>
+
+<span class="cm"># ✅ 권장: AgentRegistry 기반 Lazy Discovery</span>
+<span class="kw">from</span> google.adk.integrations.agent_registry <span class="kw">import</span> AgentRegistry
+
+registry = AgentRegistry(project_id=PROJECT, location=<span class="st">"us-central1"</span>)
+mcp = registry.get_mcp_toolset(
+    mcp_server_name=os.environ[<span class="st">"CURRENCY_MCP_REGISTRY_NAME"</span>]
+)
+a2a = registry.get_remote_a2a_agent(
+    agent_name=os.environ[<span class="st">"BILLING_AGENT_REGISTRY_NAME"</span>]
+)</div>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>배포 후 등록 확인 CLI</div>
+            <div class="codebox">gcloud agent-registry agents list --location=us-central1 --project=$PROJECT_ID</div>
+          </div>
+          <div class="sec pinb">
+            <div class="note green"><b>Preview 정책</b> — <code>agentregistry.googleapis.com</code> · <code>apphub.googleapis.com</code>을 자동 활성화하되, Preview 항목이므로 통과 판정은 차단하지 않습니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= A3 : FEATURE DEEP DIVE — AGENT GATEWAY ======================= -->
+  <section class="slide appendix" id="page9">
+    <div class="corner"></div>
+    <div class="pageno">A3</div>
+    <div class="title">Feature Deep Dive ③ · Agent Gateway <span class="tsub">L7 Agent Traffic Control &amp; Model Armor Guardrails · Preview</span></div>
+
+    <div class="headline"><span class="k">단순 로드밸런서가 아닌</span> <strong>신원 · 레지스트리 · L7 인가 · Model Armor</strong>를 결합한 에이전트 전용 보안 게이트웨이</div>
+
+    <div class="cols">
+      <div class="col left redbox">
+        <div class="ctab"><span>다계층 보안 체인 &amp; 안전한 단계적 도입</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>Agent Gateway가 통과시키는 4단계 L7 보안 검증</div>
+            <div class="flowsteps">
+              <div class="fstep"><div class="fnum">1</div><div class="ftx"><b>신원 확인 (Agent Identity)</b><span class="sm">호출 주체(클라이언트·에이전트)의 SPIFFE ID / OAuth 신원 검증</span></div></div>
+              <div class="fstep teal"><div class="fnum">2</div><div class="ftx"><b>허용 대상 탐색 (Agent Registry)</b><span class="sm">인가된 에이전트·MCP 서버·외부 API 엔드포인트로의 호출만 허용</span></div></div>
+              <div class="fstep green"><div class="fnum">3</div><div class="ftx"><b>세밀한 L7 인가 (IAP V2 / GCPAuthzPolicy)</b><span class="sm">도구·메서드·경로 수준의 접근 제어 정책 적용 (Client→Agent, Agent→Tool)</span></div></div>
+              <div class="fstep red"><div class="fnum">4</div><div class="ftx"><b>콘텐츠 가드레일 (Model Armor)</b><span class="sm">프롬프트 인젝션 · 탈옥 · 민감정보(PII) 유출을 입출력 경계에서 실시간 탐지·차단</span></div></div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="note"><b>핵심 운영 팁 (HTTP 498 방지)</b> — 처음부터 <code>ENFORCED</code>로 켜면 미등록 외부 호출이 즉시 차단됩니다. 반드시 <b><code>DRY_RUN</code></b>으로 시작해 트래픽 로그·루트 CA 신뢰를 검증한 뒤 전환하세요.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right">
+        <div class="ctab"><span>3대 런타임별 Agent Gateway 구현 비교</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>환경별 리소스 · 적용 방식 (<code>AR-S3 · CR-S4 · GKE-S4</code>)</div>
+            <table class="mini">
+              <tr><th>환경</th><th>구성 리소스 &amp; 특징</th><th>스킬 적용</th></tr>
+              <tr>
+                <td><img class="prod-icon" src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18"><b>Agent Runtime</b><br/><code>AR-S3</code></td>
+                <td><code>google_network_services_agent_gateway</code> + <code>agent_gateway_config</code> 바인딩 + Dockerfile에 Gateway TLS 루트 CA 번들 신뢰 추가</td>
+                <td><b>자동 패치</b><br/>(<code>DRY_RUN</code> 기본, <code>production_ready.tf</code> 격리)</td>
+              </tr>
+              <tr>
+                <td><img class="prod-icon" src="/static/icons/cloud-run.png" alt="Cloud Run" width="18" height="18"><b>Cloud Run</b><br/><code>CR-S4</code></td>
+                <td><code>AgentGateway</code> + <code>AgentGatewayBackend</code> + IAP V2 + Model Armor 연동 (6개 API 활성화 필요)</td>
+                <td><b>수동 가이드</b><br/>(YAML/CLI 단계별 안내)</td>
+              </tr>
+              <tr>
+                <td><img class="prod-icon" src="/static/icons/gke.png" alt="GKE" width="18" height="18"><b>GKE</b><br/><code>GKE-S4</code></td>
+                <td><b>Ingress</b>: <code>Gateway</code> · <code>GCPAgentGateway</code> · <code>GCPAuthzPolicy</code>(L7) · <code>GCPExtensionBinding</code>(Model Armor)<br/><b>Egress</b>: <code>ambient</code> · <code>GCPBackend</code> · <code>GCPEgressPolicy</code> → SWP</td>
+                <td><b>자동 매니페스트</b><br/>(<code>agent-gateway.yaml</code>)<br/>GKE &ge; <code>1.37.2</code> Rapid</td>
+              </tr>
+            </table>
+          </div>
+          <div class="sec pinb">
+            <div class="svc"><span>networkservices</span><span>networksecurity</span><span>serviceextensions</span><span class="red">modelarmor</span><span class="grn">iap</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= A4 : FEATURE DEEP DIVE — AGENT SUBSTRATE & CODE ISOLATION ======================= -->
+  <section class="slide appendix" id="page10">
+    <div class="corner"></div>
+    <div class="pageno">A4</div>
+    <div class="title">Feature Deep Dive ④ · Agent Substrate &amp; Code Isolation <span class="tsub">High-Density Suspend/Resume &amp; Sandboxing</span></div>
+
+    <div class="headline"><span class="k">AI가 생성한 신뢰할 수 없는 코드 격리</span>와 <strong>10배 밀도 · &lt;500ms 유휴 일시정지·복원</strong>을 실현하는 GKE 실행 계층</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>Agent Substrate on GKE (<code>ate.dev/v1alpha1</code>)</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>기존 Pod 모델의 2가지 한계를 동시에 해결</div>
+            <ul class="blist compact">
+              <li><b>AI 생성 코드 격리 (<code>GKE-S2</code>)</b> — LLM이 작성한 Python/셸 코드를 호스트·클러스터 권한과 분리된 격리 런타임에서 실행하고 메타데이터 서버(<code>169.254.169.254</code>) 접근 차단</li>
+              <li><b>유휴 상태 유지형 에이전트 비용 절감 (<code>GKE-O2</code>)</b> — 사용자 입력·도구 응답을 기다리는 동안 메모리 스냅샷으로 일시정지(suspend)해 컴퓨팅 반납, 재요청 시 <b>&lt;500ms</b> 만에 복원(resume)</li>
+              <li><b>초고밀도 수용</b> — 일반 Pod 대비 <b>최대 10배 밀도</b>로 세션별 독립 실행 환경 운영</li>
+            </ul>
+          </div>
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>핵심 리소스 &amp; 클러스터 요건</div>
+            <div class="codebox"><span class="cm"># deployment/k8s/agent-substrate.yaml (ate.dev/v1alpha1)</span>
+kind: <span class="kw">WorkerPool</span>           <span class="cm"># 격리 워커 풀 선언</span>
+<span class="cm"># Actor 템플릿 생성: kubectl ate create actor-template ...</span></div>
+            <div class="note"><b>필수 제약</b> — <b>GKE Standard &ge; 1.37 (x86) 전용</b>입니다. Autopilot · Extended · E2 혼합 CPU는 미지원이며, 해당 환경에서는 <b>Agent Sandbox</b>를 대안으로 선택합니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>3대 런타임 AI 코드 격리 선택 매트릭스</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>워크로드 조건별 권장 격리 옵션</div>
+            <table class="mini">
+              <tr><th>솔루션</th><th>대상 항목</th><th>핵심 특징 · 언제 선택하나?</th></tr>
+              <tr>
+                <td><b>Agent Substrate on GKE</b><br/><code>ate.dev/v1alpha1</code></td>
+                <td><code>GKE-S2</code><br/><code>GKE-O2</code><br/>(기본 권장)</td>
+                <td><b>10배 밀도 · &lt;500ms suspend/resume</b> · 유휴 시간이 긴 상태 유지형 에이전트 + AI 코드 격리 (Standard &ge; 1.37 x86)</td>
+              </tr>
+              <tr>
+                <td><b>Agent Sandbox on GKE</b><br/><code>agents.x-k8s.io/v1beta1</code></td>
+                <td><code>GKE-S2</code><br/><code>GKE-O2</code><br/>(대안)</td>
+                <td><b>gVisor / microVM + SandboxWarmPool</b> · 상시 실행 에이전트, 사이드카 등 전체 PodSpec, Arm 노드, <b>Autopilot</b> 지원</td>
+              </tr>
+              <tr>
+                <td><img class="prod-icon" src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="16" height="16"><b>Code Execution</b></td>
+                <td><code>AR-S4</code></td>
+                <td>Agent Platform 완전 관리형 코드 실행 샌드박스 (<b>1초 이내</b> 기동 · 별도 클러스터 관리 불필요)</td>
+              </tr>
+              <tr>
+                <td><img class="prod-icon" src="/static/icons/cloud-run.png" alt="Cloud Run" width="16" height="16"><b>Cloud Run sandboxes</b></td>
+                <td><code>CR-S5</code><span class="bdg prev">Preview</span></td>
+                <td><code>--sandbox-launcher</code>(2세대 실행 환경) 기반 서버리스 코드 실행 격리</td>
+              </tr>
+            </table>
+          </div>
+          <div class="sec pinb">
+            <div class="note green"><b>Zero-Metadata 불변식</b> — GKE Sandbox/Substrate는 SSRF 방어를 위해 <code>169.254.169.254/32</code>를 차단하고 <code>automountServiceAccountToken: false</code>를 강제합니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= A5 : FEATURE DEEP DIVE — MANAGED SESSIONS & MEMORY BANK ======================= -->
+  <section class="slide appendix" id="page11">
+    <div class="corner"></div>
+    <div class="pageno">A5</div>
+    <div class="title">Feature Deep Dive ⑤ · Managed Sessions &amp; Memory Bank <span class="tsub">Short-Term State &amp; Cross-Session Long-Term Memory</span></div>
+
+    <div class="headline"><span class="k">세션 영속화(VertexAiSessionService)</span>와 <strong>4계층 배선 기반 장기 기억(Memory Bank)</strong>으로 맥락 단절 해소</div>
+
+    <div class="cols">
+      <div class="col left">
+        <div class="ctab"><span>단기 기억(Session) vs 장기 기억(Memory Bank)</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>두 관리형 상태 서비스의 역할 구분</div>
+            <table class="mini">
+              <tr><th>구분</th><th>Managed Sessions (<code>*-F1</code>)</th><th>Memory Bank (<code>*-F2</code>)</th></tr>
+              <tr><td><b>클래스</b></td><td><code>VertexAiSessionService</code></td><td><code>VertexAiMemoryBankService</code></td></tr>
+              <tr><td><b>유지 범위</b></td><td><b>단일 세션 내</b> 멀티턴 대화 이력·상태·아티팩트</td><td><b>세션 간(Cross-Session)</b> 사용자 선호·핵심 사실 자동 추출·회상</td></tr>
+              <tr><td><b>해결 문제</b></td><td>컨테이너 재시작·스케일아웃 시 직전 대화 맥락 증발 방지</td><td>어제 대화한 사용자 정보·선호를 오늘 새 세션에서도 개인화 기억</td></tr>
+              <tr><td><b>환경 차이</b></td><td colspan="2"><b>Agent Runtime</b>은 플랫폼 기본 내장 · <b>Cloud Run / GKE</b>는 <code>AGENT_ENGINE_SESSION_ID</code> 환경변수로 동일 관리형 백엔드 연결</td></tr>
+            </table>
+          </div>
+          <div class="sec pinb">
+            <div class="note blue"><b>비파괴 코드 보존 정책</b> — Memory Bank 적용 시 기존 <code>app/agent.py</code> 원본 라인은 <code># [ORIGINAL before prod-ready *-F2]</code> 주석으로 보존하며, diff 검토 후 <b>사용자 승인 시에만</b> 반영합니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right tealbox">
+        <div class="ctab"><span>Memory Bank 실제 동작을 위한 4계층 배선</span></div>
+        <div class="body">
+          <div class="sec">
+            <div class="sechead"><span class="dot"></span>서비스 정의만으로는 동작하지 않음 — 4계층 End-to-End 연결 필수</div>
+            <div class="flowsteps">
+              <div class="fstep"><div class="fnum">1</div><div class="ftx"><b>Service Factory &amp; Registry (<code>services.py</code>)</b><span class="sm"><code>get_memory_service()</code> 정의 + <code>register_memory_service("shared", ...)</code> 등록</span></div></div>
+              <div class="fstep teal"><div class="fnum">2</div><div class="ftx"><b>서빙 진입점 연결 (<code>fast_api_app.py</code>)</b><span class="sm"><code>Runner(memory_service=services.get_memory_service())</code> + <code>get_fast_api_app(memory_service_uri=...)</code></span></div></div>
+              <div class="fstep green"><div class="fnum">3</div><div class="ftx"><b>ADK 읽기 도구 (<code>app/agent.py</code>)</b><span class="sm"><code>from google.adk.tools import preload_memory</code> → <code>Agent(tools=[..., preload_memory])</code></span></div></div>
+              <div class="fstep red"><div class="fnum">4</div><div class="ftx"><b>ADK 자동 저장 콜백 (<code>app/agent.py</code>)</b><span class="sm"><code>after_agent_callback</code>에서 <code>await callback_context.add_session_to_memory()</code> 호출 (기존 콜백 체이닝 보존)</span></div></div>
+            </div>
+          </div>
+          <div class="sec pinb">
+            <div class="note green"><b>스캐너 검증</b> — 4계층 중 하나라도 빠지면 <code>🟡 AMBER</code>로 누락 지점을 정확히 표시하고, 4계층이 모두 연결되어야 <code>🟢 GREEN</code> 판정합니다.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- ======================= 02 : 왜 필요한가? ======================= -->
-  <section class="slide appendix" id="page7">
+  <section class="slide appendix" id="page12">
     <div class="corner"></div>
-    <div class="pageno">A1</div>
+    <div class="pageno">A6</div>
     <div class="title">왜 Production-Readiness가 필요한가? <span class="tsub">Why AI Agents Break Standard Web Ops</span></div>
 
     <div class="headline"><span class="k">로컬 데모의 성공</span>은 <em>상용 운영의 시작</em>일 뿐 — <strong>AI Agent 고유 실행 특성</strong>이 기존 웹 운영 기준을 무너뜨림</div>
@@ -1939,9 +2243,9 @@
   </section>
 
   <!-- ======================= 03 : PROTOTYPE vs PRODUCTION ======================= -->
-  <section class="slide appendix" id="page8">
+  <section class="slide appendix" id="page13">
     <div class="corner"></div>
-    <div class="pageno">A2</div>
+    <div class="pageno">A7</div>
     <div class="title">Prototype vs. Production — 상용 전환 Gap 분석 <span class="tsub">Prototype &amp; Scaffolding → Enterprise Ready</span></div>
 
     <div class="headline"><span class="k">순수 로컬 프로토타입(adk create)</span>뿐 아니라 <em>초기 스캐폴딩(agents-cli)</em>에도 <strong>핵심 상용 Gap</strong> 존재</div>
@@ -1993,9 +2297,9 @@
   </section>
 
   <!-- ======================= 04 : 전체 시스템 아키텍처 ======================= -->
-  <section class="slide appendix" id="page9">
+  <section class="slide appendix" id="page14">
     <div class="corner"></div>
-    <div class="pageno">A3</div>
+    <div class="pageno">A8</div>
     <div class="title">전체 시스템 아키텍처 &amp; 통합 웹 포털 <span class="tsub">End-to-End 2-Stage Platform</span></div>
 
     <div class="headline"><span class="k">배포 전 코드·IaC 자동 강화(Stage 1)</span> + <strong>배포 후 Zero-IAM 라이브 감사(Stage 2)</strong> 이중 안전망</div>
@@ -2043,9 +2347,9 @@
   </section>
 
   <!-- ======================= A4 : 프로덕션 체크리스트 · 5개 카테고리 ======================= -->
-  <section class="slide appendix" id="page10">
+  <section class="slide appendix" id="page15">
     <div class="corner"></div>
-    <div class="pageno">A4</div>
+    <div class="pageno">A9</div>
     <div class="title">무엇을 검사하는가? — 에이전트 특성 기반 체크리스트 <span class="tsub">Production Checklist · 5 Categories</span></div>
 
     <div class="headline"><span class="k">에이전트이기 때문에 생기는 위험</span>만 골라 <strong>5개 카테고리</strong>로 점검 — 일반 플랫폼 BP는 <em>플랫폼 Skill</em>에 위임</div>
@@ -2100,9 +2404,9 @@
   </section>
 
   <!-- ======================= APPENDIX A1 : 환경별 검사 항목 차이 ======================= -->
-  <section class="slide appendix" id="page11">
+  <section class="slide appendix" id="page16">
     <div class="corner"></div>
-    <div class="pageno">A5</div>
+    <div class="pageno">A10</div>
     <div class="title">검사 항목은 환경별로 어떻게 다른가? <span class="tsub">Same 5 Categories · Runtime-Native Items</span></div>
 
     <div class="headline"><span class="k">같은 5개 카테고리</span>를 쓰되, <strong>런타임이 이미 제공하는 것은 빼고</strong> 환경별 항목 세트로 점검</div>
@@ -2160,9 +2464,9 @@
   </section>
 
   <!-- ======================= APPENDIX A2 : 환경별 Agent 특화 기능 ① ======================= -->
-  <section class="slide appendix" id="page12">
+  <section class="slide appendix" id="page17">
     <div class="corner"></div>
-    <div class="pageno">A6</div>
+    <div class="pageno">A11</div>
     <div class="title">환경별 Agent 특화 기능 ① — Agent Runtime &amp; Cloud Run <span class="tsub">Managed vs. Serverless</span></div>
 
     <div class="headline"><span class="k">에이전트 전용 관리형(Agent Runtime)</span> vs. <strong>유연한 서버리스 컨테이너(Cloud Run)</strong></div>
@@ -2215,9 +2519,9 @@
   </section>
 
   <!-- ======================= APPENDIX A3 : 환경별 Agent 특화 기능 ② (GKE) ======================= -->
-  <section class="slide appendix" id="page13">
+  <section class="slide appendix" id="page18">
     <div class="corner"></div>
-    <div class="pageno">A7</div>
+    <div class="pageno">A12</div>
     <div class="title"><img class="prod-icon" src="/static/icons/gke.png" alt="GKE" width="32" height="32">환경별 Agent 특화 기능 ② — GKE 3대 에이전트 아키텍처 <span class="tsub">Enterprise Kubernetes</span></div>
 
     <div class="headline"><span class="k">GKE</span>는 일반 서빙을 넘어 <strong>Gateway · 비신뢰 코드 격리 · 초고밀도 · 자체 GPU/TPU 추론</strong>까지 지원</div>
@@ -2286,9 +2590,9 @@
   </section>
 
   <!-- ======================= APPENDIX A4 : 3대 런타임 6대 축 비교표 ======================= -->
-  <section class="slide appendix" id="page14">
+  <section class="slide appendix" id="page19">
     <div class="corner"></div>
-    <div class="pageno">A8</div>
+    <div class="pageno">A13</div>
     <div class="title">3대 런타임 핵심 비교표 <span class="tsub">Agent Runtime vs. Cloud Run vs. GKE</span></div>
 
     <div class="headline"><span class="k">6대 아키텍처 핵심 축</span>으로 본 <strong>Google Cloud 에이전트 배포 환경 비교</strong></div>
@@ -2351,9 +2655,9 @@
   </section>
 
   <!-- ======================= 06 : 환경별 장단점 종합 ======================= -->
-  <section class="slide appendix" id="page15">
+  <section class="slide appendix" id="page20">
     <div class="corner"></div>
-    <div class="pageno">A9</div>
+    <div class="pageno">A14</div>
     <div class="title">Agent 배포 관점 환경별 장단점 종합 <span class="tsub">Pros &amp; Cons Analysis</span></div>
 
     <div class="headline"><span class="k">3대 런타임의 강점과 트레이드오프</span>를 명확히 이해해야 <strong>운영 실패와 과잉 설계</strong>를 방지</div>
@@ -2447,9 +2751,9 @@
   </section>
 
   <!-- ======================= 07 : 선택 기준 & 도입 로드맵 ======================= -->
-  <section class="slide appendix" id="page16">
+  <section class="slide appendix" id="page21">
     <div class="corner"></div>
-    <div class="pageno">A10</div>
+    <div class="pageno">A15</div>
     <div class="title">선택 기준 (Decision Framework) &amp; 도입 로드맵 <span class="tsub">How to Choose &amp; Start</span></div>
 
     <div class="headline"><span class="k">워크로드 특성</span>에 맞는 런타임을 고르고, <strong>동일한 프로덕션 체크리스트 파이프라인</strong>으로 즉시 상용화</div>
@@ -2505,7 +2809,6 @@
       </div>
     </div>
   </section>
-
 
   <!-- ==================== INTERACTIVE DETAIL MODAL ==================== -->
   <div class="dmodal" id="detailModal" hidden role="dialog" aria-modal="true" aria-label="상세 설명">

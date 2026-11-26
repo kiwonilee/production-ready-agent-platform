@@ -98,15 +98,16 @@ Load from `references/` (relative to this `SKILL.md`) only when needed:
 
 Let `<SKILL_DIR>` be the directory containing this `SKILL.md`. Always run `<SKILL_DIR>/scripts/prod_ready.py` with `python3` (pure stdlib).
 
-### Step 0: 의존성 점검 (Dependency Preflight — mandatory)
+### Step 0: 의존성 점검 (Dependency Preflight — ALWAYS run first, even if the user prompt does not mention `doctor`)
 
 ```bash
 python3 "<SKILL_DIR>/scripts/prod_ready.py" doctor <project_dir> --target <agent_runtime|cloud_run|gke>
 ```
 
+- **MANDATORY FIRST STEP**: Always execute `prod_ready.py doctor` BEFORE `scan` (even when the user simply asks to "점검해줘" or "진단 결과만 표로 보여줘") and **always include a concise `🩺 의존성 점검 (doctor)` summary at the top of your response**.
 - **Required** (exit 1 if missing): `agents-cli` >= 1.5.0 and the agents-cli skills `google-agents-cli-deploy` · `google-agents-cli-eval` · `google-agents-cli-scaffold`. If anything is missing, **stop** and ask the user to approve installing it: `uv tool install google-agents-cli` (or `uv tool upgrade google-agents-cli`) for the binary, then `agents-cli setup` for the skills. Re-run `doctor` after installation. Do not continue to Step 1 until the required items are present (`--skip-deps-check` exists only for CI/emergencies — never use it silently).
 - **Recommended** (never blocking): the Google Cloud platform skills for the target (catalog `platform_skills`, https://github.com/google/skills/tree/main/skills/cloud). If any are missing, **strongly recommend** installing them and ask the user for approval to run `python3 "<SKILL_DIR>/scripts/prod_ready.py" doctor <project_dir> --target <t> --install-platform-skills` (or `npx skills add google/skills --skill <name> ... -g -y`). Never install without the user's explicit consent. Proceed to Step 1 after the user answers either way.
-- `scan` / `diff` / `apply` / `report` re-run this preflight automatically: they stop when required dependencies are missing and print a prominent "⚠️ 플랫폼 Skill 미설치 — 설치를 강력히 권장합니다" banner when platform skills are missing. Reports show each platform skill as ✅ installed / ❌ not installed.
+- As a safety net, `scan` / `diff` / `apply` / `report` also enforce the required-dependency gate and print the `Doctor Preflight` summary (and a warning banner if platform skills are missing), **but never skip Step 0 `doctor` or omit its summary from your response**.
 
 ### Step 1: Target & Condition Detection (before `scan`)
 
@@ -123,11 +124,12 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target>
 # or a subset: --items CR-F1,CR-D1,CR-S1   (legacy C* IDs also accepted)
 ```
 
-Present in Korean, in this order:
-1. **Gate verdict** and detected conditions.
-2. Items grouped by the 5 categories (State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance): ID, title, status (`🟢`/`🟡`/`🔴`/`⚪ N/A`), and for non-green items the catalog **Check** and **Best Practice** text with reference links. Mark Preview items with 🅿️ and state that they do not block the verdict.
-3. **Platform skill recommendation** for the target (table above) — always include it.
-4. **Advisories** relevant to the user's situation (optional).
+Present in Korean, in this order (never modify project files during Step 2):
+1. **`🩺 의존성 점검 (doctor)` summary**: `agents-cli` version, required `google-agents-cli-*` skills, and target Google Cloud platform skills (✅/❌).
+2. **Gate verdict** and detected conditions.
+3. Items grouped by the checklist's categories (skipping empty categories): ID, title, status (`🟢`/`🟡`/`🔴`/`⚪ N/A`), **whether each item is auto-patched or guidance-only**, and for non-green items the catalog **Check** and **Best Practice** text with reference links. Mark Preview items with 🅿️ and state that they do not block the verdict.
+4. **Platform skill recommendation** for the target (table above) — always include it.
+5. **Advisories** relevant to the user's situation (optional).
 
 **`*-D1` CI/CD pipeline and `*-D2` eval gate**: `*-D1` checks that an agents-cli generated pipeline exists (`.cloudbuild/staging.yaml` or `.github/workflows/staging.yaml`); it is guidance only — the engine never generates pipeline files. If `*-D1` is RED, propose running `agents-cli scaffold enhance . --cicd-runner google_cloud_build` in the project and run it **only after explicit user approval**. `*-D2` creates the eval dataset/config and inserts the `agent-eval-gate` step (compares the `agents-cli eval run` score to `eval_threshold` and fails, because `eval run` exits 0 regardless) into the existing pipeline; without a pipeline it creates only the dataset/config and skips the gate ("D1 first"). Legacy `C7.1` maps to D1 + D2. `agents-cli infra cicd` (triggers, staging/prod CI/CD infrastructure) is a manual production-environment step: mention it as guidance, never run it.
 
@@ -141,7 +143,12 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" diff <project_dir> --target <target>
 # ... --target gke --params '{"gke_execution_pattern":"agent_substrate"}'   # or "agent_sandbox" for always-on agents, sidecars, Arm nodes or Autopilot
 ```
 
-Summarize patched vs. new files. The engine preserves existing sizing (CPU/memory/instances/replicas), cluster mode, ingress, and agents-cli resource names, and does **not** auto-apply advisories or delegated platform BPs. Preview items are applied only if the user opts in. Ask in one line whether to apply, and **wait for explicit approval**.
+Summarize patched vs. new files and separately list any **guidance-only items** with their manual YAML/CLI steps. The engine preserves existing sizing (CPU/memory/instances/replicas), cluster mode, ingress, and agents-cli resource names, and does **not** auto-apply advisories or delegated platform BPs. Preview items are applied only if the user explicitly opts in.
+
+**Existing User Code Modification Policy (Mandatory — enforced by the skill, never needs to be repeated in user prompts)**:
+- Never modify files during `diff`.
+- When a selected checklist item requires modifying existing application code (e.g., `*-F2` Memory Bank wiring `preload_memory` + `after_agent_callback(add_session_to_memory)` in `app/agent.py`, or `memory_service` in `app/fast_api_app.py`), the engine **never deletes the original lines** — it comments out the original code with `# [ORIGINAL before prod-ready ...]` and wraps every added/updated region with `# --- [BEGIN prod-ready: ...] ---` / `# --- [END prod-ready: ...] ---`.
+- Explicitly call out any existing user-code files (`app/agent.py`, `app/fast_api_app.py`) in the diff summary and **wait for the user's explicit approval before running `apply`**. Never modify existing user code silently.
 
 ### Step 4: Apply, Re-scan, Report
 
@@ -152,9 +159,11 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target>
 python3 "<SKILL_DIR>/scripts/prod_ready.py" report <project_dir> --target <target> --items <items> --format both -o <project_dir>/READINESS_REPORT.md
 ```
 
+After generating `READINESS_REPORT.md` and `READINESS_REPORT.html`, summarize the final verdict, any remaining Preview items or advisories, and the recommended Google Cloud platform skills for the target.
+
 ### Step 5: Deploy & Platform Skill Follow-up
 
-Use `references/deployment-guide.md` for `terraform apply`, `uvx google-agents-cli deploy` (only after explicit approval; `--agent-identity` and `--service-account` are mutually exclusive), GKE `kubectl apply` of generated manifests, and post-deploy checks (`gcloud agent-registry agents list`, unauthenticated call returns 403 for `CR-S1`). Finish by recommending the target's platform skills from https://github.com/google/skills/tree/main/skills/cloud.
+Use `references/deployment-guide.md` for `terraform apply`, `uvx google-agents-cli deploy` (only after explicit approval; `--agent-identity` and `--service-account` are mutually exclusive), GKE `kubectl apply` of generated manifests, and post-deploy checks (`gcloud agent-registry agents list`, unauthenticated call returns 403 for `CR-S1`). Finish by recommending the target's platform skills from https://github.com/google/skills/tree/main/skills/cloud; when the user asks to follow up on general infrastructure best practices, automatically consult the installed platform skills for the target (probes, alerts, non-root/PSS, networking, IAM/WAF, IaC) without requiring the user to list those topics.
 
 ### Optional: Web Workbench
 

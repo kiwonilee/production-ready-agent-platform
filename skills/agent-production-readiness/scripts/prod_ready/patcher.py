@@ -86,7 +86,7 @@ V3_PATCH_FLAGS: dict[str, frozenset[str]] = {
     "CR-S6": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
     # Agent Runtime
     "AR-F1": frozenset(),  # platform default VertexAiSessionService
-    "AR-F2": frozenset(),  # platform default Memory Bank
+    "AR-F2": frozenset({"MEMBANK"}),  # platform default Memory Bank + ADK preload_memory & after_agent_callback in app/agent.py
     "AR-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
     "AR-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
     "AR-OB1": frozenset({"C5.1"}),
@@ -198,8 +198,9 @@ def preview_patches(
     _prepare_apis_and_iam_and_storage_tf(root, project_name, target, item_ids, params, record)
     _prepare_service_tf(root, project_name, target, item_ids, params, record)
 
-    # 2. Drop-in Terraform modules & GKE Kubernetes manifests
+    # 2. Drop-in Terraform modules, CI/CD Terraform mirror (Option A) & GKE Kubernetes manifests
     _prepare_production_ready_tf(root, project_name, target, item_ids, params, record)
+    _prepare_terraform_cicd(root, project_name, target, item_ids, params, record)
     _prepare_alerts_tf(root, project_name, target, item_ids, params, record)  # delegated (C5.3) — no-op for v3
     _prepare_gke_k8s_manifests(root, project_name, target, item_ids, params, record)
 
@@ -2766,6 +2767,407 @@ resource "google_network_security_authz_policy" "iap_request_authz_policy" {
     record(rel, "\n".join(blocks).rstrip() + "\n", applied_items)
 
 
+def _prepare_terraform_cicd(
+    root: Path,
+    project_name: str,
+    target: TargetType,
+    item_ids: set[str],
+    params: CustomParams,
+    record: Any,
+) -> None:
+    """Option A: mirror production patches into ``deployment/terraform/cicd/`` when present.
+
+    Keeps standalone new resources (Agent Runtime Agent Gateway) isolated in
+    ``cicd/production_ready.tf`` using multi-project ``for_each = local.deploy_project_ids``,
+    and applies minimal in-place resource attribute patches to ``cicd/service.tf``,
+    ``cicd/variables.tf``, and ``cicd/locals.tf``.
+    """
+    cicd_rel = "deployment/terraform/cicd"
+    cicd_dir = root / cicd_rel
+    cicd_service_path = cicd_dir / "service.tf"
+    if not cicd_service_path.is_file() or resolve_terraform_rel_dir(root) == cicd_rel:
+        return
+
+    existing_service_tf = cicd_service_path.read_text(encoding="utf-8")
+    mcp_profile = detect_mcp_a2a_profile(root, existing_service_tf) if target == "cloud_run" else None
+
+    # 1. cicd/variables.tf
+    vars_path = cicd_dir / "variables.tf"
+    if vars_path.is_file():
+        vtxt = vars_path.read_text(encoding="utf-8")
+        vapplied: list[str] = []
+        if "C4.1" in item_ids:
+            if '"roles/storage.admin"' in vtxt:
+                vtxt = vtxt.replace('"roles/storage.admin"', '"roles/storage.objectUser"')
+                vapplied.append("C4.1")
+            if target == "agent_runtime" and '"roles/cloudsql.client"' in vtxt:
+                vtxt = re.sub(r'\s*"roles/cloudsql\.client",?\n', "\n", vtxt)
+                vapplied.append("C4.1")
+        if "C5.1" in item_ids and '"roles/cloudtrace.agent"' in vtxt and '"roles/monitoring.metricWriter"' not in vtxt:
+            vtxt = vtxt.replace(
+                '"roles/cloudtrace.agent",',
+                '"roles/cloudtrace.agent",\n    "roles/monitoring.metricWriter",',
+                1,
+            )
+            vapplied.append("C5.1")
+        if "C2.1" in item_ids and target in ("cloud_run", "gke") and 'variable "agent_engine_id"' not in vtxt:
+            vtxt = vtxt.rstrip() + f'''
+
+variable "agent_engine_id" {{
+  type        = string
+  description = "Agent Platform Reasoning Engine ID for Managed Sessions (VertexAiSessionService)"
+  default     = "{params.agent_engine_id}"
+}}
+'''
+            vapplied.append("C2.1")
+        if target == "agent_runtime" and "C4.4" in item_ids and 'variable "agent_gateway_enforcement_mode"' not in vtxt:
+            vtxt = vtxt.rstrip() + f'''
+
+variable "agent_gateway_enforcement_mode" {{
+  type        = string
+  description = "Agent Gateway IAP/UAP V2 enforcement mode (DRY_RUN prevents HTTP 498 before essential APIs are allowlisted; switch to ENFORCED for production enforcement)"
+  default     = "{params.agent_gateway_enforcement_mode}"
+}}
+'''
+            vapplied.append("C4.4")
+        if vapplied:
+            record(f"{cicd_rel}/variables.tf", vtxt, vapplied)
+
+    # 2. cicd/locals.tf — append Agent Registry / AppHub APIs to deploy_project_services
+    locals_path = cicd_dir / "locals.tf"
+    if locals_path.is_file() and "C4.2" in item_ids:
+        ltxt = locals_path.read_text(encoding="utf-8")
+        missing = [
+            api
+            for api in ("agentregistry.googleapis.com", "apphub.googleapis.com")
+            if api not in ltxt
+        ]
+        if missing and re.search(r"deploy_project_services\s*=\s*\[", ltxt):
+            inject_lines = "\n".join(f'    "{api}",' for api in missing)
+
+            def _append_deploy_apis(match: re.Match[str]) -> str:
+                body = match.group(2).rstrip()
+                if body and not body.endswith(","):
+                    body += ","
+                return f"{match.group(1)}{body}\n{inject_lines}\n{match.group(3)}"
+
+            updated_locals = re.sub(
+                r"(deploy_project_services\s*=\s*\[)([\s\S]*?)(\n[ \t]*\])",
+                _append_deploy_apis,
+                ltxt,
+                count=1,
+            )
+            if updated_locals != ltxt:
+                record(f"{cicd_rel}/locals.tf", updated_locals, ["C4.2"])
+
+    # 3. cicd/service.tf — minimal in-place resource attribute patches
+    txt = existing_service_tf
+    applied: list[str] = []
+
+    if target == "cloud_run":
+        if "C4.2" in item_ids:
+            before = txt
+            if not re.search(r"provider\s*=\s*google-beta", txt):
+                txt = txt.replace(
+                    'resource "google_cloud_run_v2_service" "app" {',
+                    'resource "google_cloud_run_v2_service" "app" {\n  provider            = google-beta',
+                    1,
+                )
+            if mcp_profile and mcp_profile.is_mcp_server:
+                if "FUNCTIONAL_TYPE_MCP_SERVER" not in txt:
+                    txt = txt.replace(
+                        'ingress             = "INGRESS_TRAFFIC_ALL"',
+                        'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_MCP_SERVER" # [C4.2] Auto-register MCP server in Agent Registry (immutable)',
+                        1,
+                    )
+            else:
+                if "FUNCTIONAL_TYPE_AGENT" not in txt:
+                    txt = txt.replace(
+                        'ingress             = "INGRESS_TRAFFIC_ALL"',
+                        'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)',
+                        1,
+                    )
+                if "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
+                    wi_block = (
+                        '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                        '    workload_identity_config {\n'
+                        '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                        '    }\n'
+                        '    # service_account = google_service_account.app_sa[each.key].email # Replaced by Agent Identity (SPIFFE ID)'
+                    )
+                    if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
+                        txt = re.sub(
+                            r'^[ \t]*service_account\s*=\s*.+$',
+                            wi_block,
+                            txt,
+                            count=1,
+                            flags=re.MULTILINE,
+                        )
+            if txt != before:
+                applied.append("C4.2")
+        if "C2.1" in item_ids:
+            before = txt
+            if "GOOGLE_CLOUD_AGENT_ENGINE_ID" in txt and "AGENT_ENGINE_SESSION_ID" not in txt:
+                txt = txt.replace('"GOOGLE_CLOUD_AGENT_ENGINE_ID"', '"AGENT_ENGINE_SESSION_ID"')
+            else:
+                txt = _inject_env_before(txt, "LOGS_BUCKET_NAME", "AGENT_ENGINE_SESSION_ID", "var.agent_engine_id")
+            if txt != before:
+                applied.append("C2.1")
+        if "C5.1" in item_ids:
+            before = txt
+            txt = _inject_env_before(txt, "LOGS_BUCKET_NAME", "OTEL_SEMCONV_STABILITY_OPT_IN", '"gen_ai_latest_experimental"')
+            txt = _inject_env_before(txt, "LOGS_BUCKET_NAME", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", '"NO_CONTENT"')
+            txt = _inject_env_before(txt, "LOGS_BUCKET_NAME", "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", '"false"')
+            if txt != before:
+                applied.append("C5.1")
+
+    elif target == "agent_runtime":
+        if ("C4.2" in item_ids or "C4.4" in item_ids) and not re.search(r"provider\s*=\s*google-beta", txt):
+            txt = txt.replace(
+                'resource "google_vertex_ai_reasoning_engine" "app" {',
+                'resource "google_vertex_ai_reasoning_engine" "app" {\n  provider     = google-beta',
+                1,
+            )
+            applied.extend([i for i in ("C4.2", "C4.4") if i in item_ids])
+        if "C4.2" in item_ids and not re.search(r'identity_type\s*=\s*"AGENT_IDENTITY"', txt):
+            id_block = (
+                '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (immutable at creation)\n'
+                '    identity_type   = "AGENT_IDENTITY"\n'
+                '    # service_account = google_service_account.app_sa[each.key].email # Replaced by per-agent SPIFFE ID'
+            )
+            if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
+                txt = re.sub(r'^[ \t]*service_account\s*=\s*.+$', id_block, txt, count=1, flags=re.MULTILINE)
+            else:
+                txt = txt.replace('agent_framework = "google-adk"', 'agent_framework = "google-adk"\n' + id_block, 1)
+            applied.append("C4.2")
+        if "C4.4" in item_ids and "agent_gateway_config" not in txt:
+            agw_block = """
+      # [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress · per-env via for_each)
+      # IAP/UAP V2 policy defaults to DRY_RUN in cicd/production_ready.tf to avoid HTTP 498 before API allowlisting.
+      agent_gateway_config {
+        agent_to_anywhere_config {
+          agent_gateway = google_network_services_agent_gateway.egress_gateway[each.key].id
+        }
+      }
+"""
+            if "resource_limits" in txt:
+                txt = re.sub(r"(resource_limits\s*=\s*\{[^}]*\})", r"\1\n" + agw_block.rstrip(), txt, count=1)
+                applied.append("C4.4")
+        if "C5.1" in item_ids:
+            before = txt
+            txt = _inject_env_before(txt, "OTEL_SEMCONV_STABILITY_OPT_IN", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", '"NO_CONTENT"')
+            txt = _inject_env_before(txt, "OTEL_SEMCONV_STABILITY_OPT_IN", "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", '"false"')
+            if txt != before:
+                applied.append("C5.1")
+
+    elif target == "gke":
+        # GKE cicd/service.tf defines separate kubernetes_deployment_v1 blocks (app_staging / app_prod)
+        dep_spans = [m.start() for m in re.finditer(r'resource\s+"kubernetes_deployment_v1"\s+"[^"]+"', txt)]
+        if dep_spans:
+            parts: list[str] = [txt[:dep_spans[0]]]
+            for idx_i, start in enumerate(dep_spans):
+                end = dep_spans[idx_i + 1] if idx_i + 1 < len(dep_spans) else len(txt)
+                # Stop at the next top-level resource if any comes before next deployment
+                chunk = txt[start:end]
+                next_res = re.search(r'\nresource\s+"', chunk[10:])
+                if next_res:
+                    dep_blk = chunk[: 10 + next_res.start()]
+                    rest_blk = chunk[10 + next_res.start() :]
+                else:
+                    dep_blk, rest_blk = chunk, ""
+
+                if "C4.2" in item_ids:
+                    b0 = dep_blk
+                    if "registry.gke.io/functional-type" not in dep_blk:
+                        dep_blk = re.sub(
+                            r'(metadata\s*\{[\s\S]*?\blabels\s*=\s*\{\s*\n)([ \t]*)(app\s*=\s*var\.project_name)',
+                            r'\1\2\3\n\2"registry.gke.io/functional-type" = "AGENT"',
+                            dep_blk,
+                            count=1,
+                        )
+                    if "iam.gke.io/spiffe-identity-type" not in dep_blk:
+                        if re.search(r'template\s*\{\s*\n[ \t]*metadata\s*\{[\s\S]*?annotations\s*=\s*\{', dep_blk):
+                            dep_blk = re.sub(
+                                r'(template\s*\{\s*\n[ \t]*metadata\s*\{[\s\S]*?annotations\s*=\s*\{\s*\n)',
+                                r'\1          "iam.gke.io/spiffe-identity-type" = "agent-identity"\n',
+                                dep_blk,
+                                count=1,
+                            )
+                        else:
+                            dep_blk = re.sub(
+                                r'(template\s*\{\s*\n[ \t]*metadata\s*\{[\s\S]*?labels\s*=\s*\{[^}]*\})',
+                                (
+                                    r'\1\n'
+                                    '        annotations = {\n'
+                                    '          # [C4.2] Official GKE Agent Identity (SPIFFE) annotation\n'
+                                    '          "iam.gke.io/spiffe-identity-type" = "agent-identity"\n'
+                                    '        }'
+                                ),
+                                dep_blk,
+                                count=1,
+                            )
+                    if dep_blk != b0 and "C4.2" not in applied:
+                        applied.append("C4.2")
+
+                drain_flag = "GKE_DRAIN" if "GKE_DRAIN" in item_ids else ("C1.2" if "C1.2" in item_ids else "")
+                if drain_flag:
+                    b0 = dep_blk
+                    if "tcp_socket" in dep_blk:
+                        dep_blk = re.sub(
+                            r'([ \t]*)tcp_socket\s*\{\s*\n[ \t]*port\s*=\s*(\d+)\s*\n[ \t]*\}',
+                            r'\1http_get {\n\1  path = "/list-apps"\n\1  port = \2\n\1}',
+                            dep_blk,
+                        )
+                    grace_sec = max(60, int(params.gke_termination_grace_seconds))
+                    if "termination_grace_period_seconds" not in dep_blk:
+                        dep_blk = re.sub(
+                            r"(^[ \t]*container\s*\{)",
+                            f"        termination_grace_period_seconds = {grace_sec} # [GKE-O1] Drain active agent streams before SIGKILL\n\n" + r"\1",
+                            dep_blk,
+                            count=1,
+                            flags=re.MULTILINE,
+                        )
+                    if "pre_stop" not in dep_blk:
+                        pre_stop_blk = (
+                            "          # [GKE-O1] Wait for LB/Gateway EndpointSlice deregistration before SIGTERM\n"
+                            "          lifecycle {\n"
+                            "            pre_stop {\n"
+                            "              exec {\n"
+                            '                command = ["/bin/sh", "-c", "sleep 10"]\n'
+                            "              }\n"
+                            "            }\n"
+                            "          }\n\n"
+                        )
+                        if re.search(r"^[ \t]*startup_probe\s*\{", dep_blk, flags=re.MULTILINE):
+                            dep_blk = re.sub(r"(^[ \t]*startup_probe\s*\{)", pre_stop_blk + r"\1", dep_blk, count=1, flags=re.MULTILINE)
+                        elif re.search(r"^[ \t]*readiness_probe\s*\{", dep_blk, flags=re.MULTILINE):
+                            dep_blk = re.sub(r"(^[ \t]*readiness_probe\s*\{)", pre_stop_blk + r"\1", dep_blk, count=1, flags=re.MULTILINE)
+                    if dep_blk != b0 and drain_flag not in applied:
+                        applied.append(drain_flag)
+
+                if "C2.1" in item_ids:
+                    b0 = dep_blk
+                    dep_blk = _inject_env_before(dep_blk, "LOGS_BUCKET_NAME", "AGENT_ENGINE_SESSION_ID", "var.agent_engine_id")
+                    if dep_blk != b0 and "C2.1" not in applied:
+                        applied.append("C2.1")
+
+                if "C5.1" in item_ids:
+                    b0 = dep_blk
+                    dep_blk = _inject_env_before(dep_blk, "LOGS_BUCKET_NAME", "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", '"NO_CONTENT"')
+                    dep_blk = _inject_env_before(dep_blk, "LOGS_BUCKET_NAME", "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS", '"false"')
+                    if dep_blk != b0 and "C5.1" not in applied:
+                        applied.append("C5.1")
+
+                parts.append(dep_blk + rest_blk)
+            txt = "".join(parts)
+
+    if applied and txt != existing_service_tf:
+        record(f"{cicd_rel}/service.tf", txt, applied)
+
+    # 4. cicd/production_ready.tf — standalone new resources for Agent Runtime (AR-S3) across staging & prod
+    if target == "agent_runtime" and "C4.4" in item_ids:
+        cicd_pr_tf = '''# deployment/terraform/cicd/production_ready.tf
+# Isolated Production-Readiness add-on resources for multi-project CI/CD (staging & prod via local.deploy_project_ids)
+# Note: iamEnforcementMode defaults to "DRY_RUN" to prevent HTTP 498 disruption before essential APIs are allowlisted.
+
+locals {
+  agent_gateway_api_list = [
+    "networkservices.googleapis.com",
+    "networksecurity.googleapis.com",
+    "serviceextensions.googleapis.com",
+    "modelarmor.googleapis.com",
+    "iap.googleapis.com",
+  ]
+}
+
+resource "google_project_service" "agent_gateway_apis" {
+  for_each = {
+    for pair in setproduct(keys(local.deploy_project_ids), local.agent_gateway_api_list) :
+    "${pair[0]}_${replace(pair[1], ".", "_")}" => {
+      project = local.deploy_project_ids[pair[0]]
+      service = pair[1]
+    }
+  }
+  project            = each.value.project
+  service            = each.value.service
+  disable_on_destroy = false
+}
+
+resource "google_network_services_agent_gateway" "egress_gateway" {
+  for_each  = local.deploy_project_ids
+  project   = each.value
+  location  = var.region
+  name      = "${var.project_name}-egress-gw"
+  protocols = ["MCP"]
+
+  google_managed {
+    governed_access_path = "AGENT_TO_ANYWHERE"
+  }
+
+  registries = [
+    "//agentregistry.googleapis.com/projects/${each.value}/locations/${var.region}",
+  ]
+
+  depends_on = [
+    google_project_service.agent_gateway_apis,
+    google_project_service.deploy_project_services,
+  ]
+}
+
+resource "google_network_services_authz_extension" "iap_request_authz_ext" {
+  for_each  = local.deploy_project_ids
+  project   = each.value
+  location  = var.region
+  name      = "${var.project_name}-iap-authz-ext"
+  service   = "iap.googleapis.com"
+  timeout   = "1s"
+  fail_open = false
+
+  metadata = {
+    iapPolicyVersion   = "V2"
+    iamEnforcementMode = var.agent_gateway_enforcement_mode
+  }
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}
+
+resource "google_network_security_authz_policy" "iap_request_authz_policy" {
+  for_each       = local.deploy_project_ids
+  project        = each.value
+  location       = var.region
+  name           = "${var.project_name}-iap-authz-policy"
+  policy_profile = "REQUEST_AUTHZ"
+  action         = "CUSTOM"
+
+  target {
+    resources = [
+      google_network_services_agent_gateway.egress_gateway[each.key].id,
+    ]
+  }
+
+  custom_provider {
+    authz_extension {
+      resources = [
+        google_network_services_authz_extension.iap_request_authz_ext[each.key].id,
+      ]
+    }
+  }
+
+  depends_on = [
+    google_network_services_agent_gateway.egress_gateway,
+    google_network_services_authz_extension.iap_request_authz_ext,
+  ]
+}
+
+# ------------------------------------------------------------------------------
+# [AR-S3 Follow-up] After auditing DRY_RUN logs in staging/prod, add per-env
+# roles/iap.egressor CEL bindings + Model Armor templates (piAndJailbreak + sdp)
+# before promoting var.agent_gateway_enforcement_mode = "ENFORCED".
+# ------------------------------------------------------------------------------
+'''
+        record(f"{cicd_rel}/production_ready.tf", cicd_pr_tf, ["C4.4"])
+
+
 def _prepare_alerts_tf(
     root: Path,
     project_name: str,
@@ -3589,9 +3991,11 @@ _registry.register_artifact_service("shared", lambda uri, **kw: get_artifact_ser
 
 _MEMORY_BANK_BLOCK = '''
 
-# [Memory Bank] Cross-session long-term memory (VertexAiMemoryBankService).
-# Wire it into the Runner / get_fast_api_app (memory_service=get_memory_service()) and
-# add a memory tool (e.g. PreloadMemoryTool) + after_agent_callback(add_session_to_memory) where needed.
+# --- [BEGIN prod-ready: *-F2 Memory Bank] ---
+# Cross-session long-term memory (`VertexAiMemoryBankService`) registered in ADK service registry.
+MEMORY_SERVICE_URI = "shared://memory"
+
+
 @functools.cache
 def get_memory_service():
     """Returns Memory Bank (`VertexAiMemoryBankService`) when an Agent Platform instance ID is set, else in-memory (local dev)."""
@@ -3615,6 +4019,15 @@ def get_memory_service():
     from google.adk.memory import InMemoryMemoryService
 
     return InMemoryMemoryService()
+
+
+try:
+    from google.adk.cli.service_registry import get_service_registry as _get_mem_registry
+
+    _get_mem_registry().register_memory_service("shared", lambda uri, **kw: get_memory_service())
+except Exception:
+    pass
+# --- [END prod-ready: *-F2 Memory Bank] ---
 '''
 
 
@@ -3624,11 +4037,13 @@ def _prepare_memory_bank_services_py(
     item_ids: set[str],
     planned_files: dict[str, tuple[str, list[str]]],
 ) -> None:
-    """[CR-F2 / GKE-F2] Adds a Memory Bank (`VertexAiMemoryBankService`) factory to services.py."""
-    if "MEMBANK" not in item_ids or target not in ("cloud_run", "gke"):
+    """[AR-F2 / CR-F2 / GKE-F2] Adds Memory Bank (`VertexAiMemoryBankService`) + registry wiring to services.py."""
+    if "MEMBANK" not in item_ids:
         return
     services_rel = "app/app_utils/services.py"
     path = root / services_rel
+    if target == "agent_runtime" and services_rel not in planned_files and not path.exists():
+        return
     if services_rel in planned_files:
         content, items = planned_files[services_rel]
     else:
@@ -3700,7 +4115,7 @@ def _prepare_cloud_run_authn(
     if "AUTHN" not in item_ids or target != "cloud_run":
         return
     candidates: list[str] = []
-    for d in {resolve_terraform_rel_dir(root), "deployment/terraform"}:
+    for d in {resolve_terraform_rel_dir(root), "deployment/terraform", "deployment/terraform/cicd"}:
         if (root / d).is_dir():
             candidates.extend(f"{d}/{p.name}" for p in sorted((root / d).glob("*.tf")))
     candidates.append("Makefile")
@@ -3722,6 +4137,268 @@ def _prepare_cloud_run_authn(
             planned_files[rel] = (updated, sorted(set(items) | {"AUTHN"}))
 
 
+_AGENT_MEMBANK_HELPERS = '''# --- [BEGIN prod-ready: *-F2 Memory Bank] ---
+from google.adk.tools import preload_memory
+
+
+async def auto_save_session_to_memory_callback(callback_context):
+    """[prod-ready: *-F2] Persist completed session turns into Memory Bank (ADK official callback pattern)."""
+    if hasattr(callback_context, "add_session_to_memory"):
+        try:
+            await callback_context.add_session_to_memory()
+        except ValueError:
+            # Skip silently when memory_service is not wired (e.g., local unit tests without Runner memory_service)
+            pass
+# --- [END prod-ready: *-F2 Memory Bank] ---
+'''
+
+
+def _split_inline_comment(line: str) -> tuple[str, str]:
+    """Splits a single Python line into (code, comment) without misreading '#' inside string literals."""
+    in_q: str | None = None
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if in_q:
+            if ch == "\\" and i + 1 < len(line):
+                i += 2
+                continue
+            if line.startswith(in_q, i):
+                i += len(in_q)
+                in_q = None
+                continue
+        else:
+            if line[i : i + 3] in ('"""', "'''"):
+                in_q = line[i : i + 3]
+                i += 3
+                continue
+            if ch in ('"', "'"):
+                in_q = ch
+            elif ch == "#":
+                return line[:i], line[i:]
+        i += 1
+    return line, ""
+
+
+def _append_kwarg_block(body: str, block_lines: list[str]) -> str:
+    """Appends keyword-argument lines inside a Python call body, ensuring a trailing comma on the last code line."""
+    lines = body.splitlines()
+    for idx in range(len(lines) - 1, -1, -1):
+        raw = lines[idx]
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        code_part, comment_part = _split_inline_comment(raw)
+        code_r = code_part.rstrip()
+        if code_r and not code_r.endswith(","):
+            pad = code_part[len(code_r) :]
+            lines[idx] = f"{code_r},{pad}{comment_part}" if comment_part else f"{code_r},"
+        break
+    prefix = "\n".join(lines).rstrip("\n")
+    return (prefix + "\n" if prefix else "\n") + "\n".join(block_lines) + "\n"
+
+
+def _patch_agent_py_memory_bank(txt: str) -> str:
+    """Non-destructively wires ADK Memory Bank read tool (`preload_memory`) & write callback (`add_session_to_memory`).
+
+    Preserves all original lines as `# [ORIGINAL before prod-ready *-F2] ...` comments and wraps
+    every injected/modified region with `# --- [BEGIN/END prod-ready: *-F2 Memory Bank] ---`.
+    """
+    has_read = bool(re.search(r"\b(?:PreloadMemoryTool|preload_memory|LoadMemoryTool|load_memory)\b", txt))
+    has_write = bool(re.search(r"\b(?:add_session_to_memory|add_events_to_memory|add_memory)\b", txt))
+    if has_read and has_write:
+        return txt
+
+    out = txt
+    # 1. Add helper import + callback right before the first `Agent(` / `LlmAgent(` assignment (or after imports)
+    need_import = not has_read
+    need_cb = not has_write
+    if need_import or need_cb:
+        helper_lines = ["# --- [BEGIN prod-ready: *-F2 Memory Bank] ---"]
+        if need_import:
+            helper_lines.append("from google.adk.tools import preload_memory")
+        if need_cb:
+            if need_import:
+                helper_lines.append("")
+                helper_lines.append("")
+            helper_lines.extend([
+                "async def auto_save_session_to_memory_callback(callback_context):",
+                '    """[prod-ready: *-F2] Persist completed session turns into Memory Bank (ADK official callback pattern)."""',
+                '    if hasattr(callback_context, "add_session_to_memory"):',
+                "        try:",
+                "            await callback_context.add_session_to_memory()",
+                "        except ValueError:",
+                "            pass  # Skip when memory_service is not wired (e.g., local unit tests)",
+            ])
+        helper_lines.append("# --- [END prod-ready: *-F2 Memory Bank] ---")
+        helper_block = "\n".join(helper_lines) + "\n\n\n"
+
+        agent_assign = re.search(r"^[ \t]*\w+\s*=\s*(?:LlmAgent|Agent)\s*\(", out, flags=re.MULTILINE)
+        if agent_assign:
+            out = out[: agent_assign.start()] + helper_block + out[agent_assign.start() :]
+        else:
+            out = helper_block + out
+
+    # 2. Locate the first `Agent(` / `LlmAgent(` call span cleanly (balanced parens)
+    m_call = re.search(r"\b(?:LlmAgent|Agent)\s*\(", out)
+    if not m_call:
+        return out
+    open_idx = m_call.end() - 1
+    depth, i = 0, open_idx
+    in_str: str | None = None
+    while i < len(out):
+        ch = out[i]
+        if in_str:
+            if ch == "\\" and i + 1 < len(out):
+                i += 2
+                continue
+            if out.startswith(in_str, i):
+                i += len(in_str)
+                in_str = None
+                continue
+            i += 1
+            continue
+        if out[i : i + 3] in ('"""', "'''"):
+            in_str = out[i : i + 3]
+            i += 3
+            continue
+        if ch in ('"', "'"):
+            in_str = ch
+            i += 1
+            continue
+        if ch == "#":
+            nl = out.find("\n", i)
+            i = len(out) if nl == -1 else nl + 1
+            continue
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    if depth != 0:
+        return out
+
+    call_body = out[open_idx + 1 : i]
+    updated_body = call_body
+    m_indent = re.search(r"^([ \t]+)\w+\s*=", call_body, flags=re.MULTILINE)
+    kw_indent = m_indent.group(1) if m_indent else "    "
+
+    # 2a. Wire `preload_memory` into `tools=[...]` (commenting out original line(s)!)
+    if not has_read:
+        m_tools = re.search(r"(^[ \t]*)(tools\s*=\s*\[)([^\]]*)(\][ \t]*,?)", updated_body, flags=re.MULTILINE)
+        if m_tools:
+            indent, prefix, inner, suffix = m_tools.group(1), m_tools.group(2), m_tools.group(3), m_tools.group(4)
+            suffix_comma = suffix if suffix.rstrip().endswith(",") else suffix.rstrip() + ","
+            orig_lines = m_tools.group(0).splitlines()
+            commented_orig = "\n".join(f"{indent}# [ORIGINAL before prod-ready *-F2] {ln.lstrip()}" for ln in orig_lines)
+            inner_stripped = inner.strip()
+            if "\n" in inner:
+                # Multiline tools list
+                item_indent = indent + "    "
+                cleaned_inner = inner.rstrip()
+                if cleaned_inner and not cleaned_inner.endswith(","):
+                    cleaned_inner += ","
+                new_tools = f"{indent}{prefix}{cleaned_inner}\n{item_indent}preload_memory,\n{indent}{suffix_comma}"
+            else:
+                new_inner = f"{inner_stripped.rstrip(',')}, preload_memory" if inner_stripped else "preload_memory"
+                new_tools = f"{indent}{prefix}{new_inner}{suffix_comma}"
+            replacement = (
+                f"{indent}# --- [BEGIN prod-ready: *-F2 Memory Bank (read tool)] ---\n"
+                f"{commented_orig}\n"
+                f"{new_tools}\n"
+                f"{indent}# --- [END prod-ready: *-F2 Memory Bank (read tool)] ---"
+            )
+            updated_body = updated_body[: m_tools.start()] + replacement + updated_body[m_tools.end() :]
+        else:
+            # No tools= kwarg yet -> inject before closing paren
+            updated_body = _append_kwarg_block(
+                updated_body,
+                [
+                    f"{kw_indent}# --- [BEGIN prod-ready: *-F2 Memory Bank (read tool)] ---",
+                    f"{kw_indent}tools=[preload_memory],",
+                    f"{kw_indent}# --- [END prod-ready: *-F2 Memory Bank (read tool)] ---",
+                ],
+            )
+
+    # 2b. Wire `after_agent_callback=auto_save_session_to_memory_callback` (preserving any existing callback!)
+    if not has_write:
+        m_cb = re.search(r"(^[ \t]*)(after_agent_callback\s*=\s*)([^\n,]+)(,?)", updated_body, flags=re.MULTILINE)
+        if m_cb:
+            indent, prefix, expr, comma = m_cb.group(1), m_cb.group(2), m_cb.group(3).strip(), m_cb.group(4) or ","
+            commented_orig = f"{indent}# [ORIGINAL before prod-ready *-F2] {m_cb.group(0).lstrip()}"
+            if expr.startswith("[") and expr.endswith("]"):
+                inner_cb = expr[1:-1].strip().rstrip(",")
+                new_expr = f"[{inner_cb}, auto_save_session_to_memory_callback]" if inner_cb else "[auto_save_session_to_memory_callback]"
+            else:
+                new_expr = f"[{expr}, auto_save_session_to_memory_callback]"
+            replacement = (
+                f"{indent}# --- [BEGIN prod-ready: *-F2 Memory Bank (write hook)] ---\n"
+                f"{commented_orig}\n"
+                f"{indent}{prefix}{new_expr}{comma}\n"
+                f"{indent}# --- [END prod-ready: *-F2 Memory Bank (write hook)] ---"
+            )
+            updated_body = updated_body[: m_cb.start()] + replacement + updated_body[m_cb.end() :]
+        else:
+            updated_body = _append_kwarg_block(
+                updated_body,
+                [
+                    f"{kw_indent}# --- [BEGIN prod-ready: *-F2 Memory Bank (write hook)] ---",
+                    f"{kw_indent}after_agent_callback=auto_save_session_to_memory_callback,",
+                    f"{kw_indent}# --- [END prod-ready: *-F2 Memory Bank (write hook)] ---",
+                ],
+            )
+
+    return out[: open_idx + 1] + updated_body + out[i:]
+
+
+def _wire_memory_service_in_fastapi(txt: str) -> str:
+    """Wires `memory_service=services.get_memory_service()` and `memory_service_uri=services.MEMORY_SERVICE_URI` cleanly."""
+    out = txt
+    if "Runner(" in out and "memory_service=" not in out:
+        out = re.sub(
+            r"(^[ \t]*)(session_service\s*=\s*services\.get_session_service\(\),)",
+            (
+                r"\1\2\n"
+                r"\1# --- [BEGIN prod-ready: *-F2 Memory Bank] ---\n"
+                r"\1memory_service=services.get_memory_service(),\n"
+                r"\1# --- [END prod-ready: *-F2 Memory Bank] ---"
+            ),
+            out,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    if "get_fast_api_app(" in out and "memory_service_uri=" not in out:
+        before_sub = out
+        out = re.sub(
+            r"(^[ \t]*)(session_service_uri\s*=\s*services\.SESSION_SERVICE_URI,)",
+            (
+                r"\1\2\n"
+                r"\1# --- [BEGIN prod-ready: *-F2 Memory Bank] ---\n"
+                r"\1memory_service_uri=services.MEMORY_SERVICE_URI,\n"
+                r"\1# --- [END prod-ready: *-F2 Memory Bank] ---"
+            ),
+            out,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        if out == before_sub and "from app.app_utils import services" in out:
+            out = re.sub(
+                r"(^[ \t]*)(agents_dir\s*=\s*[^,\n]+,)",
+                (
+                    r"\1\2\n"
+                    r"\1# --- [BEGIN prod-ready: *-F2 Memory Bank] ---\n"
+                    r"\1memory_service_uri=services.MEMORY_SERVICE_URI,\n"
+                    r"\1# --- [END prod-ready: *-F2 Memory Bank] ---"
+                ),
+                out,
+                count=1,
+                flags=re.MULTILINE,
+            )
+    return out
+
+
 def _prepare_agent_and_fastapi_py(
     root: Path,
     project_name: str,
@@ -3737,6 +4414,14 @@ def _prepare_agent_and_fastapi_py(
         applied_agent: list[str] = []
 
         # NOTE: Gemini retry_options (legacy C6.2) is ADK agent-code territory — never injected by the checklist.
+        # [*-F2] Memory Bank requires ADK read tool (`preload_memory`) + write callback (`add_session_to_memory`).
+        # Original lines are preserved as `# [ORIGINAL before prod-ready *-F2]` comments; user approves diff before apply.
+        if "MEMBANK" in item_ids:
+            patched_mem = _patch_agent_py_memory_bank(txt)
+            if patched_mem != txt:
+                txt = patched_mem
+                applied_agent.append("MEMBANK")
+
         if applied_agent:
             record(agent_rel, txt, applied_agent)
 
@@ -3822,10 +4507,16 @@ app.title = "{project_name}"
             if updated_fa != before_otel and "C5.1" not in applied_fa:
                 applied_fa.append("C5.1")
 
+        if "MEMBANK" in item_ids:
+            before_mem_fa = updated_fa
+            updated_fa = _wire_memory_service_in_fastapi(updated_fa)
+            if updated_fa != before_mem_fa and "MEMBANK" not in applied_fa:
+                applied_fa.append("MEMBANK")
+
         if updated_fa != existing_fa:
             record(fastapi_rel, updated_fa, applied_fa or ["C5.1"])
     elif target in ("cloud_run", "gke"):
-        use_services = "C2.1" in item_ids
+        use_services = "C2.1" in item_ids or "MEMBANK" in item_ids
         if use_services:
             fastapi_content = f'''"""FastAPI entrypoint compatible with google-agents-cli v1.5.0 (VertexAiSessionService)."""
 
@@ -3900,7 +4591,9 @@ app: FastAPI = get_fast_api_app(
 )
 app.title = "{project_name}"
 '''
-        record(fastapi_rel, fastapi_content, ["C1.2", "C2.1", "C5.1"])
+        if "MEMBANK" in item_ids:
+            fastapi_content = _wire_memory_service_in_fastapi(fastapi_content)
+        record(fastapi_rel, fastapi_content, ["C1.2", "C2.1", "C5.1"] + (["MEMBANK"] if "MEMBANK" in item_ids else []))
 
 
 def _prepare_pyproject_toml(

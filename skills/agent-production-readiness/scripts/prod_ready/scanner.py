@@ -752,25 +752,71 @@ def _eval_ar_session(ctx: _Ctx) -> Eval:
     return ("GREEN", False, "Agent Runtime 기본 관리형 영속 세션 저장(VertexAiSessionService) 사용 (InMemory 강제 없음)")
 
 
+_MEM_READ_RE = re.compile(r"\b(?:PreloadMemoryTool|preload_memory|LoadMemoryTool|load_memory)\b")
+_MEM_WRITE_RE = re.compile(r"\b(?:add_session_to_memory|add_events_to_memory|add_memory)\b")
+
+
 def _eval_memory_bank(ctx: _Ctx) -> Eval:
-    """CR-F2 / GKE-F2: VertexAiMemoryBankService for cross-session memory."""
-    has_bank = "VertexAiMemoryBankService" in ctx.app_py or bool(
-        re.search(r"memory_service_uri\s*=\s*[\"']agentengine://", ctx.app_py)
+    """CR-F2 / GKE-F2: VertexAiMemoryBankService + serving wiring + ADK read/write hooks."""
+    code = _strip_py_comments(ctx.app_py)
+    has_bank = "VertexAiMemoryBankService" in code or bool(
+        re.search(r"memory_service_uri\s*=\s*[\"']agentengine://", code)
     )
-    if has_bank:
-        return ("GREEN", False, "VertexAiMemoryBankService(Memory Bank)로 세션 간 기억 관리 구성 완료")
-    if "InMemoryMemoryService" in ctx.app_py:
-        return ("RED", False, "InMemoryMemoryService 사용 중 — 재시작 시 장기 기억 소실 (Memory Bank 연결 필요)")
-    return ("RED", False, "메모리 사용이 감지되었으나 Memory Bank(VertexAiMemoryBankService) 미연결")
+    if not has_bank:
+        if "InMemoryMemoryService" in code:
+            return ("RED", False, "InMemoryMemoryService 사용 중 — 재시작 시 장기 기억 소실 (Memory Bank 연결 필요)")
+        return ("RED", False, "메모리 사용이 감지되었으나 Memory Bank(VertexAiMemoryBankService) 미연결")
+
+    serving_src = _strip_py_comments(ctx.fast_api_py + "\n" + ctx.agent_engine_app_py)
+    has_serving = bool(re.search(r"\bmemory_service\s*=|\bmemory_service_uri\s*=", serving_src))
+    has_read = bool(_MEM_READ_RE.search(code))
+    has_write = bool(_MEM_WRITE_RE.search(code))
+    missing: list[str] = []
+    if not has_serving:
+        missing.append("서빙 연결(fast_api_app.py memory_service)")
+    if not has_read:
+        missing.append("ADK 읽기 도구(preload_memory / load_memory)")
+    if not has_write:
+        missing.append("ADK 저장 콜백(add_session_to_memory)")
+    if not missing:
+        return (
+            "GREEN",
+            False,
+            "VertexAiMemoryBankService + 서빙 연결(memory_service) + ADK 읽기 도구(preload_memory) · 저장 콜백(add_session_to_memory) 구성 완료",
+        )
+    return (
+        "AMBER",
+        False,
+        f"VertexAiMemoryBankService는 정의되었으나 실제 동작에 필요한 구성 누락: {', '.join(missing)}",
+    )
 
 
 def _eval_ar_memory(ctx: _Ctx) -> Eval:
-    """AR-F2: Agent Runtime connects Memory Bank by default unless the app forces InMemoryMemoryService."""
-    if "InMemoryMemoryService" in ctx.app_py:
+    """AR-F2: Agent Runtime connects Memory Bank by default; app/agent.py (and custom fast_api_app.py) still need read/write/serving wiring."""
+    code = _strip_py_comments(ctx.app_py)
+    if "InMemoryMemoryService" in code and "VertexAiMemoryBankService" not in code:
         return ("RED", False, "InMemoryMemoryService 강제 사용 — Memory Bank(VertexAiMemoryBankService)로 전환 필요")
-    if "VertexAiMemoryBankService" in ctx.app_py:
-        return ("GREEN", False, "VertexAiMemoryBankService(Memory Bank) 명시 연결 확인")
-    return ("GREEN", False, "Agent Runtime 기본 Memory Bank(VertexAiMemoryBankService) 연결 사용 (InMemory 강제 없음)")
+    has_read = bool(_MEM_READ_RE.search(code))
+    has_write = bool(_MEM_WRITE_RE.search(code))
+    missing: list[str] = []
+    serving_src = _strip_py_comments(ctx.fast_api_py)
+    if "Runner(" in serving_src and not re.search(r"\bmemory_service\s*=|\bmemory_service_uri\s*=", serving_src):
+        missing.append("서빙 연결(fast_api_app.py memory_service)")
+    if not has_read:
+        missing.append("ADK 읽기 도구(preload_memory / load_memory)")
+    if not has_write:
+        missing.append("ADK 저장 콜백(add_session_to_memory)")
+    if not missing:
+        return (
+            "GREEN",
+            False,
+            "Agent Runtime Memory Bank + ADK 읽기 도구(preload_memory) · 저장 콜백(add_session_to_memory) 구성 완료",
+        )
+    return (
+        "AMBER",
+        False,
+        f"Agent Runtime Memory Bank 실제 동작에 필요한 구성 누락: {', '.join(missing)}",
+    )
 
 
 def _eval_gke_drain(ctx: _Ctx) -> Eval:

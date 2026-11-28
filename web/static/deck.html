@@ -1200,118 +1200,172 @@
   .f6-dlink .dt { font-size: 17.5px; font-weight: 700; color: #FFFFFF; }
   .f6-dlink .dd { font-size: 13px; color: #94A3B8; line-height: 1.35; }
 
-  /* ---------- Slide BG : Why We Built This Platform (4-Point Background) ---------- */
+  /* ---------- Slide BG : Why We Built This Platform (Dense 2x2 Balanced Bento) ---------- */
   #pagebg {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFE 100%);
+    background: radial-gradient(circle at 10% 10%, rgba(66,133,244,.07) 0%, rgba(255,255,255,0) 38%),
+                radial-gradient(circle at 92% 90%, rgba(234,67,53,.06) 0%, rgba(255,255,255,0) 40%),
+                #F5F8FD;
   }
   .bg-head {
     display: flex; align-items: center; justify-content: space-between; gap: 18px;
   }
   .bg-kicker-box {
-    display: inline-flex; align-items: center; gap: 14px;
+    display: inline-flex; align-items: center; gap: 12px;
   }
   .bg-kicker-pill {
-    font-family: var(--mono); font-size: 13.5px; font-weight: 700; letter-spacing: .9px;
-    color: var(--blue-d); padding: 6px 18px; border: 1.5px solid #3C4043; border-radius: 3px;
+    font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .9px;
+    color: var(--blue-d); padding: 5px 15px; border: 1.5px solid rgba(26,115,232,.4); border-radius: 999px;
     background: #FFFFFF;
   }
   .bg-warn-pill {
-    padding: 10px 26px; border-radius: 10px; background: #FCE8E6; color: #C5221F;
-    font-size: 16.5px; font-weight: 700; letter-spacing: -.2px;
+    padding: 8px 22px; border-radius: 999px; background: #FCE8E6; color: #C5221F;
+    border: 1px solid rgba(217,48,37,.22); font-size: 15.5px; font-weight: 700; letter-spacing: -.2px;
   }
   .bg-h1 {
-    font-size: 46px; font-weight: 700; letter-spacing: -1.1px; color: var(--navy);
-    margin: 10px 0 18px; line-height: 1.15;
+    font-size: 40px; font-weight: 700; letter-spacing: -1px; color: var(--navy);
+    margin: 8px 0 14px; line-height: 1.15;
   }
   .bg-h1 span { color: var(--blue); }
   .bg-grid {
-    display: grid; grid-template-columns: 1fr 1px 1fr; gap: 36px; flex: 1; align-items: stretch;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex: 1; min-height: 0;
   }
-  .bg-divider { background: #E2E8F0; width: 1px; margin: 4px 0 12px; }
-  .bg-col { display: flex; flex-direction: column; justify-content: space-between; gap: 20px; }
-  .bg-sec { display: flex; flex-direction: column; gap: 11px; }
+  .bg-col {
+    display: flex; flex-direction: column; gap: 16px; min-height: 0;
+  }
+  .bg-card {
+    background: #FFFFFF; border-radius: 20px; padding: 18px 20px 16px;
+    box-shadow: 0 14px 34px -22px rgba(13,43,94,.20), 0 0 0 1px rgba(218,220,224,.75);
+    display: flex; flex-direction: column; justify-content: space-between; gap: 11px;
+    flex: 1; min-height: 0; position: relative; overflow: hidden;
+  }
+  .bg-card.tall { flex: 1.12; }
+  .bg-card.short { flex: 0.94; }
+  .bg-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--blue);
+  }
+  .bg-card.c-g::before { background: var(--green); }
+  .bg-card.c-y::before { background: #E37400; }
+  .bg-card.c-r::before { background: var(--red); }
+
   .bg-sec-head {
-    display: flex; align-items: baseline; gap: 14px;
+    display: flex; align-items: center; gap: 11px;
   }
   .bg-num {
-    font-family: var(--mono); font-size: 38px; font-weight: 700; line-height: 1; letter-spacing: -1px;
+    font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.8px;
   }
   .bg-num.c-b { color: var(--blue); }
   .bg-num.c-g { color: var(--green); }
   .bg-num.c-y { color: #E37400; }
   .bg-num.c-r { color: var(--red); }
+  .bg-role-pill {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--blue-50); color: var(--blue-d); letter-spacing: .3px; flex-shrink: 0;
+  }
+  .bg-card.c-g .bg-role-pill { background: var(--green-50); color: var(--green-d); }
+  .bg-card.c-y .bg-role-pill { background: var(--yellow-50); color: #B06000; }
+  .bg-card.c-r .bg-role-pill { background: var(--red-50); color: var(--red-d); }
   .bg-sec-title {
-    font-size: 25px; font-weight: 700; color: var(--navy); letter-spacing: -.4px;
+    font-size: 21px; font-weight: 700; color: var(--navy); letter-spacing: -.4px; line-height: 1.2;
   }
-  /* Generic 6-Agent Enterprise Portfolio visual (zero customer info) */
-  .bg-poc-board {
-    background: #F4F7FC; border: 1px solid #DCE5F2; border-radius: 16px; padding: 14px 16px 12px;
-    box-shadow: 0 10px 24px -18px rgba(13,43,94,.22);
-    display: flex; flex-direction: column; gap: 10px;
+  .bg-subline {
+    font-size: 13.8px; color: var(--grey-700); line-height: 1.42; margin: -4px 0 0;
   }
+  .bg-subline b { color: var(--navy); }
+
+  /* 01: Generic 6-Agent AIOps Portfolio (zero customer info) */
   .bg-poc-grid {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px;
   }
   .bg-agent-card {
-    background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 11px; padding: 10px 11px;
-    display: flex; flex-direction: column; gap: 5px;
-    box-shadow: 0 4px 10px -8px rgba(13,43,94,.16);
+    background: #F8FAFE; border: 1px solid #DCE5F2; border-radius: 11px; padding: 9px 11px;
+    display: flex; flex-direction: column; gap: 4px;
   }
   .bg-agent-top {
     display: flex; align-items: center; gap: 7px;
   }
   .bg-agent-ico {
-    width: 24px; height: 24px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; flex-shrink: 0; background: var(--blue-50); color: var(--blue-d);
+    width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0; background: var(--blue-50); color: var(--blue-d);
   }
   .bg-agent-ico.g { background: var(--green-50); color: var(--green-d); }
   .bg-agent-ico.y { background: var(--yellow-50); color: var(--yellow-d); }
   .bg-agent-ico.r { background: var(--red-50); color: var(--red-d); }
-  .bg-agent-top b { font-size: 13px; color: var(--navy); line-height: 1.2; }
-  .bg-agent-sub { font-size: 11.2px; color: var(--grey-700); line-height: 1.3; }
-  .bg-agent-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .bg-agent-top b { font-size: 13.2px; color: var(--navy); line-height: 1.15; }
+  .bg-agent-sub { font-size: 11.4px; color: var(--grey-700); line-height: 1.3; }
+  .bg-agent-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 1px; }
   .bg-agent-tags span {
-    font-family: var(--mono); font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 999px;
-    background: #EEF4FE; color: var(--blue-d);
+    font-family: var(--mono); font-size: 9.8px; font-weight: 700; padding: 1.5px 6px; border-radius: 5px;
+    background: #E8F0FE; color: var(--blue-d);
   }
   .bg-agent-tags span.tg-g { background: #E6F4EA; color: var(--green-d); }
-  .bg-agent-tags span.tg-y { background: #FEF7E0; color: var(--yellow-d); }
-  .bg-poc-foot {
+  .bg-agent-tags span.tg-y { background: #FEF7E0; color: #B06000; }
+  .bg-agent-tags span.tg-r { background: #FCE8E6; color: var(--red-d); }
+
+  .bg-foot-bar {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 8px 12px; border-radius: 10px; background: #E8F0FE; color: var(--navy);
-    font-size: 12.2px; font-weight: 600;
+    padding: 9px 13px; border-radius: 11px; background: #EEF4FE; color: var(--navy);
+    font-size: 13px; font-weight: 600; line-height: 1.38;
   }
-  .bg-poc-foot span:last-child {
-    font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--blue-d); white-space: nowrap;
+  .bg-foot-bar.g { background: #EAF6ED; color: #0D5527; }
+  .bg-foot-bar.y { background: #FEF7E0; color: #7C4300; }
+  .bg-foot-bar.dark {
+    background: linear-gradient(135deg, #132240 0%, #0D182D 100%); color: #F1F5F9;
   }
-  /* 3-mini-card row (used in 02 & 03) */
+  .bg-foot-bar.dark b { color: #8AB4F8; }
+  .bg-foot-chip {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: #FFFFFF; color: var(--blue-d); white-space: nowrap; flex-shrink: 0;
+  }
+  .bg-foot-bar.g .bg-foot-chip { color: var(--green-d); }
+
+  /* 02 & 03: 3-column mini cards */
   .bg-tri {
-    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; flex: 1;
   }
   .bg-tcard {
-    border-radius: 10px; padding: 15px 14px 14px; text-align: center;
-    border-top: 4px solid var(--blue); background: #EDF3FE;
-    display: flex; flex-direction: column; gap: 6px; justify-content: center;
+    border-radius: 12px; padding: 12px 12px 11px;
+    border-top: 3.5px solid var(--blue); background: #F1F6FE;
+    display: flex; flex-direction: column; gap: 5px;
   }
-  .bg-tcard.tc-g { border-top-color: var(--green); background: #EAF6ED; }
-  .bg-tcard.tc-y { border-top-color: var(--yellow); background: #FEF7E0; }
-  .bg-tcard b { font-size: 17.5px; color: var(--blue-d); letter-spacing: -.2px; }
-  .bg-tcard.tc-g b { color: var(--green-d); }
-  .bg-tcard.tc-y b { color: var(--yellow-d); }
-  .bg-tcard span { font-size: 14px; color: var(--grey-800); line-height: 1.4; }
-  .bg-caption {
-    font-size: 15.5px; color: var(--grey-800); line-height: 1.5; margin: 2px 0 0;
+  .bg-tcard.tc-g { border-top-color: var(--green); background: #EDF8F0; }
+  .bg-tcard.tc-y { border-top-color: #E37400; background: #FEF8E6; }
+  .bg-tcard-head {
+    display: flex; align-items: center; gap: 7px;
   }
-  .bg-caption b { color: var(--navy); }
+  .bg-tcard-head img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+  .bg-tcard-stage {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: var(--blue-d);
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .bg-tcard.tc-g .bg-tcard-stage { color: var(--green-d); }
+  .bg-tcard.tc-y .bg-tcard-stage { color: #B06000; }
+  .bg-tcard b { font-size: 15.5px; color: var(--navy); letter-spacing: -.25px; line-height: 1.2; }
+  .bg-tcard .bg-trole {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--blue-d);
+  }
+  .bg-tcard.tc-g .bg-trole { color: var(--green-d); }
+  .bg-tcard.tc-y .bg-trole { color: #B06000; }
+  .bg-tcard span.bg-tdesc { font-size: 12.6px; color: var(--grey-800); line-height: 1.42; }
+
+  /* 04: Day-1 Base + Gap Box */
+  .bg-day1-strip {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 13px; border-radius: 10px; background: #F1F5F9; border: 1px dashed #CBD5E1;
+    font-size: 13px; color: var(--navy);
+  }
+  .bg-day1-strip code {
+    font-family: var(--mono); font-weight: 700; color: var(--blue-d); background: #E8F0FE;
+    padding: 2px 7px; border-radius: 5px; font-size: 12px;
+  }
   .bg-gap-box {
-    border-left: 5px solid var(--red); background: #FDF2F1; border-radius: 0 12px 12px 0;
-    padding: 15px 18px; display: flex; flex-direction: column; gap: 9px;
+    border-left: 4.5px solid var(--red); background: #FDF2F1; border-radius: 0 12px 12px 0;
+    padding: 11px 15px; display: flex; flex-direction: column; gap: 7px;
   }
   .bg-gap-row {
-    display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 10px; align-items: baseline;
-    font-size: 14.8px; color: var(--grey-800); line-height: 1.45;
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: baseline;
+    font-size: 13.4px; color: var(--grey-800); line-height: 1.42;
   }
-  .bg-gap-row b { color: var(--navy); font-weight: 700; }
+  .bg-gap-row b { color: #B31412; font-weight: 700; }
 
   /* ---------- Slide Plugin : Antigravity Plugin Package Overview ---------- */
   #pageplugin {
@@ -1538,127 +1592,159 @@
             <span class="dot4"><i></i><i></i><i></i><i></i></span>
             <span class="bg-kicker-pill">01 · BACKGROUND</span>
           </div>
-          <span class="bg-warn-pill">PoC 성공 ≠ 상용 운영 준비 완료</span>
+          <span class="bg-warn-pill">PoC 동작 검증 성공 ≠ 상용(PROD) 운영 준비 완료</span>
         </div>
         <div class="bg-h1">왜 <span>Production Ready Agent Platform</span>을 만들었는가</div>
       </div>
 
       <div class="bg-grid">
-        <!-- Left Column: 01 & 02 -->
+        <!-- Left Column: 01 (출발점) & 02 (현실) -->
         <div class="bg-col">
-          <div class="bg-sec rvbox">
+          <!-- 01 -->
+          <div class="bg-card tall rvbox">
             <div class="bg-sec-head">
               <span class="bg-num c-b">01</span>
-              <span class="bg-sec-title">엔터프라이즈 Multi-Agent PoC → PROD</span>
+              <span class="bg-role-pill">출발점</span>
+              <span class="bg-sec-title">6대 AIOps Agent PoC → PROD 전환의 벽</span>
             </div>
-            <!-- Generic 6-Agent Enterprise AIOps PoC Portfolio (zero customer-specific content) -->
-            <div class="bg-poc-board" aria-label="엔터프라이즈 Multi-Agent PoC 포트폴리오 예시">
-              <div class="bg-poc-grid">
-                <div class="bg-agent-card">
-                  <div class="bg-agent-top"><span class="bg-agent-ico">⚡</span><b>Incident Triage</b></div>
-                  <div class="bg-agent-sub">장애 원인 분석 · 로그 상관관계</div>
-                  <div class="bg-agent-tags"><span>ADK</span><span class="tg-g">Multi-Turn</span></div>
-                </div>
-                <div class="bg-agent-card">
-                  <div class="bg-agent-top"><span class="bg-agent-ico g">🛡️</span><b>Change Advisor</b></div>
-                  <div class="bg-agent-sub">배포 변경 영향도 · 리스크 검증</div>
-                  <div class="bg-agent-tags"><span>MCP</span><span class="tg-y">HITL</span></div>
-                </div>
-                <div class="bg-agent-card">
-                  <div class="bg-agent-top"><span class="bg-agent-ico y">🔎</span><b>Code Reviewer</b></div>
-                  <div class="bg-agent-sub">PR 자동 리뷰 · 보안 패턴 점검</div>
-                  <div class="bg-agent-tags"><span>A2A</span><span>Sandbox</span></div>
-                </div>
-                <div class="bg-agent-card">
-                  <div class="bg-agent-top"><span class="bg-agent-ico">☁️</span><b>Cloud Ops Expert</b></div>
-                  <div class="bg-agent-sub">클라우드 리소스 상태 · 비용 진단</div>
-                  <div class="bg-agent-tags"><span>IAM</span><span class="tg-g">OAuth</span></div>
-                </div>
-                <div class="bg-agent-card">
-                  <div class="bg-agent-top"><span class="bg-agent-ico g">☸️</span><b>K8s Diagnostics</b></div>
-                  <div class="bg-agent-sub">클러스터 이벤트 · Pod 장애 분석</div>
-                  <div class="bg-agent-tags"><span>GKE</span><span class="tg-y">Tooling</span></div>
-                </div>
-                <div class="bg-agent-card">
-                  <div class="bg-agent-top"><span class="bg-agent-ico r">📊</span><b>SRE Analytics</b></div>
-                  <div class="bg-agent-sub">SLO 추이 · BigQuery 로그 분석</div>
-                  <div class="bg-agent-tags"><span>BQ</span><span>OTel</span></div>
-                </div>
+            <p class="bg-subline">단순 챗봇이 아니라 <b>Cloud SQL · GKE · BigQuery · 인프라 코드</b>에 직접 접근하는 운영 에이전트 6종 검증</p>
+
+            <!-- Generic 6-Agent AIOps Portfolio Diagram (zero customer screenshot/name) -->
+            <div class="bg-poc-grid" aria-label="6대 AIOps Agent 포트폴리오 예시">
+              <div class="bg-agent-card">
+                <div class="bg-agent-top"><span class="bg-agent-ico">⚡</span><b>Incident Analyzer</b></div>
+                <div class="bg-agent-sub">장애 원인 분석 · 로그 상관관계</div>
+                <div class="bg-agent-tags"><span>Monitoring</span><span class="tg-g">Logs</span></div>
               </div>
-              <div class="bg-poc-foot">
-                <span>PoC에서 검증된 6개 에이전트를 상용 전환하려면 모두 동일한 보안·운영 기준 적용 필요</span>
-                <span>PoC → PROD 표준화 필수</span>
+              <div class="bg-agent-card">
+                <div class="bg-agent-top"><span class="bg-agent-ico g">🛡️</span><b>Change Management</b></div>
+                <div class="bg-agent-sub">배포 변경 영향도 · 리스크 검토</div>
+                <div class="bg-agent-tags"><span>인프라 코드</span><span class="tg-y">승인</span></div>
               </div>
+              <div class="bg-agent-card">
+                <div class="bg-agent-top"><span class="bg-agent-ico y">🔎</span><b>Code Reviewer</b></div>
+                <div class="bg-agent-sub">PR 코드 리뷰 · 보안 패턴 점검</div>
+                <div class="bg-agent-tags"><span>Git / CI</span><span>Sandbox</span></div>
+              </div>
+              <div class="bg-agent-card">
+                <div class="bg-agent-top"><span class="bg-agent-ico">☁️</span><b>GCP Expert</b></div>
+                <div class="bg-agent-sub">클라우드 리소스 · DB 상태 진단</div>
+                <div class="bg-agent-tags"><span>Cloud SQL</span><span class="tg-g">IAM</span></div>
+              </div>
+              <div class="bg-agent-card">
+                <div class="bg-agent-top"><span class="bg-agent-ico g">☸️</span><b>K8S Expert</b></div>
+                <div class="bg-agent-sub">클러스터 이벤트 · Pod 장애 대응</div>
+                <div class="bg-agent-tags"><span>GKE</span><span class="tg-y">kubectl</span></div>
+              </div>
+              <div class="bg-agent-card">
+                <div class="bg-agent-top"><span class="bg-agent-ico r">📊</span><b>SRE Agent</b></div>
+                <div class="bg-agent-sub">SLO 추이 · 운영 로그 정밀 분석</div>
+                <div class="bg-agent-tags"><span>BigQuery</span><span class="tg-r">SLO</span></div>
+              </div>
+            </div>
+
+            <div class="bg-foot-bar">
+              <span>실제 운영(PROD)에 올리려니 <b>PoC 동작 검증과 상용 운영 준비 사이의 뚜렷한 Gap</b>을 현장에서 체감</span>
+              <span class="bg-foot-chip">PoC → PROD GAP</span>
             </div>
           </div>
 
-          <div class="bg-sec rvbox">
+          <!-- 02 -->
+          <div class="bg-card short c-g rvbox">
             <div class="bg-sec-head">
               <span class="bg-num c-g">02</span>
+              <span class="bg-role-pill">현실</span>
               <span class="bg-sec-title">모든 에이전트가 Agent Runtime은 아니다</span>
             </div>
+
             <div class="bg-tri">
               <div class="bg-tcard">
-                <b>Agent Runtime</b>
-                <span>표준 · 대화형</span>
+                <div class="bg-tcard-head">
+                  <img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="20" height="20">
+                  <b>Agent Runtime</b>
+                </div>
+                <span class="bg-trole">표준 · 대화형</span>
+                <span class="bg-tdesc">완전 관리형 워커 · 멀티턴 세션 · Memory Bank 중심 에이전트</span>
               </div>
               <div class="bg-tcard tc-g">
-                <b>Cloud Run</b>
-                <span>Ambient Agent</span>
+                <div class="bg-tcard-head">
+                  <img src="/static/icons/cloud-run.png" alt="Cloud Run" width="20" height="20">
+                  <b>Cloud Run</b>
+                </div>
+                <span class="bg-trole">Ambient · 이벤트형</span>
+                <span class="bg-tdesc">Monitoring 알람 → Pub/Sub Push 백그라운드 자율 대응 · 커스텀 API/인증</span>
               </div>
               <div class="bg-tcard tc-y">
-                <b>GKE</b>
-                <span>K8s · 격리 환경</span>
+                <div class="bg-tcard-head">
+                  <img src="/static/icons/gke.png" alt="GKE" width="20" height="20">
+                  <b>GKE</b>
+                </div>
+                <span class="bg-trole">K8s 표준 · 코드 격리</span>
+                <span class="bg-tdesc">기존 쿠버네티스 거버넌스 · 엄격한 네트워크·샌드박스 격리 요건</span>
               </div>
             </div>
-            <p class="bg-caption">
-              예) <b>Ambient Agent</b>(이벤트·백그라운드·커스텀 API)는 <b>Cloud Run</b> 적합<br/>
-              워크로드 특성에 따라 <b>Agent Runtime · Cloud Run · GKE</b> 분산이 현실
-            </p>
+
+            <div class="bg-foot-bar g">
+              <span>트리거 · 인증 · 격리 요건에 따라 <b>Agent Runtime · Cloud Run · GKE 3대 환경 분산 배포</b>가 불가피</span>
+              <span class="bg-foot-chip">MULTI-RUNTIME</span>
+            </div>
           </div>
         </div>
 
-        <div class="bg-divider" aria-hidden="true"></div>
-
-        <!-- Right Column: 03 & 04 -->
+        <!-- Right Column: 03 (본질) & 04 (보완 레이어) -->
         <div class="bg-col">
-          <div class="bg-sec rvbox">
+          <!-- 03 -->
+          <div class="bg-card tall c-y rvbox">
             <div class="bg-sec-head">
               <span class="bg-num c-y">03</span>
+              <span class="bg-role-pill">본질</span>
               <span class="bg-sec-title">에이전트도 결국 하나의 Application이다</span>
             </div>
+            <p class="bg-subline">Agent Runtime을 벗어나 <b>Cloud Run · GKE</b>를 선택하는 순간, <b>일반 상용 애플리케이션 심사 기준</b>까지 동일하게 통과 필수</p>
+
             <div class="bg-tri">
               <div class="bg-tcard">
+                <span class="bg-tcard-stage">배포 전 · PRE-DEPLOY</span>
                 <b>보안 · 네트워크</b>
-                <span>사설망(VPC/PSC)<br/>Non-Root · Secret</span>
+                <span class="bg-tdesc">• 사설망 (VPC / PSC)<br/>• Non-Root 컨테이너<br/>• Secret Manager 관리</span>
               </div>
               <div class="bg-tcard tc-g">
+                <span class="bg-tcard-stage">배포 시 · DELIVERY</span>
                 <b>CI/CD · 가용성</b>
-                <span>Terraform · 자동 배포<br/>헬스 프로브 · 무중단</span>
+                <span class="bg-tdesc">• Terraform IaC 자동화<br/>• 헬스 프로브 (Liveness)<br/>• 무중단 롤아웃 · PDB</span>
               </div>
               <div class="bg-tcard tc-y">
-                <b>관측 · Day-2 Ops</b>
-                <span>트레이스 · 메트릭<br/>알림(SLO) · 비용 · 복구</span>
+                <span class="bg-tcard-stage">운영 · DAY-2 OPS</span>
+                <b>관측 · 운영 복구</b>
+                <span class="bg-tdesc">• 메트릭 · Cloud Trace<br/>• SLO 기반 알림 정책<br/>• 비용 통제 · 장애 복구</span>
               </div>
             </div>
-            <p class="bg-caption">
-              Cloud Run · GKE를 쓰는 순간 <b>일반 상용 App 심사 기준</b>까지 동일하게 요구<br/>
-              AI 개발팀이 매번 인프라·SRE 기준까지 수동으로 맞추기엔 부담이 큼
-            </p>
+
+            <div class="bg-foot-bar y">
+              <span><b>현실적 한계:</b> AI 개발팀은 프롬프트·툴 로직 전문가 — 매번 Cloud Run·GKE 상용 인프라와 SRE 기준까지 수동으로 맞추기엔 부담 과다</span>
+            </div>
           </div>
 
-          <div class="bg-sec rvbox">
+          <!-- 04 -->
+          <div class="bg-card short c-r rvbox">
             <div class="bg-sec-head">
               <span class="bg-num c-r">04</span>
+              <span class="bg-role-pill">보완 레이어</span>
               <span class="bg-sec-title">agents-cli 배포 이후 남는 Cloud Run · GKE 공백</span>
             </div>
-            <p class="bg-caption" style="margin-top:-2px;">
-              <code>agents-cli</code>는 3대 환경의 스캐폴딩·Day-1 배포를 잘 지원하지만,<br/>
-              <b>Cloud Run · GKE 상용화 공백을 메우는 보완 레이어가 필요</b>
-            </p>
+
+            <div class="bg-day1-strip">
+              <span><code>agents-cli</code> 3대 환경 빠른 스캐폴딩 · Day-1 배포 지원</span>
+              <span style="color:#C5221F;font-weight:700;font-size:12.5px;">→ 범용 런타임(CR·GKE) 상용 설정·검증 공백 잔존</span>
+            </div>
+
             <div class="bg-gap-box">
-              <div class="bg-gap-row"><b>보안 공백</b><span>최소 권한(IAM 축소) · Agent Identity/WI · Registry · Gateway · Model Armor</span></div>
-              <div class="bg-gap-row"><b>운영 공백</b><span>영속 세션·Memory · 프롬프트 비기록 · Eval 차단 게이트 · 무중단 종료</span></div>
+              <div class="bg-gap-row"><b>보안 공백</b><span>최소 권한 IAM 축소 · Agent Identity / WI · Agent Registry · Agent Gateway</span></div>
+              <div class="bg-gap-row"><b>운영 공백</b><span>영속 세션·Memory Bank · 프롬프트 비기록(<code>NO_CONTENT</code>) · Eval 차단 게이트 · GKE 무중단 종료</span></div>
+            </div>
+
+            <div class="bg-foot-bar dark">
+              <span><b>Production Ready Agent Platform</b> = <code>agents-cli</code> 대체가 아닌, 위에서 <b>CR·GKE 상용 공백 + 인프라 BP</b>를 메우는 보완 레이어</span>
             </div>
           </div>
         </div>

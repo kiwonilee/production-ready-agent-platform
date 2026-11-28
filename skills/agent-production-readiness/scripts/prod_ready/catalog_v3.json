@@ -136,6 +136,27 @@
         "new": false
       },
       {
+        "id": "AR-OB2",
+        "category": "OB",
+        "title": "BigQuery Agent Analytics (구조화 이벤트 분석)",
+        "check": "Cloud Trace는 단기 지연·오류 추적에 강하지만 장기 토큰 비용·도구 호출 출처(Provenance)·대화 품질을 SQL과 LLM-as-judge로 분석하기 어렵습니다. 선택적으로 BigQuery Agent Analytics 플러그인과 BigQuery 데이터셋이 구성되어 있는지 확인합니다.",
+        "best_practice": "`google-adk[bigquery-analytics]`와 `BigQueryAgentAnalyticsPlugin`을 연결하고 BigQuery 데이터셋·Storage Write API 권한을 구성해 에이전트 이벤트를 비동기 스트리밍으로 적재합니다(선택형 Add-on · 판정 비차단).",
+        "references": [
+          {
+            "label": "ADK BigQuery Agent Analytics",
+            "url": "https://adk.dev/integrations/bigquery-agent-analytics/"
+          },
+          {
+            "label": "agents-cli Observability",
+            "url": "https://google.github.io/agents-cli/guide/deployment/"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
+        "new": false
+      },
+      {
         "id": "AR-S1",
         "category": "S",
         "title": "에이전트 전용 신원 · 최소 권한",
@@ -230,6 +251,52 @@
         "grade": "conditional",
         "condition": "delegated",
         "preview": true,
+        "new": false
+      },
+      {
+        "id": "AR-S6",
+        "category": "S",
+        "title": "Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)",
+        "check": "외부 사용자 입력이나 외부 도구 응답에는 프롬프트 인젝션·탈옥·민감정보(PII)·악성 URI가 섞일 수 있으며, 정규식 필터만으로는 방어하기 어렵습니다. 선택적으로 Model Armor 템플릿(`google_model_armor_template`)이 구성되어 입·출력 검사를 수행하는지 확인합니다.",
+        "best_practice": "Google Cloud Well-Architected(AI & ML) 및 SAIF 권고에 따라 `google_model_armor_template`(프롬프트 인젝션·탈옥, SDP 민감정보, 악성 URI 필터)을 생성하고 Agent Gateway 또는 인라인 API 호출로 입·출력 페이로드를 검사합니다(선택형 Add-on · 유료 · 판정 비차단).",
+        "references": [
+          {
+            "label": "Model Armor Overview",
+            "url": "https://cloud.google.com/security-command-center/docs/model-armor-overview"
+          },
+          {
+            "label": "Well-Architected: AI and ML",
+            "url": "https://cloud.google.com/architecture/framework/perspectives/ai-ml"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
+        "new": false
+      },
+      {
+        "id": "AR-S7",
+        "category": "S",
+        "title": "고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)",
+        "check": "결제·삭제·외부 시스템 쓰기 같은 비가역적 도구를 에이전트가 자율 실행하면 오판이나 프롬프트 인젝션 시 즉시 사고로 이어집니다. 선택적으로 고위험 도구에 ADK `require_confirmation` / `ToolConfirmation` 기반 사람 승인(HITL)이 연결되어 있는지 확인합니다.",
+        "best_practice": "파괴적·금전적·외부 쓰기 도구에 `FunctionTool(..., require_confirmation=True)` 또는 `ToolConfirmation`을 적용해 실행 전 사람 승인을 받도록 구성합니다(선택형 Add-on · 안내 전용 · 판정 비차단).",
+        "references": [
+          {
+            "label": "ADK Tool Confirmation",
+            "url": "https://google.github.io/adk-docs/tools/confirmation/"
+          },
+          {
+            "label": "ADK Safety & Security",
+            "url": "https://google.github.io/adk-docs/safety/"
+          },
+          {
+            "label": "Cloud Architecture Center",
+            "url": "https://docs.cloud.google.com/architecture"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
         "new": false
       }
     ],
@@ -327,6 +394,27 @@
           }
         ],
         "grade": "required",
+        "condition": null,
+        "preview": false,
+        "new": false
+      },
+      {
+        "id": "CR-OB2",
+        "category": "OB",
+        "title": "BigQuery Agent Analytics (구조화 이벤트 분석)",
+        "check": "Cloud Trace는 단기 지연·오류 추적에 강하지만 장기 토큰 비용·도구 호출 출처(Provenance)·대화 품질을 SQL과 LLM-as-judge로 분석하기 어렵습니다. 선택적으로 BigQuery Agent Analytics 플러그인과 BigQuery 데이터셋이 구성되어 있는지 확인합니다.",
+        "best_practice": "`google-adk[bigquery-analytics]`와 `BigQueryAgentAnalyticsPlugin`을 연결하고 BigQuery 데이터셋·Storage Write API 권한을 구성해 에이전트 이벤트를 비동기 스트리밍으로 적재합니다(선택형 Add-on · 판정 비차단).",
+        "references": [
+          {
+            "label": "ADK BigQuery Agent Analytics",
+            "url": "https://adk.dev/integrations/bigquery-agent-analytics/"
+          },
+          {
+            "label": "agents-cli Observability",
+            "url": "https://google.github.io/agents-cli/guide/deployment/"
+          }
+        ],
+        "grade": "optional",
         "condition": null,
         "preview": false,
         "new": false
@@ -447,6 +535,52 @@
         "grade": "conditional",
         "condition": "delegated",
         "preview": true,
+        "new": false
+      },
+      {
+        "id": "CR-S7",
+        "category": "S",
+        "title": "Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)",
+        "check": "외부 사용자 입력이나 외부 도구 응답에는 프롬프트 인젝션·탈옥·민감정보(PII)·악성 URI가 섞일 수 있으며, 정규식 필터만으로는 방어하기 어렵습니다. 선택적으로 Model Armor 템플릿(`google_model_armor_template`)이 구성되어 입·출력 검사를 수행하는지 확인합니다.",
+        "best_practice": "Google Cloud Well-Architected(AI & ML) 및 SAIF 권고에 따라 `google_model_armor_template`(프롬프트 인젝션·탈옥, SDP 민감정보, 악성 URI 필터)을 생성하고 Cloud Run 앞단 게이트웨이 또는 인라인 API 호출로 입·출력 페이로드를 검사합니다(선택형 Add-on · 유료 · 판정 비차단).",
+        "references": [
+          {
+            "label": "Model Armor Overview",
+            "url": "https://cloud.google.com/security-command-center/docs/model-armor-overview"
+          },
+          {
+            "label": "Well-Architected: AI and ML",
+            "url": "https://cloud.google.com/architecture/framework/perspectives/ai-ml"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
+        "new": false
+      },
+      {
+        "id": "CR-S8",
+        "category": "S",
+        "title": "고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)",
+        "check": "결제·삭제·외부 시스템 쓰기 같은 비가역적 도구를 에이전트가 자율 실행하면 오판이나 프롬프트 인젝션 시 즉시 사고로 이어집니다. 선택적으로 고위험 도구에 ADK `require_confirmation` / `ToolConfirmation` 기반 사람 승인(HITL)이 연결되어 있는지 확인합니다.",
+        "best_practice": "파괴적·금전적·외부 쓰기 도구에 `FunctionTool(..., require_confirmation=True)` 또는 `ToolConfirmation`을 적용해 실행 전 사람 승인을 받도록 구성합니다(선택형 Add-on · 안내 전용 · 판정 비차단).",
+        "references": [
+          {
+            "label": "ADK Tool Confirmation",
+            "url": "https://google.github.io/adk-docs/tools/confirmation/"
+          },
+          {
+            "label": "ADK Safety & Security",
+            "url": "https://google.github.io/adk-docs/safety/"
+          },
+          {
+            "label": "Cloud Architecture Center",
+            "url": "https://docs.cloud.google.com/architecture"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
         "new": false
       }
     ],
@@ -595,6 +729,27 @@
         "new": false
       },
       {
+        "id": "GKE-OB2",
+        "category": "OB",
+        "title": "BigQuery Agent Analytics (구조화 이벤트 분석)",
+        "check": "Cloud Trace는 단기 지연·오류 추적에 강하지만 장기 토큰 비용·도구 호출 출처(Provenance)·대화 품질을 SQL과 LLM-as-judge로 분석하기 어렵습니다. 선택적으로 BigQuery Agent Analytics 플러그인과 BigQuery 데이터셋이 구성되어 있는지 확인합니다.",
+        "best_practice": "`google-adk[bigquery-analytics]`와 `BigQueryAgentAnalyticsPlugin`을 연결하고 BigQuery 데이터셋·Storage Write API 권한을 구성해 에이전트 이벤트를 비동기 스트리밍으로 적재합니다(선택형 Add-on · 판정 비차단).",
+        "references": [
+          {
+            "label": "ADK BigQuery Agent Analytics",
+            "url": "https://adk.dev/integrations/bigquery-agent-analytics/"
+          },
+          {
+            "label": "agents-cli Observability",
+            "url": "https://google.github.io/agents-cli/guide/deployment/"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
+        "new": false
+      },
+      {
         "id": "GKE-S1",
         "category": "S",
         "title": "에이전트 전용 신원 · 최소 권한",
@@ -706,6 +861,52 @@
         "condition": "delegated",
         "preview": true,
         "new": false
+      },
+      {
+        "id": "GKE-S6",
+        "category": "S",
+        "title": "Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)",
+        "check": "외부 사용자 입력이나 외부 도구 응답에는 프롬프트 인젝션·탈옥·민감정보(PII)·악성 URI가 섞일 수 있으며, 정규식 필터만으로는 방어하기 어렵습니다. 선택적으로 Model Armor 템플릿(`google_model_armor_template`)이 구성되어 입·출력 검사를 수행하는지 확인합니다.",
+        "best_practice": "Google Cloud Well-Architected(AI & ML) 및 SAIF 권고에 따라 `google_model_armor_template`(프롬프트 인젝션·탈옥, SDP 민감정보, 악성 URI 필터)을 생성하고 GKE Gateway/ExtensionBinding 또는 인라인 API 호출로 입·출력 페이로드를 검사합니다(선택형 Add-on · 유료 · 판정 비차단).",
+        "references": [
+          {
+            "label": "Model Armor Overview",
+            "url": "https://cloud.google.com/security-command-center/docs/model-armor-overview"
+          },
+          {
+            "label": "Well-Architected: AI and ML",
+            "url": "https://cloud.google.com/architecture/framework/perspectives/ai-ml"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
+        "new": false
+      },
+      {
+        "id": "GKE-S7",
+        "category": "S",
+        "title": "고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)",
+        "check": "결제·삭제·외부 시스템 쓰기 같은 비가역적 도구를 에이전트가 자율 실행하면 오판이나 프롬프트 인젝션 시 즉시 사고로 이어집니다. 선택적으로 고위험 도구에 ADK `require_confirmation` / `ToolConfirmation` 기반 사람 승인(HITL)이 연결되어 있는지 확인합니다.",
+        "best_practice": "파괴적·금전적·외부 쓰기 도구에 `FunctionTool(..., require_confirmation=True)` 또는 `ToolConfirmation`을 적용해 실행 전 사람 승인을 받도록 구성합니다(선택형 Add-on · 안내 전용 · 판정 비차단).",
+        "references": [
+          {
+            "label": "ADK Tool Confirmation",
+            "url": "https://google.github.io/adk-docs/tools/confirmation/"
+          },
+          {
+            "label": "ADK Safety & Security",
+            "url": "https://google.github.io/adk-docs/safety/"
+          },
+          {
+            "label": "Cloud Architecture Center",
+            "url": "https://docs.cloud.google.com/architecture"
+          }
+        ],
+        "grade": "optional",
+        "condition": null,
+        "preview": false,
+        "new": false
       }
     ]
   },
@@ -772,6 +973,7 @@
     "cloud_run": [
       "cloud-run-basics",
       "cloud-run-alert-configuration",
+      "agent-platform-alert-configuration",
       "google-cicd-terraform",
       "google-cloud-waf-security"
     ],
@@ -781,7 +983,8 @@
       "gke-workload-security",
       "gke-workload-identity",
       "gke-networking",
-      "gke-alert-configuration"
+      "gke-alert-configuration",
+      "agent-platform-alert-configuration"
     ]
   },
   "advisories": [

@@ -1638,6 +1638,7 @@
     .gr { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
     .gr-must { background: #E6F4EA; color: #137333; }
     .gr-cond { background: #FEF7E0; color: #9A5300; }
+    .gr-opt { background: #F3E8FF; color: #6D28D9; }
     .gr-prev { background: #F1F3F4; color: #5F6368; border: 1px dashed #BDC1C6; }
     .gr-new { background: #FCE8E6; color: #C5221F; }
     .ev-tbd { color: #80868B; font-style: italic; }
@@ -1793,6 +1794,16 @@
               </dl>
             </div>
           </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">AR-OB2</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">BigQuery Agent Analytics (구조화 이벤트 분석)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>Cloud Trace는 단기 지연·오류 추적에 강하지만 장기 토큰 비용·도구 호출 출처(Provenance)·대화 품질을 SQL과 LLM-as-judge로 분석하기 어렵습니다. 선택적으로 BigQuery Agent Analytics 플러그인과 BigQuery 데이터셋이 구성되어 있는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd><code>google-adk[bigquery-analytics]</code>와 <code>BigQueryAgentAnalyticsPlugin</code>을 연결하고 BigQuery 데이터셋·Storage Write API 권한을 구성해 에이전트 이벤트를 비동기 스트리밍으로 적재합니다(선택형 Add-on · 판정 비차단). <span class="ck-ref">(<a href="https://adk.dev/integrations/bigquery-agent-analytics/" target="_blank" rel="noopener noreferrer">ADK BigQuery Agent Analytics</a> · <a href="https://google.github.io/agents-cli/guide/deployment/" target="_blank" rel="noopener noreferrer">agents-cli Observability</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
           </div>
         </section>
         <section class="card ck-cat" id="ar-security">
@@ -1845,6 +1856,26 @@
               <dl class="ck-dl">
                 <dt>Check</dt><dd>에이전트는 사용자를 대신해 Jira·GitHub 같은 외부 시스템을 호출하는데, 정적 API 키나 개인 토큰을 쓰면 모든 사용자가 같은 권한으로 접근하고 키가 유출되면 피해가 큽니다. 사용자 대신 호출하는 외부 도구가 auth manager로 위임받은 사용자 OAuth 토큰을 쓰는지 확인합니다.</dd>
                 <dt>Best Practice</dt><dd>auth manager에 auth provider(3-legged OAuth)를 구성하고, ADK가 도구·MCP 호출 시 사용자 위임 토큰을 받아 인증 헤더를 붙이게 합니다. 정적 API 키·PAT는 코드와 환경변수에 두지 않습니다. <span class="ck-ref">(<a href="https://docs.cloud.google.com/iam/docs/auth-manager-overview" target="_blank" rel="noopener noreferrer">Agent Identity auth manager</a> · <a href="https://docs.cloud.google.com/iam/docs/auth-with-3lo-v2" target="_blank" rel="noopener noreferrer">3-legged OAuth with auth manager</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">AR-S6</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>외부 사용자 입력이나 외부 도구 응답에는 프롬프트 인젝션·탈옥·민감정보(PII)·악성 URI가 섞일 수 있으며, 정규식 필터만으로는 방어하기 어렵습니다. 선택적으로 Model Armor 템플릿(<code>google_model_armor_template</code>)이 구성되어 입·출력 검사를 수행하는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd>Google Cloud Well-Architected(AI &amp; ML) 및 SAIF 권고에 따라 <code>google_model_armor_template</code>(프롬프트 인젝션·탈옥, SDP 민감정보, 악성 URI 필터)을 생성하고 Agent Gateway 또는 인라인 API 호출로 입·출력 페이로드를 검사합니다(선택형 Add-on · 유료 · 판정 비차단). <span class="ck-ref">(<a href="https://cloud.google.com/security-command-center/docs/model-armor-overview" target="_blank" rel="noopener noreferrer">Model Armor Overview</a> · <a href="https://cloud.google.com/architecture/framework/perspectives/ai-ml" target="_blank" rel="noopener noreferrer">Well-Architected: AI and ML</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">AR-S7</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>결제·삭제·외부 시스템 쓰기 같은 비가역적 도구를 에이전트가 자율 실행하면 오판이나 프롬프트 인젝션 시 즉시 사고로 이어집니다. 선택적으로 고위험 도구에 ADK <code>require_confirmation</code> / <code>ToolConfirmation</code> 기반 사람 승인(HITL)이 연결되어 있는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd>파괴적·금전적·외부 쓰기 도구에 <code>FunctionTool(..., require_confirmation=True)</code> 또는 <code>ToolConfirmation</code>을 적용해 실행 전 사람 승인을 받도록 구성합니다(선택형 Add-on · 안내 전용 · 판정 비차단). <span class="ck-ref">(<a href="https://google.github.io/adk-docs/tools/confirmation/" target="_blank" rel="noopener noreferrer">ADK Tool Confirmation</a> · <a href="https://google.github.io/adk-docs/safety/" target="_blank" rel="noopener noreferrer">ADK Safety &amp; Security</a> · <a href="https://docs.cloud.google.com/architecture" target="_blank" rel="noopener noreferrer">Cloud Architecture Center</a>)</span></dd>
               </dl>
             </div>
           </article>
@@ -1915,6 +1946,16 @@
               </dl>
             </div>
           </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">CR-OB2</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">BigQuery Agent Analytics (구조화 이벤트 분석)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>Cloud Trace는 단기 지연·오류 추적에 강하지만 장기 토큰 비용·도구 호출 출처(Provenance)·대화 품질을 SQL과 LLM-as-judge로 분석하기 어렵습니다. 선택적으로 BigQuery Agent Analytics 플러그인과 BigQuery 데이터셋이 구성되어 있는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd><code>google-adk[bigquery-analytics]</code>와 <code>BigQueryAgentAnalyticsPlugin</code>을 연결하고 BigQuery 데이터셋·Storage Write API 권한을 구성해 에이전트 이벤트를 비동기 스트리밍으로 적재합니다(선택형 Add-on · 판정 비차단). <span class="ck-ref">(<a href="https://adk.dev/integrations/bigquery-agent-analytics/" target="_blank" rel="noopener noreferrer">ADK BigQuery Agent Analytics</a> · <a href="https://google.github.io/agents-cli/guide/deployment/" target="_blank" rel="noopener noreferrer">agents-cli Observability</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
           </div>
         </section>
         <section class="card ck-cat" id="cr-security">
@@ -1977,6 +2018,26 @@
               <dl class="ck-dl">
                 <dt>Check</dt><dd>에이전트는 사용자를 대신해 Jira·GitHub 같은 외부 시스템을 호출하는데, 정적 API 키나 개인 토큰을 쓰면 모든 사용자가 같은 권한으로 접근하고 키가 유출되면 피해가 큽니다. 사용자 대신 호출하는 외부 도구가 auth manager로 위임받은 사용자 OAuth 토큰을 쓰는지 확인합니다.</dd>
                 <dt>Best Practice</dt><dd>auth manager에 auth provider(3-legged OAuth)를 구성하고, ADK가 도구·MCP 호출 시 사용자 위임 토큰을 받아 인증 헤더를 붙이게 합니다. 정적 API 키·PAT는 코드와 환경변수에 두지 않습니다. <span class="ck-ref">(<a href="https://docs.cloud.google.com/iam/docs/auth-manager-overview" target="_blank" rel="noopener noreferrer">Agent Identity auth manager</a> · <a href="https://docs.cloud.google.com/iam/docs/auth-with-3lo-v2" target="_blank" rel="noopener noreferrer">3-legged OAuth with auth manager</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">CR-S7</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>외부 사용자 입력이나 외부 도구 응답에는 프롬프트 인젝션·탈옥·민감정보(PII)·악성 URI가 섞일 수 있으며, 정규식 필터만으로는 방어하기 어렵습니다. 선택적으로 Model Armor 템플릿(<code>google_model_armor_template</code>)이 구성되어 입·출력 검사를 수행하는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd>Google Cloud Well-Architected(AI &amp; ML) 및 SAIF 권고에 따라 <code>google_model_armor_template</code>(프롬프트 인젝션·탈옥, SDP 민감정보, 악성 URI 필터)을 생성하고 Cloud Run 앞단 게이트웨이 또는 인라인 API 호출로 입·출력 페이로드를 검사합니다(선택형 Add-on · 유료 · 판정 비차단). <span class="ck-ref">(<a href="https://cloud.google.com/security-command-center/docs/model-armor-overview" target="_blank" rel="noopener noreferrer">Model Armor Overview</a> · <a href="https://cloud.google.com/architecture/framework/perspectives/ai-ml" target="_blank" rel="noopener noreferrer">Well-Architected: AI and ML</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">CR-S8</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>결제·삭제·외부 시스템 쓰기 같은 비가역적 도구를 에이전트가 자율 실행하면 오판이나 프롬프트 인젝션 시 즉시 사고로 이어집니다. 선택적으로 고위험 도구에 ADK <code>require_confirmation</code> / <code>ToolConfirmation</code> 기반 사람 승인(HITL)이 연결되어 있는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd>파괴적·금전적·외부 쓰기 도구에 <code>FunctionTool(..., require_confirmation=True)</code> 또는 <code>ToolConfirmation</code>을 적용해 실행 전 사람 승인을 받도록 구성합니다(선택형 Add-on · 안내 전용 · 판정 비차단). <span class="ck-ref">(<a href="https://google.github.io/adk-docs/tools/confirmation/" target="_blank" rel="noopener noreferrer">ADK Tool Confirmation</a> · <a href="https://google.github.io/adk-docs/safety/" target="_blank" rel="noopener noreferrer">ADK Safety &amp; Security</a> · <a href="https://docs.cloud.google.com/architecture" target="_blank" rel="noopener noreferrer">Cloud Architecture Center</a>)</span></dd>
               </dl>
             </div>
           </article>
@@ -2072,6 +2133,16 @@
               </dl>
             </div>
           </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">GKE-OB2</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">BigQuery Agent Analytics (구조화 이벤트 분석)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>Cloud Trace는 단기 지연·오류 추적에 강하지만 장기 토큰 비용·도구 호출 출처(Provenance)·대화 품질을 SQL과 LLM-as-judge로 분석하기 어렵습니다. 선택적으로 BigQuery Agent Analytics 플러그인과 BigQuery 데이터셋이 구성되어 있는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd><code>google-adk[bigquery-analytics]</code>와 <code>BigQueryAgentAnalyticsPlugin</code>을 연결하고 BigQuery 데이터셋·Storage Write API 권한을 구성해 에이전트 이벤트를 비동기 스트리밍으로 적재합니다(선택형 Add-on · 판정 비차단). <span class="ck-ref">(<a href="https://adk.dev/integrations/bigquery-agent-analytics/" target="_blank" rel="noopener noreferrer">ADK BigQuery Agent Analytics</a> · <a href="https://google.github.io/agents-cli/guide/deployment/" target="_blank" rel="noopener noreferrer">agents-cli Observability</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
           </div>
         </section>
         <section class="card ck-cat" id="gke-security">
@@ -2127,6 +2198,26 @@
               </dl>
             </div>
           </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">GKE-S6</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>외부 사용자 입력이나 외부 도구 응답에는 프롬프트 인젝션·탈옥·민감정보(PII)·악성 URI가 섞일 수 있으며, 정규식 필터만으로는 방어하기 어렵습니다. 선택적으로 Model Armor 템플릿(<code>google_model_armor_template</code>)이 구성되어 입·출력 검사를 수행하는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd>Google Cloud Well-Architected(AI &amp; ML) 및 SAIF 권고에 따라 <code>google_model_armor_template</code>(프롬프트 인젝션·탈옥, SDP 민감정보, 악성 URI 필터)을 생성하고 GKE Gateway/ExtensionBinding 또는 인라인 API 호출로 입·출력 페이로드를 검사합니다(선택형 Add-on · 유료 · 판정 비차단). <span class="ck-ref">(<a href="https://cloud.google.com/security-command-center/docs/model-armor-overview" target="_blank" rel="noopener noreferrer">Model Armor Overview</a> · <a href="https://cloud.google.com/architecture/framework/perspectives/ai-ml" target="_blank" rel="noopener noreferrer">Well-Architected: AI and ML</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
+          <article class="ck-item">
+            <div class="ck-meta"><span class="ck-id">GKE-S7</span><span class="gr gr-opt" title="선택형 프로덕션 확장 · 판정을 막지 않음">선택 (Add-on)</span></div>
+            <div class="ck-body">
+              <h4 class="ck-title">고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)</h4>
+              <dl class="ck-dl">
+                <dt>Check</dt><dd>결제·삭제·외부 시스템 쓰기 같은 비가역적 도구를 에이전트가 자율 실행하면 오판이나 프롬프트 인젝션 시 즉시 사고로 이어집니다. 선택적으로 고위험 도구에 ADK <code>require_confirmation</code> / <code>ToolConfirmation</code> 기반 사람 승인(HITL)이 연결되어 있는지 확인합니다.</dd>
+                <dt>Best Practice</dt><dd>파괴적·금전적·외부 쓰기 도구에 <code>FunctionTool(..., require_confirmation=True)</code> 또는 <code>ToolConfirmation</code>을 적용해 실행 전 사람 승인을 받도록 구성합니다(선택형 Add-on · 안내 전용 · 판정 비차단). <span class="ck-ref">(<a href="https://google.github.io/adk-docs/tools/confirmation/" target="_blank" rel="noopener noreferrer">ADK Tool Confirmation</a> · <a href="https://google.github.io/adk-docs/safety/" target="_blank" rel="noopener noreferrer">ADK Safety &amp; Security</a> · <a href="https://docs.cloud.google.com/architecture" target="_blank" rel="noopener noreferrer">Cloud Architecture Center</a>)</span></dd>
+              </dl>
+            </div>
+          </article>
           </div>
         </section>
       </div>
@@ -2135,8 +2226,8 @@
         <div class="callout-title">📚 일반 플랫폼 Best Practice는 Google Cloud Skills를 함께 참조하세요 (적극 권장)</div>
         <p style="margin-top:4px;">이 체크리스트는 <strong>에이전트 특성</strong>에서 나온 항목만 다룹니다. 헬스 프로브·PDB·Non-Root·네트워크·IaC·알림처럼 각 환경에 공통으로 필요한 Best Practice는 <a href="https://github.com/google/skills/tree/main/skills/cloud" target="_blank" rel="noopener noreferrer">google/skills · cloud</a>의 플랫폼 Skill에 정리되어 있습니다. 프로덕션 점검 시 아래 Skill을 <strong>함께 참조하는 것을 적극 권장</strong>합니다.</p>
         <p class="track-only ck-skills" data-track="agent_runtime" style="margin:8px 0 0;"><a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-deploy" target="_blank" rel="noopener noreferrer"><code>agent-platform-deploy</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-agent-registry" target="_blank" rel="noopener noreferrer"><code>agent-platform-agent-registry</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-access-audit" target="_blank" rel="noopener noreferrer"><code>agent-platform-access-audit</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-alert-configuration" target="_blank" rel="noopener noreferrer"><code>agent-platform-alert-configuration</code></a></p>
-        <p class="track-only ck-skills" data-track="cloud_run" style="margin:8px 0 0;"><a href="https://github.com/google/skills/tree/main/skills/cloud/cloud-run-basics" target="_blank" rel="noopener noreferrer"><code>cloud-run-basics</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/cloud-run-alert-configuration" target="_blank" rel="noopener noreferrer"><code>cloud-run-alert-configuration</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/google-cicd-terraform" target="_blank" rel="noopener noreferrer"><code>google-cicd-terraform</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/google-cloud-waf-security" target="_blank" rel="noopener noreferrer"><code>google-cloud-waf-security</code></a></p>
-        <p class="track-only ck-skills" data-track="gke" style="margin:8px 0 0;"><a href="https://github.com/google/skills/tree/main/skills/cloud/gke-productionize" target="_blank" rel="noopener noreferrer"><code>gke-productionize</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-reliability" target="_blank" rel="noopener noreferrer"><code>gke-reliability</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-workload-security" target="_blank" rel="noopener noreferrer"><code>gke-workload-security</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-workload-identity" target="_blank" rel="noopener noreferrer"><code>gke-workload-identity</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-networking" target="_blank" rel="noopener noreferrer"><code>gke-networking</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-alert-configuration" target="_blank" rel="noopener noreferrer"><code>gke-alert-configuration</code></a></p>
+        <p class="track-only ck-skills" data-track="cloud_run" style="margin:8px 0 0;"><a href="https://github.com/google/skills/tree/main/skills/cloud/cloud-run-basics" target="_blank" rel="noopener noreferrer"><code>cloud-run-basics</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/cloud-run-alert-configuration" target="_blank" rel="noopener noreferrer"><code>cloud-run-alert-configuration</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-alert-configuration" target="_blank" rel="noopener noreferrer"><code>agent-platform-alert-configuration</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/google-cicd-terraform" target="_blank" rel="noopener noreferrer"><code>google-cicd-terraform</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/google-cloud-waf-security" target="_blank" rel="noopener noreferrer"><code>google-cloud-waf-security</code></a></p>
+        <p class="track-only ck-skills" data-track="gke" style="margin:8px 0 0;"><a href="https://github.com/google/skills/tree/main/skills/cloud/gke-productionize" target="_blank" rel="noopener noreferrer"><code>gke-productionize</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-reliability" target="_blank" rel="noopener noreferrer"><code>gke-reliability</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-workload-security" target="_blank" rel="noopener noreferrer"><code>gke-workload-security</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-workload-identity" target="_blank" rel="noopener noreferrer"><code>gke-workload-identity</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-networking" target="_blank" rel="noopener noreferrer"><code>gke-networking</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/gke-alert-configuration" target="_blank" rel="noopener noreferrer"><code>gke-alert-configuration</code></a> · <a href="https://github.com/google/skills/tree/main/skills/cloud/agent-platform-alert-configuration" target="_blank" rel="noopener noreferrer"><code>agent-platform-alert-configuration</code></a></p>
       </div>
       <div class="callout callout-blue">
         <div class="callout-title">🧩 구체적인 수정 방법은 Agent Skill과 진단 리포트에서 확인하세요</div>

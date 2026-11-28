@@ -46,7 +46,7 @@ from typing import Any, Literal
 
 TargetType = Literal["agent_runtime", "cloud_run", "gke"]
 RAGStatus = Literal["GREEN", "AMBER", "RED", "NA"]
-GradeType = Literal["required", "conditional"]
+GradeType = Literal["required", "conditional", "optional"]
 
 # Order = managed spectrum: Agent Runtime (fully managed) → Cloud Run → GKE (most control / ops responsibility)
 ALL_TARGETS: tuple[TargetType, ...] = ("agent_runtime", "cloud_run", "gke")
@@ -64,7 +64,7 @@ PLATFORM_SKILLS_REPO: str = str(
     CATALOG.get("platform_skills_repo", "https://github.com/google/skills/tree/main/skills/cloud")
 ).rstrip("/")
 
-GRADE_LABEL = {"required": "필수", "conditional": "조건부"}
+GRADE_LABEL = {"required": "필수", "conditional": "조건부", "optional": "선택 (Add-on)"}
 
 
 @dataclass(frozen=True)
@@ -95,6 +95,12 @@ class CustomParams:
     gke_execution_pattern: str = "standard_pods"
     gke_enable_gvisor: bool = False
     gke_termination_grace_seconds: int = 120
+    # Tier 3 Optional Add-ons (opt-in only)
+    bq_analytics_dataset: str = "agent_analytics"
+    bq_analytics_table: str = "agent_events"
+    model_armor_confidence: str = "MEDIUM_AND_ABOVE"
+    model_armor_enable_sdp: bool = True
+    model_armor_enable_malicious_uri: bool = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> CustomParams:
@@ -263,6 +269,34 @@ _CF_GKE_PATTERN = CustomFieldSpec(
     default="standard_pods",
     options=["standard_pods", "agent_sandbox", "agent_substrate"],
 )
+_CF_BQ_DATASET = CustomFieldSpec(
+    key="bq_analytics_dataset",
+    label="BigQuery Agent Analytics 데이터셋 ID (기본 agent_analytics)",
+    default="agent_analytics",
+)
+_CF_BQ_TABLE = CustomFieldSpec(
+    key="bq_analytics_table",
+    label="BigQuery Agent Analytics 테이블명 (기본 agent_events)",
+    default="agent_events",
+)
+_CF_MA_CONFIDENCE = CustomFieldSpec(
+    key="model_armor_confidence",
+    label="Model Armor 프롬프트 인젝션·탈옥 탐지 신뢰도 임계치",
+    default="MEDIUM_AND_ABOVE",
+    options=["LOW_AND_ABOVE", "MEDIUM_AND_ABOVE", "HIGH"],
+)
+_CF_MA_SDP = CustomFieldSpec(
+    key="model_armor_enable_sdp",
+    label="Model Armor Sensitive Data Protection(민감정보 PII) 필터 활성화",
+    default="true",
+    options=["true", "false"],
+)
+_CF_MA_URI = CustomFieldSpec(
+    key="model_armor_enable_malicious_uri",
+    label="Model Armor 악성 URI 필터 활성화",
+    default="true",
+    options=["true", "false"],
+)
 
 _SESSION_FILES = ("app/app_utils/services.py", "deployment/terraform/service.tf")
 _EVAL_FILES = (
@@ -289,6 +323,23 @@ _DELEGATED_AUTH_META = {
     "legacy": ("C4.2",),
     "auto_patch": False,  # Preview — guidance only (auth manager auth provider + google-adk[agent-identity])
 }
+_BQ_ANALYTICS_META = {
+    "verify": 'grep -rn "BigQueryAgentAnalyticsPlugin" app/ 2>/dev/null && grep -rn "google_bigquery_dataset" deployment/terraform/ 2>/dev/null',
+    "files": ("app/app_utils/bq_analytics.py", "deployment/terraform/bq_analytics.tf", "pyproject.toml"),
+    "fields": (_CF_BQ_DATASET, _CF_BQ_TABLE),
+    "auto_patch": True,
+}
+_MODEL_ARMOR_META = {
+    "verify": 'grep -rnE "google_model_armor_template|ModelArmorClient|modelArmorTemplate" deployment/terraform/ app/ deployment/k8s/ 2>/dev/null',
+    "files": ("deployment/terraform/model_armor.tf",),
+    "fields": (_CF_MA_CONFIDENCE, _CF_MA_SDP, _CF_MA_URI),
+    "auto_patch": True,
+}
+_HITL_META = {
+    "verify": 'grep -rnE "require_confirmation|ToolConfirmation|adk_request_confirmation" app/ 2>/dev/null',
+    "files": ("app/agent.py",),
+    "auto_patch": False,  # High-risk tool selection is domain logic — guidance only
+}
 _MEMORY_VERIFY = 'grep -rnE "VertexAiMemoryBankService|memory_service" app/ 2>/dev/null'
 
 _ITEM_META: dict[str, dict[str, Any]] = {
@@ -307,6 +358,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "files": ("deployment/terraform/service.tf", "app/fast_api_app.py", "pyproject.toml", "deployment/terraform/variables.tf"),
         "legacy": ("C5.1",),
     },
+    "CR-OB2": _BQ_ANALYTICS_META,
     "CR-S1": {
         "verify": f'! grep -nE "allUsers|invoker_iam_disabled\\s*=\\s*true" {_TF_ALL} 2>/dev/null && ! grep -rn -- "--allow-unauthenticated" Makefile .cloudbuild .github 2>/dev/null',
         "files": ("deployment/terraform/service.tf",),
@@ -335,6 +387,8 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "auto_patch": False,  # Preview — guidance only (enable --sandbox-launcher + route the code executor)
     },
     "CR-S6": _DELEGATED_AUTH_META,
+    "CR-S7": _MODEL_ARMOR_META,
+    "CR-S8": _HITL_META,
     # ---------------- Agent Runtime ----------------
     "AR-F1": {
         "verify": '! grep -rn "InMemorySessionService" app/agent_engine_app.py app/agent.py 2>/dev/null',
@@ -350,6 +404,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "files": ("deployment/terraform/service.tf",),
         "legacy": ("C5.1",),
     },
+    "AR-OB2": _BQ_ANALYTICS_META,
     "AR-S1": {
         "verify": f'grep -nE "service_account|AGENT_IDENTITY" {_TF} 2>/dev/null && ! grep -nE "roles/(storage\\.admin|editor|owner)" deployment/terraform/variables.tf 2>/dev/null',
         "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
@@ -373,6 +428,8 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "auto_patch": False,  # agent-code wiring — guidance only
     },
     "AR-S5": _DELEGATED_AUTH_META,
+    "AR-S6": _MODEL_ARMOR_META,
+    "AR-S7": _HITL_META,
     # ---------------- GKE ----------------
     "GKE-F1": {
         "verify": f'grep -n "VertexAiSessionService" app/app_utils/services.py && grep -nE "AGENT_ENGINE_SESSION_ID|GOOGLE_CLOUD_AGENT_ENGINE_ID" {_TF} 2>/dev/null',
@@ -398,6 +455,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "files": ("deployment/terraform/service.tf", "app/fast_api_app.py", "pyproject.toml", "deployment/terraform/variables.tf"),
         "legacy": ("C5.1",),
     },
+    "GKE-OB2": _BQ_ANALYTICS_META,
     "GKE-S1": {
         "verify": f'grep -nE "roles/iam.workloadIdentityUser|iam.gke.io/gcp-service-account|spiffe-identity-type" {_TF} 2>/dev/null',
         "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
@@ -421,6 +479,8 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "legacy": ("C4.4",),
     },
     "GKE-S5": _DELEGATED_AUTH_META,
+    "GKE-S6": _MODEL_ARMOR_META,
+    "GKE-S7": _HITL_META,
 }
 
 

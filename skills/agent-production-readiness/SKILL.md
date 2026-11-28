@@ -40,24 +40,24 @@ The checklist contains **only items that follow from agent characteristics**: "�
 | Target | Platform skills to also consult |
 | :--- | :--- |
 | `agent_runtime` | `agent-platform-deploy` · `agent-platform-agent-registry` · `agent-platform-access-audit` · `agent-platform-alert-configuration` |
-| `cloud_run` | `cloud-run-basics` · `cloud-run-alert-configuration` · `google-cicd-terraform` · `google-cloud-waf-security` |
-| `gke` | `gke-productionize` · `gke-reliability` · `gke-workload-security` · `gke-workload-identity` · `gke-networking` · `gke-alert-configuration` |
+| `cloud_run` | `cloud-run-basics` · `cloud-run-alert-configuration` · `agent-platform-alert-configuration` · `google-cicd-terraform` · `google-cloud-waf-security` |
+| `gke` | `gke-productionize` · `gke-reliability` · `gke-workload-security` · `gke-workload-identity` · `gke-networking` · `gke-alert-configuration` · `agent-platform-alert-configuration` |
 
-Values (instance counts, timeouts, sizing), architecture choices, paid optional products (Model Armor, Cloud Armor, Secure Web Proxy, Provisioned Throughput) and app-design concerns are **advisories** only (catalog `advisories`) — mention them when relevant, never as checklist failures.
+Values (instance counts, timeouts, sizing), architecture choices, and non-universal infrastructure options (Secure Web Proxy, Cloud Armor, Provisioned Throughput) are **advisories** only (catalog `advisories`) — mention them when relevant, never as checklist failures.
 
 ## Checklist v3 Items
 
-ID format: `<target>-<category><n>` — target `AR` · `CR` · `GKE`; category `F` State & Memory · `O` Runtime Lifecycle · `D` CI/CD & Evaluation · `OB` Observability · `S` Security & Governance. ⚙️ = conditional, 🅿️ = Preview.
+ID format: `<target>-<category><n>` — target `AR` · `CR` · `GKE`; category `F` State & Memory · `O` Runtime Lifecycle · `D` CI/CD & Evaluation · `OB` Observability · `S` Security & Governance. ⚙️ = conditional, 🅿️ = Preview, 🧩 = Optional Add-on (Tier 3 · opt-in only, never blocks verdict).
 
 | Category | 🛡️ Agent Runtime | ⚡ Cloud Run | ☸️ GKE |
 | :--- | :--- | :--- | :--- |
 | State & Memory | `AR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `AR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `CR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `CR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `GKE-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `GKE-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ |
 | Runtime Lifecycle | — | — | `GKE-O1` 무중단 종료 (긴 응답 보호) · `GKE-O2` 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) ⚙️ |
 | CI/CD & Evaluation | `AR-D1` CI/CD 파이프라인 (agents-cli) · `AR-D2` 평가 데이터셋 · 평가 게이트 | `CR-D1` CI/CD 파이프라인 (agents-cli) · `CR-D2` 평가 데이터셋 · 평가 게이트 | `GKE-D1` CI/CD 파이프라인 (agents-cli) · `GKE-D2` 평가 데이터셋 · 평가 게이트 |
-| Observability | `AR-OB1` 프롬프트 미기록 | `CR-OB1` Cloud Trace · 프롬프트 미기록 | `GKE-OB1` Cloud Trace · 프롬프트 미기록 |
-| Security & Governance | `AR-S1` 에이전트 전용 신원 · 최소 권한 · `AR-S2` Agent Registry 등록 🅿️ · `AR-S3` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `AR-S4` AI 생성 코드 격리 (Code Execution) ⚙️ · `AR-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ | `CR-S1` 인증된 호출만 허용 · `CR-S2` 에이전트 전용 신원 · 최소 권한 · `CR-S3` Agent Registry 등록 🅿️ · `CR-S4` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `CR-S5` AI 생성 코드 격리 (Cloud Run sandboxes) ⚙️🅿️ · `CR-S6` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ | `GKE-S1` 에이전트 전용 신원 · 최소 권한 · `GKE-S2` AI 생성 코드 격리 (Agent Substrate · Agent Sandbox) ⚙️ · `GKE-S3` Agent Registry 등록 🅿️ · `GKE-S4` Agent Gateway for GKE (외부 호출 통제) ⚙️🅿️ · `GKE-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ |
+| Observability | `AR-OB1` 프롬프트 미기록 · `AR-OB2` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩 | `CR-OB1` Cloud Trace · 프롬프트 미기록 · `CR-OB2` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩 | `GKE-OB1` Cloud Trace · 프롬프트 미기록 · `GKE-OB2` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩 |
+| Security & Governance | `AR-S1` 에이전트 전용 신원 · 최소 권한 · `AR-S2` Agent Registry 등록 🅿️ · `AR-S3` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `AR-S4` AI 생성 코드 격리 (Code Execution) ⚙️ · `AR-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ · `AR-S6` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `AR-S7` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩 | `CR-S1` 인증된 호출만 허용 · `CR-S2` 에이전트 전용 신원 · 최소 권한 · `CR-S3` Agent Registry 등록 🅿️ · `CR-S4` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `CR-S5` AI 생성 코드 격리 (Cloud Run sandboxes) ⚙️🅿️ · `CR-S6` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ · `CR-S7` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `CR-S8` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩 | `GKE-S1` 에이전트 전용 신원 · 최소 권한 · `GKE-S2` AI 생성 코드 격리 (Agent Substrate · Agent Sandbox) ⚙️ · `GKE-S3` Agent Registry 등록 🅿️ · `GKE-S4` Agent Gateway for GKE (외부 호출 통제) ⚙️🅿️ · `GKE-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ · `GKE-S6` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `GKE-S7` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩 |
 
-Targets are listed Agent Runtime → Cloud Run → GKE (fully managed ↔ most control / ops responsibility). Agent Runtime and Cloud Run currently have no Runtime Lifecycle item; reports skip empty categories. `CR-S5` / `AR-S4` (AI-generated code isolation) are guidance-only: the engine checks them but never auto-patches (enable `--sandbox-launcher` / route the code executor to Agent Platform Code Execution yourself). Item counts: Agent Runtime 10 · Cloud Run 11 · GKE 12 (33 total).
+Targets are listed Agent Runtime → Cloud Run → GKE (fully managed ↔ most control / ops responsibility). Agent Runtime and Cloud Run currently have no Runtime Lifecycle item; reports skip empty categories. `CR-S5` / `AR-S4` (AI-generated code isolation) and `AR-S7` / `CR-S8` / `GKE-S7` (ADK Tool Confirmation · HITL) are guidance-only: the engine checks them but never auto-patches. Item counts: Agent Runtime 13 · Cloud Run 14 · GKE 15 (42 total = 33 Core/Conditional + 9 Optional Add-ons).
 
 **`idle` condition (`GKE-O2`)** cannot be detected from code: it counts as met only when Agent Substrate (`ate.dev/v1alpha1` `WorkerPool` / `ActorTemplate`) is already used. Otherwise ask the user ("사용자 입력·도구 응답을 기다리는 시간이 대부분인가?"); if yes, pass `--conditions idle=true` to `scan` / `report` / `apply`, or select `--items GKE-O2` explicitly. `GKE-O2` reuses the `GKE-S2` Agent Substrate manifest and needs GKE Standard >= 1.37 (the engine never changes an existing Autopilot cluster, so it stays 🟡 there).
 
@@ -70,8 +70,8 @@ Conditions (catalog `condition_rules`): **멀티턴 대화** → sessions (`*-F1
 ### Verdict Rules
 - **Required** items must be `GREEN` for 🟢 Production Ready.
 - **Conditional** items are evaluated only when the condition applies; otherwise `N/A` (excluded).
-- **Preview** items are checked and reported but **never block** Production Ready.
-- 🟢 Production Ready = all evaluated non-Preview items GREEN · 🟡 Ready with Follow-ups = no RED, ≥1 AMBER · 🔴 Not Production Ready = ≥1 RED.
+- **Preview** (`🅿️`) and **Optional Add-on** (`🧩`, Tier 3) items are reported for visibility and **never block** Production Ready, and are **never auto-applied on `ALL`** unless explicitly selected by the user.
+- 🟢 Production Ready = all evaluated blocking items GREEN · 🟡 Ready with Follow-ups = no RED, ≥1 AMBER · 🔴 Not Production Ready = ≥1 RED.
 
 ---
 
@@ -131,12 +131,13 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target>
 Present the **Find Report** in Korean, in this order:
 1. **`🩺 의존성 점검 (doctor)` summary**: `agents-cli` version, required `google-agents-cli-*` skills, and target Google Cloud platform skills (✅/❌).
 2. **Gate verdict** and detected conditions.
-3. **체크리스트 진단표 (범주별, 빈 범주 생략)**: For **every item** (so the user can decide what they actually need), include:
-   - **ID & 항목명** + grade badge (`필수` / `조건부 ⚙️` / `Preview 🅿️`)
-   - **현재 상태** (`🟢`/`🟡`/`🔴`/`⚪ N/A`)
+3. **체크리스트 진단표 (1부: 필수 · 조건부 핵심 판정 / 2부: 선택형 Add-on 카탈로그, 빈 범주 생략)**: For **every item** (so the user can decide with evidence), ALWAYS include:
+   - **ID & 항목명** + grade badge (`필수` / `조건부 ⚙️` / `Preview 🅿️` / `선택 Add-on 🧩`)
+   - **현재 상태** (`🟢`/`🟡`/`🔴`/`⚪ N/A` 또는 `⚪ 선택 미적용`)
    - **항목 1줄 설명** — plain Korean explanation of *what this item does and why an agent needs it*
+   - **공식 근거 (`references`)** — ALWAYS include the clickable Google Cloud / ADK / Kubernetes official doc link(s) from `catalog_v3.json` for **every item** so every recommendation is visibly grounded
    - **적용 방식** — `자동 패치` vs `안내 전용 (수동)`
-   - For non-green items: brief **Check** & **Best Practice** + reference links. Clearly note that Preview items (`🅿️`) never block the verdict.
+   - For non-green items: brief **Check** & **Best Practice**. Clearly note that Preview (`🅿️`) and Optional Add-on (`🧩`) items never block the verdict.
 4. **Platform skill recommendation** for the target (table above) — always include it.
 5. **Advisories** relevant to the user's situation (optional).
 
@@ -167,7 +168,10 @@ Consult `references/intake-questionnaire.md` **§4 (선택 항목별 적용 전 
   - **영속 세션 · 장기 기억 (`CR-F1/F2` · `GKE-F1/F2`)**: 기존 Agent Platform Reasoning Engine ID가 있는지 (`agent_engine_id`; 없으면 신규 생성 안내).
   - **GKE 무중단 종료 (`GKE-O1`)**: 최대 응답 시간에 맞춘 종료 유예 시간 (`gke_termination_grace_seconds`, 기본 `120`초).
   - **GKE 코드 격리 · 유휴 일시정지 (`GKE-S2` · `GKE-O2`)**: 실행 패턴 — `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) (`gke_execution_pattern`).
-  - **안내 전용 항목 (`CR-S4`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`)**: 사용자 응답에 맞춘 맞춤형 YAML / CLI / 코드 설정 가이드를 제공하고 다음 항목으로 이동합니다.
+  - **BigQuery Agent Analytics (`AR-OB2` · `CR-OB2` · `GKE-OB2`, 선택 Add-on)**: 데이터셋 ID (`bq_analytics_dataset`, 기본 `agent_analytics`), 테이블명 (`bq_analytics_table`, 기본 `agent_events`).
+  - **Model Armor 가드레일 (`AR-S6` · `CR-S7` · `GKE-S6`, 선택 Add-on · 유료)**: ① 프롬프트 인젝션·탈옥 신뢰도 임계치 (`LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE` / `HIGH`, `model_armor_confidence`), ② 민감정보 SDP 필터 (`model_armor_enable_sdp`), ③ 악성 URI 필터 (`model_armor_enable_malicious_uri`).
+  - **고위험 도구 승인 게이트 · HITL (`AR-S7` · `CR-S8` · `GKE-S7`, 선택 Add-on · 안내 전용)**: 사람 승인을 걸 대상 고위험 도구(결제·삭제·외부 쓰기 등) 목록을 확인한 뒤 `FunctionTool(..., require_confirmation=True)` 및 `ToolConfirmation` 적용 코드 예시를 안내합니다.
+  - **기타 안내 전용 항목 (`CR-S4`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`)**: 사용자 응답에 맞춘 맞춤형 YAML / CLI / 코드 설정 가이드와 공식 근거 링크를 제공하고 다음 항목으로 이동합니다.
 
 #### 3-2. Preview Diff (해당 항목 단일 Diff 미리보기 — 파일 수정 없음)
 ```bash

@@ -88,6 +88,9 @@ flowchart LR
 | **영속 세션 · 장기 기억** (`CR-F1/F2` · `GKE-F1/F2`) | 이미 만들어 둔 Agent Platform Reasoning Engine ID가 있는지 (있으면 연결, 없으면 신규 생성 안내) | `agent_engine_id` |
 | **GKE 무중단 종료** (`GKE-O1`) | 에이전트 한 턴의 최대 응답 시간에 맞춘 **종료 유예 시간(초)** (기본 `120`초) | `gke_termination_grace_seconds` |
 | **GKE 코드 격리 · 유휴 일시정지** (`GKE-S2` · `GKE-O2`) | 클러스터/워크로드에 맞는 **실행 패턴**: `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) | `gke_execution_pattern` |
+| **BigQuery Agent Analytics** (`AR-OB2` · `CR-OB2` · `GKE-OB2`, 선택 Add-on) | ① BigQuery **데이터셋 ID** (기본 `agent_analytics`)<br>② **테이블명** (기본 `agent_events`)<br>*(공식 근거: [ADK BigQuery Agent Analytics](https://adk.dev/integrations/bigquery-agent-analytics/))* | `bq_analytics_dataset`, `bq_analytics_table` |
+| **Model Armor 입·출력 가드레일** (`AR-S6` · `CR-S7` · `GKE-S6`, 선택 Add-on · 유료) | ① **신뢰도 임계치**: `LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE`(기본) / `HIGH`<br>② **민감정보(SDP) 필터** 활성 여부 (기본 `true`)<br>③ **악성 URI 필터** 활성 여부 (기본 `true`)<br>*(공식 근거: [Model Armor Overview](https://cloud.google.com/security-command-center/docs/model-armor-overview) · [Well-Architected AI & ML](https://cloud.google.com/architecture/framework/perspectives/ai-ml))* | `model_armor_confidence`, `model_armor_enable_sdp`, `model_armor_enable_malicious_uri` |
+| **고위험 도구 실행 승인 · HITL** (`AR-S7` · `CR-S8` · `GKE-S7`, 선택 Add-on · 안내 전용) | 사람 승인이 필요한 **고위험 도구 목록**(결제·삭제·외부 쓰기 등) 확인 → `FunctionTool(..., require_confirmation=True)` / `ToolConfirmation` 적용 코드 안내<br>*(공식 근거: [ADK Tool Confirmation](https://google.github.io/adk-docs/tools/confirmation/) · [ADK Safety](https://google.github.io/adk-docs/safety/))* | (안내 전용 · 자동 파일 수정 없음) |
 | **단일 정답 항목** (`CR-S1`, `CR-OB1`, `AR-OB1`, `GKE-OB1`, `AR-S1`, `GKE-S1`) | 추가 질문 없음 — 바로 `diff` 미리보기로 진행 | (기본 패치) |
 | **안내 전용 항목** (`*-D1`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`) | 사용자 환경(CI/CD 러너, 외부 OAuth 시스템 등)에 맞춰 수동 설정 절차·코드 예시 안내 | (자동 파일 수정 없음; `*-D1`만 승인 시 `agents-cli scaffold enhance` 실행) |
 
@@ -123,3 +126,8 @@ flowchart LR
 | `enable_model_armor` | `false` | `agent_runtime` | `true`일 때 Model Armor 템플릿(`pi_and_jailbreak` + `sdp`)과 `CONTENT_AUTHZ` 정책을 `production_ready.tf`에 함께 생성 (`AR-S3`, Preview) |
 | `cloud_run_identity_mode` | `"agent_identity"` | `cloud_run` | `CR-S3` 적용 시 Cloud Run 신원 모드 — `"service_account"`(전용 최소 권한 SA 유지, 권장·안정) 또는 `"agent_identity"`(Preview SPIFFE) |
 | `organization_id` | `""` | `cloud_run` | `cloud_run_identity_mode="agent_identity"`일 때 `variables.tf`의 `organization_id` 기본값으로 반영 (`CR-S3`) |
+| `bq_analytics_dataset` | `"agent_analytics"` | 전체 | BigQuery Agent Analytics 데이터셋 ID (`AR-OB2`·`CR-OB2`·`GKE-OB2`, 선택 Add-on) |
+| `bq_analytics_table` | `"agent_events"` | 전체 | BigQuery Agent Analytics 테이블명 (`AR-OB2`·`CR-OB2`·`GKE-OB2`, 선택 Add-on) |
+| `model_armor_confidence` | `"MEDIUM_AND_ABOVE"` | 전체 | Model Armor 프롬프트 인젝션·탈옥 신뢰도 임계치 — `LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE` / `HIGH` (`AR-S6`·`CR-S7`·`GKE-S6`, 선택 Add-on) |
+| `model_armor_enable_sdp` | `true` | 전체 | Model Armor Sensitive Data Protection(민감정보 PII) 필터 활성 여부 (`AR-S6`·`CR-S7`·`GKE-S6`) |
+| `model_armor_enable_malicious_uri` | `true` | 전체 | Model Armor 악성 URI 필터 활성 여부 (`AR-S6`·`CR-S7`·`GKE-S6`) |

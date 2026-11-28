@@ -649,7 +649,7 @@ def scan_project(
                 best_practice=spec.best_practice,
                 references=spec.references_list,
                 legacy_ids=list(spec.legacy_ids),
-                blocking=(status != "NA" and not spec.preview),
+                blocking=(status != "NA" and not spec.preview and spec.grade != "optional"),
                 auto_patch=spec.auto_patch,
             )
         )
@@ -1203,6 +1203,90 @@ def _eval_delegated_auth(ctx: _Ctx) -> Eval:
     )
 
 
+def _has_adk_bq_analytics_extra(pyproject_toml: str) -> bool:
+    for m in re.finditer(r'["\']google-adk\[([^\]]+)\]', pyproject_toml or ""):
+        extras = {e.strip().lower() for e in m.group(1).split(",")}
+        if "bigquery-analytics" in extras or "bigquery_analytics" in extras or "all" in extras:
+            return True
+    return False
+
+
+def _eval_bq_analytics(ctx: _Ctx) -> Eval:
+    """AR-OB2 / CR-OB2 / GKE-OB2 (Tier 3 Optional): BigQueryAgentAnalyticsPlugin + BigQuery dataset."""
+    code = _strip_py_comments(ctx.app_py)
+    has_plugin = "BigQueryAgentAnalyticsPlugin" in code
+    has_extra = _has_adk_bq_analytics_extra(ctx.pyproject_toml) or not bool(
+        re.search(r'["\']google-adk\b', ctx.pyproject_toml or "")
+    )
+    has_dataset = "google_bigquery_dataset" in ctx.all_tf
+    if has_plugin and has_dataset and has_extra:
+        return ("GREEN", False, "BigQueryAgentAnalyticsPlugin + google-adk[bigquery-analytics] + BigQuery 데이터셋 구성 완료")
+    if has_plugin or has_dataset:
+        missing = []
+        if not has_plugin:
+            missing.append("BigQueryAgentAnalyticsPlugin 코드")
+        if not has_extra:
+            missing.append("pyproject.toml google-adk[bigquery-analytics]")
+        if not has_dataset:
+            missing.append("BigQuery 데이터셋 Terraform(bq_analytics.tf)")
+        return ("AMBER", False, f"BigQuery Agent Analytics 일부 구성 — 보완 필요: {', '.join(missing)}")
+    return (
+        "NA",
+        False,
+        "선택 항목(미적용) — 장기 토큰 비용·도구 출처(Provenance)·SQL 분석이 필요할 때 선택 적용 "
+        "(근거: ADK BigQuery Agent Analytics · agents-cli --bq-analytics)",
+    )
+
+
+def _eval_model_armor(ctx: _Ctx) -> Eval:
+    """AR-S6 / CR-S7 / GKE-S6 (Tier 3 Optional): Model Armor template & inline/gateway guardrails."""
+    all_src = "\n".join((ctx.all_tf, ctx.k8s_yaml, _strip_py_comments(ctx.app_py)))
+    has_tpl = "google_model_armor_template" in ctx.all_tf or "modelArmorTemplate" in all_src
+    has_filter = (
+        "pi_and_jailbreak_filter_settings" in ctx.all_tf
+        or "piAndJailbreakFilterSettings" in all_src
+        or "sanitize_user_prompt" in all_src
+        or "ModelArmorClient" in all_src
+    )
+    if has_tpl and has_filter:
+        return ("GREEN", False, "Model Armor 템플릿(프롬프트 인젝션·탈옥·SDP 필터) 구성 완료")
+    if has_tpl or "modelarmor.googleapis.com" in ctx.all_tf:
+        return ("AMBER", False, "Model Armor API 또는 일부 설정만 감지 — google_model_armor_template(pi_and_jailbreak · sdp) 완성 필요")
+    return (
+        "NA",
+        False,
+        "선택 항목(미적용 · 유료) — 외부 입력 프롬프트 인젝션·탈옥·민감정보(SDP) 차단이 필요할 때 선택 적용 "
+        "(근거: Model Armor · Well-Architected AI & ML · SAIF)",
+    )
+
+
+_HIGH_RISK_TOOL_RE = re.compile(
+    r"def\s+((?:delete|remove|drop|pay|charge|transfer|refund|cancel|write|update|send_email|execute_sql)[a-zA-Z0-9_]*)\s*\("
+)
+
+
+def _eval_tool_confirmation(ctx: _Ctx) -> Eval:
+    """AR-S7 / CR-S8 / GKE-S7 (Tier 3 Optional, guidance-only): ADK Tool Confirmation (HITL)."""
+    code = _strip_py_comments(ctx.app_py)
+    hit = _first_match(re.compile(r"\brequire_confirmation\s*=|\bToolConfirmation\b|adk_request_confirmation"), code)
+    if hit:
+        return ("GREEN", False, f"ADK Tool Confirmation(HITL) 승인 게이트 감지 (`{hit}`)")
+    risky = sorted({m.group(1) for m in _HIGH_RISK_TOOL_RE.finditer(code)})
+    if risky:
+        return (
+            "NA",
+            False,
+            f"선택 항목(미적용 · 안내 전용) — 쓰기/삭제성 후보 도구({', '.join(risky[:4])}) 감지됨 · "
+            "고위험 도구에 `FunctionTool(..., require_confirmation=True)` 적용 권장 (근거: ADK Tool Confirmation · ADK Safety)",
+        )
+    return (
+        "NA",
+        False,
+        "선택 항목(미적용 · 안내 전용) — 결제·삭제·외부 쓰기 도구 실행 전 사람 승인(HITL)이 필요할 때 선택 적용 "
+        "(근거: ADK Tool Confirmation · ADK Safety)",
+    )
+
+
 _EVALUATORS: dict[str, Any] = {
     "CR-F1": _eval_session_store,
     "GKE-F1": _eval_session_store,
@@ -1221,6 +1305,9 @@ _EVALUATORS: dict[str, Any] = {
     "CR-OB1": _eval_trace_privacy,
     "AR-OB1": _eval_trace_privacy,
     "GKE-OB1": _eval_trace_privacy,
+    "CR-OB2": _eval_bq_analytics,
+    "AR-OB2": _eval_bq_analytics,
+    "GKE-OB2": _eval_bq_analytics,
     "CR-S1": _eval_cr_authn,
     "CR-S2": _eval_identity,
     "AR-S1": _eval_identity,
@@ -1237,6 +1324,12 @@ _EVALUATORS: dict[str, Any] = {
     "AR-S5": _eval_delegated_auth,
     "CR-S6": _eval_delegated_auth,
     "GKE-S5": _eval_delegated_auth,
+    "AR-S6": _eval_model_armor,
+    "CR-S7": _eval_model_armor,
+    "GKE-S6": _eval_model_armor,
+    "AR-S7": _eval_tool_confirmation,
+    "CR-S8": _eval_tool_confirmation,
+    "GKE-S7": _eval_tool_confirmation,
 }
 
 

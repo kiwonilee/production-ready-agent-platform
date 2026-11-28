@@ -78,23 +78,29 @@ V3_PATCH_FLAGS: dict[str, frozenset[str]] = {
     "CR-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
     "CR-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
     "CR-OB1": frozenset({"C5.1"}),
+    "CR-OB2": frozenset({"BQ_ANALYTICS"}),
     "CR-S1": frozenset({"AUTHN"}),
     "CR-S2": frozenset({"C4.1"}),
     "CR-S3": frozenset({"C4.2"}),
     "CR-S4": frozenset(),  # Agent Gateway for Cloud Run (Preview) — manual guidance only
     "CR-S5": frozenset(),  # Cloud Run sandboxes (Preview) — guidance only (--sandbox-launcher + code executor wiring)
     "CR-S6": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
+    "CR-S7": frozenset({"MODEL_ARMOR"}),
+    "CR-S8": frozenset(),  # ADK Tool Confirmation (HITL) — guidance only (domain high-risk tool selection)
     # Agent Runtime
     "AR-F1": frozenset(),  # platform default VertexAiSessionService
     "AR-F2": frozenset({"MEMBANK"}),  # platform default Memory Bank + ADK preload_memory & after_agent_callback in app/agent.py
     "AR-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
     "AR-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
     "AR-OB1": frozenset({"C5.1"}),
+    "AR-OB2": frozenset({"BQ_ANALYTICS"}),
     "AR-S1": frozenset({"C4.1"}),
     "AR-S2": frozenset({"C4.2"}),
     "AR-S3": frozenset({"C4.4"}),
     "AR-S4": frozenset(),  # Agent Platform Code Execution — agent-code wiring, guidance only
     "AR-S5": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
+    "AR-S6": frozenset({"MODEL_ARMOR"}),
+    "AR-S7": frozenset(),  # ADK Tool Confirmation (HITL) — guidance only
     # GKE
     "GKE-F1": frozenset({"C2.1"}),
     "GKE-F2": frozenset({"MEMBANK"}),
@@ -103,11 +109,14 @@ V3_PATCH_FLAGS: dict[str, frozenset[str]] = {
     "GKE-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
     "GKE-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
     "GKE-OB1": frozenset({"C5.1"}),
+    "GKE-OB2": frozenset({"BQ_ANALYTICS"}),
     "GKE-S1": frozenset({"C4.1"}),
     "GKE-S2": frozenset({"SANDBOX"}),
     "GKE-S3": frozenset({"C4.2"}),
     "GKE-S4": frozenset({"C4.4"}),
     "GKE-S5": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
+    "GKE-S6": frozenset({"MODEL_ARMOR"}),
+    "GKE-S7": frozenset(),  # ADK Tool Confirmation (HITL) — guidance only
 }
 
 # Base Terraform scaffold for prototypes (no service.tf yet) so selected v3 items have a place to land.
@@ -135,7 +144,7 @@ def select_patch_items(
     chosen: list[str] = []
     for item_id in sel.ids:
         spec = ITEM_BY_ID[item_id]
-        if spec.preview:
+        if spec.preview or spec.grade == "optional":
             continue
         if spec.grade == "conditional" and spec.condition:
             cres = conds.get(spec.condition)
@@ -218,6 +227,9 @@ def preview_patches(
 
     # 6. Cloud Run IAM authentication (CR-S1) — merges onto already-planned Terraform content
     _prepare_cloud_run_authn(root, target, item_ids, planned_files)
+
+    # 7. Tier 3 Optional Production Add-ons (opt-in only: BigQuery Agent Analytics & Model Armor)
+    _prepare_optional_addons(root, project_name, target, item_ids, params, record)
 
     patches: list[FilePatch] = []
     for rel_path, (new_content, applied) in sorted(planned_files.items()):
@@ -330,6 +342,8 @@ _STATUS_BADGE = {"GREEN": "🟢 충족", "AMBER": "🟡 보완", "RED": "🔴 �
 
 
 def _status_badge(item: Any) -> str:
+    if getattr(item, "grade", "") == "optional" and item.status == "NA":
+        return "⚪ 선택 (미적용)"
     badge = _STATUS_BADGE.get(item.status, item.status)
     if getattr(item, "preview", False) and item.status != "NA":
         badge += " · Preview"
@@ -4817,15 +4831,32 @@ app.title = "{project_name}"
 def _prepare_pyproject_toml(
     root: Path, target: TargetType, item_ids: set[str], record: Any
 ) -> None:
-    """[C5.1] Ensures Cloud Run / GKE ADK projects declare google-adk[gcp,otel-gcp] for Cloud Trace OTLP export."""
-    if target not in ("cloud_run", "gke") or "C5.1" not in item_ids:
+    """Ensures google-adk extras ([gcp,otel-gcp] for C5.1, [bigquery-analytics] for BQ_ANALYTICS)."""
+    need_otel = target in ("cloud_run", "gke") and "C5.1" in item_ids
+    need_bq = "BQ_ANALYTICS" in item_ids
+    if not (need_otel or need_bq):
         return
     pyproj_rel = "pyproject.toml"
     pyproj_path = root / pyproj_rel
     if not pyproj_path.exists():
         return
     txt = pyproj_path.read_text(encoding="utf-8")
-    if _has_adk_otel_gcp_extras(txt):
+
+    req_extras: list[str] = []
+    applied: list[str] = []
+    if need_otel and not _has_adk_otel_gcp_extras(txt):
+        req_extras.extend(["gcp", "otel-gcp"])
+        applied.append("C5.1")
+    if need_bq:
+        has_bq = any(
+            "bigquery-analytics" in {e.strip().lower() for e in m.group(1).split(",")}
+            or "all" in {e.strip().lower() for e in m.group(1).split(",")}
+            for m in re.finditer(r'["\']google-adk\[([^\]]+)\]', txt)
+        )
+        if not has_bq:
+            req_extras.append("bigquery-analytics")
+            applied.append("BQ_ANALYTICS")
+    if not req_extras:
         return
 
     pattern = re.compile(r'(["\'])google-adk(?:\[([^\]]+)\])?([^"\']*)\1')
@@ -4843,14 +4874,160 @@ def _prepare_pyproject_toml(
     )
     quote = chosen.group(1)
     existing_extras = [e.strip() for e in (chosen.group(2) or "").split(",") if e.strip()]
-    for req_extra in ("gcp", "otel-gcp"):
+    for req_extra in req_extras:
         if req_extra not in {e.lower() for e in existing_extras}:
             existing_extras.append(req_extra)
     spec = chosen.group(3) or ""
     replacement = f'{quote}google-adk[{",".join(existing_extras)}]{spec}{quote}'
     updated = txt[: chosen.start()] + replacement + txt[chosen.end() :]
     if updated != txt:
-        record(pyproj_rel, updated, ["C5.1"])
+        record(pyproj_rel, updated, applied)
+
+
+def _prepare_optional_addons(
+    root: Path,
+    project_name: str,
+    target: TargetType,
+    item_ids: set[str],
+    params: CustomParams,
+    record: Any,
+) -> None:
+    """Tier 3 Optional Production Add-ons (explicit opt-in only):
+    - BQ_ANALYTICS (*-OB2): app/app_utils/bq_analytics.py + deployment/terraform/.../bq_analytics.tf
+    - MODEL_ARMOR (AR-S6 / CR-S7 / GKE-S6): deployment/terraform/.../model_armor.tf
+    """
+    tf_rel = resolve_terraform_rel_dir(root)
+
+    if "BQ_ANALYTICS" in item_ids:
+        ds = (params.bq_analytics_dataset or "agent_analytics").strip()
+        tbl = (params.bq_analytics_table or "agent_events").strip()
+        bq_py = f'''"""[Tier 3 Optional · *-OB2] BigQuery Agent Analytics Plugin helper.
+
+Official Reference:
+- https://adk.dev/integrations/bigquery-agent-analytics/
+- https://google.github.io/agents-cli/guide/deployment/
+
+Attach ``build_bq_analytics_plugin()`` to your ADK ``App(plugins=[...])`` or
+``AdkApp(plugins=[...])`` to stream structured agent events asynchronously via
+the BigQuery Storage Write API.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Any
+
+
+def build_bq_analytics_plugin(
+    project_id: str | None = None,
+    dataset_id: str | None = None,
+    table_id: str | None = None,
+) -> Any:
+    """Returns a configured ADK BigQueryAgentAnalyticsPlugin instance."""
+    from google.adk.plugins.bigquery_agent_analytics_plugin import (
+        BigQueryAgentAnalyticsPlugin,
+    )
+
+    resolved_project = project_id or os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("PROJECT_ID", "")
+    resolved_dataset = dataset_id or os.getenv("BQ_ANALYTICS_DATASET", "{ds}")
+    resolved_table = table_id or os.getenv("BQ_ANALYTICS_TABLE", "{tbl}")
+    return BigQueryAgentAnalyticsPlugin(
+        project_id=resolved_project,
+        dataset_id=resolved_dataset,
+        table_id=resolved_table,
+    )
+'''
+        record("app/app_utils/bq_analytics.py", bq_py, ["BQ_ANALYTICS"])
+
+        bq_tf = f'''# {tf_rel}/bq_analytics.tf
+# [Tier 3 Optional · *-OB2] BigQuery Agent Analytics dataset & API enablement
+# Official Reference: https://adk.dev/integrations/bigquery-agent-analytics/
+
+variable "bq_analytics_dataset" {{
+  type        = string
+  description = "BigQuery dataset ID for ADK BigQueryAgentAnalyticsPlugin structured agent events"
+  default     = "{ds}"
+}}
+
+resource "google_project_service" "bigquery_analytics_api" {{
+  project            = var.project_id
+  service            = "bigquery.googleapis.com"
+  disable_on_destroy = false
+}}
+
+resource "google_bigquery_dataset" "agent_analytics" {{
+  project       = var.project_id
+  dataset_id    = var.bq_analytics_dataset
+  friendly_name = "${{var.project_name}} Agent Analytics"
+  description   = "Structured ADK agent events streamed via BigQueryAgentAnalyticsPlugin (Storage Write API)"
+  location      = var.region
+
+  depends_on = [google_project_service.bigquery_analytics_api]
+}}
+
+output "bq_analytics_dataset_id" {{
+  description = "BigQuery dataset ID for ADK BigQueryAgentAnalyticsPlugin"
+  value       = google_bigquery_dataset.agent_analytics.dataset_id
+}}
+'''
+        record(f"{tf_rel}/bq_analytics.tf", bq_tf, ["BQ_ANALYTICS"])
+
+    if "MODEL_ARMOR" in item_ids:
+        conf = (params.model_armor_confidence or "MEDIUM_AND_ABOVE").strip().upper()
+        if conf not in ("LOW_AND_ABOVE", "MEDIUM_AND_ABOVE", "HIGH"):
+            conf = "MEDIUM_AND_ABOVE"
+        sdp_block = (
+            '''    sdp_settings {
+      basic_config {
+        filter_enforcement = "ENABLED"
+      }
+    }'''
+            if params.model_armor_enable_sdp
+            else "    # sdp_settings disabled by user configuration"
+        )
+        uri_block = (
+            '''    malicious_uri_filter_settings {
+      filter_enforcement = "ENABLED"
+    }'''
+            if params.model_armor_enable_malicious_uri
+            else "    # malicious_uri_filter_settings disabled by user configuration"
+        )
+        ma_tf = f'''# {tf_rel}/model_armor.tf
+# [Tier 3 Optional · Model Armor] Prompt Injection, Jailbreak, SDP & Malicious URI guardrails
+# Official References:
+# - https://cloud.google.com/security-command-center/docs/model-armor-overview
+# - https://cloud.google.com/architecture/framework/perspectives/ai-ml
+
+resource "google_project_service" "model_armor_api" {{
+  project            = var.project_id
+  service            = "modelarmor.googleapis.com"
+  disable_on_destroy = false
+}}
+
+resource "google_model_armor_template" "agent_guardrail" {{
+  provider    = google-beta
+  project     = var.project_id
+  location    = var.region
+  template_id = "${{var.project_name}}-guardrail"
+
+  filter_config {{
+    pi_and_jailbreak_filter_settings {{
+      filter_enforcement = "ENABLED"
+      confidence_level   = "{conf}"
+    }}
+{sdp_block}
+{uri_block}
+  }}
+
+  depends_on = [google_project_service.model_armor_api]
+}}
+
+output "model_armor_template_name" {{
+  description = "Model Armor template resource name for Gateway or inline API sanitization"
+  value       = google_model_armor_template.agent_guardrail.name
+}}
+'''
+        record(f"{tf_rel}/model_armor.tf", ma_tf, ["MODEL_ARMOR"])
 
 
 # ---------------------------------------------------------------------------

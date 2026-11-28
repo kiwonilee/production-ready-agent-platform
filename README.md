@@ -14,12 +14,12 @@
 ## 💡 한 줄 요약: 이 도구는 무엇인가요?
 개발자가 로컬에서 만든 **AI 에이전트 프로토타입(`adk create` 또는 `agents-cli scaffold`)**을 스캔해, **`Agent Runtime` · `Cloud Run` · `GKE`** 환경별 (완전 관리형 ↔ 제어권·유연성 순) **프로덕션 체크리스트**로 프로덕션 준비 상태를 점검하고, 필요한 설정(`ADK 코드` · `Terraform` · `Kubernetes YAML` · `CI/CD 평가 게이트`)을 미리보기 후 적용해 주는 도구입니다.
 
-### ✨ 프로덕션 체크리스트 핵심 원칙
-1. **에이전트 특성에서 나온 항목만 점검합니다** — 모든 항목은 "에이전트의 X 특성 때문에 Y를 해야 한다"로 설명됩니다. (예: 대화 상태 → 관리형 영속 세션 저장, LLM 비결정성 → 평가 데이터셋 · 평가 게이트, 자율적 도구 호출 → 에이전트 전용 신원 · Agent Gateway, 사용자 대신 행동 → 사용자 위임 인증 (Agent Identity auth manager), AI 생성 코드 → Agent Substrate on GKE)
-2. **5개 범주**: State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance. ID는 `<환경>-<범주><번호>` (예: `CR-F1`, `AR-S3`, `GKE-O1`). 항목 수는 Agent Runtime 10 · Cloud Run 11 · GKE 12개입니다. 기존 `C*` ID는 별칭으로 계속 동작합니다.
-3. **등급**: 필수 항목은 반드시 충족 / 조건부 항목(멀티턴 대화 · 장기 기억 필요 · AI 생성 코드 실행 · MCP·외부 도구 호출 · 자주 일시정지·재개하는 상태 유지형 에이전트 · 사용자 대신 외부 도구 호출)은 조건이 해당할 때만 점검(아니면 N/A) / 🅿️ Preview 항목(Agent Registry · Agent Gateway · 사용자 위임 인증 등)은 표시만 하고 Production Ready 판정을 막지 않습니다.
-4. **조건은 코드에서 먼저 자동 판단**하고, 판단하지 못한 것만 사용자에게 묻습니다.
-5. **기존 값은 바꾸지 않습니다** — CPU·메모리·인스턴스 수·GKE 클러스터 모드 같은 값과 비용이 드는 선택형 제품(Model Armor, Cloud Armor, Secure Web Proxy 등)은 권고 사항으로만 안내합니다.
+### ✨ 프로덕션 체크리스트 핵심 원칙 (v4 · 4대 균형 범주 · 공통/고유 분리)
+1. **에이전트 특성에서 나온 항목만 점검합니다** — 모든 항목은 "에이전트의 X 특성 때문에 Y를 해야 한다"로 설명되며, 모든 Check·Best Practice에 공식 문서 근거 링크가 포함됩니다.
+2. **4대 균형 범주 · 31개 고유 항목 (중복 0건)**: `RS` (Runtime & State) · `ID` (Identity & Governance) · `SF` (Safety & Guardrails) · `DO` (Delivery, Eval & Observability). 전 환경 공통 6개(`COMMON-*`)와 런타임 고유 항목(`AR-*` 8 · `CR-*` 8 · `GKE-*` 9)을 분리했으며, 기존 v3(`CR-F1`, `AR-S3`, `GKE-O1`) 및 v2 `C*` ID는 별칭으로 100% 하위 호환됩니다.
+3. **등급**: 필수 항목은 반드시 충족 / 조건부 항목(멀티턴 대화 · 장기 기억 필요 · AI 생성 코드 실행 · MCP·외부 도구 호출 · 유휴 일시정지·복원 · 사용자 대신 외부 도구 호출)은 조건이 해당할 때만 점검(아니면 N/A) / 🅿️ Preview 및 🧩 선택형 Add-on(BigQuery Agent Analytics · Model Armor · ADK Tool Confirmation HITL · Online Evaluation Monitor)은 판정을 막지 않고 사용자가 직접 선택할 때만 적용합니다.
+4. **선택 적용 · 1개 Feature씩 순차 반영**: 전체 Best Practice를 먼저 진단·설명(Find)한 뒤 사용자가 고른 항목만 맞춤 설정을 질문하고 1개씩 diff 승인 → 적용합니다.
+5. **기존 값은 바꾸지 않습니다** — CPU·메모리·인스턴스 수·GKE 클러스터 모드 같은 값과 아키텍처 선택은 권고 사항으로만 안내합니다.
 
 > [!IMPORTANT]
 > **일반 플랫폼 BP는 Google Cloud 플랫폼 Skill을 함께 사용하세요.** 헬스 프로브 · 멀티존/PDB · Terraform IaC · 알림 정책 · Non-Root · 사설 연결 · Pod Security Standards · 서비스 계정 키 미사용(Workload Identity Federation)처럼 모든 컨테이너 서비스에 해당하는 BP는 이 체크리스트에서 점검하지 않습니다. [google/skills · cloud](https://github.com/google/skills/tree/main/skills/cloud)의 플랫폼 Skill을 **함께 참조할 것을 적극 권장**합니다.
@@ -81,17 +81,17 @@ agents-cli setup --skip-auth
 agents-cli --version
 ```
 
-**② `agent-production-readiness` + Google Cloud 플랫폼 Agent Skills (`google/skills`) 설치** *(Antigravity CLI `agy` · Gemini CLI · Claude Code · Cursor 공통)*:
+**② Antigravity 통합 플러그인 설치 (권장 · Antigravity & Antigravity CLI `agy` 전용)**:
+단 한 줄로 **Agent Skill(`agent-production-readiness`) + 네이티브 슬래시 커맨드 4종(`/prod-ready-doctor`, `/prod-ready-scan`, `/prod-ready-fix`, `/prod-ready-report`) + 상시 가드레일 규칙(`rules/AGENTS.md`)**이 통합 설치됩니다.
+```bash
+agy plugin install https://github.com/kiwonilee/production-ready-agent-platform
+agy plugin list
+```
+*(플러그인 없이 Standalone Skill 폴더만 수동 설치하려면:)*
 ```bash
 rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
 curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" \
   | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
-
-# 대상 환경(agent_runtime | cloud_run | gke)의 공식 Google Cloud Agent Skills(google/skills) 설치 + doctor 검증
-python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py doctor . \
-  --target agent_runtime \
-  --install-platform-skills \
-  --skills-dir ~/.gemini/skills
 ```
 
 **③ 기존 ADK 프로젝트에 배포 구성(`deployment/`)이 없는 경우**:
@@ -106,43 +106,16 @@ agents-cli scaffold enhance . \
   --region us-central1
 ```
 
-### 2. 표준 4단계 워크플로우 & 기본 추천 프롬프트
+### 2. Antigravity 슬래시 커맨드 기반 4단계 워크플로우
 
-프로젝트 루트에서 코딩 에이전트(`agy`, `gemini`, `claude` 등)를 열고 아래 4단계 순서로 프롬프트를 입력하는 것을 권장합니다.
+프로젝트 루트에서 **Antigravity** 또는 **Antigravity CLI (`agy`)** 를 열고 아래 슬래시 커맨드를 순서대로 실행하세요:
 
-```mermaid
-flowchart LR
-  S1["Step 1 · doctor + scan<br/>의존성·조건 판단·정적 진단"] --> S2["Step 2 · diff<br/>변경점 검토 (agent.py 불변 확인)"]
-  S2 --> S3["Step 3 · apply + report<br/>보완 적용·재검사·리포트 생성"]
-  S3 --> S4["Step 4 · deploy + 플랫폼 Skill<br/>배포 명령어·일반 BP 추가 점검"]
-```
-
-**Step 1. 의존성 점검 + 조건 자동 판단 + 정적 진단 (`doctor` → `scan`)**
-```text
-agent-production-readiness 스킬을 사용해서 현재 ADK 프로젝트를 [Agent Runtime / Cloud Run / GKE] 기준으로 점검해줘.
-1) 먼저 doctor로 필수 도구(agents-cli · agents-cli Skill)와 권장 플랫폼 Skill 설치 상태를 확인해줘.
-2) 코드에서 멀티턴 대화, 장기 기억, AI 생성 코드 실행, MCP·외부 도구 호출, 사용자 대신 외부 호출 여부를 자동 판단하고, 판단이 애매한 조건만 한 번에 질문해줘.
-3) 파일은 아직 수정하지 말고, 5개 카테고리(State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance)별 충족 현황과 주요 블로커를 표로 정리해줘.
-```
-
-**Step 2. 변경점(diff) 미리보기 — `app/agent.py` 불변 확인**
-```text
-방금 진단 결과에서 보완이 필요한 항목들의 변경점(diff)을 먼저 보여줘.
-app/agent.py의 에이전트 로직·도구·프롬프트는 수정하지 않는지 확인해주고, 자동 적용되는 항목과 내가 직접 설정해야 하는 안내 전용(guidance-only) 항목을 구분해서 설명해줘.
-```
-
-**Step 3. 보완 적용 · 재검사 · 리포트 생성 (`apply` → `report`)**
-```text
-diff 확인했어. 제안된 변경 사항을 적용하고, uv.lock 갱신 후 재검사까지 돌려줘.
-최종 결과를 READINESS_REPORT.md와 READINESS_REPORT.html로 생성하고,
-남은 Preview 항목 · 권고 사항(Advisory) · 함께 실행해야 할 Google Cloud 플랫폼 Skill 목록을 요약해줘.
-```
-
-**Step 4. GCP 배포 명령어 정리 + 일반 플랫폼 BP 추가 점검**
-```text
-현재 프로젝트 설정 기준으로 GCP 배포 명령어(Terraform apply + agents-cli deploy)와 배포 후 검증 명령어(Agent Registry 등록 확인, 인증 호출 테스트)를 순서대로 정리해줘.
-그리고 이 환경에서 권장되는 Google Cloud 플랫폼 Skill로 일반 인프라 Best Practice(헬스 프로브 · 알림 정책 · 네트워크 · 컨테이너 보안 등)도 이어서 점검해줘.
-```
+| 단계 | 슬래시 커맨드 | 동작 |
+| :--- | :--- | :--- |
+| **Step 0 · Preflight** | `/prod-ready-doctor` | `agents-cli` 및 대상 환경 Google Cloud 플랫폼 스킬(`google/skills`) 점검 · 동의 시 설치 |
+| **Step 1 · Find** | `/prod-ready-scan` | 파일 수정 없이 v4(4대 범주 · 31개 고유 항목) 진단표 + 항목별 1줄 설명 · 공식 근거 링크 출력 |
+| **Step 2 · Fix** | `/prod-ready-fix CR-RS1, CR-ID1, CR-DO1` | 선택한 항목을 **1개씩 순차 진행**: 맞춤 설정 질문 → 단일 `diff` 미리보기 → 승인 → 적용 |
+| **Step 3 · Report** | `/prod-ready-report` | `uv.lock` 갱신 → 최종 재검사 → `READINESS_REPORT.md/.html` 생성 + 배포 · 플랫폼 스킬 안내 |
 
 ### 3. 상황별 추천 프롬프트 모음
 
@@ -196,10 +169,9 @@ diff 확인했어. 제안된 변경 사항을 적용하고, uv.lock 갱신 후 �
 
 ## 🚀 실행 방법 요약 (Chat · Web UI · CLI)
 
-### 방법 1️⃣: Antigravity (또는 Gemini CLI)에서 **채팅으로** 사용하기 *(가장 추천)*
+### 방법 1️⃣: Antigravity / Antigravity CLI (`agy`) 통합 플러그인 설치 *(가장 추천)*
 ```bash
-rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
-curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
+agy plugin install https://github.com/kiwonilee/production-ready-agent-platform
 ```
 
 ### 방법 2️⃣: 브라우저 **웹 화면(Workbench UI)** 띄우기
@@ -226,37 +198,32 @@ uv run prod-ready demo samples/04_gke_agent --target gke
 ## 💡 What is this in one sentence?
 This toolkit scans a local **ADK (`google-adk`)** / **`agents-cli`** agent project against the **Production-Readiness Checklist** for **Agent Runtime**, **Cloud Run**, and **GKE**, previews diffs, and applies production settings in place (ADK code, Terraform, Kubernetes YAML, CI/CD evaluation gate).
 
-### Production-Readiness Checklist Principles
-- **Agent characteristics only**: every item is justified as "because the agent has trait X, it must do Y" (conversation state → persistent session, LLM non-determinism → CI/CD eval gate, autonomous tool calls → dedicated identity & Agent Gateway, acting on behalf of users → user-delegated auth (Agent Identity auth manager), AI-generated code → Agent Substrate on GKE).
-- **5 categories** (State & Memory · Runtime Lifecycle · CI/CD & Evaluation · Observability · Security & Governance); IDs like `CR-F1`, `AR-S3`, `GKE-O1`; Agent Runtime 10 · Cloud Run 11 · GKE 12 items; legacy `C*` IDs are accepted as aliases.
-- **Grades**: required items must pass; conditional items (multi-turn conversation, long-term memory, AI-generated code execution, MCP/external tool calls, long-idle conversational agents, tools called on behalf of users) are evaluated only when the condition applies (else N/A); 🅿️ Preview items are reported but never block Production Ready.
-- **Delegated platform BPs**: probes, PDB, IaC, alerts, non-root, private networking, PSS, and no service-account keys (Workload Identity Federation) are not checked here — **strongly recommended: also use the Google Cloud platform skills** at https://github.com/google/skills/tree/main/skills/cloud.
-- See [`/checklist`](web/static/checklist.html), [`/guide`](web/static/guide.html) (Skill Usage Guide & Recommended Prompts), [`checklist-rubric.md`](skills/agent-production-readiness/references/checklist-rubric.md), and [`docs/checklist-v3-spec.md`](docs/checklist-v3-spec.md).
+### Production-Readiness Checklist Principles (v4)
+- **Agent characteristics only**: every item is justified as "because the agent has trait X, it must do Y" and includes official Google Cloud / ADK documentation references.
+- **4 balanced categories · 31 unique items (zero duplication)**: `RS` (Runtime & State) · `ID` (Identity & Governance) · `SF` (Safety & Guardrails) · `DO` (Delivery, Eval & Observability), split into 6 cross-runtime Common items (`COMMON-*`) and runtime-specific items (`AR-*` 8 · `CR-*` 8 · `GKE-*` 9). Legacy v3 and `C*` IDs remain accepted as aliases.
+- **Grades**: required items must pass; conditional items are evaluated only when applicable (else N/A); 🅿️ Preview and 🧩 Optional Add-on items (`COMMON-DO3`, `COMMON-SF1`, `COMMON-SF2`, `AR-DO2`) never block Production Ready and are opt-in only.
+- **Delegated platform BPs**: probes, PDB, IaC, alerts, non-root, private networking, PSS, and Workload Identity Federation are delegated to Google Cloud platform skills at https://github.com/google/skills/tree/main/skills/cloud.
 
-## 🧭 Using the Agent Skill on an Existing ADK Agent
-If you already built `app/agent.py` (without `deployment/`), first add deployment scaffolding without touching your agent code (`Skipping (your code)`):
+## 🧭 Using the Antigravity Plugin Package (`agy` & Antigravity)
+Install the integrated plugin (Agent Skill + 4 native slash commands + lightweight `rules/AGENTS.md` guardrails) in one command:
 ```bash
-agents-cli scaffold enhance . --deployment-target agent_runtime --cicd-runner google_cloud_build --region us-central1
+agy plugin install https://github.com/kiwonilee/production-ready-agent-platform
 ```
-Then open your coding agent (`agy`, Gemini CLI, Claude Code, Cursor) in the project root and follow the 4-step prompt flow (also available interactively with a custom prompt builder at [`/guide`](web/static/guide.html)):
-1. **Scan (`doctor` → `scan`)**: `"Use agent-production-readiness to check this ADK project for [Agent Runtime / Cloud Run / GKE]. Run doctor first, auto-detect workload conditions, ask only ambiguous ones, and summarize the 5 categories in a table without modifying files."`
-2. **Preview (`diff`)**: `"Show the file-by-file diff for the failing items. Confirm app/agent.py logic is untouched, and separate auto-patched items from guidance-only items."`
-3. **Apply & Report (`apply` → `report`)**: `"Diff looks good. Apply the patches, update uv.lock, re-scan, export READINESS_REPORT.md/.html, and list remaining Preview items, advisories, and recommended Google Cloud platform skills."`
-4. **Deploy & Platform Skills**: `"Provide the exact Terraform + agents-cli deploy + post-deploy verification commands, then run the recommended Google Cloud platform skills for general infrastructure BPs."`
+Then open **Antigravity** or **`agy`** in your ADK project root:
+1. **`/prod-ready-doctor`** — Preflight `agents-cli` and recommended `google/skills` platform skills.
+2. **`/prod-ready-scan`** — Read-only v4 diagnostic table + 1-line explanations & official reference links.
+3. **`/prod-ready-fix CR-RS1, CR-ID1, CR-DO1`** — Interactive feature-by-feature configure, diff preview, and apply.
+4. **`/prod-ready-report`** — Refresh `uv.lock`, re-scan, export `READINESS_REPORT.md/.html`, and list deploy & platform skill next steps.
 
 ## 🚀 Quickstart
 ```bash
-# Install skill directly from GitHub for Antigravity / Gemini CLI
-rm -rf ~/.gemini/skills/agent-production-readiness && mkdir -p ~/.gemini/skills
-curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
+# Install integrated Antigravity Plugin directly from GitHub
+agy plugin install https://github.com/kiwonilee/production-ready-agent-platform
+agy plugin list
 
 # Or run the interactive Web Workbench (includes 3-track /lab guide: Agent Runtime, Cloud Run, GKE)
 uv run prod-ready ui samples/02_cloud_run_agent --port 8090
 
 # Dependency preflight (required: agents-cli >= 1.5.0 + agents-cli skills; strongly recommended: platform skills)
 uv run prod-ready doctor . --target gke            # add --install-platform-skills to install (explicit consent)
-
-# Or run CLI commands directly (Cloud Run or GKE)
-uv run prod-ready demo samples/02_cloud_run_agent
-uv run prod-ready demo samples/04_gke_agent --target gke
 ```

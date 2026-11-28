@@ -1,0 +1,30 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "agent-production-readiness",
+  "displayName": "Production Ready Agent Platform",
+  "version": "4.0.0",
+  "description": "Integrated Antigravity plugin (Skills, Slash Commands, and Guardrail Rules) to scan local ADK / google-agents-cli projects against the Google Cloud Agent Production-Readiness Checklist v4 (Agent Runtime, Cloud Run, GKE), configure selected features one by one, preview diffs, and apply fixes safely.",
+  "logo": ".antigravity-plugin/logo.svg",
+  "author": {
+    "name": "Google Cloud CE · Production Ready Agent Platform",
+    "url": "https://github.com/kiwonilee/production-ready-agent-platform"
+  },
+  "homepage": "https://prod-ready-workbench-1018407696981.us-central1.run.app/guide",
+  "repository": "https://github.com/kiwonilee/production-ready-agent-platform",
+  "license": "Apache-2.0",
+  "keywords": [
+    "antigravity",
+    "adk",
+    "agents-cli",
+    "agent-runtime",
+    "cloud-run",
+    "gke",
+    "production-readiness",
+    "google-cloud"
+  ],
+  "suggestedPrompts": [
+    "/prod-ready-scan",
+    "/prod-ready-fix CR-RS1",
+    "/prod-ready-report"
+  ]
+}

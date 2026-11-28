@@ -2085,16 +2085,30 @@ gcloud services enable \
           <strong>Antigravity CLI</strong>(터미널 명령어: <code>agy</code>)를 실행해 로그인 및 스킬 로드를 확인합니다.
         </p>
 
-        <h3>2-1. <code>agent-production-readiness</code> Agent Skill 설치</h3>
+        <h3>2-1. Antigravity 통합 플러그인(Skill + 슬래시 커맨드 + 규칙) 설치</h3>
+        <p style="font-size:13.5px;color:var(--ink-muted);margin:0 0 8px;">
+          <strong>Antigravity &amp; Antigravity CLI (<code>agy</code>)</strong>에서 GitHub URL 한 줄로 핵심 스킬(<code>agent-production-readiness</code>), 네이티브 슬래시 커맨드 4종(<code>/prod-ready-doctor</code> · <code>/prod-ready-scan</code> · <code>/prod-ready-fix</code> · <code>/prod-ready-report</code>), 상시 가드레일(<code>rules/AGENTS.md</code>)을 한 번에 설치합니다.
+        </p>
         <div class="code-wrap">
           <div class="code-head">
-            <span class="code-label">bash · GitHub 저장소에서 Antigravity 글로벌 스킬 디렉터리로 바로 설치 (단일 명령)</span>
+            <span class="code-label">bash · Antigravity Plugin 원클릭 설치 (권장 · Skill + Slash Commands + Rules)</span>
             <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
           </div>
-          <pre class="code-pre">rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
+          <pre class="code-pre">agy plugin install https://github.com/kiwonilee/production-ready-agent-platform
+agy plugin list</pre>
+        </div>
+        <details style="margin:8px 0 14px;padding:10px 14px;border-radius:10px;background:var(--surface-muted);border:1px solid rgba(66,133,244,0.14);font-size:13px;">
+          <summary style="cursor:pointer;font-weight:700;color:var(--ink);">대안: Standalone Agent Skill 폴더만 수동 설치 (~/.gemini/skills)</summary>
+          <div class="code-wrap" style="margin-top:8px;">
+            <div class="code-head">
+              <span class="code-label">bash · GitHub 저장소에서 Antigravity 글로벌 스킬 디렉터리로 수동 복사</span>
+              <button class="copy-btn" onclick="copyCodeBlock(this)">복사</button>
+            </div>
+            <pre class="code-pre">rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
 curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
 ls -la ~/.gemini/skills/agent-production-readiness/SKILL.md</pre>
-        </div>
+          </div>
+        </details>
 
         <h3>2-2. Google Cloud 플랫폼 스킬(<code>google/skills</code>) 설치 및 의존성 사전 점검 (<code>doctor</code>)</h3>
         <p>

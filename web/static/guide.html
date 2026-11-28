@@ -654,18 +654,19 @@
 
     <!-- ==================== HERO ==================== -->
     <section class="card card-rainbow">
-      <div class="eyebrow">AGENT SKILL GUIDE · ALL ENVIRONMENTS</div>
-      <h1>이미 만든 ADK 에이전트에 Agent Skill 적용하기</h1>
+      <div class="eyebrow">ANTIGRAVITY PLUGIN PACKAGE · SKILL + COMMANDS + RULES</div>
+      <h1>Antigravity 플러그인으로 ADK 에이전트 프로덕션 점검하기</h1>
       <p>
-        <code>adk create</code> 또는 직접 작성한 <code>app/agent.py</code> 프로젝트에 <code>agent-production-readiness</code> 스킬을 설치하고,
-        <strong>공통 4단계 프롬프트</strong>만으로 프로덕션 체크리스트 정적 진단 → 변경점 검토 → 보완 적용 → 리포트 생성까지 마치는 실전 가이드입니다.
-        Agent Runtime · Cloud Run · GKE 어느 환경이든 사용법은 동일하며, 스킬이 프로젝트 설정(<code>deployment/</code>)에서 배포 환경을 자동 감지합니다.
-        <em>(Antigravity CLI <code>agy</code> · Gemini CLI · Claude Code · Cursor 공통)</em>
+        <strong>Antigravity &amp; Antigravity CLI (<code>agy</code>) 전용 통합 플러그인 패키지</strong>입니다.
+        단 한 줄 설치(<code>agy plugin install</code>)로 <strong>① 핵심 Agent Skill</strong>(<code>agent-production-readiness</code>),
+        <strong>② 네이티브 슬래시 커맨드 4종</strong>(<code>/prod-ready-doctor</code> · <code>/prod-ready-scan</code> · <code>/prod-ready-fix</code> · <code>/prod-ready-report</code>),
+        <strong>③ 초경량 상시 가드레일 컨텍스트</strong>(<code>rules/AGENTS.md</code>)가 한 번에 활성화됩니다.
+        Agent Runtime · Cloud Run · GKE 어느 환경이든 <code>deployment/</code>에서 자동 감지합니다.
       </p>
 
       <div class="quick-nav">
-        <a class="q-pill" href="#setup">① 설치 · 사전 준비</a>
-        <a class="q-pill" href="#workflow">② 4단계 기본 프롬프트</a>
+        <a class="q-pill" href="#setup">① Antigravity 플러그인 설치</a>
+        <a class="q-pill" href="#workflow">② 슬래시 커맨드 · 4단계 흐름</a>
         <a class="q-pill" href="#builder">③ 내 조건 맞춤 프롬프트 생성기</a>
         <a class="q-pill" href="#recipes">④ 상황별 추천 프롬프트</a>
         <a class="q-pill" href="#scope">⑤ 수정 범위 · 플랫폼 Skill</a>
@@ -705,25 +706,41 @@ agents-cli setup --skip-auth
 agents-cli --version</pre>
       </div>
 
-      <h3>1-2. <code>agent-production-readiness</code> + Google Cloud 플랫폼 Agent Skills (<code>google/skills</code>) 설치</h3>
+      <h3>1-2. Antigravity 통합 플러그인 설치 (권장 · Skill + 슬래시 커맨드 4종 + <code>rules/AGENTS.md</code>)</h3>
+      <p>
+        Antigravity CLI(<code>agy</code>)에서 GitHub URL로 플러그인을 한 번에 설치합니다.
+        설치 후 <code>agy</code>(또는 Antigravity IDE)를 열면 <code>/prod-ready-doctor</code> · <code>/prod-ready-scan</code> · <code>/prod-ready-fix</code> · <code>/prod-ready-report</code> 슬래시 커맨드와 상시 안전 규칙이 자동 등록됩니다.
+      </p>
       <div class="code-wrap">
         <div class="code-head">
-          <span class="code-label">bash · GitHub에서 최신 agent-production-readiness 스킬 및 Google Cloud 플랫폼 스킬 일괄 설치</span>
+          <span class="code-label">bash · Antigravity Plugin 원클릭 설치 (Skill + Commands + Guardrail Context)</span>
           <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
         </div>
-        <pre class="code-pre">rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
+        <pre class="code-pre">agy plugin install https://github.com/kiwonilee/production-ready-agent-platform
+agy plugin list</pre>
+      </div>
+      <p style="font-size:13px;margin-top:-4px;">
+        설치 직후 프로젝트 폴더에서 <code>agy</code>를 실행하고 <strong><code>/prod-ready-doctor</code></strong>를 입력하면 필수 도구(<code>agents-cli</code>)와 대상 환경의 공식 Google Cloud 플랫폼 스킬(<code>google/skills</code>) 설치 상태까지 대화형으로 점검·설치합니다.
+        <a href="https://github.com/kiwonilee/production-ready-agent-platform/blob/main/.antigravity-plugin/plugin.json" target="_blank" rel="noopener noreferrer">플러그인 매니페스트(<code>.antigravity-plugin/plugin.json</code>) ↗</a>
+      </p>
+      <details style="margin:10px 0 14px;padding:10px 14px;border-radius:10px;background:var(--surface-muted);border:1px solid rgba(66,133,244,0.14);font-size:13px;">
+        <summary style="cursor:pointer;font-weight:700;color:var(--ink);">Standalone Skill만 수동 설치하기 (플러그인 대신 스킬 폴더만 복사)</summary>
+        <div class="code-wrap" style="margin-top:10px;">
+          <div class="code-head">
+            <span class="code-label">bash · Standalone Skill 수동 복사 (~/.gemini/skills)</span>
+            <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
+          </div>
+          <pre class="code-pre">rm -rf ~/.gemini/skills/agent-production-readiness &amp;&amp; mkdir -p ~/.gemini/skills
 curl -fsSL "https://github.com/kiwonilee/production-ready-agent-platform/archive/refs/heads/main.tar.gz" \
   | tar -xz -C ~/.gemini/skills/ --strip-components=2 production-ready-agent-platform-main/skills/agent-production-readiness
 
-# 대상 환경(agent_runtime | cloud_run | gke)의 공식 Google Cloud Agent Skills(google/skills) 설치 + doctor 검증
+# 대상 환경(agent_runtime | cloud_run | gke)의 공식 Google Cloud 플랫폼 스킬 설치 + doctor 검증
 python3 ~/.gemini/skills/agent-production-readiness/scripts/prod_ready.py doctor . \
   --target agent_runtime \
   --install-platform-skills \
   --skills-dir ~/.gemini/skills</pre>
-      </div>
-      <p style="font-size:13px;">
-        최신 스킬 소스·문서 확인은 <a href="https://github.com/kiwonilee/production-ready-agent-platform/tree/main/skills/agent-production-readiness" target="_blank" rel="noopener noreferrer">GitHub 저장소 (<code>skills/agent-production-readiness</code>) ↗</a>에서 바로 볼 수 있습니다.
-      </p>
+        </div>
+      </details>
 
       <h3>1-3. 기존 ADK 프로젝트에 배포 구성(<code>deployment/</code>)이 없는 경우</h3>
       <p>
@@ -756,65 +773,53 @@ agents-cli scaffold enhance . \
 
       <div class="flow-grid">
         <div class="flow-step">
-          <div class="flow-step-k">STEP 1 · FIND</div>
+          <div class="flow-step-k">STEP 1 · /prod-ready-scan</div>
           <div class="flow-step-t">진단 · 항목별 1줄 설명</div>
-          <div class="flow-step-d"><code>doctor</code> + Best Practice 전체 <code>scan</code> + 각 항목이 무엇인지 1줄 설명 (수정 없음)</div>
+          <div class="flow-step-d"><code>/prod-ready-doctor</code> + v4 전체 <code>scan</code> + 각 항목 1줄 설명 · 공식 근거 (수정 없음)</div>
         </div>
         <div class="flow-step">
           <div class="flow-step-k">STEP 2 · SELECT</div>
           <div class="flow-step-t">원하는 항목 선택</div>
-          <div class="flow-step-d">진단표를 보고 실제로 도입할 항목 ID(예: <code>CR-F1, CR-S1</code>)만 직접 선택</div>
+          <div class="flow-step-d">진단표를 보고 실제로 도입할 항목 ID(예: <code>CR-RS1, CR-ID1</code>)만 직접 선택</div>
         </div>
         <div class="flow-step">
-          <div class="flow-step-k">STEP 3 · FEATURE LOOP</div>
+          <div class="flow-step-k">STEP 3 · /prod-ready-fix</div>
           <div class="flow-step-t">항목별 설정 · Diff · Apply</div>
           <div class="flow-step-d">선택 항목을 1개씩 순차 진행: 필요 옵션 질문 → 단일 <code>diff</code> 승인 → <code>apply</code></div>
         </div>
         <div class="flow-step">
-          <div class="flow-step-k">STEP 4 · REPORT &amp; DEPLOY</div>
+          <div class="flow-step-k">STEP 4 · /prod-ready-report</div>
           <div class="flow-step-t">리포트 · 배포 · 플랫폼 Skill</div>
           <div class="flow-step-d"><code>uv.lock</code> · 재검사 · <code>READINESS_REPORT</code> 생성 + 배포 · <code>google/skills</code> 연계</div>
         </div>
       </div>
 
-      <h3>Step 1. 전체 진단 + 항목별 1줄 설명 (<code>doctor</code> → <code>scan</code>, 수정 없음)</h3>
+      <h3>Step 1. 전체 진단 + 항목별 1줄 설명 (<code>/prod-ready-scan</code>, 수정 없음)</h3>
       <div class="code-wrap prompt-card">
         <div class="code-head">
-          <span class="code-label">PROMPT 01 · Find — Best Practice 진단 및 항목별 설명 리포트</span>
-          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+          <span class="code-label">ANTIGRAVITY SLASH COMMAND · Find — Best Practice 진단 및 항목별 설명 리포트</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
         </div>
-        <pre class="code-pre">agent-production-readiness 스킬로 현재 ADK 프로젝트를 점검해줘.
-배포 환경은 자동 감지하고, 파일은 수정하지 말고 각 항목의 1줄 설명·공식 근거 링크와 함께 진단 결과표(핵심 판정 + 선택형 Add-on)만 먼저 보여줘.</pre>
+        <pre class="code-pre">/prod-ready-scan</pre>
       </div>
 
-      <h3>Step 2. 적용할 항목 선택 → 항목별 설정 질문 &amp; 단일 Diff 미리보기</h3>
-      <p style="font-size:13.5px;color:var(--ink-muted);margin:-2px 0 8px;">진단표를 보고 필요한 항목만 골라 말하면, 스킬이 <strong>1개 항목씩</strong> 필요한 설정(예: Gateway 방향·모드, 평가 기준 점수, 신원 방식 등)을 묻고 원본 주석 보존(<code># [ORIGINAL ...]</code>) diff를 제시합니다.</p>
+      <h3>Step 2. 적용할 항목 선택 → 항목별 설정 질문 &amp; 단일 Diff 미리보기 (<code>/prod-ready-fix</code>)</h3>
+      <p style="font-size:13.5px;color:var(--ink-muted);margin:-2px 0 8px;">진단표를 보고 필요한 항목 ID만 넘기면, <strong>1개 항목씩</strong> 필요한 설정(예: Gateway 방향·모드, 평가 기준 점수, 신원 방식 등)을 묻고 원본 주석 보존(<code># [ORIGINAL ...]</code>) diff를 제시합니다.</p>
       <div class="code-wrap prompt-card">
         <div class="code-head">
-          <span class="code-label">PROMPT 02 · Select &amp; Feature-by-Feature Configure / Diff</span>
-          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+          <span class="code-label">ANTIGRAVITY SLASH COMMAND · Select &amp; Feature-by-Feature Configure / Diff / Apply</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
         </div>
-        <pre class="code-pre">진단표 중 CR-RS1, CR-ID1, CR-DO1 항목을 적용하고 싶어.
-한 번에 다 고치지 말고 1개 항목씩 필요한 설정을 물어본 뒤, 각 항목의 diff를 먼저 보여줘.</pre>
+        <pre class="code-pre">/prod-ready-fix CR-RS1, CR-ID1, CR-DO1</pre>
       </div>
 
-      <h3>Step 3. 항목별 승인 후 적용 → 모든 선택 항목 완료 후 재검사 · 리포트</h3>
+      <h3>Step 3. 최종 재검사 · 리포트 생성 · GCP 배포 &amp; 플랫폼 Skill 연계 (<code>/prod-ready-report</code>)</h3>
       <div class="code-wrap prompt-card">
         <div class="code-head">
-          <span class="code-label">PROMPT 03 · 항목별 Apply 승인 + 최종 재검사 · 리포트 생성</span>
-          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
+          <span class="code-label">ANTIGRAVITY SLASH COMMAND · uv.lock 갱신 + READINESS_REPORT + 배포 · 플랫폼 Skill</span>
+          <button type="button" class="copy-btn" onclick="copyBlock(this)">복사</button>
         </div>
-        <pre class="code-pre">방금 보여준 diff 확인했어. 이 항목을 적용하고 다음 선택 항목으로 넘어가줘.
-(모든 선택 항목 적용이 끝나면 uv.lock 갱신, 최종 재검사, READINESS_REPORT 생성까지 진행해줘.)</pre>
-      </div>
-
-      <h3>Step 4. GCP 배포 명령어 정리 + 일반 플랫폼 BP 추가 점검</h3>
-      <div class="code-wrap prompt-card">
-        <div class="code-head">
-          <span class="code-label">PROMPT 04 · 배포 명령어 + 플랫폼 Skill 연계</span>
-          <button type="button" class="copy-btn" onclick="copyBlock(this)">프롬프트 복사</button>
-        </div>
-        <pre class="code-pre">현재 프로젝트의 GCP 배포 및 검증 명령어를 정리해주고, 설치된 Google Cloud 플랫폼 스킬로 일반 인프라 설정도 이어서 점검해줘.</pre>
+        <pre class="code-pre">/prod-ready-report</pre>
       </div>
     </section>
 
@@ -840,7 +845,7 @@ agents-cli scaffold enhance . \
           <span>
             <span class="cond-title">멀티턴 대화 (conv)</span>
             <span class="cond-sub">이전 대화 맥락을 이어가야 하는 에이전트</span>
-            <span class="cond-id" id="id-conv">*-F1 · 관리형 영속 세션</span>
+            <span class="cond-id" id="id-conv">*-RS1 · 관리형 영속 세션</span>
           </span>
         </label>
         <label class="cond-toggle" id="wrap-memory">
@@ -848,7 +853,7 @@ agents-cli scaffold enhance . \
           <span>
             <span class="cond-title">장기 기억 필요 (memory)</span>
             <span class="cond-sub">세션이 끝나도 사용자 선호·사실을 기억</span>
-            <span class="cond-id" id="id-memory">*-F2 · Memory Bank</span>
+            <span class="cond-id" id="id-memory">*-RS2 · Memory Bank</span>
           </span>
         </label>
         <label class="cond-toggle checked" id="wrap-tools">
@@ -872,7 +877,7 @@ agents-cli scaffold enhance . \
           <span>
             <span class="cond-title">사용자 대신 외부 도구 호출 (delegated)</span>
             <span class="cond-sub">사용자 계정으로 Jira·GitHub 등 외부 시스템 호출</span>
-            <span class="cond-id" id="id-delegated">Agent Identity auth manager (Preview)</span>
+            <span class="cond-id" id="id-delegated">COMMON-ID1 · auth manager (Preview)</span>
           </span>
         </label>
         <label class="cond-toggle builder-gke-only" id="wrap-idle">
@@ -880,7 +885,7 @@ agents-cli scaffold enhance . \
           <span>
             <span class="cond-title">자주 일시정지·재개하는 상태 유지형 에이전트 (idle)</span>
             <span class="cond-sub">GKE 전용 · 입력 대기가 길어 유휴 시 컴퓨팅 반납 필요</span>
-            <span class="cond-id">GKE-O2 · Agent Substrate / Sandbox</span>
+            <span class="cond-id">GKE-RS4 · Agent Substrate / Sandbox</span>
           </span>
         </label>
       </div>
@@ -1055,7 +1060,7 @@ agent-production-readiness 스킬로 정적 API 키나 토큰이 남아 있는�
           <tr>
             <td><strong>🔒 비즈니스 로직 보존</strong></td>
             <td><code>app/agent.py</code> (프롬프트 · 도구 로직)</td>
-            <td>비즈니스 로직과 프롬프트는 변경하지 않습니다. 단, <strong>Memory Bank(<code>*-F2</code>)</strong>를 선택하면 ADK 읽기 도구(<code>preload_memory</code>)와 저장 콜백(<code>after_agent_callback</code>) 배선이 필요하므로 원본을 <code># [ORIGINAL before prod-ready *-F2]</code> 주석으로 보존한 diff를 먼저 보여주고 <strong>사용자 승인 후에만</strong> 반영합니다.</td>
+            <td>비즈니스 로직과 프롬프트는 변경하지 않습니다. 단, <strong>Memory Bank(<code>*-RS2</code>)</strong>를 선택하면 ADK 읽기 도구(<code>preload_memory</code>)와 저장 콜백(<code>after_agent_callback</code>) 배선이 필요하므로 원본을 <code># [ORIGINAL before prod-ready *-RS2]</code> 주석으로 보존한 diff를 먼저 보여주고 <strong>사용자 승인 후에만</strong> 반영합니다.</td>
           </tr>
           <tr>
             <td><strong>🛠️ 자동 패치 가능</strong></td>
@@ -1064,7 +1069,7 @@ agent-production-readiness 스킬로 정적 API 키나 토큰이 남아 있는�
           </tr>
           <tr>
             <td><strong>📋 안내 전용 (Guidance)</strong></td>
-            <td><code>*-D1</code> (CI/CD 파이프라인 생성) · <code>CR-S4</code> (Agent Gateway for Cloud Run) · <code>AR-S4</code> / <code>CR-S5</code> (코드 격리) · <code>AR-S5</code> / <code>CR-S6</code> / <code>GKE-S5</code> (사용자 위임 인증)</td>
+            <td><code>COMMON-DO1</code> (CI/CD 파이프라인 생성) · <code>COMMON-ID1</code> (사용자 위임 인증) · <code>COMMON-SF2</code> (ADK HITL) · <code>AR-SF2</code> / <code>AR-DO2</code> · <code>CR-SF1</code> / <code>CR-SF2</code></td>
             <td>상태를 판정하고 정확한 설정 가이드·명령어만 안내하며 임의로 파일을 덮어쓰지 않습니다.</td>
           </tr>
           <tr>
@@ -1150,42 +1155,42 @@ agent-production-readiness 스킬로 정적 API 키나 토큰이 남아 있는�
       auto: {
         label: "프로젝트 환경 자동 감지",
         ids: {
-          conv: "*-F1 · 관리형 영속 세션",
-          memory: "*-F2 · Memory Bank",
+          conv: "*-RS1 · 관리형 영속 세션",
+          memory: "*-RS2 · Memory Bank",
           tools: "Agent Gateway (Preview)",
           code: "AI 생성 코드 격리",
-          delegated: "Agent Identity auth manager (Preview)",
+          delegated: "COMMON-ID1 · auth manager (Preview)",
         },
       },
       agent_runtime: {
         label: "Agent Runtime",
         ids: {
-          conv: "AR-F1 · 관리형 영속 세션",
-          memory: "AR-F2 · Memory Bank",
-          tools: "AR-S3 · Agent Gateway (Preview)",
-          code: "AR-S4 · Code Execution",
-          delegated: "AR-S5 · auth manager (Preview)",
+          conv: "AR-RS1 · 관리형 영속 세션",
+          memory: "AR-RS2 · Memory Bank",
+          tools: "AR-SF1 · Agent Gateway (Preview)",
+          code: "AR-SF2 · Code Execution",
+          delegated: "COMMON-ID1 · auth manager (Preview)",
         },
       },
       cloud_run: {
         label: "Cloud Run",
         ids: {
-          conv: "CR-F1 · 관리형 영속 세션",
-          memory: "CR-F2 · Memory Bank",
-          tools: "CR-S4 · Agent Gateway (Preview)",
-          code: "CR-S5 · Cloud Run sandboxes (Preview)",
-          delegated: "CR-S6 · auth manager (Preview)",
+          conv: "CR-RS1 · 관리형 영속 세션",
+          memory: "CR-RS2 · Memory Bank",
+          tools: "CR-SF1 · Agent Gateway (Preview)",
+          code: "CR-SF2 · Cloud Run sandboxes (Preview)",
+          delegated: "COMMON-ID1 · auth manager (Preview)",
         },
       },
       gke: {
         label: "GKE",
         ids: {
-          conv: "GKE-F1 · 관리형 영속 세션",
-          memory: "GKE-F2 · Memory Bank",
-          tools: "GKE-S4 · Agent Gateway for GKE (Preview)",
-          code: "GKE-S2 · Agent Substrate / Sandbox",
-          delegated: "GKE-S5 · auth manager (Preview)",
-          idle: "GKE-O2 · 유휴 일시정지 · 복원",
+          conv: "GKE-RS1 · 관리형 영속 세션",
+          memory: "GKE-RS2 · Memory Bank",
+          tools: "GKE-SF2 · Agent Gateway for GKE (Preview)",
+          code: "GKE-SF1 · Agent Substrate / Sandbox",
+          delegated: "COMMON-ID1 · auth manager (Preview)",
+          idle: "GKE-RS4 · 유휴 일시정지 · 복원",
         },
       },
     };

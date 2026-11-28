@@ -49,7 +49,7 @@ flowchart LR
 
 ## 3. 질문 템플릿 (판단하지 못한 조건만)
 
-### Mode A — 선택형 도구(`ask_question` / `ask_user`)가 있을 때
+### 선택형 도구(`ask_question` / `ask_user`)가 있을 때
 
 판단하지 못한 조건마다 질문 하나, 선택지는 `예` / `아니오` 두 개로 묶어서 한 번에 묻습니다.
 
@@ -60,7 +60,7 @@ flowchart LR
 - `MCP 서버·외부 API·다른 에이전트를 호출하나요?`
 - `사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하나요? (사용자 위임 인증)`
 
-### Mode B — 텍스트 대체 (선택형 도구가 없을 때)
+### 텍스트 대체 (선택형 도구가 없을 때)
 
 ```text
 코드에서 판단하지 못한 조건만 확인합니다 (예/아니오):
@@ -76,7 +76,24 @@ flowchart LR
 
 ---
 
-## 4. 권고 사항 후속 질문 (선택 · 판정과 무관)
+## 4. 선택 항목별 적용 전 설정 질문 (Feature-by-Feature Configuration)
+
+`scan` 결과와 항목별 1줄 설명을 본 사용자가 **적용할 항목을 직접 선택(Select)**하면, **1개 항목씩 순차 진행**하면서 그 항목에 필요한 설정만 짧게 묻고 `diff` → 승인 → `apply` 순서로 반영합니다.
+
+| 선택 항목 | 적용 전 확인할 설정 질문 | 매핑 `--params` 키 / 동작 |
+| :--- | :--- | :--- |
+| **Agent Gateway** (`AR-S3` · `CR-S4` · `GKE-S4`) | ① **적용 방향**: Egress (에이전트→외부 도구/MCP) / Ingress (클라이언트→에이전트) / Both (양방향)<br>② **초기 적용 모드**: `DRY_RUN` (감사 로그 확인 후 전환 권장) vs `ENFORCED`<br>③ **Model Armor 연동**: 프롬프트 인젝션·민감정보(SDP) 검사 템플릿 함께 구성할지 여부 | `agent_gateway_direction` (`"egress"` \| `"ingress"` \| `"both"`), `agent_gateway_enforcement_mode` (`"DRY_RUN"` \| `"ENFORCED"`), `enable_model_armor` (`true` \| `false`) *(Cloud Run `CR-S4`는 답변에 맞춰 수동 YAML/CLI 가이드 출력)* |
+| **Cloud Run 신원 · 레지스트리** (`CR-S2` · `CR-S3`) | ① **신원 방식**: 전용 최소 권한 서비스 계정 (`service_account`, 안정·권장) vs Agent Identity (`agent_identity`, Preview SPIFFE)<br>② `agent_identity` 선택 시 **조직 ID** (`organization_id`, 미입력 시 `gcloud projects get-ancestors` 안내) | `cloud_run_identity_mode` (`"service_account"` \| `"agent_identity"`), `organization_id` |
+| **평가 게이트** (`AR-D2` · `CR-D2` · `GKE-D2`) | 평가 통과 **기준 점수** (1.0~5.0, 기본 `3.5`) | `eval_threshold` |
+| **영속 세션 · 장기 기억** (`CR-F1/F2` · `GKE-F1/F2`) | 이미 만들어 둔 Agent Platform Reasoning Engine ID가 있는지 (있으면 연결, 없으면 신규 생성 안내) | `agent_engine_id` |
+| **GKE 무중단 종료** (`GKE-O1`) | 에이전트 한 턴의 최대 응답 시간에 맞춘 **종료 유예 시간(초)** (기본 `120`초) | `gke_termination_grace_seconds` |
+| **GKE 코드 격리 · 유휴 일시정지** (`GKE-S2` · `GKE-O2`) | 클러스터/워크로드에 맞는 **실행 패턴**: `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) | `gke_execution_pattern` |
+| **단일 정답 항목** (`CR-S1`, `CR-OB1`, `AR-OB1`, `GKE-OB1`, `AR-S1`, `GKE-S1`) | 추가 질문 없음 — 바로 `diff` 미리보기로 진행 | (기본 패치) |
+| **안내 전용 항목** (`*-D1`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`) | 사용자 환경(CI/CD 러너, 외부 OAuth 시스템 등)에 맞춰 수동 설정 절차·코드 예시 안내 | (자동 파일 수정 없음; `*-D1`만 승인 시 `agents-cli scaffold enhance` 실행) |
+
+---
+
+## 5. 권고 사항 후속 질문 (선택 · 판정과 무관)
 
 `scan` 결과를 보여 준 뒤, 사용자에게 관련이 있어 보일 때만 짧게 덧붙입니다. 답에 따라 [`checklist-rubric.md`](checklist-rubric.md) §6의 권고 사항을 골라 안내합니다. 체크리스트 판정에는 영향을 주지 않습니다.
 
@@ -91,7 +108,7 @@ flowchart LR
 
 ---
 
-## 5. 선택 `--params` (diff / apply 단계)
+## 6. 선택 `--params` (diff / apply 단계)
 
 엔진 버전에 따라 키가 바뀔 수 있으니 실제 값은 `python3 <SKILL_DIR>/scripts/prod_ready.py diff --help`와 diff 결과로 확인합니다.
 
@@ -101,4 +118,8 @@ flowchart LR
 | `eval_threshold` | `3.5` | 전체 | 평가 게이트 기준 점수 (`CR-D2`·`AR-D2`·`GKE-D2`) |
 | `gke_termination_grace_seconds` | `120` | `gke` | `terminationGracePeriodSeconds` — 최대 응답 시간 이상 (`GKE-O1`) |
 | `gke_execution_pattern` | `"standard_pods"` | `gke` | `agent_substrate`(Agent Substrate on GKE) 또는 `agent_sandbox`(상시 실행 · 사이드카 · Arm · Autopilot) (`GKE-S2`) |
-| `agent_gateway_enforcement_mode` | `"DRY_RUN"` | `agent_runtime` | Agent Gateway 정책을 시험 모드로 검증한 뒤 `ENFORCED`로 전환 (`AR-S3`, Preview) |
+| `agent_gateway_direction` | `"egress"` | `agent_runtime` | Agent Gateway 적용 방향 — `"egress"` (`AGENT_TO_ANYWHERE`), `"ingress"` (`CLIENT_TO_AGENT`), `"both"` (`AR-S3`, Preview) |
+| `agent_gateway_enforcement_mode` | `"DRY_RUN"` | `agent_runtime` | Agent Gateway 정책을 시험 모드로 검증한 뒤 `"ENFORCED"`로 전환 (`AR-S3`, Preview) |
+| `enable_model_armor` | `false` | `agent_runtime` | `true`일 때 Model Armor 템플릿(`pi_and_jailbreak` + `sdp`)과 `CONTENT_AUTHZ` 정책을 `production_ready.tf`에 함께 생성 (`AR-S3`, Preview) |
+| `cloud_run_identity_mode` | `"agent_identity"` | `cloud_run` | `CR-S3` 적용 시 Cloud Run 신원 모드 — `"service_account"`(전용 최소 권한 SA 유지, 권장·안정) 또는 `"agent_identity"`(Preview SPIFFE) |
+| `organization_id` | `""` | `cloud_run` | `cloud_run_identity_mode="agent_identity"`일 때 `variables.tf`의 `organization_id` 기본값으로 반영 (`CR-S3`) |

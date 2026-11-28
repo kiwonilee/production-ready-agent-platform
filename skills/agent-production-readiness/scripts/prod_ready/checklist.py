@@ -85,6 +85,10 @@ class CustomParams:
     egress_mode: str = "PRIVATE_RANGES_ONLY"
     latency_p95_ms: int = 15000
     agent_gateway_enforcement_mode: str = "DRY_RUN"
+    agent_gateway_direction: str = "egress"          # "egress" | "ingress" | "both"
+    enable_model_armor: bool = False                 # Attach Model Armor content guardrails on Agent Gateway
+    cloud_run_identity_mode: str = "agent_identity"  # "agent_identity" | "service_account"
+    organization_id: str = ""                        # Optional GCP Organization ID for SPIFFE principal
     eval_threshold: float = 3.5
     # GKE-native cluster / execution pattern / graceful drain tuning
     gke_cluster_mode: str = "autopilot"
@@ -218,11 +222,34 @@ _CF_EVAL = CustomFieldSpec(
     default="3.5",
     options=["3.0", "3.5", "4.0"],
 )
+_CF_AGW_DIR = CustomFieldSpec(
+    key="agent_gateway_direction",
+    label="Agent Gateway 적용 방향 (egress: 외부 호출 / ingress: 인바운드 / both: 양방향)",
+    default="egress",
+    options=["egress", "ingress", "both"],
+)
 _CF_AGW_MODE = CustomFieldSpec(
     key="agent_gateway_enforcement_mode",
     label="Agent Gateway 정책 모드 (시험 모드 DRY_RUN으로 검증 후 ENFORCED 전환)",
     default="DRY_RUN",
     options=["DRY_RUN", "ENFORCED"],
+)
+_CF_MODEL_ARMOR = CustomFieldSpec(
+    key="enable_model_armor",
+    label="Model Armor 프롬프트·민감정보(SDP) 검사 템플릿 연동 여부",
+    default="false",
+    options=["false", "true"],
+)
+_CF_CR_ID_MODE = CustomFieldSpec(
+    key="cloud_run_identity_mode",
+    label="Cloud Run 신원 방식 (service_account: 전용 최소 권한 SA 권장 / agent_identity: Preview SPIFFE)",
+    default="agent_identity",
+    options=["service_account", "agent_identity"],
+)
+_CF_ORG_ID = CustomFieldSpec(
+    key="organization_id",
+    label="GCP 조직 ID (Cloud Run Agent Identity SPIFFE principal 바인딩용, 선택)",
+    default="",
 )
 _CF_GRACE = CustomFieldSpec(
     key="gke_termination_grace_seconds",
@@ -292,6 +319,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
     "CR-S3": {
         "verify": f'grep -nE "FUNCTIONAL_TYPE_AGENT|FUNCTIONAL_TYPE_MCP_SERVER" {_TF} 2>/dev/null && grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf 2>/dev/null',
         "files": ("deployment/terraform/service.tf", "deployment/terraform/apis.tf"),
+        "fields": (_CF_CR_ID_MODE, _CF_ORG_ID),
         "legacy": ("C4.2",),
     },
     "CR-S4": {
@@ -335,7 +363,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
     "AR-S3": {
         "verify": f'grep -n "agent_gateway_config" {_TF} 2>/dev/null && grep -n "google_network_services_agent_gateway" deployment/terraform/production_ready.tf 2>/dev/null',
         "files": ("deployment/terraform/production_ready.tf", "deployment/terraform/service.tf", "Dockerfile"),
-        "fields": (_CF_AGW_MODE,),
+        "fields": (_CF_AGW_DIR, _CF_AGW_MODE, _CF_MODEL_ARMOR),
         "legacy": ("C4.4",),
     },
     "AR-S4": {

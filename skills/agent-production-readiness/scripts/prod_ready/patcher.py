@@ -581,15 +581,18 @@ def _prepare_variables_tf(
     service_path = root / f"{tf_rel}/service.tf"
     existing_service_tf = service_path.read_text(encoding="utf-8") if service_path.exists() else ""
     mcp_profile = detect_mcp_a2a_profile(root, existing_service_tf) if target == "cloud_run" else None
+    want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
     use_cr_agent_identity = (
         target == "cloud_run"
         and "C4.2" in item_ids
+        and want_cr_agent_identity
         and not (mcp_profile and mcp_profile.is_mcp_server)
     )
+    want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
     use_agent_identity = (
         "C4.2" in item_ids
         and target != "gke"
-        and not (target == "cloud_run" and mcp_profile and mcp_profile.is_mcp_server)
+        and not (target == "cloud_run" and (not want_cr_agent_identity or (mcp_profile and mcp_profile.is_mcp_server)))
     )
 
     if path.exists():
@@ -636,13 +639,14 @@ variable "vpc_subnet_name" {{
 '''
             applied.append("C3.1")
         if use_cr_agent_identity and 'variable "organization_id"' not in content:
-            content = content.rstrip() + '''
+            org_id_default = (params.organization_id or "").replace('"', '\\"')
+            content = content.rstrip() + f'''
 
-variable "organization_id" {
+variable "organization_id" {{
   type        = string
   description = "Optional Google Cloud Organization ID for Cloud Run Agent Identity SPIFFE principal binding (leave empty for org-less projects)"
-  default     = ""
-}
+  default     = "{org_id_default}"
+}}
 '''
             applied.append("C4.2")
         if target == "agent_runtime" and "C4.4" in item_ids and 'variable "agent_gateway_enforcement_mode"' not in content:
@@ -693,12 +697,13 @@ variable "vpc_subnet_name" {{
 }}
 '''
         if use_cr_agent_identity:
-            extra_vars += '''
-variable "organization_id" {
+            org_id_default = (params.organization_id or "").replace('"', '\\"')
+            extra_vars += f'''
+variable "organization_id" {{
   type        = string
   description = "Optional Google Cloud Organization ID for Cloud Run Agent Identity SPIFFE principal binding (leave empty for org-less projects)"
-  default     = ""
-}
+  default     = "{org_id_default}"
+}}
 '''
         if target == "agent_runtime" and "C4.4" in item_ids:
             extra_vars += f'''
@@ -850,10 +855,11 @@ resource "google_project_service_identity" "vertex_sa" {{
     service_path = root / f"{tf_rel}/service.tf"
     existing_service_tf = service_path.read_text(encoding="utf-8") if service_path.exists() else ""
     mcp_profile = detect_mcp_a2a_profile(root, existing_service_tf) if target == "cloud_run" else None
+    want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
     use_agent_identity = (
         "C4.2" in item_ids
         and target != "gke"
-        and not (target == "cloud_run" and mcp_profile and mcp_profile.is_mcp_server)
+        and not (target == "cloud_run" and (not want_cr_agent_identity or (mcp_profile and mcp_profile.is_mcp_server)))
     )
     is_multi_env_service = bool(
         re.search(
@@ -1135,7 +1141,8 @@ def _prepare_service_tf(
                     )
                     applied.append("C3.1")
 
-            if "C4.4" in item_ids and "agent_gateway_config" not in txt:
+            agw_dir = (params.agent_gateway_direction or "egress").strip().lower()
+            if "C4.4" in item_ids and agw_dir in ("egress", "both") and "agent_gateway_config" not in txt:
                 agw_block = """
       # [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress · requires identity_type = "AGENT_IDENTITY")
       # IAP/UAP V2 policy defaults to DRY_RUN in production_ready.tf to avoid HTTP 498 before API allowlisting.
@@ -1216,6 +1223,7 @@ def _prepare_service_tf(
                 if "C3.1" in item_ids
                 else ""
             )
+            agw_dir_fresh = (params.agent_gateway_direction or "egress").strip().lower()
             agw_cfg = (
                 """
       # [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress · UAP V2 starts in DRY_RUN)
@@ -1225,7 +1233,7 @@ def _prepare_service_tf(
         }
       }
 """
-                if "C4.4" in item_ids
+                if ("C4.4" in item_ids and agw_dir_fresh in ("egress", "both"))
                 else ""
             )
             env_blocks = [
@@ -2281,7 +2289,8 @@ resource "kubernetes_service_v1" "app" {{
                             count=1,
                             flags=re.MULTILINE,
                         )
-                if "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
+                want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
+                if want_cr_agent_identity and "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
                     wi_block = (
                         '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
                         '    # Pre-grant least-privilege IAM roles to the SPIFFE principal before migrating live traffic (--no-traffic).\n'
@@ -2525,13 +2534,20 @@ resource "kubernetes_service_v1" "app" {{
             )
         elif "C4.2" in item_ids:
             cr_func_line = '  functional_type      = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)\n'
-            cr_identity_block = (
-                '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
-                '    workload_identity_config {\n'
-                '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
-                '    }\n'
-                '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)\n'
-            )
+            want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
+            if want_cr_agent_identity:
+                cr_identity_block = (
+                    '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                    '    workload_identity_config {\n'
+                    '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                    '    }\n'
+                    '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)\n'
+                )
+            else:
+                cr_identity_block = (
+                    '    # [C4.2] Dedicated least-privilege Service Account retained per cloud_run_identity_mode="service_account"\n'
+                    '    service_account                  = google_service_account.app_sa.email\n'
+                )
         else:
             cr_func_line = ""
             cr_identity_block = "    service_account                  = google_service_account.app_sa.email\n"
@@ -2590,6 +2606,409 @@ resource "google_cloud_run_v2_service" "app" {{
 # ---------------------------------------------------------------------------
 # 3. Drop-In Production Terraform Modules (production_ready.tf for Agent Runtime PSC-I & Agent Gateway, alerts.tf)
 # ---------------------------------------------------------------------------
+
+
+def _render_agent_gateway_tf(params: CustomParams, *, multi_env: bool = False) -> str:
+    """Render Agent Runtime Agent Gateway Terraform resources (single-project or multi-env cicd).
+
+    Supports per-feature configuration selected interactively by the user:
+    - ``agent_gateway_direction``: ``egress`` (AGENT_TO_ANYWHERE), ``ingress`` (CLIENT_TO_AGENT), or ``both``
+    - ``agent_gateway_enforcement_mode``: ``DRY_RUN`` (default) or ``ENFORCED``
+    - ``enable_model_armor``: optional active Model Armor template + CONTENT_AUTHZ policy
+    """
+    direction = (params.agent_gateway_direction or "egress").strip().lower()
+    if direction not in ("egress", "ingress", "both"):
+        direction = "egress"
+    want_egress = direction in ("egress", "both")
+    want_ingress = direction in ("ingress", "both")
+    enable_ma = bool(params.enable_model_armor)
+
+    if not multi_env:
+        gw_blocks: list[str] = []
+        target_refs: list[str] = []
+        dep_refs: list[str] = []
+        if want_egress:
+            target_refs.append("      google_network_services_agent_gateway.egress_gateway.id,")
+            dep_refs.append("    google_network_services_agent_gateway.egress_gateway,")
+            gw_blocks.append('''resource "google_network_services_agent_gateway" "egress_gateway" {
+  provider = google-beta
+  project  = var.project_id
+  location = var.region
+  name     = "${var.project_name}-egress-gw"
+
+  google_managed {
+    governed_access_path = "AGENT_TO_ANYWHERE"
+  }
+
+  registries = [
+    "//agentregistry.googleapis.com/projects/${var.project_id}/locations/${var.region}",
+  ]
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}''')
+        if want_ingress:
+            target_refs.append("      google_network_services_agent_gateway.ingress_gateway.id,")
+            dep_refs.append("    google_network_services_agent_gateway.ingress_gateway,")
+            gw_blocks.append('''resource "google_network_services_agent_gateway" "ingress_gateway" {
+  provider = google-beta
+  project  = var.project_id
+  location = var.region
+  name     = "${var.project_name}-ingress-gw"
+
+  google_managed {
+    governed_access_path = "CLIENT_TO_AGENT"
+  }
+
+  registries = [
+    "//agentregistry.googleapis.com/projects/${var.project_id}/locations/${var.region}",
+  ]
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}''')
+
+        targets_hcl = "\n".join(target_refs)
+        gw_deps_hcl = "\n".join(dep_refs)
+        ma_block = ""
+        if enable_ma:
+            ma_block = f'''
+# [C4.4 · Model Armor] Prompt Injection, Jailbreak & Sensitive Data Protection (SDP) inspection
+resource "google_model_armor_template" "agent_gateway_armor" {{
+  provider    = google-beta
+  project     = var.project_id
+  location    = var.region
+  template_id = "${{var.project_name}}-agw-armor"
+
+  filter_config {{
+    pi_and_jailbreak_filter_settings {{
+      filter_enforcement = "ENABLED"
+      confidence_level   = "MEDIUM_AND_ABOVE"
+    }}
+    sdp_settings {{
+      basic_config {{
+        filter_enforcement = "ENABLED"
+      }}
+    }}
+  }}
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}}
+
+resource "google_network_services_authz_extension" "model_armor_ext" {{
+  project   = var.project_id
+  location  = var.region
+  name      = "${{var.project_name}}-model-armor-ext"
+  service   = "modelarmor.googleapis.com"
+  timeout   = "2s"
+  fail_open = false
+
+  metadata = {{
+    modelArmorTemplate = google_model_armor_template.agent_gateway_armor.name
+  }}
+
+  depends_on = [google_model_armor_template.agent_gateway_armor]
+}}
+
+resource "google_network_security_authz_policy" "model_armor_content_policy" {{
+  project        = var.project_id
+  location       = var.region
+  name           = "${{var.project_name}}-model-armor-policy"
+  policy_profile = "CONTENT_AUTHZ"
+  action         = "CUSTOM"
+
+  target {{
+    resources = [
+{targets_hcl}
+    ]
+  }}
+
+  custom_provider {{
+    authz_extension {{
+      resources = [
+        google_network_services_authz_extension.model_armor_ext.id,
+      ]
+    }}
+  }}
+
+  depends_on = [
+{gw_deps_hcl}
+    google_network_services_authz_extension.model_armor_ext,
+  ]
+}}
+'''
+        ma_followup = (
+            "# Model Armor (pi_and_jailbreak + sdp_settings) is ENABLED above.\n"
+            if enable_ma
+            else "# Optionally add Model Armor templates (piAndJailbreak + sdp) for prompt/response inspection.\n"
+        )
+        return f'''# [C4.4] Central Agent Gateway (direction={direction}, enforcement={params.agent_gateway_enforcement_mode}, model_armor={str(enable_ma).lower()})
+# Note: iamEnforcementMode defaults to "DRY_RUN" to prevent HTTP 498 disruption before essential APIs are allowlisted.
+resource "google_project_service" "agent_gateway_apis" {{
+  for_each = toset([
+    "networkservices.googleapis.com",
+    "networksecurity.googleapis.com",
+    "serviceextensions.googleapis.com",
+    "modelarmor.googleapis.com",
+    "iap.googleapis.com",
+  ])
+  project            = var.project_id
+  service            = each.value
+  disable_on_destroy = false
+}}
+
+{chr(10).join(gw_blocks)}
+
+resource "google_network_services_authz_extension" "iap_request_authz_ext" {{
+  project   = var.project_id
+  location  = var.region
+  name      = "${{var.project_name}}-iap-authz-ext"
+  service   = "iap.googleapis.com"
+  timeout   = "1s"
+  fail_open = false
+
+  metadata = {{
+    iapPolicyVersion   = "V2"
+    iamEnforcementMode = var.agent_gateway_enforcement_mode
+  }}
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}}
+
+resource "google_network_security_authz_policy" "iap_request_authz_policy" {{
+  project        = var.project_id
+  location       = var.region
+  name           = "${{var.project_name}}-iap-authz-policy"
+  policy_profile = "REQUEST_AUTHZ"
+  action         = "CUSTOM"
+
+  target {{
+    resources = [
+{targets_hcl}
+    ]
+  }}
+
+  custom_provider {{
+    authz_extension {{
+      resources = [
+        google_network_services_authz_extension.iap_request_authz_ext.id,
+      ]
+    }}
+  }}
+
+  depends_on = [
+{gw_deps_hcl}
+    google_network_services_authz_extension.iap_request_authz_ext,
+  ]
+}}
+{ma_block}
+# ------------------------------------------------------------------------------
+# [AR-S3 Follow-up] After auditing DRY_RUN logs, add roles/iap.egressor CEL
+# allowlist bindings before promoting var.agent_gateway_enforcement_mode = "ENFORCED".
+{ma_followup}# ------------------------------------------------------------------------------
+'''
+
+    # Multi-env CI/CD mode (for_each = local.deploy_project_ids; never references var.project_id)
+    gw_blocks_ci: list[str] = []
+    target_refs_ci: list[str] = []
+    dep_refs_ci: list[str] = []
+    if want_egress:
+        target_refs_ci.append("      google_network_services_agent_gateway.egress_gateway[each.key].id,")
+        dep_refs_ci.append("    google_network_services_agent_gateway.egress_gateway,")
+        gw_blocks_ci.append('''resource "google_network_services_agent_gateway" "egress_gateway" {
+  provider = google-beta
+  for_each = local.deploy_project_ids
+  project  = each.value
+  location = var.region
+  name     = "${var.project_name}-egress-gw"
+
+  google_managed {
+    governed_access_path = "AGENT_TO_ANYWHERE"
+  }
+
+  registries = [
+    "//agentregistry.googleapis.com/projects/${each.value}/locations/${var.region}",
+  ]
+
+  depends_on = [
+    google_project_service.agent_gateway_apis,
+    google_project_service.deploy_project_services,
+  ]
+}''')
+    if want_ingress:
+        target_refs_ci.append("      google_network_services_agent_gateway.ingress_gateway[each.key].id,")
+        dep_refs_ci.append("    google_network_services_agent_gateway.ingress_gateway,")
+        gw_blocks_ci.append('''resource "google_network_services_agent_gateway" "ingress_gateway" {
+  provider = google-beta
+  for_each = local.deploy_project_ids
+  project  = each.value
+  location = var.region
+  name     = "${var.project_name}-ingress-gw"
+
+  google_managed {
+    governed_access_path = "CLIENT_TO_AGENT"
+  }
+
+  registries = [
+    "//agentregistry.googleapis.com/projects/${each.value}/locations/${var.region}",
+  ]
+
+  depends_on = [
+    google_project_service.agent_gateway_apis,
+    google_project_service.deploy_project_services,
+  ]
+}''')
+
+    targets_ci_hcl = "\n".join(target_refs_ci)
+    deps_ci_hcl = "\n".join(dep_refs_ci)
+    ma_ci_block = ""
+    if enable_ma:
+        ma_ci_block = f'''
+resource "google_model_armor_template" "agent_gateway_armor" {{
+  provider    = google-beta
+  for_each    = local.deploy_project_ids
+  project     = each.value
+  location    = var.region
+  template_id = "${{var.project_name}}-agw-armor"
+
+  filter_config {{
+    pi_and_jailbreak_filter_settings {{
+      filter_enforcement = "ENABLED"
+      confidence_level   = "MEDIUM_AND_ABOVE"
+    }}
+    sdp_settings {{
+      basic_config {{
+        filter_enforcement = "ENABLED"
+      }}
+    }}
+  }}
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}}
+
+resource "google_network_services_authz_extension" "model_armor_ext" {{
+  for_each  = local.deploy_project_ids
+  project   = each.value
+  location  = var.region
+  name      = "${{var.project_name}}-model-armor-ext"
+  service   = "modelarmor.googleapis.com"
+  timeout   = "2s"
+  fail_open = false
+
+  metadata = {{
+    modelArmorTemplate = google_model_armor_template.agent_gateway_armor[each.key].name
+  }}
+
+  depends_on = [google_model_armor_template.agent_gateway_armor]
+}}
+
+resource "google_network_security_authz_policy" "model_armor_content_policy" {{
+  for_each       = local.deploy_project_ids
+  project        = each.value
+  location       = var.region
+  name           = "${{var.project_name}}-model-armor-policy"
+  policy_profile = "CONTENT_AUTHZ"
+  action         = "CUSTOM"
+
+  target {{
+    resources = [
+{targets_ci_hcl}
+    ]
+  }}
+
+  custom_provider {{
+    authz_extension {{
+      resources = [
+        google_network_services_authz_extension.model_armor_ext[each.key].id,
+      ]
+    }}
+  }}
+
+  depends_on = [
+{deps_ci_hcl}
+    google_network_services_authz_extension.model_armor_ext,
+  ]
+}}
+'''
+    return f'''# deployment/terraform/cicd/production_ready.tf
+# Isolated Production-Readiness add-on resources for multi-project CI/CD (staging & prod via local.deploy_project_ids)
+# Direction={direction}, enforcement={params.agent_gateway_enforcement_mode}, model_armor={str(enable_ma).lower()}
+# Note: iamEnforcementMode defaults to "DRY_RUN" to prevent HTTP 498 disruption before essential APIs are allowlisted.
+
+locals {{
+  agent_gateway_api_list = [
+    "networkservices.googleapis.com",
+    "networksecurity.googleapis.com",
+    "serviceextensions.googleapis.com",
+    "modelarmor.googleapis.com",
+    "iap.googleapis.com",
+  ]
+}}
+
+resource "google_project_service" "agent_gateway_apis" {{
+  for_each = {{
+    for pair in setproduct(keys(local.deploy_project_ids), local.agent_gateway_api_list) :
+    "${{pair[0]}}_${{replace(pair[1], ".", "_")}}" => {{
+      project = local.deploy_project_ids[pair[0]]
+      service = pair[1]
+    }}
+  }}
+  project            = each.value.project
+  service            = each.value.service
+  disable_on_destroy = false
+}}
+
+{chr(10).join(gw_blocks_ci)}
+
+resource "google_network_services_authz_extension" "iap_request_authz_ext" {{
+  for_each  = local.deploy_project_ids
+  project   = each.value
+  location  = var.region
+  name      = "${{var.project_name}}-iap-authz-ext"
+  service   = "iap.googleapis.com"
+  timeout   = "1s"
+  fail_open = false
+
+  metadata = {{
+    iapPolicyVersion   = "V2"
+    iamEnforcementMode = var.agent_gateway_enforcement_mode
+  }}
+
+  depends_on = [google_project_service.agent_gateway_apis]
+}}
+
+resource "google_network_security_authz_policy" "iap_request_authz_policy" {{
+  for_each       = local.deploy_project_ids
+  project        = each.value
+  location       = var.region
+  name           = "${{var.project_name}}-iap-authz-policy"
+  policy_profile = "REQUEST_AUTHZ"
+  action         = "CUSTOM"
+
+  target {{
+    resources = [
+{targets_ci_hcl}
+    ]
+  }}
+
+  custom_provider {{
+    authz_extension {{
+      resources = [
+        google_network_services_authz_extension.iap_request_authz_ext[each.key].id,
+      ]
+    }}
+  }}
+
+  depends_on = [
+{deps_ci_hcl}
+    google_network_services_authz_extension.iap_request_authz_ext,
+  ]
+}}
+{ma_ci_block}
+# ------------------------------------------------------------------------------
+# [AR-S3 Follow-up] After auditing DRY_RUN logs in staging/prod, add per-env
+# roles/iap.egressor CEL bindings + Model Armor templates (piAndJailbreak + sdp)
+# before promoting var.agent_gateway_enforcement_mode = "ENFORCED".
+# ------------------------------------------------------------------------------
+'''
 
 
 def _prepare_production_ready_tf(
@@ -2657,112 +3076,7 @@ resource "google_compute_network_attachment" "agent_psc_interface" {{
 
     if need_agw:
         applied_items.append("C4.4")
-        blocks.append('''# [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress) + IAP/UAP V2 AuthzPolicy (Agent Runtime)
-# Note: iamEnforcementMode defaults to "DRY_RUN" so platform calls (Sessions/Logging/Telemetry) are audited
-# without HTTP 498 disruption. Switch var.agent_gateway_enforcement_mode = "ENFORCED" after allowlisting APIs.
-
-resource "google_project_service" "agent_gateway_apis" {
-  for_each = toset([
-    "networkservices.googleapis.com",
-    "networksecurity.googleapis.com",
-    "serviceextensions.googleapis.com",
-    "modelarmor.googleapis.com",
-    "iap.googleapis.com",
-  ])
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = false
-}
-
-resource "google_network_services_agent_gateway" "egress_gateway" {
-  provider = google-beta
-  project  = var.project_id
-  location = var.region
-  name     = "${var.project_name}-egress-gw"
-
-  google_managed {
-    governed_access_path = "AGENT_TO_ANYWHERE"
-  }
-
-  registries = [
-    "//agentregistry.googleapis.com/projects/${var.project_id}/locations/${var.region}",
-  ]
-
-  depends_on = [
-    google_project_service.agent_gateway_apis,
-    google_project_service.services,
-  ]
-}
-
-resource "google_network_services_authz_extension" "iap_request_authz_ext" {
-  project   = var.project_id
-  location  = var.region
-  name      = "${var.project_name}-iap-authz-ext"
-  service   = "iap.googleapis.com"
-  timeout   = "1s"
-  fail_open = false
-
-  metadata = {
-    iapPolicyVersion   = "V2"
-    iamEnforcementMode = var.agent_gateway_enforcement_mode
-  }
-
-  depends_on = [google_project_service.agent_gateway_apis]
-}
-
-resource "google_network_security_authz_policy" "iap_request_authz_policy" {
-  project        = var.project_id
-  location       = var.region
-  name           = "${var.project_name}-iap-authz-policy"
-  policy_profile = "REQUEST_AUTHZ"
-  action         = "CUSTOM"
-
-  target {
-    resources = [
-      google_network_services_agent_gateway.egress_gateway.id,
-    ]
-  }
-
-  custom_provider {
-    authz_extension {
-      resources = [
-        google_network_services_authz_extension.iap_request_authz_ext.id,
-      ]
-    }
-  }
-
-  depends_on = [
-    google_network_services_agent_gateway.egress_gateway,
-    google_network_services_authz_extension.iap_request_authz_ext,
-  ]
-}
-
-# ------------------------------------------------------------------------------
-# [AR-S3 Follow-up 1] MCP Tool-Level RBAC (roles/iap.egressor + CEL)
-# Agent Gateway is NOT a plain L7 ALB: after auditing DRY_RUN logs, grant the
-# Agent SPIFFE Identity explicit tool-level egress permissions before promoting
-# var.agent_gateway_enforcement_mode = "ENFORCED" (otherwise HTTP 498 occurs).
-# ------------------------------------------------------------------------------
-# resource "google_project_iam_member" "agent_mcp_tool_egress" {
-#   project = var.project_id
-#   role    = "roles/iap.egressor"
-#   member  = "principal://agents.global.org-${var.org_id}.system.id.goog/resources/aiplatform/projects/${var.project_number}/locations/${var.region}/reasoningEngines/${google_vertex_ai_reasoning_engine.app.name}"
-#   condition {
-#     title       = "allow_readonly_or_allowlisted_mcp_tools"
-#     description = "Restrict agent egress to read-only MCP tools or explicit allowlist"
-#     expression  = "iap.googleapis.com/mcp.tool.isReadOnly == true || iap.googleapis.com/mcp.toolName in ['get_exchange_rate', 'lookup_invoice']"
-#   }
-# }
-#
-# ------------------------------------------------------------------------------
-# [AR-S3 Follow-up 2] Model Armor (CONTENT_AUTHZ) & Ingress (CLIENT_TO_AGENT)
-# - Model Armor: create a template with BOTH piAndJailbreakFilterSettings and
-#   sdpFilterSettings (filterEnforcement: ENFORCE) and attach via Service
-#   Extensions / Floor Settings (see references/agent-registry-mcp-a2a.md §5.3).
-# - Ingress Protection: for external clients calling the agent, add a separate
-#   CLIENT_TO_AGENT gateway + grant callers roles/iap.httpsResourceAccessor.
-# ------------------------------------------------------------------------------
-''')
+        blocks.append(_render_agent_gateway_tf(params, multi_env=False))
 
     record(rel, "\n".join(blocks).rstrip() + "\n", applied_items)
 
@@ -2887,7 +3201,8 @@ variable "agent_gateway_enforcement_mode" {{
                         'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)',
                         1,
                     )
-                if "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
+                want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
+                if want_cr_agent_identity and "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
                     wi_block = (
                         '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
                         '    workload_identity_config {\n'
@@ -2940,7 +3255,8 @@ variable "agent_gateway_enforcement_mode" {{
             else:
                 txt = txt.replace('agent_framework = "google-adk"', 'agent_framework = "google-adk"\n' + id_block, 1)
             applied.append("C4.2")
-        if "C4.4" in item_ids and "agent_gateway_config" not in txt:
+        agw_dir_cicd = (params.agent_gateway_direction or "egress").strip().lower()
+        if "C4.4" in item_ids and agw_dir_cicd in ("egress", "both") and "agent_gateway_config" not in txt:
             agw_block = """
       # [C4.4] Central Agent Gateway (Agent-to-Anywhere Egress · per-env via for_each)
       # IAP/UAP V2 policy defaults to DRY_RUN in cicd/production_ready.tf to avoid HTTP 498 before API allowlisting.
@@ -3066,105 +3382,7 @@ variable "agent_gateway_enforcement_mode" {{
 
     # 4. cicd/production_ready.tf — standalone new resources for Agent Runtime (AR-S3) across staging & prod
     if target == "agent_runtime" and "C4.4" in item_ids:
-        cicd_pr_tf = '''# deployment/terraform/cicd/production_ready.tf
-# Isolated Production-Readiness add-on resources for multi-project CI/CD (staging & prod via local.deploy_project_ids)
-# Note: iamEnforcementMode defaults to "DRY_RUN" to prevent HTTP 498 disruption before essential APIs are allowlisted.
-
-locals {
-  agent_gateway_api_list = [
-    "networkservices.googleapis.com",
-    "networksecurity.googleapis.com",
-    "serviceextensions.googleapis.com",
-    "modelarmor.googleapis.com",
-    "iap.googleapis.com",
-  ]
-}
-
-resource "google_project_service" "agent_gateway_apis" {
-  for_each = {
-    for pair in setproduct(keys(local.deploy_project_ids), local.agent_gateway_api_list) :
-    "${pair[0]}_${replace(pair[1], ".", "_")}" => {
-      project = local.deploy_project_ids[pair[0]]
-      service = pair[1]
-    }
-  }
-  project            = each.value.project
-  service            = each.value.service
-  disable_on_destroy = false
-}
-
-resource "google_network_services_agent_gateway" "egress_gateway" {
-  provider = google-beta
-  for_each = local.deploy_project_ids
-  project  = each.value
-  location = var.region
-  name     = "${var.project_name}-egress-gw"
-
-  google_managed {
-    governed_access_path = "AGENT_TO_ANYWHERE"
-  }
-
-  registries = [
-    "//agentregistry.googleapis.com/projects/${each.value}/locations/${var.region}",
-  ]
-
-  depends_on = [
-    google_project_service.agent_gateway_apis,
-    google_project_service.deploy_project_services,
-  ]
-}
-
-resource "google_network_services_authz_extension" "iap_request_authz_ext" {
-  for_each  = local.deploy_project_ids
-  project   = each.value
-  location  = var.region
-  name      = "${var.project_name}-iap-authz-ext"
-  service   = "iap.googleapis.com"
-  timeout   = "1s"
-  fail_open = false
-
-  metadata = {
-    iapPolicyVersion   = "V2"
-    iamEnforcementMode = var.agent_gateway_enforcement_mode
-  }
-
-  depends_on = [google_project_service.agent_gateway_apis]
-}
-
-resource "google_network_security_authz_policy" "iap_request_authz_policy" {
-  for_each       = local.deploy_project_ids
-  project        = each.value
-  location       = var.region
-  name           = "${var.project_name}-iap-authz-policy"
-  policy_profile = "REQUEST_AUTHZ"
-  action         = "CUSTOM"
-
-  target {
-    resources = [
-      google_network_services_agent_gateway.egress_gateway[each.key].id,
-    ]
-  }
-
-  custom_provider {
-    authz_extension {
-      resources = [
-        google_network_services_authz_extension.iap_request_authz_ext[each.key].id,
-      ]
-    }
-  }
-
-  depends_on = [
-    google_network_services_agent_gateway.egress_gateway,
-    google_network_services_authz_extension.iap_request_authz_ext,
-  ]
-}
-
-# ------------------------------------------------------------------------------
-# [AR-S3 Follow-up] After auditing DRY_RUN logs in staging/prod, add per-env
-# roles/iap.egressor CEL bindings + Model Armor templates (piAndJailbreak + sdp)
-# before promoting var.agent_gateway_enforcement_mode = "ENFORCED".
-# ------------------------------------------------------------------------------
-'''
+        cicd_pr_tf = _render_agent_gateway_tf(params, multi_env=True)
         record(f"{cicd_rel}/production_ready.tf", cicd_pr_tf, ["C4.4"])
 
 

@@ -2469,8 +2469,13 @@ agy"></pre>
         </div>
 
         <p style="margin-top:10px;font-size:13.5px;color:var(--ink-muted);">
-          💬 이 단계에서는 파일이 바뀌지 않습니다. 특정 항목을 빼거나 옵션(예: 평가 점수 기준, GKE 실행 패턴 등)을 바꾸고 싶다면 <code>agy</code>와 바로 대화해 조정하세요.
+          💬 이 단계에서는 파일이 바뀌지 않습니다. 특정 항목을 빼거나 옵션(예: Agent Gateway 방향 <code>egress/ingress/both</code> · Model Armor, Cloud Run 전용 SA vs Agent Identity, 평가 점수 기준, GKE 실행 패턴 등)을 바꾸고 싶다면 <code>agy</code>와 바로 대화해 조정하세요.
         </p>
+
+        <div class="callout callout-blue" style="margin-top:10px;">
+          <div class="callout-title">🎯 실전 프로덕션 운영 팁 — 원하는 항목만 1개씩 순차 적용 (Option 1)</div>
+          <p style="margin-top:4px;">이 핸즈온 실습에서는 전체 기능을 한 번에 체험하기 위해 모든 항목의 diff를 한꺼번에 확인하지만, 실제 프로덕션 프로젝트에서는 <strong>Find(전체 진단·1줄 설명) → Select(필요한 항목 ID만 선택) → 1개 Feature씩 설정 질문 · Diff · Apply</strong> 순서로 안전하게 적용하는 것이 기본 동작입니다. (<a href="/guide#workflow" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;">실전 사용 가이드 ↗</a>)</p>
+        </div>
 
         <div class="step-footer">
           <button class="btn btn-subtle" onclick="goToStep(4)">← 이전 (Step 4 · 진단)</button>

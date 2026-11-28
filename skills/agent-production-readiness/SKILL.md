@@ -93,10 +93,18 @@ Load from `references/` (relative to this `SKILL.md`) only when needed:
 ## Workflow
 
 ```text
-0. 의존성 점검 ──▶ 1. 조건 판단 ──▶ 2. Scan (정적 점검) ──▶ 3. Diff 미리보기 ──▶ 4. Apply · 재점검 · 리포트 ──▶ 5. 배포 · 플랫폼 Skill 점검
+0. 의존성 점검 (doctor)
+  ──▶ 1. Find: 전체 진단 · 항목별 1줄 설명 리포트 (수정 없음)
+  ──▶ 2. Select: 적용할 항목 선택 (임의 일괄 적용 금지)
+  ──▶ 3. Feature-by-Feature: 항목별 설정 질문 ──▶ Diff 확인 ──▶ 승인 후 Apply (1개씩 순차 진행)
+  ──▶ 4. 최종 재검사 · uv lock · 감사 리포트 (READINESS_REPORT)
+  ──▶ 5. 배포 · 라이브 검증 · 플랫폼 Skill 점검
 ```
 
 Let `<SKILL_DIR>` be the directory containing this `SKILL.md`. Always run `<SKILL_DIR>/scripts/prod_ready.py` with `python3` (pure stdlib).
+
+> **Core Interactive Rule (Option 1 — Select-and-Configure Feature-by-Feature)**:
+> Every production environment is different. **Never** run `apply --items ALL` blindly without user selection. Always: (1) **Find** and explain every item in 1 plain Korean line, (2) let the user **Select** which specific item IDs they want to adopt, and (3) process **one selected feature at a time** — asking only the configuration questions needed for *that* item, showing its exact `diff`, and running `apply` only after explicit user approval. *(Only batch multiple items into a single diff/apply if the user explicitly asks to apply several items together, e.g. in a demo or lab.)*
 
 ### Step 0: 의존성 점검 (Dependency Preflight — ALWAYS run first, even if the user prompt does not mention `doctor`)
 
@@ -109,57 +117,89 @@ python3 "<SKILL_DIR>/scripts/prod_ready.py" doctor <project_dir> --target <agent
 - **Recommended** (never blocking): the Google Cloud platform skills for the target (catalog `platform_skills`, https://github.com/google/skills/tree/main/skills/cloud). If any are missing, **strongly recommend** installing them and ask the user for approval to run `python3 "<SKILL_DIR>/scripts/prod_ready.py" doctor <project_dir> --target <t> --install-platform-skills` (or `npx skills add google/skills --skill <name> ... -g -y`). Never install without the user's explicit consent. Proceed to Step 1 after the user answers either way.
 - As a safety net, `scan` / `diff` / `apply` / `report` also enforce the required-dependency gate and print the `Doctor Preflight` summary (and a warning banner if platform skills are missing), **but never skip Step 0 `doctor` or omit its summary from your response**.
 
-### Step 1: Target & Condition Detection (before `scan`)
+### Step 1: Find — 대상 환경 판별 · 전체 진단 · 항목별 1줄 설명 (수정 없음)
 
-Follow `references/intake-questionnaire.md`:
+Follow `references/intake-questionnaire.md` (§1–§3):
 1. Determine the target (`cloud_run` · `agent_runtime` · `gke`) from the prompt or workspace (or use `--target auto`).
-2. **Auto-detect the conditions from code first** (session service usage, Memory Bank / memory tools, code executors / shell tools, `McpToolset` / `RemoteA2aAgent` / external API tools, credentials for tools called on behalf of users; `idle` only via existing Agent Substrate). Tell the user the detected result in one line each.
-3. **Ask only about conditions you could not detect**, all at once, yes/no (use `ask_question` / `ask_user` if available, otherwise the plain-text template). Never ask about required items, and do not offer "full / PoC" presets — v3 has none.
-4. If the user says a conditional item does not apply, exclude its ID from `--items`.
-
-### Step 2: Scan
+2. **Auto-detect the 6 conditions from code first** (`conv`, `memory`, `code`, `tools`, `delegated`, `idle`). Tell the user the detected result in one line each; ask only about conditions you could not detect (yes/no, all at once). Never ask about required items, and do not offer "full / PoC" presets.
+3. Run a read-only full Best Practice scan (never modify files during Step 1):
 
 ```bash
 python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target> --items ALL
-# or a subset: --items CR-F1,CR-D1,CR-S1   (legacy C* IDs also accepted)
 ```
 
-Present in Korean, in this order (never modify project files during Step 2):
+Present the **Find Report** in Korean, in this order:
 1. **`🩺 의존성 점검 (doctor)` summary**: `agents-cli` version, required `google-agents-cli-*` skills, and target Google Cloud platform skills (✅/❌).
 2. **Gate verdict** and detected conditions.
-3. Items grouped by the checklist's categories (skipping empty categories): ID, title, status (`🟢`/`🟡`/`🔴`/`⚪ N/A`), **whether each item is auto-patched or guidance-only**, and for non-green items the catalog **Check** and **Best Practice** text with reference links. Mark Preview items with 🅿️ and state that they do not block the verdict.
+3. **체크리스트 진단표 (범주별, 빈 범주 생략)**: For **every item** (so the user can decide what they actually need), include:
+   - **ID & 항목명** + grade badge (`필수` / `조건부 ⚙️` / `Preview 🅿️`)
+   - **현재 상태** (`🟢`/`🟡`/`🔴`/`⚪ N/A`)
+   - **항목 1줄 설명** — plain Korean explanation of *what this item does and why an agent needs it*
+   - **적용 방식** — `자동 패치` vs `안내 전용 (수동)`
+   - For non-green items: brief **Check** & **Best Practice** + reference links. Clearly note that Preview items (`🅿️`) never block the verdict.
 4. **Platform skill recommendation** for the target (table above) — always include it.
 5. **Advisories** relevant to the user's situation (optional).
 
-**`*-D1` CI/CD pipeline and `*-D2` eval gate**: `*-D1` checks that an agents-cli generated pipeline exists (`.cloudbuild/staging.yaml` or `.github/workflows/staging.yaml`); it is guidance only — the engine never generates pipeline files. If `*-D1` is RED, propose running `agents-cli scaffold enhance . --cicd-runner google_cloud_build` in the project and run it **only after explicit user approval**. `*-D2` creates the eval dataset/config and inserts the `agent-eval-gate` step (compares the `agents-cli eval run` score to `eval_threshold` and fails, because `eval run` exits 0 regardless) into the existing pipeline; without a pipeline it creates only the dataset/config and skips the gate ("D1 first"). Legacy `C7.1` maps to D1 + D2. `agents-cli infra cicd` (triggers, staging/prod CI/CD infrastructure) is a manual production-environment step: mention it as guidance, never run it.
+If MCP servers or hardcoded MCP/A2A URLs are detected, load `references/agent-registry-mcp-a2a.md` and note the `AgentRegistry.get_mcp_toolset()` / `get_remote_a2a_agent()` migration recipe.
 
-If MCP servers or hardcoded MCP/A2A URLs are detected, load `references/agent-registry-mcp-a2a.md` and include the `AgentRegistry.get_mcp_toolset()` / `get_remote_a2a_agent()` migration recipe.
+### Step 2: Select — 사용자가 적용할 항목 선택 (임의 일괄 적용 금지)
 
-### Step 3: Preview Diffs
+Right after presenting the Step 1 Find Report, **stop and ask the user which items they actually want to apply** — never assume all RED/AMBER items should be applied:
+- Offer clear choices (using `ask_question` if available, or concise plain-text options):
+  - **특정 항목 ID 직접 선택** (예: `CR-F1, CR-S1, CR-OB1` 또는 `AR-D2, AR-S3`)
+  - **필수 미충족 항목만 순차 적용** (Preview 제외)
+  - **지금은 진단만 확인하고 종료**
+- For `*-D1` (CI/CD pipeline): `*-D1` is guidance-only (the engine never generates pipeline files). If selected while RED, propose running `agents-cli scaffold enhance . --cicd-runner google_cloud_build` and execute it **only after explicit user approval** (before `*-D2`). `agents-cli infra cicd` is always a manual production step — mention as guidance, never run it.
 
+### Step 3: Feature-by-Feature Loop — 항목별 설정 질문 → Diff → 승인 후 Apply
+
+Process the user's selected items **one feature at a time (1개 항목씩 순차 진행)** so the user stays in full control of every configuration decision and code/Terraform change. *(Only combine multiple items into one diff/apply if the user explicitly says "한 번에 적용해줘" or requests batch mode.)*
+
+For each selected item `<ONE_ITEM>`:
+
+#### 3-1. Configure (해당 항목에 필요한 설정만 질문)
+Consult `references/intake-questionnaire.md` **§4 (선택 항목별 적용 전 설정 질문)**:
+- **Skip questions** for single-answer items (`CR-S1`, `CR-OB1`, `AR-OB1`, `GKE-OB1`, `AR-S1`, `GKE-S1`, etc.) — go straight to 3-2 Diff.
+- **Ask only the questions required by `<ONE_ITEM>`** (if not already answered by the user):
+  - **Agent Gateway (`AR-S3` · `CR-S4` · `GKE-S4`)**: ① 적용 방향 — `Egress (에이전트→외부 도구/MCP)` / `Ingress (클라이언트→에이전트)` / `Both (양방향)` (`agent_gateway_direction`), ② 초기 적용 모드 — `DRY_RUN (감사 후 전환 권장)` vs `ENFORCED` (`agent_gateway_enforcement_mode`), ③ `Model Armor` 프롬프트·민감정보 검사 연동 여부 (`enable_model_armor`).
+  - **Cloud Run 신원 · 레지스트리 (`CR-S2` · `CR-S3`)**: ① 신원 방식 — `전용 최소 권한 서비스 계정 (권장·안정)` vs `Agent Identity (Preview SPIFFE)` (`cloud_run_identity_mode`), ② `Agent Identity` 선택 시 조직 ID (`organization_id`, 미입력 시 `gcloud projects get-ancestors` 자동 조회 안내).
+  - **평가 게이트 (`*-D2`)**: 통과 기준 점수 (`eval_threshold`, 기본 `3.5`).
+  - **영속 세션 · 장기 기억 (`CR-F1/F2` · `GKE-F1/F2`)**: 기존 Agent Platform Reasoning Engine ID가 있는지 (`agent_engine_id`; 없으면 신규 생성 안내).
+  - **GKE 무중단 종료 (`GKE-O1`)**: 최대 응답 시간에 맞춘 종료 유예 시간 (`gke_termination_grace_seconds`, 기본 `120`초).
+  - **GKE 코드 격리 · 유휴 일시정지 (`GKE-S2` · `GKE-O2`)**: 실행 패턴 — `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) (`gke_execution_pattern`).
+  - **안내 전용 항목 (`CR-S4`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`)**: 사용자 응답에 맞춘 맞춤형 YAML / CLI / 코드 설정 가이드를 제공하고 다음 항목으로 이동합니다.
+
+#### 3-2. Preview Diff (해당 항목 단일 Diff 미리보기 — 파일 수정 없음)
 ```bash
-python3 "<SKILL_DIR>/scripts/prod_ready.py" diff <project_dir> --target <target> --items <items> [--params '<json>']
-# GKE with AI-generated code (GKE-S2):
-# ... --target gke --params '{"gke_execution_pattern":"agent_substrate"}'   # or "agent_sandbox" for always-on agents, sidecars, Arm nodes or Autopilot
+python3 "<SKILL_DIR>/scripts/prod_ready.py" diff <project_dir> --target <target> --items <ONE_ITEM> [--params '<json>']
+```
+- Summarize the exact patched/new files for `<ONE_ITEM>`.
+- **Existing User Code Modification Policy (Mandatory — enforced by the skill, never needs to be repeated in user prompts)**:
+  - Never modify files during `diff`.
+  - When an item modifies existing application code (e.g., `*-F2` Memory Bank wiring `preload_memory` + `after_agent_callback(add_session_to_memory)` in `app/agent.py`, or `memory_service` in `app/fast_api_app.py`), the engine **never deletes original lines** — it comments out the original code with `# [ORIGINAL before prod-ready ...]` and wraps added/updated regions with `# --- [BEGIN prod-ready: ...] ---` / `# --- [END prod-ready: ...] ---`.
+  - Explicitly call out any existing user-code files (`app/agent.py`, `app/fast_api_app.py`) in the diff summary and **wait for explicit user approval before running `apply`**. Never modify existing user code silently.
+- The engine preserves existing sizing (CPU/memory/instances/replicas), cluster mode, ingress, and `agents-cli` resource names, and does **not** auto-apply advisories or delegated platform BPs.
+
+#### 3-3. Apply (승인 후 해당 항목만 반영)
+Only after the user approves `<ONE_ITEM>`'s diff:
+```bash
+python3 "<SKILL_DIR>/scripts/prod_ready.py" apply <project_dir> --target <target> --items <ONE_ITEM> [--params '<json>']
+```
+Report what was applied for `<ONE_ITEM>` and ask whether to proceed to the next selected item (or adjust/stop).
+
+### Step 4: 최종 재검사 · `uv lock` · 감사 리포트
+
+Once all user-selected items are applied (using the union of applied `<selected_items>` or `ALL` for full visibility):
+```bash
+uv lock   # if pyproject.toml exists and changed
+python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target> --items ALL
+python3 "<SKILL_DIR>/scripts/prod_ready.py" report <project_dir> --target <target> --items ALL --format both -o <project_dir>/READINESS_REPORT.md
 ```
 
-Summarize patched vs. new files and separately list any **guidance-only items** with their manual YAML/CLI steps. The engine preserves existing sizing (CPU/memory/instances/replicas), cluster mode, ingress, and agents-cli resource names, and does **not** auto-apply advisories or delegated platform BPs. Preview items are applied only if the user explicitly opts in.
-
-**Existing User Code Modification Policy (Mandatory — enforced by the skill, never needs to be repeated in user prompts)**:
-- Never modify files during `diff`.
-- When a selected checklist item requires modifying existing application code (e.g., `*-F2` Memory Bank wiring `preload_memory` + `after_agent_callback(add_session_to_memory)` in `app/agent.py`, or `memory_service` in `app/fast_api_app.py`), the engine **never deletes the original lines** — it comments out the original code with `# [ORIGINAL before prod-ready ...]` and wraps every added/updated region with `# --- [BEGIN prod-ready: ...] ---` / `# --- [END prod-ready: ...] ---`.
-- Explicitly call out any existing user-code files (`app/agent.py`, `app/fast_api_app.py`) in the diff summary and **wait for the user's explicit approval before running `apply`**. Never modify existing user code silently.
-
-### Step 4: Apply, Re-scan, Report
-
-```bash
-python3 "<SKILL_DIR>/scripts/prod_ready.py" apply <project_dir> --target <target> --items <items> [--params '<json>']
-uv lock   # if pyproject.toml exists
-python3 "<SKILL_DIR>/scripts/prod_ready.py" scan <project_dir> --target <target> --items <items>
-python3 "<SKILL_DIR>/scripts/prod_ready.py" report <project_dir> --target <target> --items <items> --format both -o <project_dir>/READINESS_REPORT.md
-```
-
-After generating `READINESS_REPORT.md` and `READINESS_REPORT.html`, summarize the final verdict, any remaining Preview items or advisories, and the recommended Google Cloud platform skills for the target.
+After generating `READINESS_REPORT.md` and `READINESS_REPORT.html`, summarize:
+1. Items applied by the user vs. items intentionally deferred/skipped,
+2. The final gate verdict and any remaining Preview items or advisories,
+3. The recommended Google Cloud platform skills for the target.
 
 ### Step 5: Deploy, Live Verification & Platform Skill Follow-up
 

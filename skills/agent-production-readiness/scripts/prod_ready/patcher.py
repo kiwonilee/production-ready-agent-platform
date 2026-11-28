@@ -72,51 +72,41 @@ def _make_diff(rel_path: str, old: str, new: str) -> str:
 # Gemini call retry · endpoint (legacy C6.2: ``retry_options`` / ``GOOGLE_CLOUD_LOCATION``) is ADK agent-code
 # territory (ADK optimization) and was removed from the v3 checklist — no v3 selection (including ALL) produces it.
 V3_PATCH_FLAGS: dict[str, frozenset[str]] = {
-    # Cloud Run
-    "CR-F1": frozenset({"C2.1"}),
-    "CR-F2": frozenset({"MEMBANK"}),
-    "CR-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
-    "CR-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
-    "CR-OB1": frozenset({"C5.1"}),
-    "CR-OB2": frozenset({"BQ_ANALYTICS"}),
-    "CR-S1": frozenset({"AUTHN"}),
-    "CR-S2": frozenset({"C4.1"}),
-    "CR-S3": frozenset({"C4.2"}),
-    "CR-S4": frozenset(),  # Agent Gateway for Cloud Run (Preview) — manual guidance only
-    "CR-S5": frozenset(),  # Cloud Run sandboxes (Preview) — guidance only (--sandbox-launcher + code executor wiring)
-    "CR-S6": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
-    "CR-S7": frozenset({"MODEL_ARMOR"}),
-    "CR-S8": frozenset(),  # ADK Tool Confirmation (HITL) — guidance only (domain high-risk tool selection)
+    # Common (all runtimes)
+    "COMMON-DO1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
+    "COMMON-DO2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
+    "COMMON-DO3": frozenset({"BQ_ANALYTICS"}),  # BigQuery Agent Analytics (Tier 3 Optional)
+    "COMMON-ID1": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
+    "COMMON-SF1": frozenset({"MODEL_ARMOR"}),  # Model Armor standalone template (Tier 3 Optional)
+    "COMMON-SF2": frozenset(),  # ADK Tool Confirmation (HITL, Tier 3 Optional) — guidance only
     # Agent Runtime
-    "AR-F1": frozenset(),  # platform default VertexAiSessionService
-    "AR-F2": frozenset({"MEMBANK"}),  # platform default Memory Bank + ADK preload_memory & after_agent_callback in app/agent.py
-    "AR-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
-    "AR-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
-    "AR-OB1": frozenset({"C5.1"}),
-    "AR-OB2": frozenset({"BQ_ANALYTICS"}),
-    "AR-S1": frozenset({"C4.1"}),
-    "AR-S2": frozenset({"C4.2"}),
-    "AR-S3": frozenset({"C4.4"}),
-    "AR-S4": frozenset(),  # Agent Platform Code Execution — agent-code wiring, guidance only
-    "AR-S5": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
-    "AR-S6": frozenset({"MODEL_ARMOR"}),
-    "AR-S7": frozenset(),  # ADK Tool Confirmation (HITL) — guidance only
+    "AR-RS1": frozenset(),  # platform default VertexAiSessionService
+    "AR-RS2": frozenset({"MEMBANK"}),  # platform default Memory Bank + ADK preload_memory & after_agent_callback
+    "AR-ID1": frozenset({"C4.1"}),
+    "AR-ID2": frozenset({"C4.2"}),
+    "AR-SF1": frozenset({"C4.4"}),
+    "AR-SF2": frozenset(),  # Agent Platform Code Execution — agent-code wiring, guidance only
+    "AR-DO1": frozenset({"C5.1"}),
+    "AR-DO2": frozenset(),  # Online Evaluation Monitor (Agent Runtime exclusive) — guidance only
+    # Cloud Run
+    "CR-RS1": frozenset({"C2.1"}),
+    "CR-RS2": frozenset({"MEMBANK"}),
+    "CR-ID1": frozenset({"AUTHN"}),
+    "CR-ID2": frozenset({"C4.1"}),
+    "CR-ID3": frozenset({"C4.2"}),
+    "CR-SF1": frozenset(),  # Agent Gateway for Cloud Run (Preview) — manual guidance only
+    "CR-SF2": frozenset(),  # Cloud Run sandboxes (Preview) — guidance only
+    "CR-DO1": frozenset({"C5.1"}),
     # GKE
-    "GKE-F1": frozenset({"C2.1"}),
-    "GKE-F2": frozenset({"MEMBANK"}),
-    "GKE-O1": frozenset({"GKE_DRAIN"}),
-    "GKE-O2": frozenset({"SUBSTRATE"}),  # idle suspend/resume → reuses the GKE-S2 Agent Substrate scaffolding
-    "GKE-D1": frozenset(),  # agents-cli CI/CD pipeline — guidance only (never generated here)
-    "GKE-D2": frozenset({"C7.1"}),  # eval dataset/config + score gate inserted into an existing pipeline
-    "GKE-OB1": frozenset({"C5.1"}),
-    "GKE-OB2": frozenset({"BQ_ANALYTICS"}),
-    "GKE-S1": frozenset({"C4.1"}),
-    "GKE-S2": frozenset({"SANDBOX"}),
-    "GKE-S3": frozenset({"C4.2"}),
-    "GKE-S4": frozenset({"C4.4"}),
-    "GKE-S5": frozenset(),  # user-delegated auth (Agent Identity auth manager, Preview) — guidance only
-    "GKE-S6": frozenset({"MODEL_ARMOR"}),
-    "GKE-S7": frozenset(),  # ADK Tool Confirmation (HITL) — guidance only
+    "GKE-RS1": frozenset({"C2.1"}),
+    "GKE-RS2": frozenset({"MEMBANK"}),
+    "GKE-RS3": frozenset({"GKE_DRAIN"}),
+    "GKE-RS4": frozenset({"SUBSTRATE"}),  # idle suspend/resume → reuses Agent Substrate scaffolding
+    "GKE-ID1": frozenset({"C4.1"}),
+    "GKE-ID2": frozenset({"C4.2"}),
+    "GKE-SF1": frozenset({"SANDBOX"}),
+    "GKE-SF2": frozenset({"C4.4"}),
+    "GKE-DO1": frozenset({"C5.1"}),
 }
 
 # Base Terraform scaffold for prototypes (no service.tf yet) so selected v3 items have a place to land.
@@ -263,18 +253,18 @@ def has_cicd_pipeline(project_dir: str | Path) -> bool:
 
 
 def cicd_guidance_notices(project_dir: str | Path, v3_ids: list[str]) -> list[str]:
-    """Guidance when *-D1 / *-D2 are selected but no CI/CD pipeline exists (the engine never creates one)."""
-    has_d1 = any(i.endswith("-D1") for i in v3_ids)
-    has_d2 = any(i.endswith("-D2") for i in v3_ids)
+    """Guidance when COMMON-DO1 / COMMON-DO2 are selected but no CI/CD pipeline exists (the engine never creates one)."""
+    has_d1 = "COMMON-DO1" in v3_ids or any(i.endswith("-D1") for i in v3_ids)
+    has_d2 = "COMMON-DO2" in v3_ids or any(i.endswith("-D2") for i in v3_ids)
     if not (has_d1 or has_d2) or has_cicd_pipeline(project_dir):
         return []
     notices = [
-        "*-D1 CI/CD 파이프라인(.cloudbuild/staging.yaml)이 없습니다. 엔진은 파이프라인을 생성하지 않으니 "
+        "COMMON-DO1 CI/CD 파이프라인(.cloudbuild/staging.yaml)이 없습니다. 엔진은 파이프라인을 생성하지 않으니 "
         f"먼저 `{CICD_SCAFFOLD_CMD}`로 생성하세요."
     ]
     if has_d2:
         notices.append(
-            "*-D2 평가 데이터셋·설정은 생성했지만 평가 게이트는 건너뛰었습니다 — D1(파이프라인)을 먼저 만든 뒤 다시 적용하세요."
+            "COMMON-DO2 평가 데이터셋·설정은 생성했지만 평가 게이트는 건너뛰었습니다 — COMMON-DO1(파이프라인)을 먼저 만든 뒤 다시 적용하세요."
         )
     notices.append(
         f"`{CICD_INFRA_CMD}`(staging/prod CI/CD 인프라 생성)는 운영 환경 구성이므로 직접 수행하세요 — 체크리스트 범위 밖입니다."

@@ -1139,13 +1139,12 @@
     // ==================== Checklist v3 metadata (source: prod_ready/catalog_v3.json · docs/checklist-v3-spec.md) ====================
     const PLATFORM_SKILLS_URL = "https://github.com/google/skills/tree/main/skills/cloud";
     const PLATFORM_GROUP_LABEL = "플랫폼 Skill 참조 권장";
-    const CHECKLIST_CATEGORY_ORDER = ["F", "O", "D", "OB", "S"];
+    const CHECKLIST_CATEGORY_ORDER = ["RS", "ID", "SF", "DO"];
     const CHECKLIST_CATEGORIES = {
-      F: { name: "State & Memory", sub: "세션 · 장기 기억" },
-      O: { name: "Runtime Lifecycle", sub: "런타임 수명주기 · 안정성" },
-      D: { name: "CI/CD & Evaluation", sub: "배포 파이프라인 · 품질 평가" },
-      OB: { name: "Observability", sub: "관측성" },
-      S: { name: "Security & Governance", sub: "보안 · 신원 · 거버넌스" },
+      RS: { name: "Runtime & State", sub: "런타임 · 상태 · 수명주기" },
+      ID: { name: "Identity & Governance", sub: "인증 · 신원 · 레지스트리" },
+      SF: { name: "Safety & Guardrails", sub: "게이트웨이 · 코드 격리 · 모델 가드 · HITL" },
+      DO: { name: "Delivery, Eval & Observability", sub: "CI/CD · 평가 · 트레이스 · 분석" },
     };
     const CONDITION_LABELS = {
       conv: "멀티턴 대화",
@@ -1157,50 +1156,52 @@
     };
     // kind: target-independent semantic key used by the wizard choices & command builders
     const V3_ITEM_META = {
-      "CR-F1": { kind: "session", cat: "F", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
-      "CR-F2": { kind: "memory", cat: "F", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
-      "CR-D1": { kind: "pipeline", cat: "D", title: "CI/CD 파이프라인 (agents-cli)" },
-      "CR-D2": { kind: "evalgate", cat: "D", title: "평가 데이터셋 · 평가 게이트" },
-      "CR-OB1": { kind: "trace", cat: "OB", title: "Cloud Trace · 프롬프트 미기록" },
-      "CR-S1": { kind: "auth", cat: "S", title: "인증된 호출만 허용" },
-      "CR-S2": { kind: "identity", cat: "S", title: "에이전트 전용 신원 · 최소 권한" },
-      "CR-S3": { kind: "registry", cat: "S", preview: true, title: "Agent Registry 등록" },
-      "CR-S5": { kind: "code_isolation", cat: "S", preview: true, cond: "code", title: "AI 생성 코드 격리 (Cloud Run sandboxes)" },
-      "CR-S4": { kind: "gateway", cat: "S", preview: true, cond: "tools", title: "Agent Gateway (외부 호출 통제)" },
-      "CR-S6": { kind: "delegated_auth", cat: "S", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
-      "AR-F1": { kind: "session", cat: "F", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
-      "AR-F2": { kind: "memory", cat: "F", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
-      "AR-D1": { kind: "pipeline", cat: "D", title: "CI/CD 파이프라인 (agents-cli)" },
-      "AR-D2": { kind: "evalgate", cat: "D", title: "평가 데이터셋 · 평가 게이트" },
-      "AR-OB1": { kind: "trace", cat: "OB", title: "프롬프트 미기록" },
-      "AR-S1": { kind: "identity", cat: "S", title: "에이전트 전용 신원 · 최소 권한" },
-      "AR-S2": { kind: "registry", cat: "S", preview: true, title: "Agent Registry 등록" },
-      "AR-S4": { kind: "code_isolation", cat: "S", cond: "code", title: "AI 생성 코드 격리 (Code Execution)" },
-      "AR-S3": { kind: "gateway", cat: "S", preview: true, cond: "tools", title: "Agent Gateway (외부 호출 통제)" },
-      "AR-S5": { kind: "delegated_auth", cat: "S", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
-      "GKE-F1": { kind: "session", cat: "F", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
-      "GKE-F2": { kind: "memory", cat: "F", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
-      "GKE-O1": { kind: "graceful", cat: "O", title: "무중단 종료 (긴 응답 보호)" },
-      "GKE-O2": { kind: "idle_suspend", cat: "O", cond: "idle", title: "에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)" },
-      "GKE-D1": { kind: "pipeline", cat: "D", title: "CI/CD 파이프라인 (agents-cli)" },
-      "GKE-D2": { kind: "evalgate", cat: "D", title: "평가 데이터셋 · 평가 게이트" },
-      "GKE-OB1": { kind: "trace", cat: "OB", title: "Cloud Trace · 프롬프트 미기록" },
-      "GKE-S1": { kind: "identity", cat: "S", title: "에이전트 전용 신원 · 최소 권한" },
-      "GKE-S2": { kind: "substrate", cat: "S", cond: "code", title: "AI 생성 코드 격리 (Agent Substrate · Agent Sandbox)" },
-      "GKE-S3": { kind: "registry", cat: "S", preview: true, title: "Agent Registry 등록" },
-      "GKE-S4": { kind: "gateway", cat: "S", preview: true, cond: "tools", title: "Agent Gateway for GKE (외부 호출 통제)" },
-      "GKE-S5": { kind: "delegated_auth", cat: "S", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
+      // Common (all runtimes)
+      "COMMON-DO1": { kind: "pipeline", cat: "DO", scope: "common", title: "CI/CD 파이프라인 (agents-cli)" },
+      "COMMON-DO2": { kind: "evalgate", cat: "DO", scope: "common", title: "평가 데이터셋 · 평가 게이트" },
+      "COMMON-DO3": { kind: "bq_analytics", cat: "DO", scope: "common", optional: true, title: "BigQuery Agent Analytics (구조화 이벤트 분석)" },
+      "COMMON-ID1": { kind: "delegated_auth", cat: "ID", scope: "common", preview: true, cond: "delegated", title: "사용자 위임 인증 (Agent Identity auth manager)" },
+      "COMMON-SF1": { kind: "model_armor", cat: "SF", scope: "common", optional: true, title: "Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP)" },
+      "COMMON-SF2": { kind: "hitl", cat: "SF", scope: "common", optional: true, title: "고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL)" },
+      // Cloud Run (runtime-specific)
+      "CR-RS1": { kind: "session", cat: "RS", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
+      "CR-RS2": { kind: "memory", cat: "RS", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
+      "CR-ID1": { kind: "auth", cat: "ID", title: "인증된 호출만 허용" },
+      "CR-ID2": { kind: "identity", cat: "ID", title: "에이전트 전용 신원 · 최소 권한" },
+      "CR-ID3": { kind: "registry", cat: "ID", preview: true, title: "Agent Registry 등록" },
+      "CR-SF1": { kind: "gateway", cat: "SF", preview: true, cond: "tools", title: "Agent Gateway (외부 호출 통제)" },
+      "CR-SF2": { kind: "code_isolation", cat: "SF", preview: true, cond: "code", title: "AI 생성 코드 격리 (Cloud Run sandboxes)" },
+      "CR-DO1": { kind: "trace", cat: "DO", title: "Cloud Trace · 프롬프트 미기록" },
+      // Agent Runtime (runtime-specific)
+      "AR-RS1": { kind: "session", cat: "RS", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
+      "AR-RS2": { kind: "memory", cat: "RS", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
+      "AR-ID1": { kind: "identity", cat: "ID", title: "에이전트 전용 신원 · 최소 권한" },
+      "AR-ID2": { kind: "registry", cat: "ID", preview: true, title: "Agent Registry 등록" },
+      "AR-SF1": { kind: "gateway", cat: "SF", preview: true, cond: "tools", title: "Agent Gateway (외부 호출 통제)" },
+      "AR-SF2": { kind: "code_isolation", cat: "SF", cond: "code", title: "AI 생성 코드 격리 (Code Execution)" },
+      "AR-DO1": { kind: "trace", cat: "DO", title: "프롬프트 미기록" },
+      "AR-DO2": { kind: "online_eval", cat: "DO", optional: true, title: "Online Evaluation Monitor (실시간 품질 감시)" },
+      // GKE (runtime-specific)
+      "GKE-RS1": { kind: "session", cat: "RS", cond: "conv", title: "관리형 영속 세션 저장 (VertexAiSessionService)" },
+      "GKE-RS2": { kind: "memory", cat: "RS", cond: "memory", title: "관리형 장기 기억 저장 (VertexAiMemoryBankService)" },
+      "GKE-RS3": { kind: "graceful", cat: "RS", title: "무중단 종료 (긴 응답 보호)" },
+      "GKE-RS4": { kind: "idle_suspend", cat: "RS", cond: "idle", title: "에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox)" },
+      "GKE-ID1": { kind: "identity", cat: "ID", title: "에이전트 전용 신원 · 최소 권한" },
+      "GKE-ID2": { kind: "registry", cat: "ID", preview: true, title: "Agent Registry 등록" },
+      "GKE-SF1": { kind: "substrate", cat: "SF", cond: "code", title: "AI 생성 코드 격리 (Agent Substrate · Agent Sandbox)" },
+      "GKE-SF2": { kind: "gateway", cat: "SF", preview: true, cond: "tools", title: "Agent Gateway for GKE (외부 호출 통제)" },
+      "GKE-DO1": { kind: "trace", cat: "DO", title: "Cloud Trace · 프롬프트 미기록" },
     };
     const DEFAULT_PLATFORM_SKILLS = {
-      cloud_run: ["cloud-run-basics", "cloud-run-alert-configuration", "google-cicd-terraform", "google-cloud-waf-security"],
+      cloud_run: ["cloud-run-basics", "cloud-run-alert-configuration", "agent-platform-alert-configuration", "google-cicd-terraform", "google-cloud-waf-security"],
       agent_runtime: ["agent-platform-deploy", "agent-platform-agent-registry", "agent-platform-access-audit", "agent-platform-alert-configuration"],
-      gke: ["gke-productionize", "gke-reliability", "gke-workload-security", "gke-workload-identity", "gke-networking", "gke-alert-configuration"],
+      gke: ["gke-productionize", "gke-reliability", "gke-workload-security", "gke-workload-identity", "gke-networking", "gke-alert-configuration", "agent-platform-alert-configuration"],
     };
-    // Backward compatibility only: older runtime-inspector responses (R*) → v3 IDs. Never shown in the UI.
+    // Backward compatibility only: older runtime-inspector responses (R*) → canonical IDs. Never shown in the UI.
     const LEGACY_RUNTIME_ID_MAP = {
-      cloud_run: { "R2.1": "CR-F1", "R3.1": "CR-S1", "R4.1": "CR-S2", "R4.2": "CR-S3", "R4.3": "CR-S4", "R5.1": "CR-OB1" },
-      agent_runtime: { "R4.1": "AR-S1", "R4.2": "AR-S2", "R4.3": "AR-S3", "R5.1": "AR-OB1" },
-      gke: { "R1.3": "GKE-O1", "R2.1": "GKE-F1", "R4.1": "GKE-S1", "R4.2": "GKE-S3", "R4.3": "GKE-S4", "R5.1": "GKE-OB1", "R4.4": "GKE-S2", "R7.1": "GKE-O2" },
+      cloud_run: { "R2.1": "CR-RS1", "R3.1": "CR-ID1", "R4.1": "CR-ID2", "R4.2": "CR-ID3", "R4.3": "CR-SF1", "R5.1": "CR-DO1" },
+      agent_runtime: { "R2.1": "AR-RS1", "R4.1": "AR-ID1", "R4.2": "AR-ID2", "R4.3": "AR-SF1", "R5.1": "AR-DO1" },
+      gke: { "R1.3": "GKE-RS3", "R2.1": "GKE-RS1", "R4.1": "GKE-ID1", "R4.2": "GKE-ID2", "R4.3": "GKE-SF2", "R5.1": "GKE-DO1", "R4.4": "GKE-SF1", "R7.1": "GKE-RS4" },
     };
     const LEGACY_PLATFORM_ID_MAP = {
       cloud_run: {
@@ -1218,15 +1219,15 @@
         "R3.1": { id: "PLAT-NETPOL", skills: "gke-networking · gke-workload-security" },
       },
     };
-    // Older engine checklist IDs (C*) → v3 IDs per target.
+    // Older engine checklist IDs (C*) → canonical IDs per target.
     const LEGACY_CHECKLIST_ID_MAP = {
-      "C2.1": { cloud_run: "CR-F1", agent_runtime: "AR-F1", gke: "GKE-F1" },
-      "C1.2": { gke: "GKE-O1" },
-      "C7.1": { cloud_run: "CR-D2", agent_runtime: "AR-D2", gke: "GKE-D2" },  // + *-D1 pipeline (guidance only)
-      "C5.1": { cloud_run: "CR-OB1", agent_runtime: "AR-OB1", gke: "GKE-OB1" },
-      "C4.1": { cloud_run: "CR-S2", agent_runtime: "AR-S1", gke: "GKE-S1" },
-      "C4.2": { cloud_run: "CR-S3", agent_runtime: "AR-S2", gke: "GKE-S3" },
-      "C4.4": { cloud_run: "CR-S4", agent_runtime: "AR-S3", gke: "GKE-S4" },
+      "C2.1": { cloud_run: "CR-RS1", agent_runtime: "AR-RS1", gke: "GKE-RS1" },
+      "C1.2": { gke: "GKE-RS3" },
+      "C7.1": { cloud_run: "COMMON-DO2", agent_runtime: "COMMON-DO2", gke: "COMMON-DO2" },
+      "C5.1": { cloud_run: "CR-DO1", agent_runtime: "AR-DO1", gke: "GKE-DO1" },
+      "C4.1": { cloud_run: "CR-ID2", agent_runtime: "AR-ID1", gke: "GKE-ID1" },
+      "C4.2": { cloud_run: "CR-ID3", agent_runtime: "AR-ID2", gke: "GKE-ID2" },
+      "C4.4": { cloud_run: "CR-SF1", agent_runtime: "AR-SF1", gke: "GKE-SF2" },
     };
 
     function categoryCodeFromId(id) {

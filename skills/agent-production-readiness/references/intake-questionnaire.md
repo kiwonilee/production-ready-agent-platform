@@ -27,14 +27,14 @@ flowchart LR
 
 ## 2. 조건과 적용 항목
 
-| 조건 (`conditions` 키) | 판단 기준 (질문) | 적용 항목 (v3 ID) | 코드 자동 판단 신호 |
+| 조건 (`conditions` 키) | 판단 기준 (질문) | 적용 항목 (v4 ID) | 코드 자동 판단 신호 |
 | :--- | :--- | :--- | :--- |
-| **멀티턴 대화** (`conv`) | 이전 대화를 이어가야 하는가 | 관리형 영속 세션 저장 (VertexAiSessionService) — `AR-F1` · `CR-F1` · `GKE-F1` | `SessionService` 사용, `session_id`를 요청 간 전달, 채팅 UI·`/run_sse` 대화 엔드포인트, `get_fast_api_app(session_service_uri=...)` |
-| **장기 기억 필요** (`memory`) | 세션을 넘어 사용자를 기억해야 하는가 | 관리형 장기 기억 저장 (VertexAiMemoryBankService) — `AR-F2` · `CR-F2` · `GKE-F2` | `MemoryService` · `VertexAiMemoryBankService`, `load_memory` / `PreloadMemoryTool`, `add_session_to_memory`, 사용자 프로필·선호 저장 로직 |
-| **AI 생성 코드 실행** (`code`) | AI가 만든 코드·셸을 실행하는가 | Code Execution — `AR-S4` / Cloud Run sandboxes (Preview) — `CR-S5` / Agent Substrate on GKE — `GKE-S2` (AI 생성 코드 격리) | `BuiltInCodeExecutor` · `UnsafeLocalCodeExecutor` · `ContainerCodeExecutor`, `subprocess` / `exec(` / `eval(`를 도구로 노출, 셸·브라우저·computer-use 도구 |
-| **자주 일시정지·재개하는 상태 유지형 에이전트** (`idle`) | 사용자 입력·도구 응답을 기다리는 시간이 대부분인가 | 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) — `GKE-O2` (GKE 전용) | 코드로 판단 불가 → Agent Substrate(`ate.dev/v1alpha1` `WorkerPool` / `ActorTemplate`)를 이미 쓰면 해당, 아니면 **사용자에게 질문**. 해당이면 `--conditions idle=true` |
-| **MCP·외부 도구 호출** (`tools`) | MCP 서버·외부 API·다른 에이전트를 호출하는가 | Agent Gateway (외부 호출 통제) — `CR-S4` · `AR-S3` / Agent Gateway for GKE (외부 호출 통제) — `GKE-S4` | `McpToolset` · `StreamableHTTPConnectionParams` · `SseConnectionParams`, `RemoteA2aAgent`, `AgentRegistry.get_mcp_toolset()`, `OpenAPIToolset`, 외부 URL로의 `httpx`/`requests` 호출 도구 |
-| **사용자 대신 외부 도구 호출** (`delegated`) | 사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하는가 | 사용자 위임 인증 (Agent Identity auth manager) — `AR-S5` · `CR-S6` · `GKE-S5` (Preview · 전 환경) | auth manager 사용(`google.adk.integrations.agent_identity`, `GcpAuthProvider` / `GcpAuthProviderScheme`, `…/authProviders/…`), 인증 헤더(`headers=` · `Authorization` · `auth_scheme` · `auth_credential`)를 붙인 MCP·OpenAPI·서드파티 API 도구, `*_TOKEN` · `*_API_KEY` · `GITHUB_PAT` 같은 환경변수 (Gemini 키 제외). 감지되지 않으면 **사용자에게 질문**하고, 해당이면 `--conditions delegated=true` |
+| **멀티턴 대화** (`conv`) | 이전 대화를 이어가야 하는가 | 관리형 영속 세션 저장 (VertexAiSessionService) — `AR-RS1` · `CR-RS1` · `GKE-RS1` | `SessionService` 사용, `session_id`를 요청 간 전달, 채팅 UI·`/run_sse` 대화 엔드포인트, `get_fast_api_app(session_service_uri=...)` |
+| **장기 기억 필요** (`memory`) | 세션을 넘어 사용자를 기억해야 하는가 | 관리형 장기 기억 저장 (VertexAiMemoryBankService) — `AR-RS2` · `CR-RS2` · `GKE-RS2` | `MemoryService` · `VertexAiMemoryBankService`, `load_memory` / `PreloadMemoryTool`, `add_session_to_memory`, 사용자 프로필·선호 저장 로직 |
+| **AI 생성 코드 실행** (`code`) | AI가 만든 코드·셸을 실행하는가 | Code Execution — `AR-SF2` / Cloud Run sandboxes (Preview) — `CR-SF2` / Agent Substrate on GKE — `GKE-SF1` (AI 생성 코드 격리) | `BuiltInCodeExecutor` · `UnsafeLocalCodeExecutor` · `ContainerCodeExecutor`, `subprocess` / `exec(` / `eval(`를 도구로 노출, 셸·브라우저·computer-use 도구 |
+| **자주 일시정지·재개하는 상태 유지형 에이전트** (`idle`) | 사용자 입력·도구 응답을 기다리는 시간이 대부분인가 | 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) — `GKE-RS4` (GKE 전용) | 코드로 판단 불가 → Agent Substrate(`ate.dev/v1alpha1` `WorkerPool` / `ActorTemplate`)를 이미 쓰면 해당, 아니면 **사용자에게 질문**. 해당이면 `--conditions idle=true` |
+| **MCP·외부 도구 호출** (`tools`) | MCP 서버·외부 API·다른 에이전트를 호출하는가 | Agent Gateway (외부 호출 통제) — `AR-SF1` · `CR-SF1` / Agent Gateway for GKE (외부 호출 통제) — `GKE-SF2` | `McpToolset` · `StreamableHTTPConnectionParams` · `SseConnectionParams`, `RemoteA2aAgent`, `AgentRegistry.get_mcp_toolset()`, `OpenAPIToolset`, 외부 URL로의 `httpx`/`requests` 호출 도구 |
+| **사용자 대신 외부 도구 호출** (`delegated`) | 사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하는가 | 사용자 위임 인증 (Agent Identity auth manager) — `COMMON-ID1` (전 환경 공통 · Preview) | auth manager 사용(`google.adk.integrations.agent_identity`, `GcpAuthProvider` / `GcpAuthProviderScheme`, `…/authProviders/…`), 인증 헤더(`headers=` · `Authorization` · `auth_scheme` · `auth_credential`)를 붙인 MCP·OpenAPI·서드파티 API 도구, `*_TOKEN` · `*_API_KEY` · `GITHUB_PAT` 같은 환경변수 (Gemini 키 제외). 감지되지 않으면 **사용자에게 질문**하고, 해당이면 `--conditions delegated=true` |
 
 - 조건이 **해당하지 않으면** 그 항목은 `N/A`로 표시하고 판정에서 제외합니다.
 - Agent Gateway 항목(`AR-S3` · `CR-S4` · `GKE-S4`)과 사용자 위임 인증 항목(`AR-S5` · `CR-S6` · `GKE-S5`)은 **Preview**라 조건이 해당해도 판정을 막지 않습니다.
@@ -82,17 +82,18 @@ flowchart LR
 
 | 선택 항목 | 적용 전 확인할 설정 질문 | 매핑 `--params` 키 / 동작 |
 | :--- | :--- | :--- |
-| **Agent Gateway** (`AR-S3` · `CR-S4` · `GKE-S4`) | ① **적용 방향**: Egress (에이전트→외부 도구/MCP) / Ingress (클라이언트→에이전트) / Both (양방향)<br>② **초기 적용 모드**: `DRY_RUN` (감사 로그 확인 후 전환 권장) vs `ENFORCED`<br>③ **Model Armor 연동**: 프롬프트 인젝션·민감정보(SDP) 검사 템플릿 함께 구성할지 여부 | `agent_gateway_direction` (`"egress"` \| `"ingress"` \| `"both"`), `agent_gateway_enforcement_mode` (`"DRY_RUN"` \| `"ENFORCED"`), `enable_model_armor` (`true` \| `false`) *(Cloud Run `CR-S4`는 답변에 맞춰 수동 YAML/CLI 가이드 출력)* |
-| **Cloud Run 신원 · 레지스트리** (`CR-S2` · `CR-S3`) | ① **신원 방식**: 전용 최소 권한 서비스 계정 (`service_account`, 안정·권장) vs Agent Identity (`agent_identity`, Preview SPIFFE)<br>② `agent_identity` 선택 시 **조직 ID** (`organization_id`, 미입력 시 `gcloud projects get-ancestors` 안내) | `cloud_run_identity_mode` (`"service_account"` \| `"agent_identity"`), `organization_id` |
-| **평가 게이트** (`AR-D2` · `CR-D2` · `GKE-D2`) | 평가 통과 **기준 점수** (1.0~5.0, 기본 `3.5`) | `eval_threshold` |
-| **영속 세션 · 장기 기억** (`CR-F1/F2` · `GKE-F1/F2`) | 이미 만들어 둔 Agent Platform Reasoning Engine ID가 있는지 (있으면 연결, 없으면 신규 생성 안내) | `agent_engine_id` |
-| **GKE 무중단 종료** (`GKE-O1`) | 에이전트 한 턴의 최대 응답 시간에 맞춘 **종료 유예 시간(초)** (기본 `120`초) | `gke_termination_grace_seconds` |
-| **GKE 코드 격리 · 유휴 일시정지** (`GKE-S2` · `GKE-O2`) | 클러스터/워크로드에 맞는 **실행 패턴**: `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) | `gke_execution_pattern` |
-| **BigQuery Agent Analytics** (`AR-OB2` · `CR-OB2` · `GKE-OB2`, 선택 Add-on) | ① BigQuery **데이터셋 ID** (기본 `agent_analytics`)<br>② **테이블명** (기본 `agent_events`)<br>*(공식 근거: [ADK BigQuery Agent Analytics](https://adk.dev/integrations/bigquery-agent-analytics/))* | `bq_analytics_dataset`, `bq_analytics_table` |
-| **Model Armor 입·출력 가드레일** (`AR-S6` · `CR-S7` · `GKE-S6`, 선택 Add-on · 유료) | ① **신뢰도 임계치**: `LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE`(기본) / `HIGH`<br>② **민감정보(SDP) 필터** 활성 여부 (기본 `true`)<br>③ **악성 URI 필터** 활성 여부 (기본 `true`)<br>*(공식 근거: [Model Armor Overview](https://cloud.google.com/security-command-center/docs/model-armor-overview) · [Well-Architected AI & ML](https://cloud.google.com/architecture/framework/perspectives/ai-ml))* | `model_armor_confidence`, `model_armor_enable_sdp`, `model_armor_enable_malicious_uri` |
-| **고위험 도구 실행 승인 · HITL** (`AR-S7` · `CR-S8` · `GKE-S7`, 선택 Add-on · 안내 전용) | 사람 승인이 필요한 **고위험 도구 목록**(결제·삭제·외부 쓰기 등) 확인 → `FunctionTool(..., require_confirmation=True)` / `ToolConfirmation` 적용 코드 안내<br>*(공식 근거: [ADK Tool Confirmation](https://google.github.io/adk-docs/tools/confirmation/) · [ADK Safety](https://google.github.io/adk-docs/safety/))* | (안내 전용 · 자동 파일 수정 없음) |
-| **단일 정답 항목** (`CR-S1`, `CR-OB1`, `AR-OB1`, `GKE-OB1`, `AR-S1`, `GKE-S1`) | 추가 질문 없음 — 바로 `diff` 미리보기로 진행 | (기본 패치) |
-| **안내 전용 항목** (`*-D1`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`) | 사용자 환경(CI/CD 러너, 외부 OAuth 시스템 등)에 맞춰 수동 설정 절차·코드 예시 안내 | (자동 파일 수정 없음; `*-D1`만 승인 시 `agents-cli scaffold enhance` 실행) |
+| **Agent Gateway** (`AR-SF1` · `CR-SF1` · `GKE-SF2`) | ① **적용 방향**: Egress (에이전트→외부 도구/MCP) / Ingress (클라이언트→에이전트) / Both (양방향)<br>② **초기 적용 모드**: `DRY_RUN` (감사 로그 확인 후 전환 권장) vs `ENFORCED`<br>③ **Model Armor 연동**: 프롬프트 인젝션·민감정보(SDP) 검사 템플릿 함께 구성할지 여부 | `agent_gateway_direction` (`"egress"` \| `"ingress"` \| `"both"`), `agent_gateway_enforcement_mode` (`"DRY_RUN"` \| `"ENFORCED"`), `enable_model_armor` (`true` \| `false`) *(Cloud Run `CR-SF1`은 답변에 맞춰 수동 YAML/CLI 가이드 출력)* |
+| **Cloud Run 신원 · 레지스트리** (`CR-ID2` · `CR-ID3`) | ① **신원 방식**: 전용 최소 권한 서비스 계정 (`service_account`, 안정·권장) vs Agent Identity (`agent_identity`, Preview SPIFFE)<br>② `agent_identity` 선택 시 **조직 ID** (`organization_id`, 미입력 시 `gcloud projects get-ancestors` 안내) | `cloud_run_identity_mode` (`"service_account"` \| `"agent_identity"`), `organization_id` |
+| **평가 게이트** (`COMMON-DO2`) | 평가 통과 **기준 점수** (1.0~5.0, 기본 `3.5`) | `eval_threshold` |
+| **영속 세션 · 장기 기억** (`CR-RS1/RS2` · `GKE-RS1/RS2`) | 이미 만들어 둔 Agent Platform Reasoning Engine ID가 있는지 (있으면 연결, 없으면 신규 생성 안내) | `agent_engine_id` |
+| **GKE 무중단 종료** (`GKE-RS3`) | 에이전트 한 턴의 최대 응답 시간에 맞춘 **종료 유예 시간(초)** (기본 `120`초) | `gke_termination_grace_seconds` |
+| **GKE 코드 격리 · 유휴 일시정지** (`GKE-SF1` · `GKE-RS4`) | 클러스터/워크로드에 맞는 **실행 패턴**: `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) | `gke_execution_pattern` |
+| **BigQuery Agent Analytics** (`COMMON-DO3`, 전 환경 공통 · 선택 Add-on) | ① BigQuery **데이터셋 ID** (기본 `agent_analytics`)<br>② **테이블명** (기본 `agent_events`)<br>*(공식 근거: [ADK BigQuery Agent Analytics](https://adk.dev/integrations/bigquery-agent-analytics/))* | `bq_analytics_dataset`, `bq_analytics_table` |
+| **Model Armor 입·출력 가드레일** (`COMMON-SF1`, 전 환경 공통 · 선택 Add-on · 유료) | ① **신뢰도 임계치**: `LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE`(기본) / `HIGH`<br>② **민감정보(SDP) 필터** 활성 여부 (기본 `true`)<br>③ **악성 URI 필터** 활성 여부 (기본 `true`)<br>*(공식 근거: [Model Armor Overview](https://cloud.google.com/security-command-center/docs/model-armor-overview) · [Well-Architected AI & ML](https://cloud.google.com/architecture/framework/perspectives/ai-ml))* | `model_armor_confidence`, `model_armor_enable_sdp`, `model_armor_enable_malicious_uri` |
+| **고위험 도구 실행 승인 · HITL** (`COMMON-SF2`, 전 환경 공통 · 선택 Add-on · 안내 전용) | 사람 승인이 필요한 **고위험 도구 목록**(결제·삭제·외부 쓰기 등) 확인 → `FunctionTool(..., require_confirmation=True)` / `ToolConfirmation` 적용 코드 안내<br>*(공식 근거: [ADK Tool Confirmation](https://google.github.io/adk-docs/tools/confirmation/) · [ADK Safety](https://google.github.io/adk-docs/safety/))* | (안내 전용 · 자동 파일 수정 없음) |
+| **Online Evaluation Monitor** (`AR-DO2`, Agent Runtime 전용 · 선택 Add-on) | 실시간 샘플링 비율 및 추가 LLM 평가 과금 승인 확인 → `agent-platform-alert-configuration` 스킬로 Online Monitor 구성 | (안내 전용 · 스킬 연계) |
+| **단일 정답 항목** (`CR-ID1`, `CR-DO1`, `AR-DO1`, `GKE-DO1`, `AR-ID1`, `GKE-ID1`) | 추가 질문 없음 — 바로 `diff` 미리보기로 진행 | (기본 패치) |
+| **기타 안내 전용 항목** (`COMMON-DO1`, `COMMON-ID1`, `AR-SF2`, `CR-SF2`) | 사용자 환경(CI/CD 러너, 외부 OAuth 시스템 등)에 맞춰 수동 설정 절차·코드 예시 안내 | (자동 파일 수정 없음; `COMMON-DO1`만 승인 시 `agents-cli scaffold enhance` 실행) |
 
 ---
 

@@ -39,11 +39,10 @@ PLATFORM_GROUP_LABEL = "플랫폼 Skill 참조 권장"
 _CATALOG_REL = Path("skills") / "agent-production-readiness" / "scripts" / "prod_ready" / "catalog_v3.json"
 
 _FALLBACK_CATEGORIES = [
-    {"code": "F", "name": "State & Memory", "sub": "세션 · 장기 기억"},
-    {"code": "O", "name": "Runtime Lifecycle", "sub": "런타임 수명주기 · 안정성"},
-    {"code": "D", "name": "CI/CD & Evaluation", "sub": "배포 파이프라인 · 품질 평가"},
-    {"code": "OB", "name": "Observability", "sub": "관측성"},
-    {"code": "S", "name": "Security & Governance", "sub": "보안 · 신원 · 거버넌스"},
+    {"code": "RS", "name": "Runtime & State", "sub": "런타임 · 상태 · 수명주기"},
+    {"code": "ID", "name": "Identity & Governance", "sub": "인증 · 신원 · 레지스트리"},
+    {"code": "SF", "name": "Safety & Guardrails", "sub": "게이트웨이 · 코드 격리 · 모델 가드 · HITL"},
+    {"code": "DO", "name": "Delivery, Eval & Observability", "sub": "CI/CD · 평가 · 트레이스 · 분석"},
 ]
 _FALLBACK_CONDITIONS = {
     "conv": "멀티턴 대화",
@@ -93,32 +92,32 @@ def get_checklist_v3_catalog() -> dict[str, Any]:
         "platform_skills_repo": _CATALOG_V3.get("platform_skills_repo") or PLATFORM_SKILLS_URL,
     }
 
-# runtime_type -> {legacy runtime check id -> v3 item id}
+# runtime_type -> {legacy runtime check id -> v4 canonical item id}
 _V3_MAP: dict[str, dict[str, str]] = {
     "cloud_run": {
-        "R2.1": "CR-F1",
-        "R3.1": "CR-S1",
-        "R4.1": "CR-S2",
-        "R4.2": "CR-S3",
-        "R4.3": "CR-S4",
-        "R5.1": "CR-OB1",
+        "R2.1": "CR-RS1",
+        "R3.1": "CR-ID1",
+        "R4.1": "CR-ID2",
+        "R4.2": "CR-ID3",
+        "R4.3": "CR-SF1",
+        "R5.1": "CR-DO1",
     },
     "agent_runtime": {
-        "R2.1": "AR-F1",
-        "R4.1": "AR-S1",
-        "R4.2": "AR-S2",
-        "R4.3": "AR-S3",
-        "R5.1": "AR-OB1",
+        "R2.1": "AR-RS1",
+        "R4.1": "AR-ID1",
+        "R4.2": "AR-ID2",
+        "R4.3": "AR-SF1",
+        "R5.1": "AR-DO1",
     },
     "gke": {
-        "R1.3": "GKE-O1",
-        "R2.1": "GKE-F1",
-        "R4.1": "GKE-S1",
-        "R4.2": "GKE-S3",
-        "R4.3": "GKE-S4",
-        "R4.4": "GKE-S2",
-        "R7.1": "GKE-O2",
-        "R5.1": "GKE-OB1",
+        "R1.3": "GKE-RS3",
+        "R2.1": "GKE-RS1",
+        "R4.1": "GKE-ID1",
+        "R4.2": "GKE-ID2",
+        "R4.3": "GKE-SF2",
+        "R4.4": "GKE-SF1",
+        "R7.1": "GKE-RS4",
+        "R5.1": "GKE-DO1",
     },
 }
 

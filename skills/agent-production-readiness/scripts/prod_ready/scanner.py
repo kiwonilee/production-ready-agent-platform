@@ -70,6 +70,7 @@ class ItemScanResult:
     legacy_ids: list[str] = field(default_factory=list)
     blocking: bool = True
     auto_patch: bool = True
+    scope: str = "runtime"
 
 
 @dataclass
@@ -651,6 +652,7 @@ def scan_project(
                 legacy_ids=list(spec.legacy_ids),
                 blocking=(status != "NA" and not spec.preview and spec.grade != "optional"),
                 auto_patch=spec.auto_patch,
+                scope=spec.scope,
             )
         )
 
@@ -1287,49 +1289,59 @@ def _eval_tool_confirmation(ctx: _Ctx) -> Eval:
     )
 
 
+def _eval_ar_online_monitor(ctx: _Ctx) -> Eval:
+    """AR-DO2 (Agent Runtime exclusive · Tier 3 Optional, guidance-only): Online Evaluation Monitor."""
+    src = "\n".join((ctx.all_tf, _strip_py_comments(ctx.app_py), ctx.deploy_scripts))
+    hit = _first_match(
+        re.compile(r"aiplatform\.googleapis\.com/online_evaluator|\bOnlineEvaluator\b|create_online_monitor"),
+        src,
+    )
+    if hit:
+        return ("GREEN", False, f"Agent Runtime Online Evaluation Monitor 구성 감지 (`{hit}`)")
+    return (
+        "NA",
+        False,
+        "선택 항목(미적용 · Agent Runtime 전용 · 추가 LLM 평가 과금) — 운영 트래픽의 최종 응답 품질·도구 사용 품질·환각을 "
+        "실시간 감시하려면 `agent-platform-alert-configuration` 스킬로 Online Monitor 구성",
+    )
+
+
 _EVALUATORS: dict[str, Any] = {
-    "CR-F1": _eval_session_store,
-    "GKE-F1": _eval_session_store,
-    "AR-F1": _eval_ar_session,
-    "CR-F2": _eval_memory_bank,
-    "GKE-F2": _eval_memory_bank,
-    "AR-F2": _eval_ar_memory,
-    "GKE-O1": _eval_gke_drain,
-    "GKE-O2": _eval_gke_idle_suspend,
-    "CR-D1": _eval_cicd_pipeline,
-    "CR-D2": _eval_eval_gate,
-    "AR-D1": _eval_cicd_pipeline,
-    "AR-D2": _eval_eval_gate,
-    "GKE-D1": _eval_cicd_pipeline,
-    "GKE-D2": _eval_eval_gate,
-    "CR-OB1": _eval_trace_privacy,
-    "AR-OB1": _eval_trace_privacy,
-    "GKE-OB1": _eval_trace_privacy,
-    "CR-OB2": _eval_bq_analytics,
-    "AR-OB2": _eval_bq_analytics,
-    "GKE-OB2": _eval_bq_analytics,
-    "CR-S1": _eval_cr_authn,
-    "CR-S2": _eval_identity,
-    "AR-S1": _eval_identity,
-    "GKE-S1": _eval_identity,
-    "CR-S3": _eval_registry,
-    "AR-S2": _eval_registry,
-    "GKE-S3": _eval_registry,
-    "CR-S4": _eval_gateway,
-    "AR-S3": _eval_gateway,
-    "GKE-S4": _eval_gateway,
-    "GKE-S2": _eval_gke_code_sandbox,
-    "CR-S5": _eval_cr_sandbox,
-    "AR-S4": _eval_ar_code_execution,
-    "AR-S5": _eval_delegated_auth,
-    "CR-S6": _eval_delegated_auth,
-    "GKE-S5": _eval_delegated_auth,
-    "AR-S6": _eval_model_armor,
-    "CR-S7": _eval_model_armor,
-    "GKE-S6": _eval_model_armor,
-    "AR-S7": _eval_tool_confirmation,
-    "CR-S8": _eval_tool_confirmation,
-    "GKE-S7": _eval_tool_confirmation,
+    # Common (all runtimes)
+    "COMMON-DO1": _eval_cicd_pipeline,
+    "COMMON-DO2": _eval_eval_gate,
+    "COMMON-DO3": _eval_bq_analytics,
+    "COMMON-ID1": _eval_delegated_auth,
+    "COMMON-SF1": _eval_model_armor,
+    "COMMON-SF2": _eval_tool_confirmation,
+    # Agent Runtime
+    "AR-RS1": _eval_ar_session,
+    "AR-RS2": _eval_ar_memory,
+    "AR-ID1": _eval_identity,
+    "AR-ID2": _eval_registry,
+    "AR-SF1": _eval_gateway,
+    "AR-SF2": _eval_ar_code_execution,
+    "AR-DO1": _eval_trace_privacy,
+    "AR-DO2": _eval_ar_online_monitor,
+    # Cloud Run
+    "CR-RS1": _eval_session_store,
+    "CR-RS2": _eval_memory_bank,
+    "CR-ID1": _eval_cr_authn,
+    "CR-ID2": _eval_identity,
+    "CR-ID3": _eval_registry,
+    "CR-SF1": _eval_gateway,
+    "CR-SF2": _eval_cr_sandbox,
+    "CR-DO1": _eval_trace_privacy,
+    # GKE
+    "GKE-RS1": _eval_session_store,
+    "GKE-RS2": _eval_memory_bank,
+    "GKE-RS3": _eval_gke_drain,
+    "GKE-RS4": _eval_gke_idle_suspend,
+    "GKE-ID1": _eval_identity,
+    "GKE-ID2": _eval_registry,
+    "GKE-SF1": _eval_gke_code_sandbox,
+    "GKE-SF2": _eval_gateway,
+    "GKE-DO1": _eval_trace_privacy,
 }
 
 

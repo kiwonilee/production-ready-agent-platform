@@ -45,6 +45,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 TargetType = Literal["agent_runtime", "cloud_run", "gke"]
+TargetOrCommon = Literal["agent_runtime", "cloud_run", "gke", "common"]
+ScopeType = Literal["runtime", "common"]
 RAGStatus = Literal["GREEN", "AMBER", "RED", "NA"]
 GradeType = Literal["required", "conditional", "optional"]
 
@@ -132,10 +134,10 @@ class CustomParams:
 
 @dataclass(frozen=True)
 class ChecklistItemSpec:
-    """One v3 checklist item (each item belongs to exactly one runtime target)."""
+    """One checklist item (either runtime-specific or common across all runtimes)."""
 
     id: str
-    target: TargetType
+    target: TargetOrCommon
     category: str
     title: str
     check: str
@@ -150,6 +152,7 @@ class ChecklistItemSpec:
     custom_fields: tuple[CustomFieldSpec, ...] = ()
     legacy_ids: tuple[str, ...] = ()
     auto_patch: bool = True
+    scope: ScopeType = "runtime"
 
     # ---- v2-compatible accessors (used by scanner / reports / web) ----
     @property
@@ -183,6 +186,8 @@ class ChecklistItemSpec:
 
     @property
     def applicable_targets(self) -> tuple[TargetType, ...]:
+        if self.scope == "common" or self.target == "common":
+            return ALL_TARGETS
         return (self.target,)
 
     @property
@@ -190,6 +195,8 @@ class ChecklistItemSpec:
         return [{"label": label, "url": url} for label, url in self.references]
 
     def applies_to(self, target: TargetType) -> bool:
+        if self.scope == "common" or self.target == "common":
+            return True
         return target == self.target
 
     def title_for(self, target: TargetType | None = None) -> str:
@@ -342,157 +349,154 @@ _HITL_META = {
 }
 _MEMORY_VERIFY = 'grep -rnE "VertexAiMemoryBankService|memory_service" app/ 2>/dev/null'
 
+_ONLINE_MONITOR_META = {
+    "verify": 'grep -rnE "OnlineEvaluator|online_evaluator|create_online_monitor" deployment/terraform/ app/ scripts/ 2>/dev/null',
+    "files": ("deployment/terraform/alerts.tf",),
+    "auto_patch": False,  # Agent Runtime Online Monitor incurs LLM eval billing — guidance & agent-platform-alert-configuration skill
+}
+
 _ITEM_META: dict[str, dict[str, Any]] = {
-    # ---------------- Cloud Run ----------------
-    "CR-F1": {
-        "verify": f'grep -n "VertexAiSessionService" app/app_utils/services.py && grep -nE "AGENT_ENGINE_SESSION_ID|GOOGLE_CLOUD_AGENT_ENGINE_ID" {_TF} 2>/dev/null',
-        "files": _SESSION_FILES,
-        "fields": (_CF_AGENT_ENGINE,),
-        "legacy": ("C2.1",),
-    },
-    "CR-F2": {"verify": _MEMORY_VERIFY, "files": ("app/app_utils/services.py",), "fields": (_CF_AGENT_ENGINE,)},
-    "CR-D1": _D1_META,
-    "CR-D2": _D2_META,
-    "CR-OB1": {
-        "verify": f'grep -n "otel_to_cloud" app/fast_api_app.py && grep -nE "NO_CONTENT|ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" {_TF} 2>/dev/null',
-        "files": ("deployment/terraform/service.tf", "app/fast_api_app.py", "pyproject.toml", "deployment/terraform/variables.tf"),
-        "legacy": ("C5.1",),
-    },
-    "CR-OB2": _BQ_ANALYTICS_META,
-    "CR-S1": {
-        "verify": f'! grep -nE "allUsers|invoker_iam_disabled\\s*=\\s*true" {_TF_ALL} 2>/dev/null && ! grep -rn -- "--allow-unauthenticated" Makefile .cloudbuild .github 2>/dev/null',
-        "files": ("deployment/terraform/service.tf",),
-    },
-    "CR-S2": {
-        "verify": f'grep -nE "service_account|IDENTITY_TYPE_AGENT_IDENTITY" {_TF} 2>/dev/null && ! grep -nE "roles/(storage\\.admin|editor|owner)" deployment/terraform/variables.tf 2>/dev/null',
-        "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
-        "legacy": ("C4.1", "C4.2"),
-    },
-    "CR-S3": {
-        "verify": f'grep -nE "FUNCTIONAL_TYPE_AGENT|FUNCTIONAL_TYPE_MCP_SERVER" {_TF} 2>/dev/null && grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf 2>/dev/null',
-        "files": ("deployment/terraform/service.tf", "deployment/terraform/apis.tf"),
-        "fields": (_CF_CR_ID_MODE, _CF_ORG_ID),
-        "legacy": ("C4.2",),
-    },
-    "CR-S4": {
-        "verify": f'grep -nE "agent_gateway" {_TF_ALL} 2>/dev/null',
-        "files": ("deployment/terraform/service.tf",),
-        "legacy": ("C4.4",),
-        "auto_patch": False,
-    },
-    "CR-S5": {
-        "verify": f'grep -rnE "sandbox[-_]launcher|sandboxLauncher" {_TF_ALL} Makefile .cloudbuild 2>/dev/null',
-        "files": ("deployment/terraform/service.tf",),
-        "legacy": ("C4.4",),
-        "auto_patch": False,  # Preview — guidance only (enable --sandbox-launcher + route the code executor)
-    },
-    "CR-S6": _DELEGATED_AUTH_META,
-    "CR-S7": _MODEL_ARMOR_META,
-    "CR-S8": _HITL_META,
+    # ---------------- Common (all runtimes) ----------------
+    "COMMON-DO1": _D1_META,
+    "COMMON-DO2": _D2_META,
+    "COMMON-DO3": _BQ_ANALYTICS_META,
+    "COMMON-ID1": _DELEGATED_AUTH_META,
+    "COMMON-SF1": _MODEL_ARMOR_META,
+    "COMMON-SF2": _HITL_META,
     # ---------------- Agent Runtime ----------------
-    "AR-F1": {
+    "AR-RS1": {
         "verify": '! grep -rn "InMemorySessionService" app/agent_engine_app.py app/agent.py 2>/dev/null',
         "files": ("app/agent_engine_app.py",),
         "legacy": ("C2.1",),
         "auto_patch": False,
     },
-    "AR-F2": {"verify": _MEMORY_VERIFY, "files": ("app/agent_engine_app.py",), "auto_patch": False},
-    "AR-D1": _D1_META,
-    "AR-D2": _D2_META,
-    "AR-OB1": {
-        "verify": f'grep -nE "NO_CONTENT|ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" {_TF} 2>/dev/null',
-        "files": ("deployment/terraform/service.tf",),
-        "legacy": ("C5.1",),
-    },
-    "AR-OB2": _BQ_ANALYTICS_META,
-    "AR-S1": {
+    "AR-RS2": {"verify": _MEMORY_VERIFY, "files": ("app/agent_engine_app.py",), "auto_patch": False},
+    "AR-ID1": {
         "verify": f'grep -nE "service_account|AGENT_IDENTITY" {_TF} 2>/dev/null && ! grep -nE "roles/(storage\\.admin|editor|owner)" deployment/terraform/variables.tf 2>/dev/null',
         "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
         "legacy": ("C4.1", "C4.2"),
     },
-    "AR-S2": {
+    "AR-ID2": {
         "verify": 'grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf deployment/terraform/single-project/apis.tf 2>/dev/null',
         "files": ("deployment/terraform/apis.tf", "deployment/terraform/service.tf"),
         "legacy": ("C4.2",),
     },
-    "AR-S3": {
+    "AR-SF1": {
         "verify": f'grep -n "agent_gateway_config" {_TF} 2>/dev/null && grep -n "google_network_services_agent_gateway" deployment/terraform/production_ready.tf 2>/dev/null',
         "files": ("deployment/terraform/production_ready.tf", "deployment/terraform/service.tf", "Dockerfile"),
         "fields": (_CF_AGW_DIR, _CF_AGW_MODE, _CF_MODEL_ARMOR),
         "legacy": ("C4.4",),
     },
-    "AR-S4": {
+    "AR-SF2": {
         "verify": 'grep -rnE "AgentEngineSandboxCodeExecutor|execute_code|sandbox_environment" app/ 2>/dev/null',
         "files": ("app/agent.py",),
         "legacy": ("C4.4",),
         "auto_patch": False,  # agent-code wiring — guidance only
     },
-    "AR-S5": _DELEGATED_AUTH_META,
-    "AR-S6": _MODEL_ARMOR_META,
-    "AR-S7": _HITL_META,
-    # ---------------- GKE ----------------
-    "GKE-F1": {
+    "AR-DO1": {
+        "verify": f'grep -nE "NO_CONTENT|ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" {_TF} 2>/dev/null',
+        "files": ("deployment/terraform/service.tf",),
+        "legacy": ("C5.1",),
+    },
+    "AR-DO2": _ONLINE_MONITOR_META,
+    # ---------------- Cloud Run ----------------
+    "CR-RS1": {
         "verify": f'grep -n "VertexAiSessionService" app/app_utils/services.py && grep -nE "AGENT_ENGINE_SESSION_ID|GOOGLE_CLOUD_AGENT_ENGINE_ID" {_TF} 2>/dev/null',
         "files": _SESSION_FILES,
         "fields": (_CF_AGENT_ENGINE,),
         "legacy": ("C2.1",),
     },
-    "GKE-F2": {"verify": _MEMORY_VERIFY, "files": ("app/app_utils/services.py",), "fields": (_CF_AGENT_ENGINE,)},
-    "GKE-O1": {
+    "CR-RS2": {"verify": _MEMORY_VERIFY, "files": ("app/app_utils/services.py",), "fields": (_CF_AGENT_ENGINE,)},
+    "CR-ID1": {
+        "verify": f'! grep -nE "allUsers|invoker_iam_disabled\\s*=\\s*true" {_TF_ALL} 2>/dev/null && ! grep -rn -- "--allow-unauthenticated" Makefile .cloudbuild .github 2>/dev/null',
+        "files": ("deployment/terraform/service.tf",),
+    },
+    "CR-ID2": {
+        "verify": f'grep -nE "service_account|IDENTITY_TYPE_AGENT_IDENTITY" {_TF} 2>/dev/null && ! grep -nE "roles/(storage\\.admin|editor|owner)" deployment/terraform/variables.tf 2>/dev/null',
+        "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
+        "legacy": ("C4.1", "C4.2"),
+    },
+    "CR-ID3": {
+        "verify": f'grep -nE "FUNCTIONAL_TYPE_AGENT|FUNCTIONAL_TYPE_MCP_SERVER" {_TF} 2>/dev/null && grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf 2>/dev/null',
+        "files": ("deployment/terraform/service.tf", "deployment/terraform/apis.tf"),
+        "fields": (_CF_CR_ID_MODE, _CF_ORG_ID),
+        "legacy": ("C4.2",),
+    },
+    "CR-SF1": {
+        "verify": f'grep -nE "agent_gateway" {_TF_ALL} 2>/dev/null',
+        "files": ("deployment/terraform/service.tf",),
+        "legacy": ("C4.4",),
+        "auto_patch": False,
+    },
+    "CR-SF2": {
+        "verify": f'grep -rnE "sandbox[-_]launcher|sandboxLauncher" {_TF_ALL} Makefile .cloudbuild 2>/dev/null',
+        "files": ("deployment/terraform/service.tf",),
+        "legacy": ("C4.4",),
+        "auto_patch": False,  # Preview — guidance only (enable --sandbox-launcher + route the code executor)
+    },
+    "CR-DO1": {
+        "verify": f'grep -n "otel_to_cloud" app/fast_api_app.py && grep -nE "NO_CONTENT|ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" {_TF} 2>/dev/null',
+        "files": ("deployment/terraform/service.tf", "app/fast_api_app.py", "pyproject.toml", "deployment/terraform/variables.tf"),
+        "legacy": ("C5.1",),
+    },
+    # ---------------- GKE ----------------
+    "GKE-RS1": {
+        "verify": f'grep -n "VertexAiSessionService" app/app_utils/services.py && grep -nE "AGENT_ENGINE_SESSION_ID|GOOGLE_CLOUD_AGENT_ENGINE_ID" {_TF} 2>/dev/null',
+        "files": _SESSION_FILES,
+        "fields": (_CF_AGENT_ENGINE,),
+        "legacy": ("C2.1",),
+    },
+    "GKE-RS2": {"verify": _MEMORY_VERIFY, "files": ("app/app_utils/services.py",), "fields": (_CF_AGENT_ENGINE,)},
+    "GKE-RS3": {
         "verify": f'grep -nE "termination_grace_period_seconds|pre_stop|readiness_probe" {_TF} 2>/dev/null',
         "files": ("deployment/terraform/service.tf",),
         "fields": (_CF_GRACE,),
         "legacy": ("C1.2",),
     },
-    "GKE-O2": {
+    "GKE-RS4": {
         "verify": 'grep -nE "ate.dev/v1alpha1|kind:\\s*(WorkerPool|ActorTemplate)" deployment/k8s/agent-substrate.yaml 2>/dev/null',
         "files": ("deployment/k8s/agent-substrate.yaml", "deployment/terraform/service.tf"),
     },
-    "GKE-D1": _D1_META,
-    "GKE-D2": _D2_META,
-    "GKE-OB1": {
-        "verify": f'grep -n "otel_to_cloud" app/fast_api_app.py && grep -nE "NO_CONTENT|ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" {_TF} 2>/dev/null',
-        "files": ("deployment/terraform/service.tf", "app/fast_api_app.py", "pyproject.toml", "deployment/terraform/variables.tf"),
-        "legacy": ("C5.1",),
-    },
-    "GKE-OB2": _BQ_ANALYTICS_META,
-    "GKE-S1": {
+    "GKE-ID1": {
         "verify": f'grep -nE "roles/iam.workloadIdentityUser|iam.gke.io/gcp-service-account|spiffe-identity-type" {_TF} 2>/dev/null',
         "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
         "legacy": ("C4.1", "C4.2"),
     },
-    "GKE-S2": {
+    "GKE-ID2": {
+        "verify": f'grep -n "registry.gke.io/functional-type" {_TF} 2>/dev/null && grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf 2>/dev/null',
+        "files": ("deployment/terraform/service.tf", "deployment/terraform/apis.tf"),
+        "legacy": ("C4.2",),
+    },
+    "GKE-SF1": {
         "verify": 'grep -nE "SandboxTemplate|WorkerPool|ActorTemplate" deployment/k8s/agent-sandbox.yaml deployment/k8s/agent-substrate.yaml 2>/dev/null',
         "files": ("deployment/k8s/agent-substrate.yaml", "deployment/k8s/agent-sandbox.yaml"),
         "fields": (_CF_GKE_PATTERN,),
         "legacy": ("C4.4",),
     },
-    "GKE-S3": {
-        "verify": f'grep -n "registry.gke.io/functional-type" {_TF} 2>/dev/null && grep -n "agentregistry.googleapis.com" deployment/terraform/apis.tf 2>/dev/null',
-        "files": ("deployment/terraform/service.tf", "deployment/terraform/apis.tf"),
-        "legacy": ("C4.2",),
-    },
-    "GKE-S4": {
+    "GKE-SF2": {
         "verify": 'grep -n "GCPAgentGateway" deployment/k8s/agent-gateway.yaml 2>/dev/null',
         "files": ("deployment/k8s/agent-gateway.yaml",),
         "fields": (_CF_AGW_MODE,),
         "legacy": ("C4.4",),
     },
-    "GKE-S5": _DELEGATED_AUTH_META,
-    "GKE-S6": _MODEL_ARMOR_META,
-    "GKE-S7": _HITL_META,
+    "GKE-DO1": {
+        "verify": f'grep -n "otel_to_cloud" app/fast_api_app.py && grep -nE "NO_CONTENT|ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS" {_TF} 2>/dev/null',
+        "files": ("deployment/terraform/service.tf", "app/fast_api_app.py", "pyproject.toml", "deployment/terraform/variables.tf"),
+        "legacy": ("C5.1",),
+    },
 }
 
 
 def _build_items() -> list[ChecklistItemSpec]:
     items: list[ChecklistItemSpec] = []
-    for target in ALL_TARGETS:
-        for raw in CATALOG.get("items", {}).get(target, []):
+    for bucket in (*ALL_TARGETS, "common"):
+        scope: ScopeType = "common" if bucket == "common" else "runtime"
+        for raw in CATALOG.get("items", {}).get(bucket, []):
             meta = _ITEM_META.get(raw["id"], {})
             items.append(
                 ChecklistItemSpec(
                     id=raw["id"],
-                    target=target,
+                    target=bucket,  # type: ignore[arg-type]
                     category=raw["category"],
                     title=raw["title"],
                     check=raw.get("check", ""),
@@ -507,6 +511,7 @@ def _build_items() -> list[ChecklistItemSpec]:
                     custom_fields=tuple(meta.get("fields", ())),
                     legacy_ids=tuple(meta.get("legacy", ())),
                     auto_patch=bool(meta.get("auto_patch", True)),
+                    scope=raw.get("scope", scope),
                 )
             )
     return items
@@ -514,27 +519,87 @@ def _build_items() -> list[ChecklistItemSpec]:
 
 CHECKLIST_ITEMS: list[ChecklistItemSpec] = _build_items()
 ITEM_BY_ID: dict[str, ChecklistItemSpec] = {item.id: item for item in CHECKLIST_ITEMS}
+COMMON_ITEMS: list[ChecklistItemSpec] = [i for i in CHECKLIST_ITEMS if i.scope == "common"]
 ITEMS_BY_TARGET: dict[TargetType, list[ChecklistItemSpec]] = {
-    t: [i for i in CHECKLIST_ITEMS if i.target == t] for t in ALL_TARGETS
+    t: [i for i in CHECKLIST_ITEMS if i.target == t] + COMMON_ITEMS for t in ALL_TARGETS
 }
-# v3 IDs are already unique short codes; kept for v2 API compatibility.
+# Canonical IDs + v3 aliases for backward compatibility.
 ITEM_BY_ALIAS: dict[str, ChecklistItemSpec] = dict(ITEM_BY_ID)
 
 # ---------------------------------------------------------------------------
-# Legacy (v2.x) ``C*`` IDs -> v3 IDs, per target. Empty list = delegated to platform skills.
+# v3 ID aliases -> v4 canonical IDs (transparent backward compatibility)
+# ---------------------------------------------------------------------------
+V3_TO_V4_ALIASES: dict[str, tuple[str, TargetType]] = {
+    # Agent Runtime v3 -> v4
+    "AR-F1": ("AR-RS1", "agent_runtime"),
+    "AR-F2": ("AR-RS2", "agent_runtime"),
+    "AR-D1": ("COMMON-DO1", "agent_runtime"),
+    "AR-D2": ("COMMON-DO2", "agent_runtime"),
+    "AR-OB1": ("AR-DO1", "agent_runtime"),
+    "AR-OB2": ("COMMON-DO3", "agent_runtime"),
+    "AR-S1": ("AR-ID1", "agent_runtime"),
+    "AR-S2": ("AR-ID2", "agent_runtime"),
+    "AR-S3": ("AR-SF1", "agent_runtime"),
+    "AR-S4": ("AR-SF2", "agent_runtime"),
+    "AR-S5": ("COMMON-ID1", "agent_runtime"),
+    "AR-S6": ("COMMON-SF1", "agent_runtime"),
+    "AR-S7": ("COMMON-SF2", "agent_runtime"),
+    # Cloud Run v3 -> v4
+    "CR-F1": ("CR-RS1", "cloud_run"),
+    "CR-F2": ("CR-RS2", "cloud_run"),
+    "CR-D1": ("COMMON-DO1", "cloud_run"),
+    "CR-D2": ("COMMON-DO2", "cloud_run"),
+    "CR-OB1": ("CR-DO1", "cloud_run"),
+    "CR-OB2": ("COMMON-DO3", "cloud_run"),
+    "CR-S1": ("CR-ID1", "cloud_run"),
+    "CR-S2": ("CR-ID2", "cloud_run"),
+    "CR-S3": ("CR-ID3", "cloud_run"),
+    "CR-S4": ("CR-SF1", "cloud_run"),
+    "CR-S5": ("CR-SF2", "cloud_run"),
+    "CR-S6": ("COMMON-ID1", "cloud_run"),
+    "CR-S7": ("COMMON-SF1", "cloud_run"),
+    "CR-S8": ("COMMON-SF2", "cloud_run"),
+    # GKE v3 -> v4
+    "GKE-F1": ("GKE-RS1", "gke"),
+    "GKE-F2": ("GKE-RS2", "gke"),
+    "GKE-O1": ("GKE-RS3", "gke"),
+    "GKE-O2": ("GKE-RS4", "gke"),
+    "GKE-D1": ("COMMON-DO1", "gke"),
+    "GKE-D2": ("COMMON-DO2", "gke"),
+    "GKE-OB1": ("GKE-DO1", "gke"),
+    "GKE-OB2": ("COMMON-DO3", "gke"),
+    "GKE-S1": ("GKE-ID1", "gke"),
+    "GKE-S2": ("GKE-SF1", "gke"),
+    "GKE-S3": ("GKE-ID2", "gke"),
+    "GKE-S4": ("GKE-SF2", "gke"),
+    "GKE-S5": ("COMMON-ID1", "gke"),
+    "GKE-S6": ("COMMON-SF1", "gke"),
+    "GKE-S7": ("COMMON-SF2", "gke"),
+}
+
+# ---------------------------------------------------------------------------
+# Legacy (v2.x) ``C*`` IDs -> v4 IDs, per target. Empty list = delegated to platform skills.
 # ---------------------------------------------------------------------------
 LEGACY_ID_MAP: dict[str, dict[TargetType, list[str]]] = {
-    "C2.1": {"cloud_run": ["CR-F1"], "agent_runtime": ["AR-F1"], "gke": ["GKE-F1"]},
-    "C1.2": {"cloud_run": [], "agent_runtime": [], "gke": ["GKE-O1"]},
-    "C7.1": {"cloud_run": ["CR-D1", "CR-D2"], "agent_runtime": ["AR-D1", "AR-D2"], "gke": ["GKE-D1", "GKE-D2"]},
-    "C5.1": {"cloud_run": ["CR-OB1"], "agent_runtime": ["AR-OB1"], "gke": ["GKE-OB1"]},
-    "C4.1": {"cloud_run": ["CR-S2"], "agent_runtime": ["AR-S1"], "gke": ["GKE-S1"]},
-    "C4.2": {
-        "cloud_run": ["CR-S2", "CR-S3", "CR-S6"],
-        "agent_runtime": ["AR-S1", "AR-S2", "AR-S5"],
-        "gke": ["GKE-S1", "GKE-S3", "GKE-S5"],
+    "C2.1": {"cloud_run": ["CR-RS1"], "agent_runtime": ["AR-RS1"], "gke": ["GKE-RS1"]},
+    "C1.2": {"cloud_run": [], "agent_runtime": [], "gke": ["GKE-RS3"]},
+    "C7.1": {
+        "cloud_run": ["COMMON-DO1", "COMMON-DO2"],
+        "agent_runtime": ["COMMON-DO1", "COMMON-DO2"],
+        "gke": ["COMMON-DO1", "COMMON-DO2"],
     },
-    "C4.4": {"cloud_run": ["CR-S4", "CR-S5"], "agent_runtime": ["AR-S3", "AR-S4"], "gke": ["GKE-S4", "GKE-S2"]},
+    "C5.1": {"cloud_run": ["CR-DO1"], "agent_runtime": ["AR-DO1"], "gke": ["GKE-DO1"]},
+    "C4.1": {"cloud_run": ["CR-ID2"], "agent_runtime": ["AR-ID1"], "gke": ["GKE-ID1"]},
+    "C4.2": {
+        "cloud_run": ["CR-ID2", "CR-ID3", "COMMON-ID1"],
+        "agent_runtime": ["AR-ID1", "AR-ID2", "COMMON-ID1"],
+        "gke": ["GKE-ID1", "GKE-ID2", "COMMON-ID1"],
+    },
+    "C4.4": {
+        "cloud_run": ["CR-SF1", "CR-SF2"],
+        "agent_runtime": ["AR-SF1", "AR-SF2"],
+        "gke": ["GKE-SF2", "GKE-SF1"],
+    },
     # Delegated to platform skills (google/skills) — not scored, not auto-patched by this skill.
     "C1.1": {"cloud_run": [], "agent_runtime": [], "gke": []},
     "C3.1": {"cloud_run": [], "agent_runtime": [], "gke": []},
@@ -635,6 +700,12 @@ def resolve_item_selection(requested: list[str] | None, target: TargetType | Non
     for token in tokens:
         if token in ITEM_BY_ID:
             _add(token)
+            continue
+        if token in V3_TO_V4_ALIASES:
+            mapped_id, orig_target = V3_TO_V4_ALIASES[token]
+            if target is None or target == orig_target:
+                _add(mapped_id)
+                sel.legacy_resolved[token] = [mapped_id]
             continue
         legacy = _canonical_legacy(token)
         if legacy in OUT_OF_SCOPE_LEGACY_NOTES:

@@ -45,27 +45,33 @@ The checklist contains **only items that follow from agent characteristics**: "�
 
 Values (instance counts, timeouts, sizing), architecture choices, and non-universal infrastructure options (Secure Web Proxy, Cloud Armor, Provisioned Throughput) are **advisories** only (catalog `advisories`) — mention them when relevant, never as checklist failures.
 
-## Checklist v3 Items
+## Checklist Items (v4 — 4 Balanced Categories · Common + Runtime-Specific)
 
-ID format: `<target>-<category><n>` — target `AR` · `CR` · `GKE`; category `F` State & Memory · `O` Runtime Lifecycle · `D` CI/CD & Evaluation · `OB` Observability · `S` Security & Governance. ⚙️ = conditional, 🅿️ = Preview, 🧩 = Optional Add-on (Tier 3 · opt-in only, never blocks verdict).
+ID format: `<scope>-<category><n>` — scope `COMMON` (all runtimes) · `AR` (Agent Runtime) · `CR` (Cloud Run) · `GKE`; 4 balanced categories: **`RS`** Runtime & State · **`ID`** Identity & Governance · **`SF`** Safety & Guardrails · **`DO`** Delivery, Eval & Observability. ⚙️ = conditional, 🅿️ = Preview, 🧩 = Optional Add-on (Tier 3 · opt-in only, never blocks verdict).
 
-| Category | 🛡️ Agent Runtime | ⚡ Cloud Run | ☸️ GKE |
+### 1) 🌐 Common Across All Runtimes (`COMMON-*`, 6 items)
+- `COMMON-DO1` CI/CD 파이프라인 (agents-cli) · `COMMON-DO2` 평가 데이터셋 · 평가 게이트 · `COMMON-DO3` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩
+- `COMMON-ID1` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️
+- `COMMON-SF1` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `COMMON-SF2` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩
+
+### 2) ⚙️ Runtime-Specific Items (25 items — tailored per platform, zero duplication)
+
+| Category | 🛡️ Agent Runtime (`AR-*`, 8) | ⚡ Cloud Run (`CR-*`, 8) | ☸️ GKE (`GKE-*`, 9) |
 | :--- | :--- | :--- | :--- |
-| State & Memory | `AR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `AR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `CR-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `CR-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `GKE-F1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `GKE-F2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ |
-| Runtime Lifecycle | — | — | `GKE-O1` 무중단 종료 (긴 응답 보호) · `GKE-O2` 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) ⚙️ |
-| CI/CD & Evaluation | `AR-D1` CI/CD 파이프라인 (agents-cli) · `AR-D2` 평가 데이터셋 · 평가 게이트 | `CR-D1` CI/CD 파이프라인 (agents-cli) · `CR-D2` 평가 데이터셋 · 평가 게이트 | `GKE-D1` CI/CD 파이프라인 (agents-cli) · `GKE-D2` 평가 데이터셋 · 평가 게이트 |
-| Observability | `AR-OB1` 프롬프트 미기록 · `AR-OB2` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩 | `CR-OB1` Cloud Trace · 프롬프트 미기록 · `CR-OB2` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩 | `GKE-OB1` Cloud Trace · 프롬프트 미기록 · `GKE-OB2` BigQuery Agent Analytics (구조화 이벤트 분석) 🧩 |
-| Security & Governance | `AR-S1` 에이전트 전용 신원 · 최소 권한 · `AR-S2` Agent Registry 등록 🅿️ · `AR-S3` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `AR-S4` AI 생성 코드 격리 (Code Execution) ⚙️ · `AR-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ · `AR-S6` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `AR-S7` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩 | `CR-S1` 인증된 호출만 허용 · `CR-S2` 에이전트 전용 신원 · 최소 권한 · `CR-S3` Agent Registry 등록 🅿️ · `CR-S4` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `CR-S5` AI 생성 코드 격리 (Cloud Run sandboxes) ⚙️🅿️ · `CR-S6` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ · `CR-S7` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `CR-S8` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩 | `GKE-S1` 에이전트 전용 신원 · 최소 권한 · `GKE-S2` AI 생성 코드 격리 (Agent Substrate · Agent Sandbox) ⚙️ · `GKE-S3` Agent Registry 등록 🅿️ · `GKE-S4` Agent Gateway for GKE (외부 호출 통제) ⚙️🅿️ · `GKE-S5` 사용자 위임 인증 (Agent Identity auth manager) ⚙️🅿️ · `GKE-S6` Model Armor 입·출력 가드레일 (프롬프트 인젝션 · SDP) 🧩 · `GKE-S7` 고위험 도구 실행 승인 게이트 (ADK Tool Confirmation · HITL) 🧩 |
+| **RS · Runtime & State** | `AR-RS1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `AR-RS2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `CR-RS1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `CR-RS2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ | `GKE-RS1` 관리형 영속 세션 저장 (VertexAiSessionService) ⚙️ · `GKE-RS2` 관리형 장기 기억 저장 (VertexAiMemoryBankService) ⚙️ · `GKE-RS3` 무중단 종료 (긴 응답 보호) · `GKE-RS4` 에이전트 일시정지 · 복원 (Agent Substrate · Agent Sandbox) ⚙️ |
+| **ID · Identity & Governance** | `AR-ID1` 에이전트 전용 신원 · 최소 권한 · `AR-ID2` Agent Registry 등록 🅿️ | `CR-ID1` 인증된 호출만 허용 · `CR-ID2` 에이전트 전용 신원 · 최소 권한 · `CR-ID3` Agent Registry 등록 🅿️ | `GKE-ID1` 에이전트 전용 신원 · 최소 권한 · `GKE-ID2` Agent Registry 등록 🅿️ |
+| **SF · Safety & Guardrails** | `AR-SF1` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `AR-SF2` AI 생성 코드 격리 (Code Execution) ⚙️ | `CR-SF1` Agent Gateway (외부 호출 통제) ⚙️🅿️ · `CR-SF2` AI 생성 코드 격리 (Cloud Run sandboxes) ⚙️🅿️ | `GKE-SF1` AI 생성 코드 격리 (Agent Substrate · Agent Sandbox) ⚙️ · `GKE-SF2` Agent Gateway for GKE (외부 호출 통제) ⚙️🅿️ |
+| **DO · Delivery, Eval & Observability** | `AR-DO1` 프롬프트 미기록 · `AR-DO2` Online Evaluation Monitor (실시간 품질 감시) 🧩 | `CR-DO1` Cloud Trace · 프롬프트 미기록 | `GKE-DO1` Cloud Trace · 프롬프트 미기록 |
 
-Targets are listed Agent Runtime → Cloud Run → GKE (fully managed ↔ most control / ops responsibility). Agent Runtime and Cloud Run currently have no Runtime Lifecycle item; reports skip empty categories. `CR-S5` / `AR-S4` (AI-generated code isolation) and `AR-S7` / `CR-S8` / `GKE-S7` (ADK Tool Confirmation · HITL) are guidance-only: the engine checks them but never auto-patches. Item counts: Agent Runtime 13 · Cloud Run 14 · GKE 15 (42 total = 33 Core/Conditional + 9 Optional Add-ons).
+Total unique catalog items: **31** (`COMMON` 6 + `AR` 8 + `CR` 8 + `GKE` 9). When scanning a target, the engine evaluates **that target's runtime-specific items + the 6 `COMMON-*` items**. Guidance-only items: `COMMON-DO1`, `COMMON-ID1`, `COMMON-SF2`, `AR-SF2`, `AR-DO2`, `CR-SF1`, `CR-SF2`.
 
-**`idle` condition (`GKE-O2`)** cannot be detected from code: it counts as met only when Agent Substrate (`ate.dev/v1alpha1` `WorkerPool` / `ActorTemplate`) is already used. Otherwise ask the user ("사용자 입력·도구 응답을 기다리는 시간이 대부분인가?"); if yes, pass `--conditions idle=true` to `scan` / `report` / `apply`, or select `--items GKE-O2` explicitly. `GKE-O2` reuses the `GKE-S2` Agent Substrate manifest and needs GKE Standard >= 1.37 (the engine never changes an existing Autopilot cluster, so it stays 🟡 there).
+**`idle` condition (`GKE-RS4`)** cannot be detected from code: it counts as met only when Agent Substrate (`ate.dev/v1alpha1` `WorkerPool` / `ActorTemplate`) is already used. Otherwise ask the user ("사용자 입력·도구 응답을 기다리는 시간이 대부분인가?"); if yes, pass `--conditions idle=true` to `scan` / `report` / `apply`, or select `--items GKE-RS4` explicitly. `GKE-RS4` reuses the `GKE-SF1` Agent Substrate manifest and needs GKE Standard >= 1.37 (the engine never changes an existing Autopilot cluster, so it stays 🟡 there).
 
-**`delegated` condition (`AR-S5` · `CR-S6` · `GKE-S5`, 사용자 위임 인증 · Preview · guidance only)** — met when the agent calls external tools / MCP servers (Jira, GitHub, …) on behalf of users. Auto-detected from Agent Identity auth manager usage (`google.adk.integrations.agent_identity`, `GcpAuthProvider` / `GcpAuthProviderScheme`, `…/authProviders/…`), credential-bearing tool configs (MCP / OpenAPI / third-party API tools with auth headers) or secret-like env vars (`*_TOKEN`, `*_API_KEY`, `GITHUB_PAT`, …; Gemini keys excluded). If undetectable it is N/A — ask the user ("사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하는가?") and pass `--conditions delegated=true` if yes. Status: 🟢 `google-adk[agent-identity]` extra + auth provider wiring · 🔴 static API keys / PATs passed into tool headers · 🟡 otherwise. The engine never auto-patches it: guide the user to create an auth provider (3-legged OAuth) in Agent Identity auth manager and attach it to tools with `google-adk[agent-identity]` ([auth manager](https://docs.cloud.google.com/iam/docs/auth-manager-overview) · [3-legged OAuth](https://docs.cloud.google.com/iam/docs/auth-with-3lo-v2)).
+**`delegated` condition (`COMMON-ID1`, 사용자 위임 인증 · Preview · guidance only)** — met when the agent calls external tools / MCP servers (Jira, GitHub, …) on behalf of users. Auto-detected from Agent Identity auth manager usage (`google.adk.integrations.agent_identity`, `GcpAuthProvider` / `GcpAuthProviderScheme`, `…/authProviders/…`), credential-bearing tool configs (MCP / OpenAPI / third-party API tools with auth headers) or secret-like env vars (`*_TOKEN`, `*_API_KEY`, `GITHUB_PAT`, …; Gemini keys excluded). If undetectable it is N/A — ask the user ("사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하는가?") and pass `--conditions delegated=true` if yes. Status: 🟢 `google-adk[agent-identity]` extra + auth provider wiring · 🔴 static API keys / PATs passed into tool headers · 🟡 otherwise.
 
-Conditions (catalog `condition_rules`): **멀티턴 대화** → sessions (`*-F1`) · **장기 기억 필요** → Memory Bank (`*-F2`) · **AI 생성 코드 실행** → `AR-S4` · `CR-S5` · `GKE-S2` · **자주 일시정지·재개하는 상태 유지형 에이전트** (`idle`) → `GKE-O2` · **사용자 대신 외부 도구 호출** (`delegated`) → 사용자 위임 인증 (`AR-S5` · `CR-S6` · `GKE-S5`) · **MCP·외부 도구 호출** → Agent Gateway (`AR-S3` · `CR-S4` · `GKE-S4`).
+Conditions (catalog `condition_rules`): **멀티턴 대화** → sessions (`*-RS1`) · **장기 기억 필요** → Memory Bank (`*-RS2`) · **AI 생성 코드 실행** → `AR-SF2` · `CR-SF2` · `GKE-SF1` · **자주 일시정지·재개하는 상태 유지형 에이전트** (`idle`) → `GKE-RS4` · **사용자 대신 외부 도구 호출** (`delegated`) → `COMMON-ID1` · **MCP·외부 도구 호출** → Agent Gateway (`AR-SF1` · `CR-SF1` · `GKE-SF2`).
 
-**Legacy IDs**: earlier `C*` IDs (e.g. `C2.1`, `C4.1`, `C7.1`) are still accepted as aliases in `--items` and resolve to the target's v3 IDs. `C*` IDs for delegated BPs (`C1.1`, `C3.1`, `C4.3`, `C5.3`, and the probe/PDB part of `C1.2`) no longer map to checklist items — point the user to the platform skills instead. `C6.2` (Gemini call retry · endpoint) is ADK optimization (agent code) and out of scope: it resolves to nothing, the CLI says so, and you should not check, patch, or recommend it as part of this skill. Mapping: `references/checklist-rubric.md` §4.
+**Legacy IDs**: Previous v3 IDs (e.g. `CR-F1`, `AR-S3`, `GKE-O1`, `CR-D2`) AND v2 `C*` IDs (e.g. `C2.1`, `C4.1`, `C7.1`) are transparently accepted as aliases in `--items` and resolve to the canonical v4 IDs (`CR-RS1`, `AR-SF1`, `GKE-RS3`, `COMMON-DO2`). Delegated BPs (`C1.1`, `C3.1`, `C4.3`, `C5.3`) point to platform skills; `C6.2` is out of scope. Mapping: `references/checklist-rubric.md` §4.
 
 ### Verdict Rules
 - **Required** items must be `GREEN` for 🟢 Production Ready.
@@ -147,10 +153,10 @@ If MCP servers or hardcoded MCP/A2A URLs are detected, load `references/agent-re
 
 Right after presenting the Step 1 Find Report, **stop and ask the user which items they actually want to apply** — never assume all RED/AMBER items should be applied:
 - Offer clear choices (using `ask_question` if available, or concise plain-text options):
-  - **특정 항목 ID 직접 선택** (예: `CR-F1, CR-S1, CR-OB1` 또는 `AR-D2, AR-S3`)
-  - **필수 미충족 항목만 순차 적용** (Preview 제외)
+  - **특정 항목 ID 직접 선택** (예: `CR-RS1, CR-ID1, CR-DO1` 또는 `AR-SF1, COMMON-SF1` — 기존 v3 ID 별칭도 자동 해석)
+  - **필수 미충족 항목만 순차 적용** (Preview · 선택 Add-on 제외)
   - **지금은 진단만 확인하고 종료**
-- For `*-D1` (CI/CD pipeline): `*-D1` is guidance-only (the engine never generates pipeline files). If selected while RED, propose running `agents-cli scaffold enhance . --cicd-runner google_cloud_build` and execute it **only after explicit user approval** (before `*-D2`). `agents-cli infra cicd` is always a manual production step — mention as guidance, never run it.
+- For `COMMON-DO1` (CI/CD pipeline): `COMMON-DO1` is guidance-only (the engine never generates pipeline files). If selected while RED, propose running `agents-cli scaffold enhance . --cicd-runner google_cloud_build` and execute it **only after explicit user approval** (before `COMMON-DO2`). `agents-cli infra cicd` is always a manual production step — mention as guidance, never run it.
 
 ### Step 3: Feature-by-Feature Loop — 항목별 설정 질문 → Diff → 승인 후 Apply
 
@@ -160,18 +166,19 @@ For each selected item `<ONE_ITEM>`:
 
 #### 3-1. Configure (해당 항목에 필요한 설정만 질문)
 Consult `references/intake-questionnaire.md` **§4 (선택 항목별 적용 전 설정 질문)**:
-- **Skip questions** for single-answer items (`CR-S1`, `CR-OB1`, `AR-OB1`, `GKE-OB1`, `AR-S1`, `GKE-S1`, etc.) — go straight to 3-2 Diff.
+- **Skip questions** for single-answer items (`CR-ID1`, `CR-DO1`, `AR-DO1`, `GKE-DO1`, `AR-ID1`, `GKE-ID1`, etc.) — go straight to 3-2 Diff.
 - **Ask only the questions required by `<ONE_ITEM>`** (if not already answered by the user):
-  - **Agent Gateway (`AR-S3` · `CR-S4` · `GKE-S4`)**: ① 적용 방향 — `Egress (에이전트→외부 도구/MCP)` / `Ingress (클라이언트→에이전트)` / `Both (양방향)` (`agent_gateway_direction`), ② 초기 적용 모드 — `DRY_RUN (감사 후 전환 권장)` vs `ENFORCED` (`agent_gateway_enforcement_mode`), ③ `Model Armor` 프롬프트·민감정보 검사 연동 여부 (`enable_model_armor`).
-  - **Cloud Run 신원 · 레지스트리 (`CR-S2` · `CR-S3`)**: ① 신원 방식 — `전용 최소 권한 서비스 계정 (권장·안정)` vs `Agent Identity (Preview SPIFFE)` (`cloud_run_identity_mode`), ② `Agent Identity` 선택 시 조직 ID (`organization_id`, 미입력 시 `gcloud projects get-ancestors` 자동 조회 안내).
-  - **평가 게이트 (`*-D2`)**: 통과 기준 점수 (`eval_threshold`, 기본 `3.5`).
-  - **영속 세션 · 장기 기억 (`CR-F1/F2` · `GKE-F1/F2`)**: 기존 Agent Platform Reasoning Engine ID가 있는지 (`agent_engine_id`; 없으면 신규 생성 안내).
-  - **GKE 무중단 종료 (`GKE-O1`)**: 최대 응답 시간에 맞춘 종료 유예 시간 (`gke_termination_grace_seconds`, 기본 `120`초).
-  - **GKE 코드 격리 · 유휴 일시정지 (`GKE-S2` · `GKE-O2`)**: 실행 패턴 — `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) (`gke_execution_pattern`).
-  - **BigQuery Agent Analytics (`AR-OB2` · `CR-OB2` · `GKE-OB2`, 선택 Add-on)**: 데이터셋 ID (`bq_analytics_dataset`, 기본 `agent_analytics`), 테이블명 (`bq_analytics_table`, 기본 `agent_events`).
-  - **Model Armor 가드레일 (`AR-S6` · `CR-S7` · `GKE-S6`, 선택 Add-on · 유료)**: ① 프롬프트 인젝션·탈옥 신뢰도 임계치 (`LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE` / `HIGH`, `model_armor_confidence`), ② 민감정보 SDP 필터 (`model_armor_enable_sdp`), ③ 악성 URI 필터 (`model_armor_enable_malicious_uri`).
-  - **고위험 도구 승인 게이트 · HITL (`AR-S7` · `CR-S8` · `GKE-S7`, 선택 Add-on · 안내 전용)**: 사람 승인을 걸 대상 고위험 도구(결제·삭제·외부 쓰기 등) 목록을 확인한 뒤 `FunctionTool(..., require_confirmation=True)` 및 `ToolConfirmation` 적용 코드 예시를 안내합니다.
-  - **기타 안내 전용 항목 (`CR-S4`, `AR-S4`, `CR-S5`, `AR-S5`, `CR-S6`, `GKE-S5`)**: 사용자 응답에 맞춘 맞춤형 YAML / CLI / 코드 설정 가이드와 공식 근거 링크를 제공하고 다음 항목으로 이동합니다.
+  - **Agent Gateway (`AR-SF1` · `CR-SF1` · `GKE-SF2`)**: ① 적용 방향 — `Egress (에이전트→외부 도구/MCP)` / `Ingress (클라이언트→에이전트)` / `Both (양방향)` (`agent_gateway_direction`), ② 초기 적용 모드 — `DRY_RUN (감사 후 전환 권장)` vs `ENFORCED` (`agent_gateway_enforcement_mode`), ③ `Model Armor` 프롬프트·민감정보 검사 연동 여부 (`enable_model_armor`).
+  - **Cloud Run 신원 · 레지스트리 (`CR-ID2` · `CR-ID3`)**: ① 신원 방식 — `전용 최소 권한 서비스 계정 (권장·안정)` vs `Agent Identity (Preview SPIFFE)` (`cloud_run_identity_mode`), ② `Agent Identity` 선택 시 조직 ID (`organization_id`, 미입력 시 `gcloud projects get-ancestors` 자동 조회 안내).
+  - **평가 게이트 (`COMMON-DO2`)**: 통과 기준 점수 (`eval_threshold`, 기본 `3.5`).
+  - **영속 세션 · 장기 기억 (`CR-RS1/RS2` · `GKE-RS1/RS2`)**: 기존 Agent Platform Reasoning Engine ID가 있는지 (`agent_engine_id`; 없으면 신규 생성 안내).
+  - **GKE 무중단 종료 (`GKE-RS3`)**: 최대 응답 시간에 맞춘 종료 유예 시간 (`gke_termination_grace_seconds`, 기본 `120`초).
+  - **GKE 코드 격리 · 유휴 일시정지 (`GKE-SF1` · `GKE-RS4`)**: 실행 패턴 — `agent_substrate` (Standard ≥ 1.37 권장) vs `agent_sandbox` (상시 실행 · 사이드카 · Arm · Autopilot) (`gke_execution_pattern`).
+  - **BigQuery Agent Analytics (`COMMON-DO3`, 선택 Add-on)**: 데이터셋 ID (`bq_analytics_dataset`, 기본 `agent_analytics`), 테이블명 (`bq_analytics_table`, 기본 `agent_events`).
+  - **Model Armor 가드레일 (`COMMON-SF1`, 선택 Add-on · 유료)**: ① 프롬프트 인젝션·탈옥 신뢰도 임계치 (`LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE` / `HIGH`, `model_armor_confidence`), ② 민감정보 SDP 필터 (`model_armor_enable_sdp`), ③ 악성 URI 필터 (`model_armor_enable_malicious_uri`).
+  - **고위험 도구 승인 게이트 · HITL (`COMMON-SF2`, 선택 Add-on · 안내 전용)**: 사람 승인을 걸 대상 고위험 도구(결제·삭제·외부 쓰기 등) 목록을 확인한 뒤 `FunctionTool(..., require_confirmation=True)` 및 `ToolConfirmation` 적용 코드 예시를 안내합니다.
+  - **Agent Runtime Online Evaluation Monitor (`AR-DO2`, 선택 Add-on · 안내 전용)**: `agent-platform-alert-configuration` 스킬과 연계해 추가 LLM 평가 과금 동의 후 Online Monitor 프로비저닝을 안내합니다.
+  - **기타 안내 전용 항목 (`CR-SF1`, `AR-SF2`, `CR-SF2`, `COMMON-ID1`)**: 사용자 응답에 맞춘 맞춤형 YAML / CLI / 코드 설정 가이드와 공식 근거 링크를 제공하고 다음 항목으로 이동합니다.
 
 #### 3-2. Preview Diff (해당 항목 단일 Diff 미리보기 — 파일 수정 없음)
 ```bash

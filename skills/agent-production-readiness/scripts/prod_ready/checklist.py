@@ -370,7 +370,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
         "legacy": ("C2.1",),
         "auto_patch": False,
     },
-    "AR-RS2": {"verify": _MEMORY_VERIFY, "files": ("app/agent_engine_app.py",), "auto_patch": False},
+    "AR-RS2": {"verify": _MEMORY_VERIFY, "files": ("app/agent.py", "app/agent_engine_app.py"), "auto_patch": True},
     "AR-ID1": {
         "verify": f'grep -nE "service_account|AGENT_IDENTITY" {_TF} 2>/dev/null && ! grep -nE "roles/(storage\\.admin|editor|owner)" deployment/terraform/variables.tf 2>/dev/null',
         "files": ("deployment/terraform/variables.tf", "deployment/terraform/service.tf"),
@@ -476,7 +476,7 @@ _ITEM_META: dict[str, dict[str, Any]] = {
     "GKE-SF2": {
         "verify": 'grep -n "GCPAgentGateway" deployment/k8s/agent-gateway.yaml 2>/dev/null',
         "files": ("deployment/k8s/agent-gateway.yaml",),
-        "fields": (_CF_AGW_MODE,),
+        "fields": (_CF_AGW_DIR, _CF_AGW_MODE, _CF_MODEL_ARMOR),
         "legacy": ("C4.4",),
     },
     "GKE-DO1": {

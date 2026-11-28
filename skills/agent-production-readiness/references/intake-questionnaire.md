@@ -37,13 +37,13 @@ flowchart LR
 | **사용자 대신 외부 도구 호출** (`delegated`) | 사용자 계정으로 외부 시스템(Jira·GitHub 등)을 호출하는가 | 사용자 위임 인증 (Agent Identity auth manager) — `COMMON-ID1` (전 환경 공통 · Preview) | auth manager 사용(`google.adk.integrations.agent_identity`, `GcpAuthProvider` / `GcpAuthProviderScheme`, `…/authProviders/…`), 인증 헤더(`headers=` · `Authorization` · `auth_scheme` · `auth_credential`)를 붙인 MCP·OpenAPI·서드파티 API 도구, `*_TOKEN` · `*_API_KEY` · `GITHUB_PAT` 같은 환경변수 (Gemini 키 제외). 감지되지 않으면 **사용자에게 질문**하고, 해당이면 `--conditions delegated=true` |
 
 - 조건이 **해당하지 않으면** 그 항목은 `N/A`로 표시하고 판정에서 제외합니다.
-- Agent Gateway 항목(`AR-S3` · `CR-S4` · `GKE-S4`)과 사용자 위임 인증 항목(`AR-S5` · `CR-S6` · `GKE-S5`)은 **Preview**라 조건이 해당해도 판정을 막지 않습니다.
-- `GKE-O2`는 조건을 코드로 판단할 수 없어 기본은 `N/A`입니다. 사용자가 "해당"이라고 답하면 `scan`/`report`에 `--conditions idle=true`를 붙이고, 적용은 `--items GKE-O2`(명시 선택)로 합니다.
-- AI 생성 코드 격리는 환경별 항목입니다: Agent Runtime `AR-S4`(Code Execution) · Cloud Run `CR-S5`(Cloud Run sandboxes, Preview) · GKE `GKE-S2`(Agent Substrate). `AR-S4` · `CR-S5`는 점검·안내만 하고 자동 패치하지 않습니다.
-- 사용자 위임 인증(`AR-S5` · `CR-S6` · `GKE-S5`)도 점검·안내만 합니다: 🟢 `google-adk[agent-identity]` extra + auth provider 연결 · 🔴 정적 API 키·PAT를 도구 헤더에 전달 · 🟡 그 외. auth manager에 auth provider(3-legged OAuth)를 만들고 ADK 도구·MCP에 연결하도록 안내합니다 ([Agent Identity auth manager](https://docs.cloud.google.com/iam/docs/auth-manager-overview) · [3-legged OAuth with auth manager](https://docs.cloud.google.com/iam/docs/auth-with-3lo-v2)).
+- Agent Gateway 항목(`AR-SF1` · `CR-SF1` · `GKE-SF2`)과 사용자 위임 인증 항목(`COMMON-ID1`)은 **Preview**라 조건이 해당해도 판정을 막지 않습니다.
+- `GKE-RS4`는 조건을 코드로 판단할 수 없어 기본은 `N/A`입니다. 사용자가 "해당"이라고 답하면 `scan`/`report`에 `--conditions idle=true`를 붙이고, 적용은 `--items GKE-RS4`(명시 선택)로 합니다.
+- AI 생성 코드 격리는 환경별 항목입니다: Agent Runtime `AR-SF2`(Code Execution) · Cloud Run `CR-SF2`(Cloud Run sandboxes, Preview) · GKE `GKE-SF1`(Agent Substrate). `AR-SF2` · `CR-SF2`는 점검·안내만 하고 자동 패치하지 않습니다.
+- 사용자 위임 인증(`COMMON-ID1`)도 점검·안내만 합니다: 🟢 `google-adk[agent-identity]` extra + auth provider 연결 · 🔴 정적 API 키·PAT를 도구 헤더에 전달 · 🟡 그 외. auth manager에 auth provider(3-legged OAuth)를 만들고 ADK 도구·MCP에 연결하도록 안내합니다 ([Agent Identity auth manager](https://docs.cloud.google.com/iam/docs/auth-manager-overview) · [3-legged OAuth with auth manager](https://docs.cloud.google.com/iam/docs/auth-with-3lo-v2)).
 
 > [!NOTE]
-> 엔진이 조건을 자동 판단하므로 대부분은 질문 없이 `scan`을 실행할 수 있습니다. 사용자가 "해당 없음"이라고 답한 조건부 항목은 `--items`에서 빼고 실행합니다 (예: Cloud Run에서 멀티턴 대화가 아니면 `CR-F1`을 제외).
+> 엔진이 조건을 자동 판단하므로 대부분은 질문 없이 `scan`을 실행할 수 있습니다. 사용자가 "해당 없음"이라고 답한 조건부 항목은 `--items`에서 빼고 실행합니다 (예: Cloud Run에서 멀티턴 대화가 아니면 `CR-RS1`을 제외).
 
 ---
 
@@ -118,17 +118,17 @@ flowchart LR
 
 | 키 | 기본값 | 대상 | 관련 항목 |
 | :--- | :--- | :---: | :--- |
-| `agent_engine_id` | `""` | `cloud_run`, `gke` | Agent Platform 인스턴스 ID — `VertexAiSessionService` · Memory Bank 연결 (`CR-F1`·`CR-F2`·`GKE-F1`·`GKE-F2`) |
-| `eval_threshold` | `3.5` | 전체 | 평가 게이트 기준 점수 (`CR-D2`·`AR-D2`·`GKE-D2`) |
-| `gke_termination_grace_seconds` | `120` | `gke` | `terminationGracePeriodSeconds` — 최대 응답 시간 이상 (`GKE-O1`) |
-| `gke_execution_pattern` | `"standard_pods"` | `gke` | `agent_substrate`(Agent Substrate on GKE) 또는 `agent_sandbox`(상시 실행 · 사이드카 · Arm · Autopilot) (`GKE-S2`) |
-| `agent_gateway_direction` | `"egress"` | `agent_runtime` | Agent Gateway 적용 방향 — `"egress"` (`AGENT_TO_ANYWHERE`), `"ingress"` (`CLIENT_TO_AGENT`), `"both"` (`AR-S3`, Preview) |
-| `agent_gateway_enforcement_mode` | `"DRY_RUN"` | `agent_runtime` | Agent Gateway 정책을 시험 모드로 검증한 뒤 `"ENFORCED"`로 전환 (`AR-S3`, Preview) |
-| `enable_model_armor` | `false` | `agent_runtime` | `true`일 때 Model Armor 템플릿(`pi_and_jailbreak` + `sdp`)과 `CONTENT_AUTHZ` 정책을 `production_ready.tf`에 함께 생성 (`AR-S3`, Preview) |
-| `cloud_run_identity_mode` | `"agent_identity"` | `cloud_run` | `CR-S3` 적용 시 Cloud Run 신원 모드 — `"service_account"`(전용 최소 권한 SA 유지, 권장·안정) 또는 `"agent_identity"`(Preview SPIFFE) |
-| `organization_id` | `""` | `cloud_run` | `cloud_run_identity_mode="agent_identity"`일 때 `variables.tf`의 `organization_id` 기본값으로 반영 (`CR-S3`) |
-| `bq_analytics_dataset` | `"agent_analytics"` | 전체 | BigQuery Agent Analytics 데이터셋 ID (`AR-OB2`·`CR-OB2`·`GKE-OB2`, 선택 Add-on) |
-| `bq_analytics_table` | `"agent_events"` | 전체 | BigQuery Agent Analytics 테이블명 (`AR-OB2`·`CR-OB2`·`GKE-OB2`, 선택 Add-on) |
-| `model_armor_confidence` | `"MEDIUM_AND_ABOVE"` | 전체 | Model Armor 프롬프트 인젝션·탈옥 신뢰도 임계치 — `LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE` / `HIGH` (`AR-S6`·`CR-S7`·`GKE-S6`, 선택 Add-on) |
-| `model_armor_enable_sdp` | `true` | 전체 | Model Armor Sensitive Data Protection(민감정보 PII) 필터 활성 여부 (`AR-S6`·`CR-S7`·`GKE-S6`) |
-| `model_armor_enable_malicious_uri` | `true` | 전체 | Model Armor 악성 URI 필터 활성 여부 (`AR-S6`·`CR-S7`·`GKE-S6`) |
+| `agent_engine_id` | `""` | `cloud_run`, `gke` | Agent Platform 인스턴스 ID — `VertexAiSessionService` · Memory Bank 연결 (`CR-RS1`·`CR-RS2`·`GKE-RS1`·`GKE-RS2`) |
+| `eval_threshold` | `3.5` | 전체 | 평가 게이트 기준 점수 (`COMMON-DO2`) |
+| `gke_termination_grace_seconds` | `120` | `gke` | `terminationGracePeriodSeconds` — 최대 응답 시간 이상 (`GKE-RS3`) |
+| `gke_execution_pattern` | `"standard_pods"` | `gke` | `agent_substrate`(Agent Substrate on GKE) 또는 `agent_sandbox`(상시 실행 · 사이드카 · Arm · Autopilot) (`GKE-SF1`·`GKE-RS4`) |
+| `agent_gateway_direction` | `"egress"` | `agent_runtime`, `gke` | Agent Gateway 적용 방향 — `"egress"` (`AGENT_TO_ANYWHERE`), `"ingress"` (`CLIENT_TO_AGENT`), `"both"` (`AR-SF1`·`GKE-SF2`, Preview) |
+| `agent_gateway_enforcement_mode` | `"DRY_RUN"` | `agent_runtime`, `gke` | Agent Gateway 정책을 시험 모드로 검증한 뒤 `"ENFORCED"`로 전환 (`AR-SF1`·`GKE-SF2`, Preview) |
+| `enable_model_armor` | `false` | `agent_runtime`, `gke` | `true`일 때 Model Armor 템플릿(`pi_and_jailbreak` + `sdp`)과 `CONTENT_AUTHZ` 정책을 함께 생성 (`AR-SF1`·`GKE-SF2`, Preview) |
+| `cloud_run_identity_mode` | `"agent_identity"` | `cloud_run` | `CR-ID3` 적용 시 Cloud Run 신원 모드 — `"service_account"`(전용 최소 권한 SA 유지, 권장·안정) 또는 `"agent_identity"`(Preview SPIFFE) |
+| `organization_id` | `""` | `cloud_run` | `cloud_run_identity_mode="agent_identity"`일 때 `variables.tf`의 `organization_id` 기본값으로 반영 (`CR-ID3`) |
+| `bq_analytics_dataset` | `"agent_analytics"` | 전체 | BigQuery Agent Analytics 데이터셋 ID (`COMMON-DO3`, 선택 Add-on) |
+| `bq_analytics_table` | `"agent_events"` | 전체 | BigQuery Agent Analytics 테이블명 (`COMMON-DO3`, 선택 Add-on) |
+| `model_armor_confidence` | `"MEDIUM_AND_ABOVE"` | 전체 | Model Armor 프롬프트 인젝션·탈옥 신뢰도 임계치 — `LOW_AND_ABOVE` / `MEDIUM_AND_ABOVE` / `HIGH` (`COMMON-SF1`, 선택 Add-on) |
+| `model_armor_enable_sdp` | `true` | 전체 | Model Armor Sensitive Data Protection(민감정보 PII) 필터 활성 여부 (`COMMON-SF1`) |
+| `model_armor_enable_malicious_uri` | `true` | 전체 | Model Armor 악성 URI 필터 활성 여부 (`COMMON-SF1`) |

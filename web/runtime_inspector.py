@@ -231,7 +231,7 @@ def _apply_checklist_v3(result: dict[str, Any]) -> dict[str, Any]:
 
     result.update(
         {
-            "checklist_version": "v3",
+            "checklist_version": "v4",
             "checks": scored,
             "platform_skill_checks": platform,
             "platform_skills": list(_PLATFORM_SKILLS.get(runtime_type, [])),

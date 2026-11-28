@@ -616,16 +616,28 @@ def _prepare_variables_tf(
                 1,
             )
             applied.append("C5.1")
-        if "C2.1" in item_ids and target in ("cloud_run", "gke") and 'variable "agent_engine_id"' not in content:
-            content = content.rstrip() + f'''
+        if ("C2.1" in item_ids or "MEMBANK" in item_ids) and target in ("cloud_run", "gke"):
+            if 'variable "agent_engine_id"' not in content:
+                content = content.rstrip() + f'''
 
 variable "agent_engine_id" {{
   type        = string
-  description = "Agent Platform Reasoning Engine ID for Managed Sessions (VertexAiSessionService)"
+  description = "Agent Platform Reasoning Engine ID for Managed Sessions (VertexAiSessionService) & Memory Bank"
   default     = "{params.agent_engine_id}"
 }}
 '''
-            applied.append("C2.1")
+                applied.append("C2.1" if "C2.1" in item_ids else "MEMBANK")
+            elif params.agent_engine_id:
+                updated_var = re.sub(
+                    r'(variable\s+"agent_engine_id"\s*\{[^}]*?\bdefault\s*=\s*")[^"]*(")',
+                    rf'\g<1>{params.agent_engine_id}\2',
+                    content,
+                    count=1,
+                    flags=re.DOTALL,
+                )
+                if updated_var != content:
+                    content = updated_var
+                    applied.append("C2.1" if "C2.1" in item_ids else "MEMBANK")
         if "C3.1" in item_ids and target != "gke" and 'variable "vpc_network_name"' not in content:
             content = content.rstrip() + f'''
 
@@ -678,11 +690,11 @@ variable "agent_gateway_enforcement_mode" {{
             roles.append('    "roles/secretmanager.secretAccessor",')
 
         extra_vars = ""
-        if target in ("cloud_run", "gke") and "C2.1" in item_ids:
+        if target in ("cloud_run", "gke") and ("C2.1" in item_ids or "MEMBANK" in item_ids):
             extra_vars += f'''
 variable "agent_engine_id" {{
   type        = string
-  description = "Agent Platform Reasoning Engine ID for Managed Sessions (VertexAiSessionService)"
+  description = "Agent Platform Reasoning Engine ID for Managed Sessions (VertexAiSessionService) & Memory Bank"
   default     = "{params.agent_engine_id}"
 }}
 '''
@@ -1683,8 +1695,8 @@ resource "kubernetes_network_policy_v1" "agent_egress_guard" {
                 if txt != before_c12:
                     applied.append(drain_flag)
 
-            # [C2.1] Managed Sessions env vars (AGENT_ENGINE_SESSION_ID + GOOGLE_CLOUD_AGENT_ENGINE_LOCATION)
-            if "C2.1" in item_ids:
+            # [C2.1 / MEMBANK] Managed Sessions & Memory Bank env vars (AGENT_ENGINE_SESSION_ID + GOOGLE_CLOUD_AGENT_ENGINE_LOCATION)
+            if "C2.1" in item_ids or "MEMBANK" in item_ids:
                 before_c21 = txt
                 if "GOOGLE_CLOUD_AGENT_ENGINE_ID" in txt and "AGENT_ENGINE_SESSION_ID" not in txt:
                     txt = txt.replace('"GOOGLE_CLOUD_AGENT_ENGINE_ID"', '"AGENT_ENGINE_SESSION_ID"')
@@ -1703,7 +1715,7 @@ resource "kubernetes_network_policy_v1" "agent_egress_guard" {
                         "var.region",
                     )
                 if txt != before_c21:
-                    applied.append("C2.1")
+                    applied.append("C2.1" if "C2.1" in item_ids else "MEMBANK")
 
             # [C5.1] Unified OTel GenAI Semconv + NO_CONTENT + ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false
             if "C5.1" in item_ids:
@@ -2279,44 +2291,45 @@ resource "kubernetes_service_v1" "app" {{
                             flags=re.MULTILINE,
                         )
             else:
-                if "FUNCTIONAL_TYPE_AGENT" not in txt:
-                    txt = txt.replace(
-                        'ingress             = "INGRESS_TRAFFIC_ALL"',
-                        'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)',
-                        1,
-                    )
-                    if "FUNCTIONAL_TYPE_AGENT" not in txt:
-                        txt = re.sub(
-                            r'(^[ \t]*(?:ingress|deletion_protection)\s*=\s*.+$)',
-                            r'\1\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [CR-S3] Auto-register in Agent Registry (immutable)',
-                            txt,
-                            count=1,
-                            flags=re.MULTILINE,
-                        )
                 want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
-                if want_cr_agent_identity and "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
-                    wi_block = (
-                        '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
-                        '    # Pre-grant least-privilege IAM roles to the SPIFFE principal before migrating live traffic (--no-traffic).\n'
-                        '    workload_identity_config {\n'
-                        '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
-                        '    }\n'
-                        '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)'
-                    )
-                    if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
-                        txt = re.sub(
-                            r'^[ \t]*service_account\s*=\s*.+$',
-                            wi_block,
-                            txt,
-                            count=1,
-                            flags=re.MULTILINE,
-                        )
-                    else:
+                if want_cr_agent_identity:
+                    if "FUNCTIONAL_TYPE_AGENT" not in txt:
                         txt = txt.replace(
-                            "    max_instance_request_concurrency",
-                            wi_block + "\n    max_instance_request_concurrency",
+                            'ingress             = "INGRESS_TRAFFIC_ALL"',
+                            'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [CR-ID3] Auto-register in Agent Registry (immutable; requires IDENTITY_TYPE_AGENT_IDENTITY)',
                             1,
                         )
+                        if "FUNCTIONAL_TYPE_AGENT" not in txt:
+                            txt = re.sub(
+                                r'(^[ \t]*(?:ingress|deletion_protection)\s*=\s*.+$)',
+                                r'\1\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [CR-ID3] Auto-register in Agent Registry (immutable; requires IDENTITY_TYPE_AGENT_IDENTITY)',
+                                txt,
+                                count=1,
+                                flags=re.MULTILINE,
+                            )
+                    if "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
+                        wi_block = (
+                            '    # [CR-ID3] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                            '    # Pre-grant least-privilege IAM roles to the SPIFFE principal before migrating live traffic (--no-traffic).\n'
+                            '    workload_identity_config {\n'
+                            '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                            '    }\n'
+                            '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)'
+                        )
+                        if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
+                            txt = re.sub(
+                                r'^[ \t]*service_account\s*=\s*.+$',
+                                wi_block,
+                                txt,
+                                count=1,
+                                flags=re.MULTILINE,
+                            )
+                        else:
+                            txt = txt.replace(
+                                "    max_instance_request_concurrency",
+                                wi_block + "\n    max_instance_request_concurrency",
+                                1,
+                            )
             if txt != before_c42:
                 applied.append("C4.2")
 
@@ -2356,8 +2369,8 @@ resource "kubernetes_service_v1" "app" {{
             if txt != before_c12:
                 applied.append("C1.2")
 
-        # [C2.1] Agent Platform Managed Sessions env var (VertexAiSessionService via AGENT_ENGINE_SESSION_ID)
-        if "C2.1" in item_ids:
+        # [C2.1 / MEMBANK] Agent Platform Managed Sessions & Memory Bank env var (AGENT_ENGINE_SESSION_ID)
+        if "C2.1" in item_ids or "MEMBANK" in item_ids:
             before = txt
             if "GOOGLE_CLOUD_AGENT_ENGINE_ID" in txt and "AGENT_ENGINE_SESSION_ID" not in txt:
                 txt = txt.replace('"GOOGLE_CLOUD_AGENT_ENGINE_ID"', '"AGENT_ENGINE_SESSION_ID"')
@@ -2369,7 +2382,7 @@ resource "kubernetes_service_v1" "app" {{
                     "var.agent_engine_id",
                 )
             if txt != before:
-                applied.append("C2.1")
+                applied.append("C2.1" if "C2.1" in item_ids else "MEMBANK")
 
         # [C3.1] Direct VPC Egress (binds existing VPC/subnet variables; no hardcoded CIDR subnet creation)
         if "C3.1" in item_ids and "vpc_access" not in txt:
@@ -2537,19 +2550,21 @@ resource "kubernetes_service_v1" "app" {{
                 '    service_account                  = google_service_account.app_sa.email\n'
             )
         elif "C4.2" in item_ids:
-            cr_func_line = '  functional_type      = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)\n'
             want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
             if want_cr_agent_identity:
+                cr_func_line = '  functional_type      = "FUNCTIONAL_TYPE_AGENT" # [CR-ID3] Auto-register in Agent Registry (immutable; requires IDENTITY_TYPE_AGENT_IDENTITY)\n'
                 cr_identity_block = (
-                    '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                    '    # [CR-ID3] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
                     '    workload_identity_config {\n'
                     '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
                     '    }\n'
                     '    # service_account = google_service_account.app_sa.email # Replaced by Agent Identity (SPIFFE ID)\n'
                 )
             else:
+                cr_func_line = ""
                 cr_identity_block = (
-                    '    # [C4.2] Dedicated least-privilege Service Account retained per cloud_run_identity_mode="service_account"\n'
+                    '    # [CR-ID3] Dedicated least-privilege Service Account retained per cloud_run_identity_mode="service_account"\n'
+                    '    # (Cloud Run API requires IDENTITY_TYPE_AGENT_IDENTITY when functional_type=FUNCTIONAL_TYPE_AGENT)\n'
                     '    service_account                  = google_service_account.app_sa.email\n'
                 )
         else:
@@ -2697,47 +2712,16 @@ resource "google_model_armor_template" "agent_gateway_armor" {{
   depends_on = [google_project_service.agent_gateway_apis]
 }}
 
-resource "google_network_services_authz_extension" "model_armor_ext" {{
-  project   = var.project_id
-  location  = var.region
-  name      = "${{var.project_name}}-model-armor-ext"
-  service   = "modelarmor.googleapis.com"
-  timeout   = "2s"
-  fail_open = false
-
-  metadata = {{
-    modelArmorTemplate = google_model_armor_template.agent_gateway_armor.name
-  }}
-
-  depends_on = [google_model_armor_template.agent_gateway_armor]
+output "agent_gateway_model_armor_template" {{
+  description = "Model Armor template for Agent Gateway prompt/response inspection (bind via Service Extensions)"
+  value       = google_model_armor_template.agent_gateway_armor.name
 }}
 
-resource "google_network_security_authz_policy" "model_armor_content_policy" {{
-  project        = var.project_id
-  location       = var.region
-  name           = "${{var.project_name}}-model-armor-policy"
-  policy_profile = "CONTENT_AUTHZ"
-  action         = "CUSTOM"
-
-  target {{
-    resources = [
-{targets_hcl}
-    ]
-  }}
-
-  custom_provider {{
-    authz_extension {{
-      resources = [
-        google_network_services_authz_extension.model_armor_ext.id,
-      ]
-    }}
-  }}
-
-  depends_on = [
-{gw_deps_hcl}
-    google_network_services_authz_extension.model_armor_ext,
-  ]
-}}
+# Attach Model Armor template to Agent Gateway via Service Extensions ExtensionBinding (Preview):
+#   gcloud beta service-extensions extension-bindings create ${{var.project_name}}-ma-binding \\
+#     --location=${{var.region}} --project=${{var.project_id}} \\
+#     --target-resource=projects/${{var.project_id}}/locations/${{var.region}}/agentGateways/${{var.project_name}}-egress-gw \\
+#     --producer-extension="modelarmor.${{var.region}}.rep.googleapis.com"
 '''
         ma_followup = (
             "# Model Armor (pi_and_jailbreak + sdp_settings) is ENABLED above.\n"
@@ -2888,49 +2872,11 @@ resource "google_model_armor_template" "agent_gateway_armor" {{
   depends_on = [google_project_service.agent_gateway_apis]
 }}
 
-resource "google_network_services_authz_extension" "model_armor_ext" {{
-  for_each  = local.deploy_project_ids
-  project   = each.value
-  location  = var.region
-  name      = "${{var.project_name}}-model-armor-ext"
-  service   = "modelarmor.googleapis.com"
-  timeout   = "2s"
-  fail_open = false
-
-  metadata = {{
-    modelArmorTemplate = google_model_armor_template.agent_gateway_armor[each.key].name
-  }}
-
-  depends_on = [google_model_armor_template.agent_gateway_armor]
-}}
-
-resource "google_network_security_authz_policy" "model_armor_content_policy" {{
-  for_each       = local.deploy_project_ids
-  project        = each.value
-  location       = var.region
-  name           = "${{var.project_name}}-model-armor-policy"
-  policy_profile = "CONTENT_AUTHZ"
-  action         = "CUSTOM"
-
-  target {{
-    resources = [
-{targets_ci_hcl}
-    ]
-  }}
-
-  custom_provider {{
-    authz_extension {{
-      resources = [
-        google_network_services_authz_extension.model_armor_ext[each.key].id,
-      ]
-    }}
-  }}
-
-  depends_on = [
-{deps_ci_hcl}
-    google_network_services_authz_extension.model_armor_ext,
-  ]
-}}
+# Attach Model Armor template to Agent Gateway per env via Service Extensions ExtensionBinding (Preview):
+#   gcloud beta service-extensions extension-bindings create <project_name>-ma-binding \\
+#     --location=<region> --project=<env_project_id> \\
+#     --target-resource=projects/<env_project_id>/locations/<region>/agentGateways/<project_name>-egress-gw \\
+#     --producer-extension="modelarmor.<region>.rep.googleapis.com"
 '''
     return f'''# deployment/terraform/cicd/production_ready.tf
 # Isolated Production-Readiness add-on resources for multi-project CI/CD (staging & prod via local.deploy_project_ids)
@@ -3199,29 +3145,30 @@ variable "agent_gateway_enforcement_mode" {{
                         1,
                     )
             else:
-                if "FUNCTIONAL_TYPE_AGENT" not in txt:
-                    txt = txt.replace(
-                        'ingress             = "INGRESS_TRAFFIC_ALL"',
-                        'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [C4.2] Auto-register in Agent Registry (immutable)',
-                        1,
-                    )
                 want_cr_agent_identity = (params.cloud_run_identity_mode or "agent_identity").strip().lower() != "service_account"
-                if want_cr_agent_identity and "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
-                    wi_block = (
-                        '    # [C4.2] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
-                        '    workload_identity_config {\n'
-                        '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
-                        '    }\n'
-                        '    # service_account = google_service_account.app_sa[each.key].email # Replaced by Agent Identity (SPIFFE ID)'
-                    )
-                    if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
-                        txt = re.sub(
-                            r'^[ \t]*service_account\s*=\s*.+$',
-                            wi_block,
-                            txt,
-                            count=1,
-                            flags=re.MULTILINE,
+                if want_cr_agent_identity:
+                    if "FUNCTIONAL_TYPE_AGENT" not in txt:
+                        txt = txt.replace(
+                            'ingress             = "INGRESS_TRAFFIC_ALL"',
+                            'ingress             = "INGRESS_TRAFFIC_ALL"\n  functional_type     = "FUNCTIONAL_TYPE_AGENT" # [CR-ID3] Auto-register in Agent Registry (immutable; requires IDENTITY_TYPE_AGENT_IDENTITY)',
+                            1,
                         )
+                    if "IDENTITY_TYPE_AGENT_IDENTITY" not in txt:
+                        wi_block = (
+                            '    # [CR-ID3] Agent Identity (SPIFFE ID) & Agent Registry Auto-Registration (Preview, immutable)\n'
+                            '    workload_identity_config {\n'
+                            '      identity_type = "IDENTITY_TYPE_AGENT_IDENTITY"\n'
+                            '    }\n'
+                            '    # service_account = google_service_account.app_sa[each.key].email # Replaced by Agent Identity (SPIFFE ID)'
+                        )
+                        if re.search(r'^[ \t]*service_account\s*=\s*.+$', txt, flags=re.MULTILINE):
+                            txt = re.sub(
+                                r'^[ \t]*service_account\s*=\s*.+$',
+                                wi_block,
+                                txt,
+                                count=1,
+                                flags=re.MULTILINE,
+                            )
             if txt != before:
                 applied.append("C4.2")
         if "C2.1" in item_ids:
@@ -4605,14 +4552,23 @@ def _wire_memory_service_in_fastapi(txt: str) -> str:
             count=1,
             flags=re.MULTILINE,
         )
-        if out == before_sub and "from app.app_utils import services" in out:
+        if out == before_sub:
+            if "from app.app_utils import services" not in out:
+                if "from google.adk.cli.fast_api import get_fast_api_app" in out:
+                    out = out.replace(
+                        "from google.adk.cli.fast_api import get_fast_api_app",
+                        "from google.adk.cli.fast_api import get_fast_api_app\nfrom app.app_utils import services",
+                        1,
+                    )
+                else:
+                    out = "from app.app_utils import services\n" + out
             out = re.sub(
                 r"(^[ \t]*)(agents_dir\s*=\s*[^,\n]+,)",
                 (
                     r"\1\2\n"
-                    r"\1# --- [BEGIN prod-ready: *-F2 Memory Bank] ---\n"
+                    r"\1# --- [BEGIN prod-ready: *-RS2 Memory Bank] ---\n"
                     r"\1memory_service_uri=services.MEMORY_SERVICE_URI,\n"
-                    r"\1# --- [END prod-ready: *-F2 Memory Bank] ---"
+                    r"\1# --- [END prod-ready: *-RS2 Memory Bank] ---"
                 ),
                 out,
                 count=1,
@@ -4655,7 +4611,10 @@ def _prepare_agent_and_fastapi_py(
         updated_fa = existing_fa
         applied_fa: list[str] = []
 
-        if target in ("cloud_run", "gke") and "C2.1" in item_ids and "get_session_service" not in updated_fa and "SESSION_SERVICE_URI" not in updated_fa:
+        if target in ("cloud_run", "gke") and (
+            ("C2.1" in item_ids and "get_session_service" not in updated_fa and "SESSION_SERVICE_URI" not in updated_fa)
+            or ("MEMBANK" in item_ids and "get_fast_api_app(" not in updated_fa and "memory_service" not in updated_fa)
+        ):
             # Minimal stub without services.py wiring: upgrade to official agents-cli v1.5.0 lifespan + VertexAiSessionService
             if "attach_a2a_routes" not in updated_fa:
                 updated_fa = f'''"""FastAPI entrypoint compatible with google-agents-cli v1.5.0 (VertexAiSessionService)."""

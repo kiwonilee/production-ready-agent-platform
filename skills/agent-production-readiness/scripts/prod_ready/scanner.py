@@ -1096,10 +1096,23 @@ def _eval_gateway(ctx: _Ctx) -> Eval:
     has_agw_wired = "agent_gateway_config" in ctx.service_tf
     has_ca_bundle = "AGENT_GATEWAY_ROOT_CERTIFICATES" in ctx.dockerfile
     if has_agw_res and has_agw_wired and has_ca_bundle:
+        dirs = []
+        if "AGENT_TO_ANYWHERE" in ctx.prod_ready_tf:
+            dirs.append("AGENT_TO_ANYWHERE")
+        if "CLIENT_TO_AGENT" in ctx.prod_ready_tf:
+            dirs.append("CLIENT_TO_AGENT")
+        dir_label = " + ".join(dirs) if dirs else "AGENT_TO_ANYWHERE"
+        enf_m = re.search(
+            r'variable\s+"agent_gateway_enforcement_mode"\s*\{[^}]*?\bdefault\s*=\s*"([^"]+)"',
+            ctx.variables_tf,
+            re.DOTALL,
+        )
+        enf_label = enf_m.group(1) if enf_m else ("ENFORCED" if 'action = "CUSTOM"' in ctx.prod_ready_tf and "DRY_RUN" not in ctx.prod_ready_tf else "DRY_RUN")
+        ma_label = " + Model Armor" if "google_model_armor_template" in ctx.prod_ready_tf else ""
         return (
             "GREEN",
             False,
-            "Agent Gateway(AGENT_TO_ANYWHERE · DRY_RUN) + AuthzPolicy + agent_gateway_config + Dockerfile CA 신뢰 구성 완료 (ENFORCED 전환 전 roles/iap.egressor CEL · Model Armor 템플릿 확인)",
+            f"Agent Gateway({dir_label} · {enf_label}{ma_label}) + AuthzPolicy + agent_gateway_config + Dockerfile CA 신뢰 구성 완료",
         )
     if has_agw_res or has_agw_wired:
         return ("AMBER", False, "Agent Gateway 리소스·AuthzPolicy·service.tf 바인딩·Dockerfile CA 신뢰 중 일부 누락")
@@ -1220,7 +1233,13 @@ def _eval_bq_analytics(ctx: _Ctx) -> Eval:
     has_extra = _has_adk_bq_analytics_extra(ctx.pyproject_toml) or not bool(
         re.search(r'["\']google-adk\b', ctx.pyproject_toml or "")
     )
-    has_dataset = "google_bigquery_dataset" in ctx.all_tf
+    has_dataset = bool(
+        re.search(
+            r'resource\s+"google_bigquery_dataset"\s+"[^"]*analytics|bq_analytics_dataset|agent_analytics',
+            ctx.all_tf,
+            re.IGNORECASE,
+        )
+    )
     if has_plugin and has_dataset and has_extra:
         return ("GREEN", False, "BigQueryAgentAnalyticsPlugin + google-adk[bigquery-analytics] + BigQuery 데이터셋 구성 완료")
     if has_plugin or has_dataset:
@@ -1251,7 +1270,12 @@ def _eval_model_armor(ctx: _Ctx) -> Eval:
         or "ModelArmorClient" in all_src
     )
     if has_tpl and has_filter:
-        return ("GREEN", False, "Model Armor 템플릿(프롬프트 인젝션·탈옥·SDP 필터) 구성 완료")
+        active_filters = ["프롬프트 인젝션·탈옥"]
+        if re.search(r"^\s*sdp_settings\s*\{", ctx.all_tf, re.MULTILINE):
+            active_filters.append("SDP 민감정보")
+        if re.search(r"^\s*malicious_uri_filter_settings\s*\{", ctx.all_tf, re.MULTILINE):
+            active_filters.append("악성 URI")
+        return ("GREEN", False, f"Model Armor 템플릿({' · '.join(active_filters)} 필터) 구성 완료")
     if has_tpl or "modelarmor.googleapis.com" in ctx.all_tf:
         return ("AMBER", False, "Model Armor API 또는 일부 설정만 감지 — google_model_armor_template(pi_and_jailbreak · sdp) 완성 필요")
     return (

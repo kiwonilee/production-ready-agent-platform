@@ -1200,31 +1200,54 @@
   .f6-dlink .dt { font-size: 17.5px; font-weight: 700; color: #FFFFFF; }
   .f6-dlink .dd { font-size: 13px; color: #94A3B8; line-height: 1.35; }
 
-  /* ---------- Slide BG : Background (Matches Slide 04/06 Editorial Tile Grammar) ---------- */
+  /* ---------- Slide BG : Background (Left Keynote Visual + Right 2x2 Editorial Tiles) ---------- */
   #pagebg {
     background: radial-gradient(circle at 8% 14%, rgba(66,133,244,.07) 0%, rgba(255,255,255,0) 40%), #FAFBFD;
+  }
+  .bg-split {
+    display: grid; grid-template-columns: 0.90fr 1.32fr; gap: 22px; flex: 1; margin: 14px 0 8px;
+    align-items: stretch; min-height: 0;
+  }
+  .bg-visual-card {
+    border-radius: 26px; padding: 18px 18px 16px; background: #FFFFFF;
+    box-shadow: 0 20px 44px -22px rgba(13,43,94,.18), 0 0 0 1px rgba(218,220,224,.65);
+    display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+    overflow: hidden;
+  }
+  .bg-visual-img {
+    width: 100%; flex: 1; min-height: 0; object-fit: contain; border-radius: 16px;
+    background: #F8FAFE;
+  }
+  .bg-visual-cap {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 14px; border-radius: 12px; background: #F4F7FC;
+    font-size: 13.5px; font-weight: 700; color: var(--navy);
+  }
+  .bg-visual-cap span:last-child {
+    font-family: var(--mono); font-size: 11.5px; color: var(--red-d);
+    background: var(--red-50); padding: 3px 9px; border-radius: 999px; white-space: nowrap;
   }
   .bg-grid2x2 {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 20px; flex: 1; margin: 16px 0 8px;
+    gap: 16px; min-height: 0;
   }
   .bg-tile {
-    position: relative; overflow: hidden; border-radius: 24px; padding: 26px 28px 22px;
-    background: #FFFFFF; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
-    box-shadow: 0 18px 40px -22px rgba(13,43,94,.16), 0 0 0 1px rgba(218,220,224,.6);
+    padding: 20px 22px 18px; border-radius: 22px; gap: 8px;
   }
-  .bg-tile .f4-dash { margin-bottom: 10px; }
+  .bg-tile .f4-dash { margin-bottom: 8px; width: 28px; }
+  .bg-tile .f4-wm { font-size: 48px; right: 14px; top: 8px; }
+  .bg-tile .f4-thead b { font-size: 18.5px; }
   .bg-tile.t-red .f4-dash { background: var(--red); }
   .bg-tile.t-red .f4-badge { background: var(--red-50); color: var(--red-d); }
-  .bg-tile .f4-desc { margin: 8px 0 0; font-size: 16px; }
-  .bg-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+  .bg-tile .f4-desc { margin: 6px 0 0; font-size: 14px; line-height: 1.44; }
+  .bg-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
   .bg-chips span {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #F4F7FC; color: var(--navy); padding: 7px 12px; border-radius: 10px;
-    font-size: 13.5px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #F4F7FC; color: var(--navy); padding: 5px 9px; border-radius: 8px;
+    font-size: 12.2px; font-weight: 600;
   }
-  .bg-chips span img { width: 18px; height: 18px; object-fit: contain; }
+  .bg-chips span img { width: 15px; height: 15px; object-fit: contain; }
   .bg-chips span.c-g { background: #EBF7EE; color: var(--green-d); }
   .bg-chips span.c-y { background: #FEF7E0; color: #9A5400; }
   .bg-chips span.c-r { background: #FCE8E6; color: var(--red-d); }
@@ -1400,66 +1423,76 @@
         <div class="ed-h1">왜 <strong>Production Ready Agent Platform</strong>을 만들었는가</div>
       </div>
 
-      <div class="bg-grid2x2">
-        <!-- 01 -->
-        <div class="f4-tile bg-tile rvbox">
-          <span class="f4-wm" aria-hidden="true">01</span>
-          <div>
-            <div class="f4-dash"></div>
-            <div class="f4-thead"><b>6대 AIOps Agent PoC → PROD</b><span class="f4-badge">출발점</span></div>
-            <p class="f4-desc">Cloud SQL · GKE · BigQuery · 인프라 코드에 직접 접근하는 운영 에이전트 — PoC 검증과 상용 준비는 완전히 달랐다.</p>
-          </div>
-          <div class="bg-chips">
-            <span class="c-b">Incident Analyzer</span>
-            <span class="c-b">Change Management</span>
-            <span class="c-b">Code Reviewer</span>
-            <span>GCP Expert</span>
-            <span>K8S Expert</span>
-            <span>SRE Agent</span>
+      <div class="bg-split">
+        <!-- Left: Clean Keynote Illustration -->
+        <div class="bg-visual-card rvbox">
+          <img class="bg-visual-img" src="/static/icons/bg-poc-to-prod.jpg" alt="6대 AIOps Agent PoC에서 3대 런타임 상용 전환 아키텍처" />
+          <div class="bg-visual-cap">
+            <span>6대 운영 에이전트 PoC → PROD 전환</span>
+            <span>PoC ≠ PROD Ready</span>
           </div>
         </div>
 
-        <!-- 02 -->
-        <div class="f4-tile bg-tile t-grn rvbox">
-          <span class="f4-wm" aria-hidden="true">02</span>
-          <div>
-            <div class="f4-dash"></div>
-            <div class="f4-thead"><b>모든 에이전트가 Agent Runtime은 아니다</b><span class="f4-badge">현실</span></div>
-            <p class="f4-desc">Ambient(Pub/Sub Push) · 커스텀 API · K8s 격리 요건상 3대 런타임 분산 배포가 불가피하다.</p>
+        <!-- Right: Concise 2x2 Keynote Tiles -->
+        <div class="bg-grid2x2">
+          <!-- 01 -->
+          <div class="f4-tile bg-tile rvbox">
+            <span class="f4-wm" aria-hidden="true">01</span>
+            <div>
+              <div class="f4-dash"></div>
+              <div class="f4-thead"><b>6대 AIOps Agent PoC</b><span class="f4-badge">출발점</span></div>
+              <p class="f4-desc">Cloud SQL · GKE · BigQuery · 인프라 코드에 직접 접근하는 운영 에이전트 — 상용 전환 시 뚜렷한 Gap 체감.</p>
+            </div>
+            <div class="bg-chips">
+              <span class="c-b">Incident</span>
+              <span class="c-b">Change</span>
+              <span class="c-b">Code Review</span>
+              <span>GCP · K8S · SRE</span>
+            </div>
           </div>
-          <div class="bg-chips">
-            <span class="c-b"><img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="18" height="18">Agent Runtime · 대화형</span>
-            <span class="c-g"><img src="/static/icons/cloud-run.png" alt="Cloud Run" width="18" height="18">Cloud Run · Ambient · API</span>
-            <span class="c-y"><img src="/static/icons/gke.png" alt="GKE" width="18" height="18">GKE · K8s · 코드 격리</span>
-          </div>
-        </div>
 
-        <!-- 03 -->
-        <div class="f4-tile bg-tile t-amb rvbox">
-          <span class="f4-wm" aria-hidden="true">03</span>
-          <div>
-            <div class="f4-dash"></div>
-            <div class="f4-thead"><b>에이전트도 결국 하나의 Application이다</b><span class="f4-badge">본질</span></div>
-            <p class="f4-desc">Cloud Run · GKE를 쓰는 순간 일반 상용 App 심사 기준까지 동일하게 요구 — AI 개발팀 수동 대응엔 부담 과다.</p>
+          <!-- 02 -->
+          <div class="f4-tile bg-tile t-grn rvbox">
+            <span class="f4-wm" aria-hidden="true">02</span>
+            <div>
+              <div class="f4-dash"></div>
+              <div class="f4-thead"><b>런타임 분산 현실</b><span class="f4-badge">현실</span></div>
+              <p class="f4-desc">Ambient(Pub/Sub Push) · 커스텀 API · K8s 격리 요건상 3대 런타임 분산 배포가 불가피.</p>
+            </div>
+            <div class="bg-chips">
+              <span class="c-b"><img src="/static/icons/agent-runtime.png" alt="Agent Runtime" width="15" height="15">Agent Runtime</span>
+              <span class="c-g"><img src="/static/icons/cloud-run.png" alt="Cloud Run" width="15" height="15">Cloud Run · Ambient</span>
+              <span class="c-y"><img src="/static/icons/gke.png" alt="GKE" width="15" height="15">GKE · 격리</span>
+            </div>
           </div>
-          <div class="bg-chips">
-            <span class="c-b">보안·네트워크 · VPC · Non-Root · Secret</span>
-            <span class="c-g">CI/CD·가용성 · Terraform · 프로브 · 무중단</span>
-            <span class="c-y">관측·Day-2 · Trace · SLO 알림 · 복구</span>
-          </div>
-        </div>
 
-        <!-- 04 -->
-        <div class="f4-tile bg-tile t-red rvbox">
-          <span class="f4-wm" aria-hidden="true">04</span>
-          <div>
-            <div class="f4-dash"></div>
-            <div class="f4-thead"><b>agents-cli 이후 남는 Cloud Run · GKE 공백</b><span class="f4-badge">보완 레이어</span></div>
-            <p class="f4-desc"><code>agents-cli</code> Day-1 배포를 대체하지 않고, 위에서 범용 런타임 보안·운영 공백을 일관되게 메우는 보완 레이어.</p>
+          <!-- 03 -->
+          <div class="f4-tile bg-tile t-amb rvbox">
+            <span class="f4-wm" aria-hidden="true">03</span>
+            <div>
+              <div class="f4-dash"></div>
+              <div class="f4-thead"><b>에이전트도 하나의 App</b><span class="f4-badge">본질</span></div>
+              <p class="f4-desc">Cloud Run · GKE 선택 순간 일반 상용 App 심사 기준까지 동일 요구 — AI 팀 수동 대응 한계.</p>
+            </div>
+            <div class="bg-chips">
+              <span class="c-b">VPC · Non-Root · Secret</span>
+              <span class="c-g">Terraform · 프로브</span>
+              <span class="c-y">Trace · SLO · 복구</span>
+            </div>
           </div>
-          <div class="bg-chips">
-            <span class="c-r">보안: 최소 권한 IAM · Agent Identity · Registry · Gateway</span>
-            <span class="c-r">운영: 영속 세션·Memory · NO_CONTENT · Eval 게이트 · 무중단 종료</span>
+
+          <!-- 04 -->
+          <div class="f4-tile bg-tile t-red rvbox">
+            <span class="f4-wm" aria-hidden="true">04</span>
+            <div>
+              <div class="f4-dash"></div>
+              <div class="f4-thead"><b>agents-cli 이후 공백</b><span class="f4-badge">보완 레이어</span></div>
+              <p class="f4-desc"><code>agents-cli</code> 대체가 아닌, 위에서 Cloud Run · GKE 보안·운영 공백을 메우는 보완 레이어.</p>
+            </div>
+            <div class="bg-chips">
+              <span class="c-r">보안: IAM · Identity · Registry · AGW</span>
+              <span class="c-r">운영: 세션·Memory · NO_CONTENT · Eval · 종료</span>
+            </div>
           </div>
         </div>
       </div>
